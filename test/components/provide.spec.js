@@ -1,4 +1,4 @@
-import expect from 'expect';
+  import expect from 'expect';
 import jsdomReact from './jsdomReact';
 import React, { PropTypes, Component } from 'react/addons';
 import { createStore } from 'redux';
@@ -20,8 +20,12 @@ describe('React', () => {
       }
     }
 
+    function foo() {
+      return {};
+    }
+
     it('should wrap the component into Provider', () => {
-      const store = createStore({});
+      const store = createStore(foo);
 
       @provide(store)
       class Container extends Component {
@@ -42,7 +46,7 @@ describe('React', () => {
     });
 
     it('sets the displayName correctly', () => {
-      @provide(createStore({}))
+      @provide(createStore(foo))
       class Container extends Component {
         render() {
           return <div />;
