@@ -1,7 +1,7 @@
 import expect from 'expect';
 import jsdomReact from './jsdomReact';
 import React, { PropTypes, Component } from 'react/addons';
-import { createStore } from 'redux';
+import { createStore, combineReducers } from 'redux';
 import { Connector } from '../../src/index';
 
 const { TestUtils } = React.addons;
@@ -32,7 +32,7 @@ describe('React', () => {
     }
 
     it('should receive the store in the context', () => {
-      const store = createStore({});
+      const store = createStore(combineReducers({}));
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
@@ -49,12 +49,13 @@ describe('React', () => {
     });
 
     it('should subscribe to the store changes', () => {
-      const store = createStore(stringBuilder);
+      const reducer = combineReducers({string: stringBuilder})
+      const store = createStore(reducer);
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={string => ({ string })}>
+            <Connector select={state => ({ string: state.string })}>
               {({ string }) => <div string={string} />}
             </Connector>
           )}
@@ -70,7 +71,8 @@ describe('React', () => {
     });
 
     it('should unsubscribe before unmounting', () => {
-      const store = createStore(stringBuilder);
+      const reducer = combineReducers({string: stringBuilder})
+      const store = createStore(reducer);
       const subscribe = store.subscribe;
 
       // Keep track of unsubscribe by wrapping subscribe()
@@ -86,7 +88,7 @@ describe('React', () => {
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={string => ({ string })}>
+            <Connector select={state => ({ string: state.string })}>
               {({ string }) => <div string={string} />}
             </Connector>
           )}
@@ -100,7 +102,8 @@ describe('React', () => {
     });
 
     it('should shallowly compare the selected state to prevent unnecessary updates', () => {
-      const store = createStore(stringBuilder);
+      const reducer = combineReducers({string: stringBuilder})
+      const store = createStore(reducer);
       const spy = expect.createSpy(() => {});
       function render({ string }) {
         spy();
@@ -110,7 +113,7 @@ describe('React', () => {
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={string => ({ string })}>
+            <Connector select={state => ({ string: state.string })}>
               {render}
             </Connector>
           )}
@@ -129,10 +132,10 @@ describe('React', () => {
     });
 
     it('should recompute the state slice when the select prop changes', () => {
-      const store = createStore({
+      const store = createStore(combineReducers({
         a: () => 42,
         b: () => 72
-      });
+      }));
 
       function selectA(state) {
         return { result: state.a };
@@ -174,7 +177,7 @@ describe('React', () => {
     });
 
     it('should pass dispatch() to the child function', () => {
-      const store = createStore({});
+      const store = createStore(combineReducers({}));
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
@@ -191,7 +194,7 @@ describe('React', () => {
     });
 
     it('should throw an error if select returns anything but a plain object', () => {
-      const store = createStore({});
+      const store = createStore(combineReducers({}));
 
       expect(() => {
         TestUtils.renderIntoDocument(
@@ -234,7 +237,8 @@ describe('React', () => {
 
     it('should not setState when renderToString is called on the server', () => {
       const { renderToString } = React;
-      const store = createStore(stringBuilder);
+      const reducer = combineReducers({string: stringBuilder})
+      const store = createStore(reducer);
 
       class TestComp extends Component {
         componentWillMount() {
@@ -252,7 +256,7 @@ describe('React', () => {
       const el = (
         <Provider store={store}>
           {() => (
-            <Connector select={string => ({ string })}>
+            <Connector select={state => ({ string: state.string })}>
               {({ string }) => <TestComp string={string} />}
             </Connector>
           )}
@@ -263,7 +267,8 @@ describe('React', () => {
     });
 
     it('should handle dispatch inside componentDidMount', () => {
-      const store = createStore(stringBuilder);
+      const reducer = combineReducers({string: stringBuilder})
+      const store = createStore(reducer);
 
       class TestComp extends Component {
         componentDidMount() {
@@ -281,7 +286,7 @@ describe('React', () => {
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={string => ({ string })}>
+            <Connector select={state => ({ string: state.string })}>
               {({ string }) => <TestComp string={string} />}
             </Connector>
           )}

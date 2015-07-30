@@ -1,7 +1,7 @@
 import expect from 'expect';
 import jsdomReact from './jsdomReact';
 import React, { PropTypes, Component } from 'react/addons';
-import { createStore } from 'redux';
+import { createStore, combineReducers } from 'redux';
 import { Provider } from '../../src/index';
 
 const { TestUtils } = React.addons;
@@ -21,7 +21,7 @@ describe('React', () => {
     }
 
     it('should add the store to the child context', () => {
-      const store = createStore({});
+      const store = createStore(combineReducers({}));
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
