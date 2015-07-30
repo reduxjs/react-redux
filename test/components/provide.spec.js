@@ -1,7 +1,7 @@
 import expect from 'expect';
 import jsdomReact from './jsdomReact';
 import React, { PropTypes, Component } from 'react/addons';
-import { createStore } from 'redux';
+import { createStore, combineReducers } from 'redux';
 import { provide, Provider } from '../../src/index';
 
 const { TestUtils } = React.addons;
@@ -21,7 +21,7 @@ describe('React', () => {
     }
 
     it('should wrap the component into Provider', () => {
-      const store = createStore({});
+      const store = createStore(combineReducers({}));
 
       @provide(store)
       class Container extends Component {
@@ -42,7 +42,7 @@ describe('React', () => {
     });
 
     it('sets the displayName correctly', () => {
-      @provide(createStore({}))
+      @provide(createStore(combineReducers({})))
       class Container extends Component {
         render() {
           return <div />;

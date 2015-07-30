@@ -102,11 +102,11 @@ describe('React', () => {
         bar: 'baz'
       }));
 
-      function select({ foo }) {
+      function slicer({ foo }) {
         return { foo };
       }
 
-      @connect(select)
+      @connect(slicer)
       class Container extends Component {
         render() {
           return <div {...this.props} />;
@@ -119,7 +119,7 @@ describe('React', () => {
         </Provider>
       );
       const connector = TestUtils.findRenderedComponentWithType(container, Connector);
-      expect(connector.props.select({
+      expect(connector.props.slicer({
         foo: 5,
         bar: 7
       })).toEqual({
@@ -149,6 +149,98 @@ describe('React', () => {
       const decorated = decorator(Container);
 
       expect(decorated.DecoratedComponent).toBe(Container);
+    });
+
+    it('should bind actionCreators if passed a function', () => {
+      const store = createStore(() => ({
+        foo: 'bar'
+      }));
+      const spy = expect.createSpy(() => {});
+      function appender(body) {
+        spy();
+        return {type: 'APPEND', body};
+      }
+
+      @connect(
+        state => ({string: state.foo}),
+        dispatch =>({
+          append: (...args) => dispatch(appender(...args))
+        })
+      )
+      class Container extends Component {
+        render() {
+          return <div {...this.props} />;
+        }
+      }
+
+      const tree = TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          {() => <Container id="container" />}
+        </Provider>
+      );
+      const container = TestUtils.findRenderedComponentWithType(tree, Container);
+      const div = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
+      // TODO: So for some reasons container.props only has id
+      expect(spy.calls.length).toBe(0);
+      div.props.append();
+      expect(spy.calls.length).toBe(1);
+    });
+
+    it('should bind actionCreators if passed an dict of functions', () => {
+      const store = createStore(() => ({
+        foo: 'bar'
+      }));
+      const spy = expect.createSpy(() => {});
+      function appender(body) {
+        spy();
+        return {type: 'APPEND', body};
+      }
+
+      @connect(
+        state => ({string: state.foo}),
+        {append: appender}
+      )
+      class Container extends Component {
+        render() {
+          return <div {...this.props} />;
+        }
+      }
+
+      const tree = TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          {() => <Container id="container" />}
+        </Provider>
+      );
+      const container = TestUtils.findRenderedComponentWithType(tree, Container);
+      const div = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
+      // TODO: So for some reasons container.props only has id
+      expect(spy.calls.length).toBe(0);
+      div.props.append();
+      expect(spy.calls.length).toBe(1);
+    });
+
+    it('should allow subscribing to no state', () => {
+      const store = createStore(() => ({
+        foo: 'bar'
+      }));
+
+      @connect(
+        null,
+        dispatch => ({ dispatch })
+      )
+      class Container extends Component {
+        render() {
+          return <div {...this.props} />;
+        }
+      }
+
+      expect(() => {
+        TestUtils.renderIntoDocument(
+          <Provider store={store}>
+            {() => <Container id="container" />}
+          </Provider>
+        );
+      }).toNotThrow();
     });
   });
 });

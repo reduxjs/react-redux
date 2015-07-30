@@ -4,7 +4,7 @@ import shallowEqualScalar from '../utils/shallowEqualScalar';
 export default function createConnectDecorator(React, Connector) {
   const { Component } = React;
 
-  return function connect(select) {
+  return function connect(slicer, actionCreators) {
     return DecoratedComponent => class ConnectorDecorator extends Component {
       static displayName = `Connector(${getDisplayName(DecoratedComponent)})`;
       static DecoratedComponent = DecoratedComponent;
@@ -14,8 +14,17 @@ export default function createConnectDecorator(React, Connector) {
       }
 
       render() {
+        // Linter doesn't allow const slicerFn = slicer || () => ({});
+        let slicerFn = slicer;
+        if (slicerFn === null) {
+          slicerFn = () => ({});
+        }
+
         return (
-          <Connector select={state => select(state, this.props)}>
+          <Connector
+            slicer={state => slicerFn(state, this.props)}
+            actionCreators={actionCreators}
+          >
             {stuff => <DecoratedComponent {...stuff} {...this.props} />}
           </Connector>
         );
