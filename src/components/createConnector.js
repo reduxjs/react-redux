@@ -1,3 +1,5 @@
+import { bindActionCreators } from 'redux';
+
 import createStoreShape from '../utils/createStoreShape';
 import shallowEqual from '../utils/shallowEqual';
 import isPlainObject from '../utils/isPlainObject';
@@ -14,11 +16,11 @@ export default function createConnector(React) {
 
     static propTypes = {
       children: PropTypes.func.isRequired,
-      select: PropTypes.func.isRequired
+      slicer: PropTypes.func.isRequired
     };
 
     static defaultProps = {
-      select: state => state
+      slicer: state => state
     };
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -47,7 +49,7 @@ export default function createConnector(React) {
     }
 
     componentWillReceiveProps(nextProps) {
-      if (nextProps.select !== this.props.select) {
+      if (nextProps.slicer !== this.props.slicer) {
         // Force the state slice recalculation
         this.handleChange(nextProps);
       }
@@ -66,23 +68,32 @@ export default function createConnector(React) {
 
     selectState(props, context) {
       const state = context.store.getState();
-      const slice = props.select(state);
+      const slice = props.slicer(state);
 
       invariant(
         isPlainObject(slice),
-        'The return value of `select` prop must be an object. Instead received %s.',
+        'The return value of `slicer` prop must be an object. Instead received %s.',
         slice
       );
 
       return { slice };
     }
 
+    wrapActionCreators(dispatch) {
+      return typeof this.props.actionCreators === 'function'
+        ? this.props.actionCreators(dispatch)
+        : bindActionCreators(this.props.actionCreators, dispatch);
+    }
+
     render() {
       const { children } = this.props;
       const { slice } = this.state;
       const { store: { dispatch } } = this.context;
+      const actions = this.props.actionCreators
+        ? this.wrapActionCreators(dispatch)
+        : {};
 
-      return children({ dispatch, ...slice });
+      return children({ dispatch, ...slice, ...actions});
     }
   };
 }

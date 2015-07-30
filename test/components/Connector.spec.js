@@ -49,13 +49,13 @@ describe('React', () => {
     });
 
     it('should subscribe to the store changes', () => {
-      const reducer = combineReducers({string: stringBuilder})
+      const reducer = combineReducers({string: stringBuilder});
       const store = createStore(reducer);
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={state => ({ string: state.string })}>
+            <Connector slicer={state => ({ string: state.string })}>
               {({ string }) => <div string={string} />}
             </Connector>
           )}
@@ -71,7 +71,7 @@ describe('React', () => {
     });
 
     it('should unsubscribe before unmounting', () => {
-      const reducer = combineReducers({string: stringBuilder})
+      const reducer = combineReducers({string: stringBuilder});
       const store = createStore(reducer);
       const subscribe = store.subscribe;
 
@@ -88,7 +88,7 @@ describe('React', () => {
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={state => ({ string: state.string })}>
+            <Connector slicer={state => ({ string: state.string })}>
               {({ string }) => <div string={string} />}
             </Connector>
           )}
@@ -102,7 +102,7 @@ describe('React', () => {
     });
 
     it('should shallowly compare the selected state to prevent unnecessary updates', () => {
-      const reducer = combineReducers({string: stringBuilder})
+      const reducer = combineReducers({string: stringBuilder});
       const store = createStore(reducer);
       const spy = expect.createSpy(() => {});
       function render({ string }) {
@@ -113,7 +113,7 @@ describe('React', () => {
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={state => ({ string: state.string })}>
+            <Connector slicer={state => ({ string: state.string })}>
               {render}
             </Connector>
           )}
@@ -152,14 +152,14 @@ describe('React', () => {
       class Container extends Component {
         constructor() {
           super();
-          this.state = { select: selectA };
+          this.state = { slicer: selectA };
         }
 
         render() {
           return (
             <Provider store={store}>
               {() =>
-                <Connector select={this.state.select}>
+                <Connector slicer={this.state.slicer}>
                   {render}
                 </Connector>
               }
@@ -172,7 +172,7 @@ describe('React', () => {
       let div = TestUtils.findRenderedDOMComponentWithTag(tree, 'div');
       expect(div.props.children).toBe(42);
 
-      tree.setState({ select: selectB });
+      tree.setState({ slicer: selectB });
       expect(div.props.children).toBe(72);
     });
 
@@ -200,25 +200,25 @@ describe('React', () => {
         TestUtils.renderIntoDocument(
           <Provider store={store}>
             {() => (
-              <Connector select={() => 1}>
+              <Connector slicer={() => 1}>
                 {() => <div />}
               </Connector>
             )}
           </Provider>
         );
-      }).toThrow(/select/);
+      }).toThrow(/slicer/);
 
       expect(() => {
         TestUtils.renderIntoDocument(
           <Provider store={store}>
             {() => (
-              <Connector select={() => 'hey'}>
+              <Connector slicer={() => 'hey'}>
                 {() => <div />}
               </Connector>
             )}
           </Provider>
         );
-      }).toThrow(/select/);
+      }).toThrow(/slicer/);
 
       function AwesomeMap() { }
 
@@ -226,18 +226,18 @@ describe('React', () => {
         TestUtils.renderIntoDocument(
           <Provider store={store}>
             {() => (
-              <Connector select={() => new AwesomeMap()}>
+              <Connector slicer={() => new AwesomeMap()}>
                 {() => <div />}
               </Connector>
             )}
           </Provider>
         );
-      }).toThrow(/select/);
+      }).toThrow(/slicer/);
     });
 
     it('should not setState when renderToString is called on the server', () => {
       const { renderToString } = React;
-      const reducer = combineReducers({string: stringBuilder})
+      const reducer = combineReducers({string: stringBuilder});
       const store = createStore(reducer);
 
       class TestComp extends Component {
@@ -256,7 +256,7 @@ describe('React', () => {
       const el = (
         <Provider store={store}>
           {() => (
-            <Connector select={state => ({ string: state.string })}>
+            <Connector slicer={state => ({ string: state.string })}>
               {({ string }) => <TestComp string={string} />}
             </Connector>
           )}
@@ -267,7 +267,7 @@ describe('React', () => {
     });
 
     it('should handle dispatch inside componentDidMount', () => {
-      const reducer = combineReducers({string: stringBuilder})
+      const reducer = combineReducers({string: stringBuilder});
       const store = createStore(reducer);
 
       class TestComp extends Component {
@@ -286,7 +286,7 @@ describe('React', () => {
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={state => ({ string: state.string })}>
+            <Connector slicer={state => ({ string: state.string })}>
               {({ string }) => <TestComp string={string} />}
             </Connector>
           )}
