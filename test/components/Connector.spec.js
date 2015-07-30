@@ -31,17 +31,13 @@ describe('React', () => {
         : prev;
     }
 
-    function foo() {
-      return {};
-    }
-
     it('should receive the store in the context', () => {
-      const store = createStore(foo);
+      const store = createStore(stringBuilder);
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector select={foo}>
+            <Connector>
               {() => <div />}
             </Connector>
           )}
