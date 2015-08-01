@@ -32,7 +32,7 @@ describe('React', () => {
     }
 
     it('should receive the store in the context', () => {
-      const store = createStore({});
+      const store = createStore(stringBuilder);
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
@@ -43,7 +43,6 @@ describe('React', () => {
           )}
         </Provider>
       );
-
       const connector = TestUtils.findRenderedComponentWithType(tree, Connector);
       expect(connector.context.store).toBe(store);
     });
@@ -129,9 +128,9 @@ describe('React', () => {
     });
 
     it('should recompute the state slice when the select prop changes', () => {
-      const store = createStore({
-        a: () => 42,
-        b: () => 72
+      const store = createStore(stringBuilder, {
+        a: 42,
+        b: 72
       });
 
       function selectA(state) {
@@ -174,12 +173,12 @@ describe('React', () => {
     });
 
     it('should pass dispatch() to the child function', () => {
-      const store = createStore({});
+      const store = createStore(stringBuilder);
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           {() => (
-            <Connector>
+            <Connector select={() => ({})}>
               {({ dispatch }) => <div dispatch={dispatch} />}
             </Connector>
           )}
@@ -191,7 +190,7 @@ describe('React', () => {
     });
 
     it('should throw an error if select returns anything but a plain object', () => {
-      const store = createStore({});
+      const store = createStore(stringBuilder);
 
       expect(() => {
         TestUtils.renderIntoDocument(

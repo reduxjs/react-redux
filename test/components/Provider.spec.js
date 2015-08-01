@@ -20,8 +20,12 @@ describe('React', () => {
       }
     }
 
+    function foo() {
+      return {};
+    }
+
     it('should add the store to the child context', () => {
-      const store = createStore({});
+      const store = createStore(foo);
 
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
