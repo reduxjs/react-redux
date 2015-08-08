@@ -45,9 +45,9 @@ export default function createConnect(React) {
       return stateProps;
     }
 
-    function computeDispatchProps(context) {
+    function computeDispatchProps(context, props = {}) {
       const { dispatch } = context.store;
-      const dispatchProps = finalMapDispatchToProps(dispatch);
+      const dispatchProps = finalMapDispatchToProps(dispatch, props);
       invariant(
         isPlainObject(dispatchProps),
         '`mapDispatchToProps` must return an object. Instead received %s.',
@@ -84,7 +84,7 @@ export default function createConnect(React) {
         this.setUnderlyingRef = ::this.setUnderlyingRef;
 
         this.stateProps = computeStateProps(context, props);
-        this.dispatchProps = computeDispatchProps(context);
+        this.dispatchProps = computeDispatchProps(context, props);
         this.state = this.computeNextState();
       }
 
@@ -99,7 +99,7 @@ export default function createConnect(React) {
       }
 
       recomputeDispatchProps() {
-        const nextDispatchProps = computeDispatchProps(this.context);
+        const nextDispatchProps = computeDispatchProps(this.context, this.props);
         if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false;
         }
