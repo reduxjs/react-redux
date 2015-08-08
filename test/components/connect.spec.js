@@ -566,5 +566,36 @@ describe('React', () => {
       expect(() => decorated.someInstanceMethod()).toThrow();
       expect(decorated.getUnderlyingRef().someInstanceMethod()).toBe(someData);
     });
+
+    it('should react to dispatching within componentWillMount', () => {
+      const reducer = (state = { called: false }, { type }) => type === 'ACTION' ? { called: true } : state;
+      const store = createStore(reducer);
+      const action = () => ({ type: 'ACTION' });
+
+      @connect(
+        state => state,
+        { action }
+      )
+      class Container extends Component {
+        componentWillMount() {
+          this.props.action();
+        }
+
+        render() {
+          return <div />;
+        }
+      }
+
+      const tree = TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          {() => <Container />}
+        </Provider>
+      );
+
+      const component = TestUtils.findRenderedComponentWithType(tree, Container);
+
+      expect(store.getState().called).toBe(true);
+      expect(component.getUnderlyingRef().props.called).toBe(true);
+    });
   });
 });
