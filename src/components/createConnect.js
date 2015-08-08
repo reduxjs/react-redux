@@ -72,7 +72,7 @@ export default function createConnect(React) {
         return typeof this.unsubscribe === 'function';
       }
 
-      componentDidMount() {
+      componentWillMount() {
         if (shouldSubscribe) {
           this.unsubscribe = this.context.store.subscribe(::this.handleChange);
         }
