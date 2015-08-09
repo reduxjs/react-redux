@@ -146,7 +146,7 @@ export default function createConnect(React) {
       }
 
       componentWillUpdate() {
-        if (process.env.NODE_ENV !== 'production') {
+        if (__DEV__ || (process && process.env.NODE_ENV !== 'production')) {
           if (this.version === version) {
             return;
           }
