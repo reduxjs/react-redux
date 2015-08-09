@@ -81,7 +81,6 @@ export default function createConnect(React) {
       constructor(props, context) {
         super(props, context);
         this.version = version;
-        this.setUnderlyingRef = ::this.setUnderlyingRef;
 
         this.stateProps = computeStateProps(context);
         this.dispatchProps = computeDispatchProps(context);
@@ -179,16 +178,12 @@ export default function createConnect(React) {
       }
 
       getUnderlyingRef() {
-        return this.underlyingRef;
-      }
-
-      setUnderlyingRef(instance) {
-        this.underlyingRef = instance;
+        return this.refs.underlyingRef;
       }
 
       render() {
         return (
-          <DecoratedComponent ref={this.setUnderlyingRef}
+          <DecoratedComponent ref='underlyingRef'
                               {...this.state} />
         );
       }
