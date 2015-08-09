@@ -16,6 +16,12 @@ function getDisplayName(Component) {
   return Component.displayName || Component.name || 'Component';
 }
 
+const nullStore = {
+  getState() {},
+  subscribe() {},
+  dispatch() {}
+};
+
 // Helps track hot reloading.
 let nextVersion = 0;
 
@@ -34,8 +40,8 @@ export default function createConnect(React) {
     // Helps track hot reloading.
     const version = nextVersion++;
 
-    function computeStateProps(context) {
-      const state = context.store.getState();
+    function computeStateProps(store) {
+      const state = store.getState();
       const stateProps = finalMapStateToProps(state);
       invariant(
         isPlainObject(stateProps),
@@ -45,8 +51,8 @@ export default function createConnect(React) {
       return stateProps;
     }
 
-    function computeDispatchProps(context) {
-      const { dispatch } = context.store;
+    function computeDispatchProps(store) {
+      const { dispatch } = store;
       const dispatchProps = finalMapDispatchToProps(dispatch);
       invariant(
         isPlainObject(dispatchProps),
@@ -71,7 +77,7 @@ export default function createConnect(React) {
       static DecoratedComponent = DecoratedComponent;
 
       static contextTypes = {
-        store: storeShape.isRequired
+        store: storeShape
       };
 
       shouldComponentUpdate(nextProps, nextState) {
@@ -81,15 +87,15 @@ export default function createConnect(React) {
       constructor(props, context) {
         super(props, context);
         this.version = version;
+        this.store = context.store || nullStore;
         this.setUnderlyingRef = ::this.setUnderlyingRef;
-
-        this.stateProps = computeStateProps(context);
-        this.dispatchProps = computeDispatchProps(context);
+        this.stateProps = computeStateProps(this.store);
+        this.dispatchProps = computeDispatchProps(this.store);
         this.state = this.computeNextState();
       }
 
       recomputeStateProps() {
-        const nextStateProps = computeStateProps(this.context);
+        const nextStateProps = computeStateProps(this.store);
         if (shallowEqual(nextStateProps, this.stateProps)) {
           return false;
         }
@@ -99,7 +105,7 @@ export default function createConnect(React) {
       }
 
       recomputeDispatchProps() {
-        const nextDispatchProps = computeDispatchProps(this.context);
+        const nextDispatchProps = computeDispatchProps(this.store);
         if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false;
         }
@@ -129,7 +135,7 @@ export default function createConnect(React) {
 
       trySubscribe() {
         if (shouldSubscribe && !this.unsubscribe) {
-          this.unsubscribe = this.context.store.subscribe(::this.handleChange);
+          this.unsubscribe = this.store.subscribe(::this.handleChange);
           this.handleChange();
         }
       }
