@@ -82,6 +82,30 @@ describe('React', () => {
       ).toNotThrow();
     });
 
+    it('should pass the props into the state map', () => {
+      const store = createStore(() => ({
+        foo: 'bar',
+        baz: 42,
+        hello: 'world'
+      }));
+
+      @connect((state, {foo}) => ({ bar: foo }))
+      class Container extends Component {
+        render() {
+          return <div {...this.props} />;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          {() => <Container foo={50} />}
+        </Provider>
+      );
+
+      const div = TestUtils.findRenderedDOMComponentWithTag(container, 'div');
+      expect(div.props.bar).toEqual(50);
+    })
+
     it('should subscribe to the store changes', () => {
       const store = createStore(stringBuilder);
 

@@ -34,9 +34,9 @@ export default function createConnect(React) {
     // Helps track hot reloading.
     const version = nextVersion++;
 
-    function computeStateProps(context) {
+    function computeStateProps(context, props = {}) {
       const state = context.store.getState();
-      const stateProps = finalMapStateToProps(state);
+      const stateProps = finalMapStateToProps(state, props);
       invariant(
         isPlainObject(stateProps),
         '`mapStateToProps` must return an object. Instead received %s.',
@@ -45,9 +45,9 @@ export default function createConnect(React) {
       return stateProps;
     }
 
-    function computeDispatchProps(context) {
+    function computeDispatchProps(context, props = {}) {
       const { dispatch } = context.store;
-      const dispatchProps = finalMapDispatchToProps(dispatch);
+      const dispatchProps = finalMapDispatchToProps(dispatch, props);
       invariant(
         isPlainObject(dispatchProps),
         '`mapDispatchToProps` must return an object. Instead received %s.',
@@ -83,13 +83,13 @@ export default function createConnect(React) {
         this.version = version;
         this.setUnderlyingRef = ::this.setUnderlyingRef;
 
-        this.stateProps = computeStateProps(context);
-        this.dispatchProps = computeDispatchProps(context);
+        this.stateProps = computeStateProps(context, props);
+        this.dispatchProps = computeDispatchProps(context, props);
         this.state = this.computeNextState();
       }
 
       recomputeStateProps() {
-        const nextStateProps = computeStateProps(this.context);
+        const nextStateProps = computeStateProps(this.context, this.props);
         if (shallowEqual(nextStateProps, this.stateProps)) {
           return false;
         }
@@ -99,7 +99,7 @@ export default function createConnect(React) {
       }
 
       recomputeDispatchProps() {
-        const nextDispatchProps = computeDispatchProps(this.context);
+        const nextDispatchProps = computeDispatchProps(this.context, this.props);
         if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false;
         }
