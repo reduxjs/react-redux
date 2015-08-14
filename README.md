@@ -4,7 +4,7 @@ React Redux
 Official React bindings for [Redux](https://github.com/gaearon/redux).  
 Performant and flexible.
 
-[![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux) 
+[![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
 [![npm downloads](https://img.shields.io/npm/dm/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
 [![redux channel on slack](https://img.shields.io/badge/slack-redux@reactiflux-61DAFB.svg?style=flat-square)](http://www.reactiflux.com)
 
@@ -226,7 +226,7 @@ Connects a React component to a Redux store.
 
 #### Arguments
 
-* [`mapStateToProps(state): stateProps`] \(*Function*): If specified, the component will subscribe to Redux store updates. Any time it updates, `mapStateToProps` will be called. Its result must be a plain object, and it will be merged into the component’s props. If you omit it, the component will not be subscribed to the Redux store.
+* [`mapStateToProps(state, props): stateProps`] \(*Function*): If specified, the component will subscribe to Redux store updates. Any time the store updates or the component receives new props, `mapStateToProps` will be called. Its result must be a plain object, and it will be merged into the component’s props. If you omit it, the component will not be subscribed to the Redux store.
 
 * [`mapDispatchToProps(dispatch): dispatchProps`] \(*Object* or *Function*): If an object is passed, each function inside it will be assumed to be a Redux action creator. An object with the same function names, but bound to a Redux store, will be merged into the component’s props. If a function is passed, it will be given `dispatch`. It’s up to you to return an object that somehow uses `dispatch` to bind action creators in your own way. (Tip: you may use [`bindActionCreators()`](http://gaearon.github.io/redux/docs/api/bindActionCreators.html) helper from Redux.) If you omit it, the default implementation just injects `dispatch` into your component’s props.
 
@@ -240,7 +240,7 @@ A React component class that injects state and action creators into your compone
 
 * It needs to be invoked two times. First time with its arguments described above, and second time, with the component: `connect(mapStateToProps, mapDispatchToProps, mergeProps)(MyComponent)`.
 
-* The `mapStateToProps` function takes a single argument of the entire Redux store’s state and returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/faassen/reselect) to efficiently compose selectors and [compute derived data](http://gaearon.github.io/redux/docs/recipes/ComputingDerivedData.html).
+* The `mapStateToProps` function takes the entire Redux store’s state and the "smart" component's props and returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/faassen/reselect) to efficiently compose selectors and [compute derived data](http://gaearon.github.io/redux/docs/recipes/ComputingDerivedData.html).
 
 * **To use `connect()`, the root component of your app must be wrapped into `<Provider>{() => ... }</Provider>` before being rendered.** You may also pass `store` as a prop to the `connect()`ed component, but it's not recommended because it's just too much trouble. Only do this for in non-fully-React codebases or to stub store in a unit test.
 
@@ -398,7 +398,7 @@ Make sure to check out [Troubleshooting Redux](http://gaearon.github.io/redux/do
 ### My views aren’t updating!
 
 See the link above.
-In short, 
+In short,
 
 * Reducers should never mutate state, they must return new objects, or React Redux won’t see the updates.
 * Make sure you either bind action creators with `mapDispatchToState` argument to `connect()` or with `bindActionCreators()` method, or that you manually call `dispatch()`. Just calling your `MyActionCreators.addTodo()` function won’t work because it just *returns* an action, but not *dispatches* it.

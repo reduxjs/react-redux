@@ -26,6 +26,7 @@ export default function createConnect(React) {
   return function connect(mapStateToProps, mapDispatchToProps, mergeProps) {
     const shouldSubscribe = Boolean(mapStateToProps);
     const finalMapStateToProps = mapStateToProps || defaultMapStateToProps;
+    const statePropsDependOnParentProps = finalMapStateToProps.length > 1;
     const finalMapDispatchToProps = isPlainObject(mapDispatchToProps) ?
       wrapActionCreators(mapDispatchToProps) :
       mapDispatchToProps || defaultMapDispatchToProps;
@@ -34,9 +35,9 @@ export default function createConnect(React) {
     // Helps track hot reloading.
     const version = nextVersion++;
 
-    function computeStateProps(store) {
+    function computeStateProps(store, props) {
       const state = store.getState();
-      const stateProps = finalMapStateToProps(state);
+      const stateProps = finalMapStateToProps(state, props);
       invariant(
         isPlainObject(stateProps),
         '`mapStateToProps` must return an object. Instead received %s.',
@@ -95,15 +96,15 @@ export default function createConnect(React) {
             `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
           );
 
-          this.stateProps = computeStateProps(this.store);
+          this.stateProps = computeStateProps(this.store, props);
           this.dispatchProps = computeDispatchProps(this.store);
           this.state = {
             props: this.computeNextState()
           };
         }
 
-        recomputeStateProps() {
-          const nextStateProps = computeStateProps(this.store);
+        recomputeStateProps(props = this.props) {
+          const nextStateProps = computeStateProps(this.store, props);
           if (shallowEqual(nextStateProps, this.stateProps)) {
             return false;
           }
@@ -163,6 +164,9 @@ export default function createConnect(React) {
 
         componentWillReceiveProps(nextProps) {
           if (!shallowEqual(nextProps, this.props)) {
+            if (statePropsDependOnParentProps) {
+              this.stateProps = computeStateProps(this.store, nextProps);
+            }
             this.recomputeState(nextProps);
           }
         }

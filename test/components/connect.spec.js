@@ -375,6 +375,45 @@ describe('React', () => {
       expect(div.props.stateThing).toBe('HELLO azbzcZ');
     });
 
+    it('should pass state and parent props to mapStateToProps', () => {
+      const store = createStore(stringBuilder);
+
+      @connect(
+        (state, props) => ({idString: `[${props.id}] ${state}`}),
+      )
+      class Container extends Component {
+        render() {
+          return <div {...this.props}/>;
+        };
+      }
+
+      class OuterContainer extends Component {
+        constructor() {
+          super();
+          this.state = {id: 0};
+        }
+
+        render() {
+          return (
+            <Provider store={store}>
+              {() => <Container id={this.state.id} />}
+            </Provider>
+          );
+        }
+      }
+
+      const tree = TestUtils.renderIntoDocument(<OuterContainer />);
+      const div = TestUtils.findRenderedDOMComponentWithTag(tree, 'div');
+
+      expect(div.props.idString).toBe('[0] ');
+      store.dispatch({type: 'APPEND', body: 'a'});
+      expect(div.props.idString).toBe('[0] a');
+      tree.setState({id: 1});
+      expect(div.props.idString).toBe('[1] a');
+      store.dispatch({type: 'APPEND', body: 'b'});
+      expect(div.props.idString).toBe('[1] ab');
+    });
+
     it('should merge actionProps into WrappedComponent', () => {
       const store = createStore(() => ({
         foo: 'bar'
