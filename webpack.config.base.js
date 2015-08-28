@@ -1,27 +1,14 @@
 'use strict';
 
 var webpack = require('webpack');
-
-var reactExternal = {
-  root: 'React',
-  commonjs2: 'react',
-  commonjs: 'react',
-  amd: 'react'
-};
-
-var reduxExternal = {
-  root: 'Redux',
-  commonjs2: 'redux',
-  commonjs: 'redux',
-  amd: 'redux'
-};
+var webpackUMDExternal = require('webpack-umd-external');
 
 module.exports = {
-  externals: {
-    'react': reactExternal,
-    'react-native': reactExternal,
-    'redux': reduxExternal
-  },
+  externals: webpackUMDExternal({
+    'react': 'React',
+    'react-native': 'React',
+    'redux': 'Redux'
+  }),
   module: {
     loaders: [
       { test: /\.js$/, loaders: ['babel-loader'], exclude: /node_modules/ }

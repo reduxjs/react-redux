@@ -54,7 +54,8 @@
     "react-addons-test-utils": "^0.14.0-beta3",
     "redux": "^1.0.1",
     "rimraf": "^2.3.4",
-    "webpack": "^1.11.0"
+    "webpack": "^1.11.0",
+    "webpack-umd-external": "^1.0.2"
   },
   "dependencies": {
     "invariant": "^2.0.0"
