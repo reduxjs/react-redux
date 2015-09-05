@@ -52,7 +52,8 @@ export default function createConnect(React) {
     }
 
     function computeDispatchProps(store, props) {
-      const { dispatch, state } = store;
+      const { dispatch } = store;
+      const state = store.getState();
       const dispatchProps = shouldUpdateDispatchProps ?
         finalMapDispatchToProps(dispatch, state, props) :
         finalMapDispatchToProps(dispatch, state);
