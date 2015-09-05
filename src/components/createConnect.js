@@ -52,10 +52,10 @@ export default function createConnect(React) {
     }
 
     function computeDispatchProps(store, props) {
-      const { dispatch } = store;
+      const { dispatch, state } = store;
       const dispatchProps = shouldUpdateDispatchProps ?
-        finalMapDispatchToProps(dispatch, props) :
-        finalMapDispatchToProps(dispatch);
+        finalMapDispatchToProps(dispatch, state, props) :
+        finalMapDispatchToProps(dispatch, state);
 
       invariant(
         isPlainObject(dispatchProps),
