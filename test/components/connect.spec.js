@@ -1147,5 +1147,70 @@ describe('React', () => {
       wrapper.setState({ value: 1 });
       expect(target.props.statefulValue).toEqual(1);
     });
+
+    it('should pass state consistently to mapState', () => {
+      const store = createStore(stringBuilder);
+
+      store.dispatch({ type: 'APPEND', body: 'a'});
+      let childMapStateInvokes = 0;
+
+      @connect(state => ({ state }))
+      class Container extends Component {
+
+        emitChange() {
+          store.dispatch({ type: 'APPEND', body: 'b'});
+        }
+
+        render() {
+          return (
+            <div>
+              <button ref="button" onClick={this.emitChange.bind(this)}>change</button>
+              <ChildContainer parentState={this.props.state} />
+            </div>
+          );
+        }
+      }
+
+      @connect((state, parentProps) => {
+        childMapStateInvokes++;
+        // The state from parent props should always be consistent with the current state
+        expect(state).toEqual(parentProps.parentState);
+        return {};
+      })
+      class ChildContainer extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      );
+
+      expect(childMapStateInvokes).toBe(2);
+
+      // The store state stays consistent when setState calls are batched
+      ReactDOM.unstable_batchedUpdates(() => {
+        store.dispatch({ type: 'APPEND', body: 'c'});
+      });
+      expect(childMapStateInvokes).toBe(3);
+
+      // setState calls DOM handlers are batched
+      const container = TestUtils.findRenderedComponentWithType(tree, Container);
+      const node = React.findDOMNode(container.getWrappedInstance().refs.button);
+      TestUtils.Simulate.click(node);
+      expect(childMapStateInvokes).toBe(4);
+
+      // In future all setState calls will be batched[1]. Uncomment when it
+      // happens. For now redux-batched-updates middleware can be used as
+      // workaround this.
+      //
+      // [1]: https://twitter.com/sebmarkbage/status/642366976824864768
+      //
+      // store.dispatch({ type: 'APPEND', body: 'd'});
+      // expect(childMapStateInvokes).toBe(5);
+    });
   });
 });
