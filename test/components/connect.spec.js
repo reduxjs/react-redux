@@ -549,7 +549,7 @@ describe('React', () => {
       let propsPassedIn;
       let invocationCount = 0;
 
-      @connect(null, (dispatch, props) => {
+      @connect(null, (dispatch, state, props) => {
         invocationCount++;
         propsPassedIn = props;
         return {};
