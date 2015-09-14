@@ -76,7 +76,7 @@ export default function createConnect(React) {
     }
 
     return function wrapWithConnect(WrappedComponent) {
-      class Connect extends Component {
+      class Connect extends WrappedComponent {
         static displayName = `Connect(${getDisplayName(WrappedComponent)})`;
         static WrappedComponent = WrappedComponent;
 
