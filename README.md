@@ -502,6 +502,44 @@ If you’re using React for web, this usually means you have a [duplicate React]
 
 If you’re using React Native, make sure you’re importing `react-redux/native` both for `<Provider>` and any `connect()` call. Importing from `react-redux` will not work on React Native.
 
+### My static and instance methods don't work!
+
+When you use `connect()`, it wraps your component and returns a new component. Upon doing this, the new component will be unable to access the original component's static properties or methods.
+
+You may avoid this by not using decorators and using separate variables for the component and the connected component.
+
+**Good**
+
+```jsx
+class Foo {
+  static bar () {
+    return 'baz';
+  }
+
+  quux () {
+    return Foo.bar(); // works
+  }
+}
+
+const ConnectedFoo = connect()(Foo);
+export default ConnectedFoo;
+```
+
+**Bad**
+
+```
+@connect()
+export default class Foo {
+  static bar () {
+    return 'baz';
+  }
+
+  quux () {
+    return Foo.bar(); // doesn't work
+  }
+}
+```
+
 ## License
 
 MIT
