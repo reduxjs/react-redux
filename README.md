@@ -27,7 +27,7 @@ For React Native, import from `react-redux/native` instead.
 - [Quick Start](docs/quick-start.md#quick-start)
 - [API](docs/api.md#api)
   - [`<Provider store>`](docs/api.md#provider-store)
-  - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](dos/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
+  - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](docs/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
 - [Troubleshooting](docs/troubleshooting.md#troubleshooting)
 
 ## License
