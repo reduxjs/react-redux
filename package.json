@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "2.1.2",
+  "version": "3.0.0-alpha",
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
   "scripts": {
