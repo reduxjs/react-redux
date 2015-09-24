@@ -196,7 +196,9 @@ export default function createConnect(React) {
             return;
           }
 
-          this.setState({storeState: this.store.getState()});
+          this.setState({
+            storeState: this.store.getState()
+          });
         }
 
         getWrappedInstance() {
