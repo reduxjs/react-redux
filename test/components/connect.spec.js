@@ -1148,6 +1148,65 @@ describe('React', () => {
       expect(target.props.statefulValue).toEqual(1);
     });
 
+    it('calls mapState and mapDispatch for impure components', () => {
+      const store = createStore(() => ({
+        foo: 'foo',
+        bar: 'bar'
+      }));
+
+      const mapStateSpy = expect.createSpy();
+      const mapDispatchSpy = expect.createSpy().andReturn({});
+
+      class ImpureComponent extends Component {
+        render() {
+          return <Passthrough statefulValue={this.props.value} />;
+        }
+      }
+
+      const decorator = connect(
+        (state, {storeGetter}) => {
+          mapStateSpy();
+          return {value: state[storeGetter.storeKey]};
+        },
+        mapDispatchSpy,
+        null,
+        { pure: false }
+      );
+      const Decorated = decorator(ImpureComponent);
+
+      class StatefulWrapper extends Component {
+        state = {
+          storeGetter: {storeKey: 'foo'}
+        };
+
+        render() {
+          return <Decorated storeGetter={this.state.storeGetter} />;
+        };
+      }
+
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <StatefulWrapper />
+        </ProviderMock>
+      );
+
+      const target = TestUtils.findRenderedComponentWithType(tree, Passthrough);
+      const wrapper = TestUtils.findRenderedComponentWithType(tree, StatefulWrapper);
+
+      expect(mapStateSpy.calls.length).toBe(2);
+      expect(mapDispatchSpy.calls.length).toBe(2);
+      expect(target.props.statefulValue).toEqual('foo');
+
+      // Impure update
+      const storeGetter = wrapper.state.storeGetter;
+      storeGetter.storeKey = 'bar';
+      wrapper.setState({ storeGetter });
+
+      expect(mapStateSpy.calls.length).toBe(3);
+      expect(mapDispatchSpy.calls.length).toBe(3);
+      expect(target.props.statefulValue).toEqual('bar');
+    });
+
     it('should pass state consistently to mapState', () => {
       const store = createStore(stringBuilder);
 
