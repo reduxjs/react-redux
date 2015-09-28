@@ -90,6 +90,8 @@ export default function createConnect(React) {
 
         shouldComponentUpdate(nextProps, nextState) {
           if (!pure) {
+            this.updateStateProps(nextProps);
+            this.updateDispatchProps(nextProps);
             this.updateState(nextProps);
             return true;
           }
