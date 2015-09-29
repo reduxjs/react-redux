@@ -1021,6 +1021,24 @@ describe('React', () => {
       expect(decorated.WrappedComponent).toBe(Container);
     });
 
+    it('should hoist non-react statics from wrapped component', () => {
+      class Container extends Component {
+        static howIsRedux = () => 'Awesome!';
+        static foo = 'bar';
+
+        render() {
+          return <Passthrough />;
+        }
+      }
+
+      const decorator = connect(state => state);
+      const decorated = decorator(Container);
+
+      expect(decorated.howIsRedux).toBeA('function');
+      expect(decorated.howIsRedux()).toBe('Awesome!');
+      expect(decorated.foo).toBe('bar');
+    });
+
     it('should use the store from the props instead of from the context if present', () => {
       class Container extends Component {
         render() {

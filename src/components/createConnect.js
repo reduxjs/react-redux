@@ -2,6 +2,7 @@ import createStoreShape from '../utils/createStoreShape';
 import shallowEqual from '../utils/shallowEqual';
 import isPlainObject from '../utils/isPlainObject';
 import wrapActionCreators from '../utils/wrapActionCreators';
+import hoistStatics from 'hoist-non-react-statics';
 import invariant from 'invariant';
 
 const defaultMapStateToProps = () => ({});
@@ -232,7 +233,7 @@ export default function createConnect(React) {
         };
       }
 
-      return Connect;
+      return hoistStatics(Connect, WrappedComponent);
     };
   };
 }
