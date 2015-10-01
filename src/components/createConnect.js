@@ -206,7 +206,8 @@ export default function createConnect(React) {
           );
         }
       }
-      // to prevent breaking ie8 
+      //adding properties in this way
+      //prevents ie8 from breaking
       Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`;
       Connect.WrappedComponent = WrappedComponent;
 

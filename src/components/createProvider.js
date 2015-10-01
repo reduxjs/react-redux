@@ -92,11 +92,13 @@ export default function createProvider(React) {
       return Children.only(children);
     }
   }
+  //adding properties in this way
+  //prevents ie8 from breaking
   Provider.childContextTypes = {
     store: storeShape.isRequired
   };
 
-    Provider.propTypes = {
+  Provider.propTypes = {
     store: storeShape.isRequired,
     children: (requireFunctionChild ?
       PropTypes.func :
