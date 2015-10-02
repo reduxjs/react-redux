@@ -78,7 +78,6 @@ export default function createConnect(React) {
 
     return function wrapWithConnect(WrappedComponent) {
       class Connect extends Component {
-        
 
         shouldComponentUpdate(nextProps, nextState) {
           if (!pure) {
@@ -206,8 +205,8 @@ export default function createConnect(React) {
           );
         }
       }
-      //adding properties in this way
-      //prevents ie8 from breaking
+      // adding properties in this way
+      // prevents ie8 from breaking
       Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`;
       Connect.WrappedComponent = WrappedComponent;
 
