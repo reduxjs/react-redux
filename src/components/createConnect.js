@@ -78,16 +78,6 @@ export default function createConnect(React) {
 
     return function wrapWithConnect(WrappedComponent) {
       class Connect extends Component {
-        static displayName = `Connect(${getDisplayName(WrappedComponent)})`;
-        static WrappedComponent = WrappedComponent;
-
-        static contextTypes = {
-          store: storeShape
-        };
-
-        static propTypes = {
-          store: storeShape
-        };
 
         shouldComponentUpdate(nextProps, nextState) {
           if (!pure) {
@@ -215,6 +205,17 @@ export default function createConnect(React) {
           );
         }
       }
+      // adding properties in this way
+      // prevents ie8 from breaking
+      Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`;
+      Connect.WrappedComponent = WrappedComponent;
+
+      Connect.contextTypes = {
+        store: storeShape
+      };
+      Connect.propTypes = {
+        store: storeShape
+      };
 
       if (process.env.NODE_ENV !== 'production') {
         Connect.prototype.componentWillUpdate = function componentWillUpdate() {
