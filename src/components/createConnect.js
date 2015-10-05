@@ -205,11 +205,9 @@ export default function createConnect(React) {
           );
         }
       }
-      // adding properties in this way
-      // prevents ie8 from breaking
+
       Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`;
       Connect.WrappedComponent = WrappedComponent;
-
       Connect.contextTypes = {
         store: storeShape
       };

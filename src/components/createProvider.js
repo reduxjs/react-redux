@@ -60,7 +60,6 @@ export default function createProvider(React) {
   }
 
   class Provider extends Component {
-
     getChildContext() {
       return { store: this.store };
     }
@@ -92,12 +91,10 @@ export default function createProvider(React) {
       return Children.only(children);
     }
   }
-  // adding properties in this way
-  // prevents ie8 from breaking
+
   Provider.childContextTypes = {
     store: storeShape.isRequired
   };
-
   Provider.propTypes = {
     store: storeShape.isRequired,
     children: (requireFunctionChild ?
@@ -105,5 +102,6 @@ export default function createProvider(React) {
       PropTypes.element
     ).isRequired
   };
+
   return Provider;
 }
