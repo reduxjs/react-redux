@@ -1117,6 +1117,21 @@ describe('React', () => {
       expect(decorated.refs.wrappedInstance.someInstanceMethod()).toBe(someData);
     });
 
+    it('should not add refs to wrapped instance if stateless', () => {
+      const store = createStore(() => ({}));
+      const decorator = connect(state => state);
+      const Decorated = decorator(() => <div/>);
+
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Decorated />
+        </ProviderMock>
+      );
+
+      const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated);
+      expect(Object.keys(decorated.refs)).toExclude('wrappedInstance');
+    });
+
     it('should wrap impure components without supressing updates', () => {
       const store = createStore(() => ({}));
 
