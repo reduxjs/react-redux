@@ -1132,6 +1132,30 @@ describe('React', () => {
       expect(Object.keys(decorated.refs)).toExclude('wrappedInstance');
     });
 
+    it('should consider module pattern of non-Component-inheriting classes stateful', () => {
+      function MyComponent(initialProps) {
+        return {
+          state: { value: initialProps.initialValue },
+          render: function render() {
+            return <span className={this.state.value} />;
+          }
+        };
+      }
+
+      const store = createStore(() => ({}));
+      const decorator = connect(state => state);
+      const Decorated = decorator(() => <MyComponent/>);
+
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Decorated />
+        </ProviderMock>
+      );
+
+      const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated);
+      expect(Object.keys(decorated.refs)).toInclude('wrappedInstance');
+    });
+
     it('should wrap impure components without supressing updates', () => {
       const store = createStore(() => ({}));
 
