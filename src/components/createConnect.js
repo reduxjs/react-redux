@@ -4,7 +4,7 @@ import isPlainObject from '../utils/isPlainObject';
 import wrapActionCreators from '../utils/wrapActionCreators';
 import hoistStatics from 'hoist-non-react-statics';
 import invariant from 'invariant';
-import { wrapDisplayName } from 'recompose';
+import wrapDisplayName from 'recompose/wrapDisplayName';
 
 const defaultMapStateToProps = () => ({});
 const defaultMapDispatchToProps = dispatch => ({ dispatch });
