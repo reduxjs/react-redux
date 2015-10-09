@@ -40,7 +40,7 @@ describe('React', () => {
 
       const store = createStore(() => ({}));
       const contextTypes = {
-        foo: PropTypes.string.isRequred
+        foo: PropTypes.string.isRequired
       };
 
       class TrirdPartyContextConsumer extends Component {
