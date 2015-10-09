@@ -36,6 +36,59 @@ describe('React', () => {
         : prev;
     }
 
+    it('should not prevent third-party context changes to propagate', () => {
+
+      const store = createStore(() => ({}));
+      const contextTypes = {
+        foo: PropTypes.string.isRequred
+      };
+
+      class TrirdPartyContextConsumer extends Component {
+        render() {
+          return <Passthrough foo={this.context.foo} />;
+        }
+      }
+      TrirdPartyContextConsumer.contextTypes = contextTypes;
+
+      @connect()
+      class Container extends Component {
+        render() {
+          return <TrirdPartyContextConsumer />;
+        }
+      }
+
+      class TrirdPartyContextProvider extends Component {
+        constructor(props, context) {
+          super(props, context);
+          this.state = {
+            foo: 'bar'
+          };
+        }
+        getChildContext() {
+          return {
+            foo: this.state.foo
+          };
+        }
+        render() {
+          return <Container />;
+        }
+      }
+      TrirdPartyContextProvider.childContextTypes = contextTypes;
+
+      let component;
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <TrirdPartyContextProvider ref={c => component = c} />
+        </ProviderMock>
+      );
+
+      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough);
+      expect(stub.props.foo).toEqual('bar');
+      component.setState({foo: 'baz'});
+      expect(stub.props.foo).toEqual('baz');
+
+    });
+
     it('should receive the store in the context', () => {
       const store = createStore(() => ({}));
 

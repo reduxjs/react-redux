@@ -87,8 +87,12 @@ export default function createConnect(React) {
             return true;
           }
 
-          const storeChanged = nextState.storeState !== this.state.storeState;
           const propsChanged = !shallowEqual(nextProps, this.props);
+          if (this.state === nextState && !propsChanged) {
+            return true;
+          }
+
+          const storeChanged = nextState.storeState !== this.state.storeState;
           let mapStateProducedChange = false;
           let dispatchPropsChanged = false;
 
