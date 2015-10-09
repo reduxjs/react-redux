@@ -87,8 +87,11 @@ export default function createConnect(React) {
             return true;
           }
 
+          const stateChanged = nextState !== this.state;
           const propsChanged = !shallowEqual(nextProps, this.props);
-          if (this.state === nextState && !propsChanged) {
+          if (!stateChanged && !propsChanged) {
+            // No reason to reconcile but we're in shouldComponentUpdate():
+            // This is probably due to a context change so we let the update happen.
             return true;
           }
 
