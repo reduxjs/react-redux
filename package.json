@@ -60,7 +60,7 @@
   "dependencies": {
     "hoist-non-react-statics": "^1.0.3",
     "invariant": "^2.0.0",
-    "react-display-name": "0.0.1"
+    "recompose": "^0.2.3"
   },
   "peerDependencies": {
     "redux": "^2.0.0 || ^3.0.0"
