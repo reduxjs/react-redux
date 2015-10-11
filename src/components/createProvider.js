@@ -61,12 +61,16 @@ export default function createProvider(React) {
 
   class Provider extends Component {
     getChildContext() {
-      return { store: this.store };
+      return {
+        store: this.store,
+        connectOptions: this.connectOptions
+      };
     }
 
     constructor(props, context) {
       super(props, context);
       this.store = props.store;
+      this.connectOptions = {...this.defaultConnectOptions, ...props.connectOptions};
     }
 
     componentWillReceiveProps(nextProps) {
@@ -93,14 +97,19 @@ export default function createProvider(React) {
   }
 
   Provider.childContextTypes = {
-    store: storeShape.isRequired
+    store: storeShape.isRequired,
+    connectOptions: PropTypes.object.isRequired
   };
   Provider.propTypes = {
     store: storeShape.isRequired,
     children: (requireFunctionChild ?
       PropTypes.func :
       PropTypes.element
-    ).isRequired
+    ).isRequired,
+    connectOptions: PropTypes.object
+  };
+  Provider.defaultConnectOptions = {
+    useRefs: true
   };
 
   return Provider;

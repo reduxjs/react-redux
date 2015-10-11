@@ -112,6 +112,7 @@ export default function createConnect(React) {
           super(props, context);
           this.version = version;
           this.store = props.store || context.store;
+          this.connectOptions = {...context.connectOptions, ...props.connectOptions};
 
           invariant(this.store,
             `Could not find "store" in either the context or ` +
@@ -199,20 +200,22 @@ export default function createConnect(React) {
         }
 
         render() {
-          return (
-            <WrappedComponent ref='wrappedInstance'
-                              {...this.nextState} />
-          );
+          if (this.connectOptions.useRefs) {
+            return <WrappedComponent {...this.nextState} ref='wrappedInstance' />;
+          }
+          return <WrappedComponent {...this.nextState} />;
         }
       }
 
       Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`;
       Connect.WrappedComponent = WrappedComponent;
       Connect.contextTypes = {
-        store: storeShape
+        store: storeShape,
+        connectOptions: PropTypes.object.isRequired
       };
       Connect.propTypes = {
-        store: storeShape
+        store: storeShape,
+        connectOptions: PropTypes.object
       };
 
       if (process.env.NODE_ENV !== 'production') {
