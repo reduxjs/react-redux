@@ -74,6 +74,8 @@ A React component class that injects state and action creators into your compone
 
 * It does not modify the passed React component. It returns a new, connected component, that you should use instead.
 
+* The returned component makes the original, non-wrapped component class available on its `WrappedComponent` property, and any instances of the connected component allow access to the wrapped instance of the non-wrapped component via its `getWrappedInstance()` method.
+
 * The `mapStateToProps` function takes a single argument of the entire Redux store’s state and returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/faassen/reselect) to efficiently compose selectors and [compute derived data](http://gaearon.github.io/redux/docs/recipes/ComputingDerivedData.html).
 
 * **To use `connect()`, the root component of your app must be wrapped into `<Provider>{() => ... }</Provider>` before being rendered.** You may also pass `store` as a prop to the `connect()`ed component, but it's not recommended, because it's just too much trouble. Only do this for non-fully-React codebases or to stub the store in a unit test.
