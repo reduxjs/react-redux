@@ -4,6 +4,7 @@ import isPlainObject from '../utils/isPlainObject';
 import wrapActionCreators from '../utils/wrapActionCreators';
 import hoistStatics from 'hoist-non-react-statics';
 import invariant from 'invariant';
+import wrapDisplayName from 'recompose/wrapDisplayName';
 
 const defaultMapStateToProps = () => ({});
 const defaultMapDispatchToProps = dispatch => ({ dispatch });
@@ -12,10 +13,6 @@ const defaultMergeProps = (stateProps, dispatchProps, parentProps) => ({
   ...stateProps,
   ...dispatchProps
 });
-
-function getDisplayName(Component) {
-  return Component.displayName || Component.name || 'Component';
-}
 
 // Helps track hot reloading.
 let nextVersion = 0;
@@ -206,7 +203,7 @@ export default function createConnect(React) {
         }
       }
 
-      Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`;
+      Connect.displayName = wrapDisplayName(WrappedComponent, 'Connect');
       Connect.WrappedComponent = WrappedComponent;
       Connect.contextTypes = {
         store: storeShape
