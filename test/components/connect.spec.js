@@ -1276,7 +1276,7 @@ describe('React', () => {
 
       // setState calls DOM handlers are batched
       const container = TestUtils.findRenderedComponentWithType(tree, Container);
-      const node = React.findDOMNode(container.getWrappedInstance().refs.button);
+      const node = ReactDOM.findDOMNode(container.getWrappedInstance().refs.button);
       TestUtils.Simulate.click(node);
       expect(childMapStateInvokes).toBe(4);
 
