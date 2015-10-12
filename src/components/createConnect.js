@@ -77,6 +77,8 @@ export default function createConnect(React) {
     }
 
     return function wrapWithConnect(WrappedComponent) {
+      let isStateless = !(WrappedComponent.prototype && WrappedComponent.prototype.isReactComponent) || !('prototype' in WrappedComponent);
+
       class Connect extends Component {
 
         shouldComponentUpdate(nextProps, nextState) {
@@ -199,6 +201,10 @@ export default function createConnect(React) {
         }
 
         render() {
+          if (isStateless) {
+            return <WrappedComponent {...this.nextState} />;
+          }
+
           return (
             <WrappedComponent ref='wrappedInstance'
                               {...this.nextState} />
