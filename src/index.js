@@ -1,4 +1,2 @@
-import React from 'react';
-import createAll from './components/createAll';
-
-export const { Provider, connect } = createAll(React);
+export { default as Provider } from './components/Provider';
+export { default as connect } from './components/connect';
