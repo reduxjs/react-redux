@@ -30,7 +30,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
   const finalMergeProps = mergeProps || defaultMergeProps;
   const shouldUpdateStateProps = finalMapStateToProps.length > 1;
   const shouldUpdateDispatchProps = finalMapDispatchToProps.length > 1;
-  const { pure = true } = options;
+  const { pure = true, withRef = false } = options;
 
   // Helps track hot reloading.
   const version = nextVersion++;
@@ -75,7 +75,6 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
   return function wrapWithConnect(WrappedComponent) {
     class Connect extends Component {
-
       shouldComponentUpdate(nextProps, nextState) {
         if (!pure) {
           this.updateStateProps(nextProps);
@@ -192,13 +191,18 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       getWrappedInstance() {
+        invariant(withRef,
+          `To access the wrapped instance, you need to specify ` +
+          `{ withRef: true } as the fourth argument of the connect() call.`
+        );
+
         return this.refs.wrappedInstance;
       }
 
       render() {
+        const ref = withRef ? 'wrappedInstance' : null;
         return (
-          <WrappedComponent ref='wrappedInstance'
-                            {...this.nextState} />
+          <WrappedComponent {...this.nextState} ref={ref} />
         );
       }
     }
