@@ -15,12 +15,11 @@ Performant and flexible.
 npm install --save react-redux
 ```
 
-React Redux requires **React 0.13 or later.**
+React Redux requires **React 0.14 or later.**
 
 ## React Native
 
-What you get from `react-redux` is for React.  
-For React Native, import from `react-redux/native` instead.
+Until [React Native is compatible with React 0.14](https://github.com/facebook/react-native/issues/2985), you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/rackt/react-redux/tree/v3.1.0).
 
 ## Documentation
 
