@@ -11,6 +11,7 @@
     "clean": "rimraf lib dist coverage",
     "lint": "eslint src test",
     "prepublish": "npm run clean && npm run build",
+    "bench": "npm run build && python -m SimpleHTTPServer",
     "test": "mocha --compilers js:babel/register --recursive",
     "test:watch": "npm test -- --watch",
     "test:cov": "babel-node ./node_modules/isparta/bin/isparta cover ./node_modules/mocha/bin/_mocha -- --recursive"
@@ -41,6 +42,7 @@
     "babel-core": "^5.8.22",
     "babel-eslint": "^3.1.15",
     "babel-loader": "^5.3.2",
+    "benchmark": "^1.0.0",
     "eslint": "^0.23",
     "eslint-config-airbnb": "0.0.6",
     "eslint-plugin-react": "^2.3.0",
