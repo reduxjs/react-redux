@@ -1,5 +1,4 @@
 import expect from 'expect';
-import jsdom from 'mocha-jsdom';
 import React, { createClass, Children, PropTypes, Component } from 'react';
 import ReactDOM from 'react-dom';
 import TestUtils from 'react-addons-test-utils';
@@ -8,8 +7,6 @@ import { connect } from '../../src/index';
 
 describe('React', () => {
   describe('connect', () => {
-    jsdom();
-
     class Passthrough extends Component {
       render() {
         return <div {...this.props} />;

@@ -1,5 +1,4 @@
 import expect from 'expect';
-import jsdom from 'mocha-jsdom';
 import React, { PropTypes, Component } from 'react';
 import TestUtils from 'react-addons-test-utils';
 import { createStore } from 'redux';
@@ -7,8 +6,6 @@ import { Provider } from '../../src/index';
 
 describe('React', () => {
   describe('Provider', () => {
-    jsdom();
-
     class Child extends Component {
       static contextTypes = {
         store: PropTypes.object.isRequired

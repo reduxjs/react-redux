@@ -11,7 +11,7 @@
     "clean": "rimraf lib dist coverage",
     "lint": "eslint src test",
     "prepublish": "npm run clean && npm run build",
-    "test": "mocha --compilers js:babel/register --recursive",
+    "test": "mocha --compilers js:babel/register --recursive --require ./test/setup.js",
     "test:watch": "npm test -- --watch",
     "test:cov": "babel-node ./node_modules/isparta/bin/isparta cover ./node_modules/mocha/bin/_mocha -- --recursive"
   },
@@ -49,7 +49,6 @@
     "istanbul": "^0.3.17",
     "jsdom": "~5.4.3",
     "mocha": "^2.2.5",
-    "mocha-jsdom": "~0.4.0",
     "react": "^0.14.0",
     "react-addons-test-utils": "^0.14.0",
     "react-dom": "^0.14.0",
