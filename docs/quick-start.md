@@ -126,9 +126,10 @@ This is the most basic usage, but `connect()` supports many other patterns: just
 
 Finally, how do we actually hook it up to the Redux store? We need to create the store somewhere at the root of our component hierarchy. For client apps, the root component is a good place. For server rendering, you can do this in the request handler.
 
-The trick is to wrap the whole view hierarchy into a `<Provider>{() => ... }</Provider>` where `Provider` is imported from `react-redux`. One gotcha is that **the child of `Provider` must be a function**. This is to work around an issue about how context (undocumented feature we have to rely on to pass Redux data to components below) works in React 0.13. In React 0.14, you will be able to put your view hierarchy in `<Provider>` without wrapping it into a function.
+The trick is to wrap the whole view hierarchy into a `<Provider>` from React Redux.
 
 ```js
+import ReactDOM from 'react-dom';
 import { Component } from 'react';
 import { Provider } from 'react-redux';
 
@@ -140,9 +141,10 @@ class App extends Component {
 
 const targetEl = document.getElementById('root');
 
-React.render((
+ReactDOM.render(
   <Provider store={store}>
-    {() => <App />}
-  </Provider>
-), targetEl);
+    <App />
+  </Provider>,
+  targetEl
+);
 ```

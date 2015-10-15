@@ -85,7 +85,7 @@ describe('React', () => {
       ).toNotThrow();
     });
 
-    it('should subscribe to the store changes', () => {
+    it('should subscribe class components to the store changes', () => {
       const store = createStore(stringBuilder);
 
       @connect(state => ({ string: state }) )
@@ -100,6 +100,32 @@ describe('React', () => {
           <Container />
         </ProviderMock>
       );
+
+      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough);
+      expect(stub.props.string).toBe('');
+      store.dispatch({ type: 'APPEND', body: 'a'});
+      expect(stub.props.string).toBe('a');
+      store.dispatch({ type: 'APPEND', body: 'b'});
+      expect(stub.props.string).toBe('ab');
+    });
+
+    it('should subscribe pure function components to the store changes', () => {
+      const store = createStore(stringBuilder);
+
+      let Container = connect(
+        state => ({ string: state })
+      )(function Container(props) {
+        return <Passthrough {...props}/>;
+      });
+
+      const spy = expect.spyOn(console, 'error');
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      );
+      spy.destroy();
+      expect(spy.calls.length).toBe(0);
 
       const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough);
       expect(stub.props.string).toBe('');
@@ -1084,6 +1110,30 @@ describe('React', () => {
       );
     });
 
+    it('should throw when trying to access the wrapped instance if withRef is not specified', () => {
+      const store = createStore(() => ({}));
+
+      class Container extends Component {
+        render() {
+          return <Passthrough />;
+        }
+      }
+
+      const decorator = connect(state => state);
+      const Decorated = decorator(Container);
+
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Decorated />
+        </ProviderMock>
+      );
+
+      const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated);
+      expect(() => decorated.getWrappedInstance()).toThrow(
+        /To access the wrapped instance, you need to specify \{ withRef: true \} as the fourth argument of the connect\(\) call\./
+      );
+    });
+
     it('should return the instance of the wrapped component for use in calling child methods', () => {
       const store = createStore(() => ({}));
 
@@ -1101,7 +1151,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state);
+      const decorator = connect(state => state, null, null, { withRef: true });
       const Decorated = decorator(Container);
 
       const tree = TestUtils.renderIntoDocument(
@@ -1231,7 +1281,7 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a'});
       let childMapStateInvokes = 0;
 
-      @connect(state => ({ state }))
+      @connect(state => ({ state }), null, null, { withRef: true })
       class Container extends Component {
 
         emitChange() {
@@ -1276,7 +1326,7 @@ describe('React', () => {
 
       // setState calls DOM handlers are batched
       const container = TestUtils.findRenderedComponentWithType(tree, Container);
-      const node = ReactDOM.findDOMNode(container.getWrappedInstance().refs.button);
+      const node = container.getWrappedInstance().refs.button;
       TestUtils.Simulate.click(node);
       expect(childMapStateInvokes).toBe(4);
 

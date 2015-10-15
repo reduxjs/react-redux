@@ -2,21 +2,23 @@
 
 ### `<Provider store>`
 
-Makes the Redux store available to the `connect()` calls in the component hierarchy below. Normally, you can’t use `connect()` without wrapping the root component in `<Provider>`. (If you *really* need to, you can manually pass `store` as a prop to every `connect()`ed component, but we only recommend to do this for stubbing `store` in unit tests, or in non-fully-React codebases. Normally, you should just use `<Provider>`.)
+Makes the Redux store available to the `connect()` calls in the component hierarchy below. Normally, you can’t use `connect()` without wrapping the root component in `<Provider>`.
+
+If you *really* need to, you can manually pass `store` as a prop to every `connect()`ed component, but we only recommend to do this for stubbing `store` in unit tests, or in non-fully-React codebases. Normally, you should just use `<Provider>`.
 
 #### Props
 
-* `store`: (*[Redux Store](http://gaearon.github.io/redux/docs/api/Store.html)*): The single Redux store in your application.
-* `children`: (*Function*): Unlike most React components, `<Provider>` accepts a [function as a child](#child-must-be-a-function) with your root component. This is a temporary workaround for a React 0.13 context issue, which will be fixed when React 0.14 comes out.
+* `store` (*[Redux Store](http://rackt.github.io/redux/docs/api/Store.html)*): The single Redux store in your application.
+* `children` (*ReactElement*) The root of your component hierarchy.
 
 #### Example
 
 ##### Vanilla React
 
 ```js
-React.render(
+ReactDOM.render(
   <Provider store={store}>
-    {() => <MyRootComponent />}
+    <MyRootComponent />
   </Provider>,
   rootEl
 );
@@ -26,9 +28,10 @@ React.render(
 
 ```js
 Router.run(routes, Router.HistoryLocation, (Handler, routerState) => { // note "routerState" here
-  React.render(
+  ReactDOM.render(
     <Provider store={store}>
-      {() => <Handler routerState={routerState} />} // note "routerState" here: important to pass it down
+      {/* note "routerState" here: important to pass it down */}
+      <Handler routerState={routerState} />
     </Provider>,
     document.getElementById('root')
   );
@@ -38,9 +41,9 @@ Router.run(routes, Router.HistoryLocation, (Handler, routerState) => { // note "
 ##### React Router 1.0
 
 ```js
-React.render(
+ReactDOM.render(
   <Provider store={store}>
-    {() => <Router history={history}>...</Router>}
+    <Router history={history}>...</Router>
   </Provider>,
   targetEl
 );
@@ -57,16 +60,31 @@ Instead, it *returns* a new, connected component class, for you to use.
 
 * [`mapStateToProps(state, [ownProps]): stateProps`] \(*Function*): If specified, the component will subscribe to Redux store updates. Any time it updates, `mapStateToProps` will be called. Its result must be a plain object, and it will be merged into the component’s props. If you omit it, the component will not be subscribed to the Redux store. If `ownProps` is specified as a second argument, its value will be the properties passed to your component, and `mapStateToProps` will be re-invoked whenever the component receives new props.
 
-* [`mapDispatchToProps(dispatch, [ownProps]): dispatchProps`] \(*Object* or *Function*): If an object is passed, each function inside it will be assumed to be a Redux action creator. An object with the same function names, but bound to a Redux store, will be merged into the component’s props. If a function is passed, it will be given `dispatch`. It’s up to you to return an object that somehow uses `dispatch` to bind action creators in your own way. (Tip: you may use the [`bindActionCreators()`](http://gaearon.github.io/redux/docs/api/bindActionCreators.html) helper from Redux.) If you omit it, the default implementation just injects `dispatch` into your component’s props. If `ownProps` is specified as a second argument, its value will be the properties passed to your component, and `mapDispatchToProps` will be re-invoked whenever the component receives new props.
+* [`mapDispatchToProps(dispatch, [ownProps]): dispatchProps`] \(*Object* or *Function*): If an object is passed, each function inside it will be assumed to be a Redux action creator. An object with the same function names, but bound to a Redux store, will be merged into the component’s props. If a function is passed, it will be given `dispatch`. It’s up to you to return an object that somehow uses `dispatch` to bind action creators in your own way. (Tip: you may use the [`bindActionCreators()`](http://rackt.github.io/redux/docs/api/bindActionCreators.html) helper from Redux.) If you omit it, the default implementation just injects `dispatch` into your component’s props. If `ownProps` is specified as a second argument, its value will be the properties passed to your component, and `mapDispatchToProps` will be re-invoked whenever the component receives new props.
 
 * [`mergeProps(stateProps, dispatchProps, ownProps): props`] \(*Function*): If specified, it is passed the result of `mapStateToProps()`, `mapDispatchToProps()`, and the parent `props`. The plain object you return from it will be passed as props to the wrapped component. You may specify this function to select a slice of the state based on props, or to bind action creators to a particular variable from props. If you omit it, `Object.assign({}, ownProps, stateProps, dispatchProps)` is used by default.
 
 * [`options`] *(Object)* If specified, further customizes the behavior of the connector.
-  * [`pure`] *(Boolean)*: If true, implements `shouldComponentUpdate` and shallowly compares the result of `mergeProps`, preventing unnecessary updates, assuming that the component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state. *Defaults to `true`.*
+  * [`pure = true`] *(Boolean)*: If true, implements `shouldComponentUpdate` and shallowly compares the result of `mergeProps`, preventing unnecessary updates, assuming that the component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state. *Defaults to `true`.*
+  * [`withRef = false`] *(Boolean)*: If true, stores a ref to the wrapped component instance and makes it available via `getWrappedInstance()` method. *Defaults to `false`.*
 
 #### Returns
 
 A React component class that injects state and action creators into your component according to the specified options.
+
+##### Static Properties
+
+* `WrappedComponent` *(Component)*: The original component class passed to `connect()`.
+
+##### Static Methods
+
+All the original static methods of the component are hoisted.
+
+##### Instance Methods
+
+###### `getWrappedInstance(): ReactComponent`
+
+Returns the wrapped component instance. Only available if you pass `{ withRef: true }` as part of the `connect()`’s fourth `options` argument.
 
 #### Remarks
 
@@ -74,9 +92,7 @@ A React component class that injects state and action creators into your compone
 
 * It does not modify the passed React component. It returns a new, connected component, that you should use instead.
 
-* The `mapStateToProps` function takes a single argument of the entire Redux store’s state and returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/faassen/reselect) to efficiently compose selectors and [compute derived data](http://gaearon.github.io/redux/docs/recipes/ComputingDerivedData.html).
-
-* **To use `connect()`, the root component of your app must be wrapped into `<Provider>{() => ... }</Provider>` before being rendered.** You may also pass `store` as a prop to the `connect()`ed component, but it's not recommended, because it's just too much trouble. Only do this for non-fully-React codebases or to stub the store in a unit test.
+* The `mapStateToProps` function takes a single argument of the entire Redux store’s state and returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/rackt/reselect) to efficiently compose selectors and [compute derived data](http://rackt.github.io/redux/docs/recipes/ComputingDerivedData.html).
 
 #### Examples
 
