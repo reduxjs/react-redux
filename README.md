@@ -1,7 +1,7 @@
 React Redux
 =========================
 
-Official React bindings for [Redux](https://github.com/gaearon/redux).  
+Official React bindings for [Redux](https://github.com/rackt/redux).  
 Performant and flexible.
 
 [![build status](https://img.shields.io/travis/rackt/react-redux/master.svg?style=flat-square)](https://travis-ci.org/rackt/react-redux) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
