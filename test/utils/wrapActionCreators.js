@@ -1,5 +1,5 @@
-import expect from 'expect';
-import wrapActionCreators from '../../src/utils/wrapActionCreators';
+import expect from 'expect'
+import wrapActionCreators from '../../src/utils/wrapActionCreators'
 
 describe('Utils', () => {
   describe('wrapActionCreators', () => {
@@ -8,24 +8,24 @@ describe('Utils', () => {
       function dispatch(action) {
         return {
           dispatched: action
-        };
+        }
       }
 
-      const actionResult = {an: 'action'};
+      const actionResult = { an: 'action' }
 
       const actionCreators = {
         action: () => actionResult
-      };
+      }
 
-      const wrapped = wrapActionCreators(actionCreators);
-      expect(wrapped).toBeA(Function);
-      expect(() => wrapped(dispatch)).toNotThrow();
-      expect(() => wrapped().action()).toThrow();
+      const wrapped = wrapActionCreators(actionCreators)
+      expect(wrapped).toBeA(Function)
+      expect(() => wrapped(dispatch)).toNotThrow()
+      expect(() => wrapped().action()).toThrow()
 
-      const bound = wrapped(dispatch);
-      expect(bound.action).toNotThrow();
-      expect(bound.action().dispatched).toBe(actionResult);
+      const bound = wrapped(dispatch)
+      expect(bound.action).toNotThrow()
+      expect(bound.action().dispatched).toBe(actionResult)
 
-    });
-  });
-});
+    })
+  })
+})
