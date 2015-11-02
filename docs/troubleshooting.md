@@ -24,8 +24,8 @@ Router.run(routes, Router.HistoryLocation, (Handler, routerState) => { // note "
       <Handler routerState={routerState} />
     </Provider>,
     document.getElementById('root')
-  );
-});
+  )
+})
 ```
 
 Nested view:
@@ -33,7 +33,7 @@ Nested view:
 ```js
 render() {
   // Keep passing it down
-  return <RouteHandler routerState={this.props.routerState} />;
+  return <RouteHandler routerState={this.props.routerState} />
 }
 ```
 
@@ -52,12 +52,12 @@ If that’s not practical for whatever reason (for example, if you’re using a 
 
 ```
 function mapStateToProps(state) {
-  return { todos: state.todos };
+  return { todos: state.todos }
 }
 
 export default connect(mapStateToProps, null, null, {
   pure: false
-})(TodoApp);
+})(TodoApp)
 ```
 
 This will remove the assumption that `TodoApp` is pure and cause it to update whenever its parent component renders. Note that this will make your application less performant, so only do this if you have no other option.

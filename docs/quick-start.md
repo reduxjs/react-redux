@@ -50,7 +50,7 @@ export default class Counter extends Component {
       <button onClick={this.props.onIncrement}>
         {this.props.value}
       </button>
-    );
+    )
   }
 }
 ```
@@ -64,30 +64,30 @@ We will use the `connect()` function provided by `react-redux` to turn a “dumb
 ##### `containers/CounterContainer.js`
 
 ```js
-import { Component } from 'react';
-import { connect } from 'react-redux';
+import { Component } from 'react'
+import { connect } from 'react-redux'
 
-import Counter from '../components/Counter';
-import { increment } from '../actionsCreators';
+import Counter from '../components/Counter'
+import { increment } from '../actionsCreators'
 
 // Which part of the Redux global state does our component want to receive as props?
 function mapStateToProps(state) {
   return {
     value: state.counter
-  };
+  }
 }
 
 // Which action creators does it want to receive by props?
 function mapDispatchToProps(dispatch) {
   return {
     onIncrement: () => dispatch(increment())
-  };
+  }
 }
 
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(Counter);
+)(Counter)
 
 // You can also pass an object instead of defining `mapDispatchToProps`:
 // export default connect(mapStateToProps, CounterActionCreators)(Counter);
@@ -129,9 +129,9 @@ Finally, how do we actually hook it up to the Redux store? We need to create the
 The trick is to wrap the whole view hierarchy into a `<Provider>` from React Redux.
 
 ```js
-import ReactDOM from 'react-dom';
-import { Component } from 'react';
-import { Provider } from 'react-redux';
+import ReactDOM from 'react-dom'
+import { Component } from 'react'
+import { Provider } from 'react-redux'
 
 class App extends Component {
   render() {
@@ -139,12 +139,12 @@ class App extends Component {
   }
 }
 
-const targetEl = document.getElementById('root');
+const targetEl = document.getElementById('root')
 
 ReactDOM.render(
   <Provider store={store}>
     <App />
   </Provider>,
   targetEl
-);
+)
 ```
