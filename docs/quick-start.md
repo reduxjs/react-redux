@@ -42,16 +42,14 @@ It is advisable that only top-level components of your app (such as route handle
 Let’s say we have a `<Counter />` “dumb” component with a number `value` prop, and an `onIncrement` function prop that it will call when user presses an “Increment” button:
 
 ```js
-import { Component } from 'react';
+import React from 'react'
 
-export default class Counter extends Component {
-  render() {
-    return (
-      <button onClick={this.props.onIncrement}>
-        {this.props.value}
-      </button>
-    )
-  }
+export default function Counter(props) {
+  return (
+    <button onClick={props.onIncrement}>
+      {props.value}
+    </button>
+  )
 }
 ```
 
