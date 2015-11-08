@@ -22,24 +22,24 @@ function getDisplayName(WrappedComponent) {
 let nextVersion = 0
 
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
-  const { pure = true, withRef = false, wrapMapState = false, wrapMapDispatch = false } = options
+  const { pure = true, withRef = false, mapStateThunk = false, mapDispatchThunk = false } = options
   const shouldSubscribe = Boolean(mapStateToProps)
   const finalMapStateToProps = mapStateToProps || defaultMapStateToProps
   const finalMapDispatchToProps = isPlainObject(mapDispatchToProps) ?
     wrapActionCreators(mapDispatchToProps) :
     mapDispatchToProps || defaultMapDispatchToProps
   const finalMergeProps = mergeProps || defaultMergeProps
-  const shouldUpdateStateProps = wrapMapState || finalMapStateToProps.length > 1
-  const shouldUpdateDispatchProps = wrapMapDispatch || finalMapDispatchToProps.length > 1
+  const shouldUpdateStateProps = mapStateThunk || finalMapStateToProps.length > 1
+  const shouldUpdateDispatchProps = mapDispatchThunk || finalMapDispatchToProps.length > 1
 
   // Helps track hot reloading.
   const version = nextVersion++
 
-  function computeStateProps(connectMapStateToProps, store, props) {
+  function computeStateProps(mapState, store, props) {
     const state = store.getState()
     const stateProps = shouldUpdateStateProps ?
-      connectMapStateToProps(state, props) :
-      connectMapStateToProps(state)
+      mapState(state, props) :
+      mapState(state)
 
     invariant(
       isPlainObject(stateProps),
@@ -49,11 +49,11 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     return stateProps
   }
 
-  function computeDispatchProps(connectMapDispatchToProps, store, props) {
+  function computeDispatchProps(mapDispatch, store, props) {
     const { dispatch } = store
     const dispatchProps = shouldUpdateDispatchProps ?
-      connectMapDispatchToProps(dispatch, props) :
-      connectMapDispatchToProps(dispatch)
+      mapDispatch(dispatch, props) :
+      mapDispatch(dispatch)
 
     invariant(
       isPlainObject(dispatchProps),
@@ -116,18 +116,18 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
         )
 
-        this.wrapMapToProps()
-        this.stateProps = computeStateProps(this.connectMapStateToProps, this.store, props)
-        this.dispatchProps = computeDispatchProps(this.connectMapDispatchToProps, this.store, props)
+        this.updateThunks()
+        this.stateProps = computeStateProps(this.finalMapStateToProps, this.store, props)
+        this.dispatchProps = computeDispatchProps(this.finalMapDispatchToProps, this.store, props)
         this.state = { storeState: null }
         this.updateState()
       }
 
-      wrapMapToProps() {
-        this.connectMapStateToProps = wrapMapState
-          ? wrapMapState(finalMapStateToProps) : finalMapStateToProps
-        this.connectMapDispatchToProps = wrapMapDispatch
-          ? wrapMapDispatch(finalMapDispatchToProps) : finalMapDispatchToProps
+      updateThunks() {
+        this.finalMapStateToProps = mapStateThunk
+          ? finalMapStateToProps() : finalMapStateToProps
+        this.finalMapDispatchToProps = mapDispatchThunk
+          ? finalMapDispatchToProps() : finalMapDispatchToProps
       }
 
       computeNextState(props = this.props) {
@@ -139,7 +139,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateStateProps(props = this.props) {
-        const nextStateProps = computeStateProps(this.connectMapStateToProps, this.store, props)
+        const nextStateProps = computeStateProps(this.finalMapStateToProps, this.store, props)
         if (shallowEqual(nextStateProps, this.stateProps)) {
           return false
         }
@@ -149,7 +149,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateDispatchProps(props = this.props) {
-        const nextDispatchProps = computeDispatchProps(this.connectMapDispatchToProps, this.store, props)
+        const nextDispatchProps = computeDispatchProps(this.finalMapDispatchToProps, this.store, props)
         if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false
         }
@@ -234,7 +234,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.version = version
 
         // Update the state and bindings.
-        this.wrapMapToProps()
+        this.updateThunks()
         this.trySubscribe()
         this.updateStateProps()
         this.updateDispatchProps()

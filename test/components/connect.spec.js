@@ -1371,7 +1371,7 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
     })
 
-    it('accepts a wrapMapState option for configuring mapStateToProps for the component', () => {
+    it('accepts mapStateThunk for a unique mapStateToProps per component', () => {
 
       const store = createStore(() => ({
         prefix: 'name: '
@@ -1399,7 +1399,7 @@ describe('React', () => {
         return { value: props.prefix + state.name }
       }
 
-      @connect(() => memoize(computeValue), null, null, { wrapMapState: (fn) => fn() })
+      @connect(() => memoize(computeValue), null, null, { mapStateThunk: true })
       class Container extends Component {
         componentDidMount() {
           this.forceUpdate()
