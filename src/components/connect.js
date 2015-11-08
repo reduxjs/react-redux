@@ -22,15 +22,15 @@ function getDisplayName(WrappedComponent) {
 let nextVersion = 0
 
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
-  const { pure = true, withRef = false, mapStateThunk = false, mapDispatchThunk = false } = options
+  const { pure = true, withRef = false, stateThunk = false, dispatchThunk = false } = options
   const shouldSubscribe = Boolean(mapStateToProps)
   const finalMapStateToProps = mapStateToProps || defaultMapStateToProps
   const finalMapDispatchToProps = isPlainObject(mapDispatchToProps) ?
     wrapActionCreators(mapDispatchToProps) :
     mapDispatchToProps || defaultMapDispatchToProps
   const finalMergeProps = mergeProps || defaultMergeProps
-  const shouldUpdateStateProps = mapStateThunk || finalMapStateToProps.length > 1
-  const shouldUpdateDispatchProps = mapDispatchThunk || finalMapDispatchToProps.length > 1
+  const shouldUpdateStateProps = stateThunk || finalMapStateToProps.length > 1
+  const shouldUpdateDispatchProps = dispatchThunk || finalMapDispatchToProps.length > 1
 
   // Helps track hot reloading.
   const version = nextVersion++
@@ -124,9 +124,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateThunks() {
-        this.finalMapStateToProps = mapStateThunk
+        this.finalMapStateToProps = stateThunk
           ? finalMapStateToProps() : finalMapStateToProps
-        this.finalMapDispatchToProps = mapDispatchThunk
+        this.finalMapDispatchToProps = dispatchThunk
           ? finalMapDispatchToProps() : finalMapDispatchToProps
       }
 

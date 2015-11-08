@@ -1399,7 +1399,7 @@ describe('React', () => {
         return { value: props.prefix + state.name }
       }
 
-      @connect(() => memoize(computeValue), null, null, { mapStateThunk: true })
+      @connect(() => memoize(computeValue), null, null, { stateThunk: true })
       class Container extends Component {
         componentDidMount() {
           this.forceUpdate()
