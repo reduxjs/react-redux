@@ -30,16 +30,22 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
   const finalMergeProps = mergeProps || defaultMergeProps
   const shouldUpdateStateProps = finalMapStateToProps.length > 1
   const shouldUpdateDispatchProps = finalMapDispatchToProps.length > 1
-  const { pure = true, withRef = false } = options
+  const { pure = true, withRef = false, memoize = false } = options
+
+  invariant(
+    (memoize === false || typeof memoize === 'function'),
+    '`memoize` must be a function. Instead received %s.',
+    memoize
+  )
 
   // Helps track hot reloading.
   const version = nextVersion++
 
-  function computeStateProps(store, props) {
+  function computeStateProps(mapState, store, props) {
     const state = store.getState()
     const stateProps = shouldUpdateStateProps ?
-      finalMapStateToProps(state, props) :
-      finalMapStateToProps(state)
+      mapState(state, props) :
+      mapState(state)
 
     invariant(
       isPlainObject(stateProps),
@@ -49,11 +55,11 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     return stateProps
   }
 
-  function computeDispatchProps(store, props) {
+  function computeDispatchProps(mapDispatch, store, props) {
     const { dispatch } = store
     const dispatchProps = shouldUpdateDispatchProps ?
-      finalMapDispatchToProps(dispatch, props) :
-      finalMapDispatchToProps(dispatch)
+      mapDispatch(dispatch, props) :
+      mapDispatch(dispatch)
 
     invariant(
       isPlainObject(dispatchProps),
@@ -115,9 +121,17 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           `Either wrap the root component in a <Provider>, ` +
           `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
         )
+      }
 
-        this.stateProps = computeStateProps(this.store, props)
-        this.dispatchProps = computeDispatchProps(this.store, props)
+      componentWillMount() {
+        this.finalMapStateToProps = memoize ?
+          memoize(finalMapStateToProps) :
+          finalMapStateToProps
+        this.finalMapDispatchToProps = memoize ?
+          memoize(finalMapDispatchToProps) :
+          finalMapDispatchToProps
+        this.stateProps = computeStateProps(this.finalMapStateToProps, this.store, this.props)
+        this.dispatchProps = computeDispatchProps(this.finalMapDispatchToProps, this.store, this.props)
         this.state = { storeState: null }
         this.updateState()
       }
@@ -131,7 +145,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateStateProps(props = this.props) {
-        const nextStateProps = computeStateProps(this.store, props)
+        const nextStateProps = computeStateProps(this.finalMapStateToProps, this.store, props)
         if (shallowEqual(nextStateProps, this.stateProps)) {
           return false
         }
@@ -141,7 +155,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateDispatchProps(props = this.props) {
-        const nextDispatchProps = computeDispatchProps(this.store, props)
+        const nextDispatchProps = computeDispatchProps(this.finalMapDispatchToProps, this.store, props)
         if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false
         }
@@ -226,6 +240,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.version = version
 
         // Update the state and bindings.
+        this.componentWillMount()
         this.trySubscribe()
         this.updateStateProps()
         this.updateDispatchProps()
