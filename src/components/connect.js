@@ -22,15 +22,15 @@ function getDisplayName(WrappedComponent) {
 let nextVersion = 0
 
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
-  const { pure = true, withRef = false, stateThunk = false, dispatchThunk = false } = options
+  const { pure = true, withRef = false } = options
   const shouldSubscribe = Boolean(mapStateToProps)
   const finalMapStateToProps = mapStateToProps || defaultMapStateToProps
   const finalMapDispatchToProps = isPlainObject(mapDispatchToProps) ?
     wrapActionCreators(mapDispatchToProps) :
     mapDispatchToProps || defaultMapDispatchToProps
   const finalMergeProps = mergeProps || defaultMergeProps
-  const shouldUpdateStateProps = stateThunk || finalMapStateToProps.length > 1
-  const shouldUpdateDispatchProps = dispatchThunk || finalMapDispatchToProps.length > 1
+  const shouldUpdateStateProps = finalMapStateToProps.length > 1
+  const shouldUpdateDispatchProps = finalMapDispatchToProps.length > 1
 
   // Helps track hot reloading.
   const version = nextVersion++
@@ -116,18 +116,16 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
         )
 
-        this.updateThunks()
+        this.assignMapFunctions()
         this.stateProps = computeStateProps(this.finalMapStateToProps, this.store, props)
         this.dispatchProps = computeDispatchProps(this.finalMapDispatchToProps, this.store, props)
         this.state = { storeState: null }
         this.updateState()
       }
 
-      updateThunks() {
-        this.finalMapStateToProps = stateThunk
-          ? finalMapStateToProps() : finalMapStateToProps
-        this.finalMapDispatchToProps = dispatchThunk
-          ? finalMapDispatchToProps() : finalMapDispatchToProps
+      assignMapFunctions() {
+        this.finalMapStateToProps = finalMapStateToProps
+        this.finalMapDispatchToProps = finalMapDispatchToProps
       }
 
       computeNextState(props = this.props) {
@@ -234,7 +232,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.version = version
 
         // Update the state and bindings.
-        this.updateThunks()
+        this.assignMapFunctions()
         this.trySubscribe()
         this.updateStateProps()
         this.updateDispatchProps()

@@ -1371,7 +1371,7 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
     })
 
-    it('accepts mapStateThunk for a unique mapStateToProps per component', () => {
+    it('defines finalMapStateToProps on the component', () => {
 
       const store = createStore(() => ({
         prefix: 'name: '
@@ -1395,11 +1395,21 @@ describe('React', () => {
         }
       }
 
+      function memoizer(WrappedComponent) {
+        let assignMapFunctions = WrappedComponent.prototype.assignMapFunctions
+        WrappedComponent.prototype.assignMapFunctions = function () {
+          assignMapFunctions.call(this)
+          this.finalMapStateToProps = memoize(this.finalMapStateToProps)
+        }
+        return WrappedComponent
+      }
+
       function computeValue(state, props) {
         return { value: props.prefix + state.name }
       }
 
-      @connect(() => memoize(computeValue), null, null, { stateThunk: true })
+      @memoizer
+      @connect(computeValue, null, null, { stateThunk: true })
       class Container extends Component {
         componentDidMount() {
           this.forceUpdate()
