@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 import TestUtils from 'react-addons-test-utils'
 import { createStore } from 'redux'
 import { connect } from '../../src/index'
+import shallowEqual from '../../src/utils/shallowEqual'
 
 describe('React', () => {
   describe('connect', () => {
@@ -190,7 +191,7 @@ describe('React', () => {
           return (
             <ProviderMock store={store}>
               <ConnectContainer bar={this.state.bar} />
-             </ProviderMock>
+            </ProviderMock>
           )
         }
       }
@@ -1368,6 +1369,69 @@ describe('React', () => {
       expect(mapStateCalls).toBe(3)
       // But render is not because it did not make any actual changes
       expect(renderCalls).toBe(1)
+    })
+
+    it('defines finalMapStateToProps on the component', () => {
+
+      const store = createStore(() => ({
+        prefix: 'name: '
+      }))
+      let memoizeHits = 0
+      let memoizeMisses = 0
+      let renderCalls = 0
+
+      function memoize(func) {
+        let lastResult, lastArgs = lastResult = null
+        return (...args) => {
+          if (lastArgs && args.every((value, index) => shallowEqual(value, lastArgs[index]))) {
+            memoizeHits++
+            return lastResult
+          } else if (lastArgs) {
+            memoizeMisses++
+          }
+          lastArgs = args
+          lastResult = func(...args)
+          return lastResult
+        }
+      }
+
+      function memoizer(WrappedComponent) {
+        let assignMapFunctions = WrappedComponent.prototype.assignMapFunctions
+        WrappedComponent.prototype.assignMapFunctions = function () {
+          assignMapFunctions.call(this)
+          this.finalMapStateToProps = memoize(this.finalMapStateToProps)
+        }
+        return WrappedComponent
+      }
+
+      function computeValue(state, props) {
+        return { value: props.prefix + state.name }
+      }
+
+      @memoizer
+      @connect(computeValue, null, null, { stateThunk: true })
+      class Container extends Component {
+        componentDidMount() {
+          this.forceUpdate()
+        }
+        render() {
+          renderCalls++
+          return <div>{this.props.value}</div>
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Container name="one" />
+            <Container name="two" />
+          </div>
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toEqual(4)
+      expect(memoizeHits).toEqual(2)
+      expect(memoizeMisses).toEqual(0)
     })
   })
 })
