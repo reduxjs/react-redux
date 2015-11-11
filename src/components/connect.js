@@ -21,57 +21,14 @@ function getDisplayName(WrappedComponent) {
 // Helps track hot reloading.
 let nextVersion = 0
 
-export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
-  const shouldSubscribe = Boolean(mapStateToProps)
-  const finalMapStateToProps = mapStateToProps || defaultMapStateToProps
-  const finalMapDispatchToProps = isPlainObject(mapDispatchToProps) ?
-    wrapActionCreators(mapDispatchToProps) :
-    mapDispatchToProps || defaultMapDispatchToProps
+export function connectFactory(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
   const finalMergeProps = mergeProps || defaultMergeProps
-  const shouldUpdateStateProps = finalMapStateToProps.length > 1
-  const shouldUpdateDispatchProps = finalMapDispatchToProps.length > 1
+  const finalMapStateToPropsFactory = mapStateToPropsFactory || () => defaultMapStateToProps
+  const finalMapDispatchToPropsFactory = mapDispatchToPropsFactory || () => defaultMapDispatchToProps
   const { pure = true, withRef = false } = options
 
   // Helps track hot reloading.
   const version = nextVersion++
-
-  function computeStateProps(store, props) {
-    const state = store.getState()
-    const stateProps = shouldUpdateStateProps ?
-      finalMapStateToProps(state, props) :
-      finalMapStateToProps(state)
-
-    invariant(
-      isPlainObject(stateProps),
-      '`mapStateToProps` must return an object. Instead received %s.',
-      stateProps
-    )
-    return stateProps
-  }
-
-  function computeDispatchProps(store, props) {
-    const { dispatch } = store
-    const dispatchProps = shouldUpdateDispatchProps ?
-      finalMapDispatchToProps(dispatch, props) :
-      finalMapDispatchToProps(dispatch)
-
-    invariant(
-      isPlainObject(dispatchProps),
-      '`mapDispatchToProps` must return an object. Instead received %s.',
-      dispatchProps
-    )
-    return dispatchProps
-  }
-
-  function computeNextState(stateProps, dispatchProps, parentProps) {
-    const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
-    invariant(
-      isPlainObject(mergedProps),
-      '`mergeProps` must return an object. Instead received %s.',
-      mergedProps
-    )
-    return mergedProps
-  }
 
   return function wrapWithConnect(WrappedComponent) {
     class Connect extends Component {
@@ -88,11 +45,11 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         let mapStateProducedChange = false
         let dispatchPropsChanged = false
 
-        if (storeChanged || (propsChanged && shouldUpdateStateProps)) {
+        if (storeChanged || (propsChanged && this.shouldUpdateStateProps)) {
           mapStateProducedChange = this.updateStateProps(nextProps)
         }
 
-        if (propsChanged && shouldUpdateDispatchProps) {
+        if (propsChanged && this.shouldUpdateDispatchProps) {
           dispatchPropsChanged = this.updateDispatchProps(nextProps)
         }
 
@@ -116,22 +73,61 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
         )
 
-        this.stateProps = computeStateProps(this.store, props)
-        this.dispatchProps = computeDispatchProps(this.store, props)
+        this.configure()
+        this.stateProps = this.computeStateProps()
+        this.dispatchProps = this.computeDispatchProps()
         this.state = { storeState: null }
         this.updateState()
       }
 
-      computeNextState(props = this.props) {
-        return computeNextState(
-          this.stateProps,
-          this.dispatchProps,
-          props
+      configure() {
+        this.shouldSubscribe = Boolean(mapStateToPropsFactory)
+        this.finalMapStateToProps = finalMapStateToPropsFactory()
+        this.finalMapDispatchToProps = finalMapDispatchToPropsFactory()
+        this.shouldUpdateStateProps = this.finalMapStateToProps.length > 1
+        this.shouldUpdateDispatchProps = this.finalMapDispatchToProps.length > 1
+      }
+
+      computeStateProps(props = this.props) {
+        const state = this.store.getState()
+        const stateProps = this.shouldUpdateStateProps ?
+          this.finalMapStateToProps(state, props) :
+          this.finalMapStateToProps(state)
+
+        invariant(
+          isPlainObject(stateProps),
+          '`mapStateToProps` must return an object. Instead received %s.',
+          stateProps
         )
+        return stateProps
+      }
+
+      computeDispatchProps(props = this.props) {
+        const { dispatch } = this.store
+        const dispatchProps = this.shouldUpdateDispatchProps ?
+          this.finalMapDispatchToProps(dispatch, props) :
+          this.finalMapDispatchToProps(dispatch)
+
+        invariant(
+          isPlainObject(dispatchProps),
+          '`mapDispatchToProps` must return an object. Instead received %s.',
+          dispatchProps
+        )
+        return dispatchProps
+      }
+
+      computeNextState(parentProps = this.props) {
+        const mergedProps = finalMergeProps(this.stateProps, this.dispatchProps, parentProps)
+        invariant(
+          isPlainObject(mergedProps),
+          '`mergeProps` must return an object. Instead received %s.',
+          mergedProps
+        )
+        return mergedProps
       }
 
       updateStateProps(props = this.props) {
-        const nextStateProps = computeStateProps(this.store, props)
+        const nextStateProps = this.computeStateProps(props)
         if (shallowEqual(nextStateProps, this.stateProps)) {
           return false
         }
@@ -141,7 +137,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateDispatchProps(props = this.props) {
-        const nextDispatchProps = computeDispatchProps(this.store, props)
+        const nextDispatchProps = this.computeDispatchProps(props)
         if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false
         }
@@ -159,7 +155,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       trySubscribe() {
-        if (shouldSubscribe && !this.unsubscribe) {
+        if (this.shouldSubscribe && !this.unsubscribe) {
           this.unsubscribe = this.store.subscribe(::this.handleChange)
           this.handleChange()
         }
@@ -226,6 +222,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.version = version
 
         // Update the state and bindings.
+        this.configure()
         this.trySubscribe()
         this.updateStateProps()
         this.updateDispatchProps()
@@ -235,4 +232,16 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
     return hoistStatics(Connect, WrappedComponent)
   }
+}
+
+export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options) {
+  const configuredMapDispatch = isPlainObject(mapDispatchToProps) ? 
+    wrapActionCreators(mapDispatchToProps) : 
+    mapDispatchToProps
+  return connectFactory(
+    mapStateToProps ? () => mapStateToProps : null, 
+    configuredMapDispatch ? () => configuredMapDispatch : null, 
+    mergeProps, 
+    options
+  )
 }
