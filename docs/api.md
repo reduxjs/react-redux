@@ -67,6 +67,7 @@ Instead, it *returns* a new, connected component class, for you to use.
 * [`options`] *(Object)* If specified, further customizes the behavior of the connector.
   * [`pure = true`] *(Boolean)*: If true, implements `shouldComponentUpdate` and shallowly compares the result of `mergeProps`, preventing unnecessary updates, assuming that the component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state. *Defaults to `true`.*
   * [`withRef = false`] *(Boolean)*: If true, stores a ref to the wrapped component instance and makes it available via `getWrappedInstance()` method. *Defaults to `false`.*
+  * [`arePropsEqual = shallowEqual`] *(Function)*: Replaces the default equality comparison between props when determining if props have been updated. *Defaults to `shallowEqual` comparison.*
 
 #### Returns
 

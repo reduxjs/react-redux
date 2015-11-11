@@ -1369,5 +1369,57 @@ describe('React', () => {
       // But render is not because it did not make any actual changes
       expect(renderCalls).toBe(1)
     })
+
+    it('should accept arePropsEqual option for custom equality', () => {
+      const store = createStore(stringBuilder)
+      let renderCalls = 0
+      let mapStateCalls = 0
+
+      function deeperShallowEqual(maxDepth) {
+        return function eq(objA, objB, depth = 0) {
+          if (objA === objB) return true
+          if (depth > maxDepth) return objA === objB
+          const keysA = Object.keys(objA)
+          const keysB = Object.keys(objB)
+          if (keysA.length !== keysB.length) return false
+          const hasOwn = Object.prototype.hasOwnProperty
+          for (let i = 0; i < keysA.length; i++) {
+            if (!hasOwn.call(objB, keysA[i]) ||
+              !eq(objA[keysA[i]], objB[keysA[i]], depth + 1)) {
+              return false
+            }
+          }
+          return true
+        }
+      }
+
+      @connect((state, props) => {
+        mapStateCalls++
+        return { a: [ 1, 2, 3, 4 ], name: props.name } // no change with new equality comparison!
+      }, null, null, { arePropsEqual: deeperShallowEqual(1) })
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container name="test" />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(2)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+
+      // After store a change mapState has been called
+      expect(mapStateCalls).toBe(3)
+      // But render is not because it did not make any actual changes
+      expect(renderCalls).toBe(1)
+    })
+
   })
 })
