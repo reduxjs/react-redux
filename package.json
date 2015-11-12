@@ -3,6 +3,7 @@
   "version": "4.0.0",
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
+  "jsnext:main": "./src/index.js",
   "scripts": {
     "build:lib": "babel src --out-dir lib",
     "build:umd": "webpack src/index.js dist/react-redux.js --config webpack.config.development.js",
