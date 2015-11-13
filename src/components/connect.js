@@ -28,8 +28,8 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     wrapActionCreators(mapDispatchToProps) :
     mapDispatchToProps || defaultMapDispatchToProps
   const finalMergeProps = mergeProps || defaultMergeProps
-  const shouldUpdateStateProps = finalMapStateToProps.length > 1
-  const shouldUpdateDispatchProps = finalMapDispatchToProps.length > 1
+  const shouldUpdateStateProps = finalMapStateToProps.length !== 1
+  const shouldUpdateDispatchProps = finalMapDispatchToProps.length !== 1
   const { pure = true, withRef = false } = options
 
   // Helps track hot reloading.

@@ -426,10 +426,12 @@ describe('React', () => {
 
       let invocationCount = 0
 
-      @connect(() => {
+      /*eslint-disable no-unused-vars */
+      @connect((arg1) => {
         invocationCount++
         return {}
       })
+      /*eslint-enable no-unused-vars */
       class WithoutProps extends Component {
         render() {
           return <Passthrough {...this.props}/>
@@ -524,10 +526,12 @@ describe('React', () => {
 
       let invocationCount = 0
 
-      @connect(null, () => {
+      /*eslint-disable no-unused-vars */
+      @connect(null, (arg1) => {
         invocationCount++
         return {}
       })
+      /*eslint-enable no-unused-vars */
       class WithoutProps extends Component {
         render() {
           return <Passthrough {...this.props}/>
