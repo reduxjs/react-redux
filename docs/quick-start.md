@@ -1,16 +1,16 @@
 ## Quick Start
 
-React bindings for Redux embrace the idea of [dividing “smart” and “dumb” components](https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0).
+React bindings for Redux embrace the idea of [dividing container and presentational components](https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0).
 
-It is advisable that only top-level components of your app (such as route handlers, for example) are aware of Redux. Components below them should be “dumb” and receive all data via props.
+It is advisable that only top-level components of your app (such as route handlers, for example) are aware of Redux. Components below them should be presentational and receive all data via props.
 
 
 <table>
     <thead>
         <tr>
             <th></th>
-            <th scope="col" style="text-align:left">“Smart” Components</th>
-            <th scope="col" style="text-align:left">“Dumb” Components</th>
+            <th scope="col" style="text-align:left">Container Components</th>
+            <th scope="col" style="text-align:left">Presentational Components</th>
         </tr>
     </thead>
     <tbody>
@@ -37,9 +37,9 @@ It is advisable that only top-level components of your app (such as route handle
     </tbody>
 </table>
 
-### “Dumb” components are unaware of Redux
+### Presentational components are unaware of Redux
 
-Let’s say we have a `<Counter />` “dumb” component with a number `value` prop, and an `onIncrement` function prop that it will call when user presses an “Increment” button:
+Let’s say we have a `<Counter />` presentational component with a number `value` prop, and an `onIncrement` function prop that it will call when user presses an “Increment” button:
 
 ```js
 import React from 'react'
@@ -53,11 +53,11 @@ export default function Counter(props) {
 }
 ```
 
-### “Smart” components are `connect()`-ed to Redux
+### Container components are `connect()`-ed to Redux
 
 Here’s how we hook it up to the Redux Store.
 
-We will use the `connect()` function provided by `react-redux` to turn a “dumb” `Counter` into a smart component. The `connect()` function lets you specify *which exact* state from the Redux store your component wants to track. This lets you subscribe on any level of granularity.
+We will use the `connect()` function provided by `react-redux` to turn a presentational `Counter` into a container component. The `connect()` function lets you specify *which exact* state from the Redux store your component wants to track. This lets you subscribe on any level of granularity.
 
 ##### `containers/CounterContainer.js`
 
@@ -96,7 +96,7 @@ export default connect(
 // See more recipes in detailed connect() examples below.
 ```
 
-Whether to put the `connect()` call in the same file as the “dumb” component, or separately, is up to you.  
+Whether to put the `connect()` call in the same file as the presentational component, or separately, is up to you.  
 Ask yourself whether you’d want to reuse this component but bind it to different data, or not.
 
 ### Nesting
