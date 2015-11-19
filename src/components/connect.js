@@ -180,7 +180,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.tryUnsubscribe()
       }
 
-      handleChange() {
+      handleChange(instrumentationFn) {
         if (!this.unsubscribe) {
           return
         }
@@ -188,6 +188,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.setState({
           storeState: this.store.getState()
         })
+
+        if (typeof instrumentationFn === 'function') {
+          return instrumentationFn(
+            getDisplayName(WrappedComponent),
+            this.nextState,
+            this
+          );
+        }
       }
 
       getWrappedInstance() {
