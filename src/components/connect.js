@@ -118,7 +118,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         this.stateProps = computeStateProps(this.store, props)
         this.dispatchProps = computeDispatchProps(this.store, props)
-        this.state = { storeState: null }
+        this.state = { storeState: this.store.getState() }
         this.updateState()
       }
 

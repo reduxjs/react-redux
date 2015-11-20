@@ -464,7 +464,7 @@ describe('React', () => {
       outerComponent.setFoo('BAR')
       outerComponent.setFoo('DID')
 
-      expect(invocationCount).toEqual(2)
+      expect(invocationCount).toEqual(1)
     })
 
     it('should invoke mapState every time props are changed if it has a second argument', () => {
@@ -513,7 +513,7 @@ describe('React', () => {
       outerComponent.setFoo('BAR')
       outerComponent.setFoo('BAZ')
 
-      expect(invocationCount).toEqual(4)
+      expect(invocationCount).toEqual(3)
       expect(propsPassedIn).toEqual({
         foo: 'BAZ'
       })
@@ -714,12 +714,12 @@ describe('React', () => {
         div
       )
 
-      expect(mapStateToPropsCalls).toBe(2)
+      expect(mapStateToPropsCalls).toBe(1)
       const spy = expect.spyOn(console, 'error')
       store.dispatch({ type: 'APPEND', body: 'a' })
       spy.destroy()
       expect(spy.calls.length).toBe(0)
-      expect(mapStateToPropsCalls).toBe(2)
+      expect(mapStateToPropsCalls).toBe(1)
     })
 
     it('should shallowly compare the selected state to prevent unnecessary updates', () => {
@@ -1313,19 +1313,19 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      expect(childMapStateInvokes).toBe(2)
+      expect(childMapStateInvokes).toBe(1)
 
       // The store state stays consistent when setState calls are batched
       ReactDOM.unstable_batchedUpdates(() => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
-      expect(childMapStateInvokes).toBe(3)
+      expect(childMapStateInvokes).toBe(2)
 
       // setState calls DOM handlers are batched
       const container = TestUtils.findRenderedComponentWithType(tree, Container)
       const node = container.getWrappedInstance().refs.button
       TestUtils.Simulate.click(node)
-      expect(childMapStateInvokes).toBe(4)
+      expect(childMapStateInvokes).toBe(3)
 
       // In future all setState calls will be batched[1]. Uncomment when it
       // happens. For now redux-batched-updates middleware can be used as
@@ -1334,7 +1334,7 @@ describe('React', () => {
       // [1]: https://twitter.com/sebmarkbage/status/642366976824864768
       //
       // store.dispatch({ type: 'APPEND', body: 'd' })
-      // expect(childMapStateInvokes).toBe(5)
+      // expect(childMapStateInvokes).toBe(4)
     })
 
     it('should not render the wrapped component when mapState does not produce change', () => {
@@ -1360,12 +1360,12 @@ describe('React', () => {
       )
 
       expect(renderCalls).toBe(1)
-      expect(mapStateCalls).toBe(2)
+      expect(mapStateCalls).toBe(1)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
 
       // After store a change mapState has been called
-      expect(mapStateCalls).toBe(3)
+      expect(mapStateCalls).toBe(2)
       // But render is not because it did not make any actual changes
       expect(renderCalls).toBe(1)
     })
