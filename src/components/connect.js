@@ -21,7 +21,7 @@ function getDisplayName(WrappedComponent) {
 // Helps track hot reloading.
 let nextVersion = 0
 
-export function connectFactory(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
+export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
   const finalMergeProps = mergeProps || defaultMergeProps
   const finalMapStateToPropsFactory = mapStateToPropsFactory || () => defaultMapStateToProps
   const finalMapDispatchToPropsFactory = mapDispatchToPropsFactory || () => defaultMapDispatchToProps
@@ -235,13 +235,13 @@ export function connectFactory(mapStateToPropsFactory, mapDispatchToPropsFactory
 }
 
 export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options) {
-  const configuredMapDispatch = isPlainObject(mapDispatchToProps) ? 
-    wrapActionCreators(mapDispatchToProps) : 
+  const configuredMapDispatch = isPlainObject(mapDispatchToProps) ?
+    wrapActionCreators(mapDispatchToProps) :
     mapDispatchToProps
-  return connectFactory(
-    mapStateToProps ? () => mapStateToProps : null, 
-    configuredMapDispatch ? () => configuredMapDispatch : null, 
-    mergeProps, 
+  return connectComponent(
+    mapStateToProps ? () => mapStateToProps : null,
+    configuredMapDispatch ? () => configuredMapDispatch : null,
+    mergeProps,
     options
   )
 }
