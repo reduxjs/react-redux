@@ -1100,11 +1100,7 @@ describe('React', () => {
 
       expect(() =>
         TestUtils.renderIntoDocument(<Decorated />)
-      ).toThrow(
-        'Invariant Violation: Could not find "store" in either the context ' +
-        'or props of "Connect(Container)". Either wrap the root component in a ' +
-        '<Provider>, or explicitly pass "store" as a prop to "Connect(Container)".'
-      )
+      ).toThrow(/Could not find "store"/)
     })
 
     it('should throw when trying to access the wrapped instance if withRef is not specified', () => {
