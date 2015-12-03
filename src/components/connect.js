@@ -185,7 +185,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           return
         }
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           this.setState({
             storeState: this.store.getState()
           }, resolve)
