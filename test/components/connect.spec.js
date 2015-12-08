@@ -985,13 +985,14 @@ describe('React', () => {
 
       function imitateHotReloading(TargetClass, SourceClass) {
         // Crude imitation of hot reloading that does the job
-        Object.keys(SourceClass.prototype).filter(key =>
+        Object.getOwnPropertyNames(SourceClass.prototype).filter(key =>
           typeof SourceClass.prototype[key] === 'function'
         ).forEach(key => {
-          if (key !== 'render') {
+          if (key !== 'render' && key !== 'constructor') {
             TargetClass.prototype[key] = SourceClass.prototype[key]
           }
         })
+
         container.forceUpdate()
       }
 
