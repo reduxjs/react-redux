@@ -1,4 +1,23 @@
 {
-  "stage": 0,
-  "loose": "all"
+  "presets": ["es2015", "react", "stage-0"],
+  "plugins": [
+    "transform-react-jsx",
+    "transform-export-extensions",
+    "transform-class-constructor-call",
+    "transform-es2015-spread",
+    "transform-es2015-arrow-functions",
+    "transform-es2015-modules-commonjs",
+    "transform-es2015-parameters",
+    "transform-es2015-block-scoping",
+    "transform-es2015-classes",
+    "syntax-export-extensions",
+    "syntax-class-properties",
+    "syntax-class-constructor-call",
+    "syntax-jsx",
+    "check-es2015-constants",
+    "transform-es2015-destructuring",
+    "transform-es2015-literals",
+    "transform-es2015-shorthand-properties",
+    "transform-es2015-template-literals"
+  ]
 }
