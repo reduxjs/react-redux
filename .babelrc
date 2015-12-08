@@ -4,6 +4,7 @@
     "transform-react-jsx",
     "transform-class-properties",
     "transform-class-constructor-call",
+    "transform-decorators-legacy",
     "transform-export-extensions",
     "transform-class-constructor-call",
     "transform-es2015-spread",
