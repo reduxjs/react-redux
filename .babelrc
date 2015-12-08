@@ -1,7 +1,9 @@
 {
-  "presets": ["es2015", "react", "stage-0"],
+  "presets": ["es2015", "stage-0", "react"],
   "plugins": [
     "transform-react-jsx",
+    "transform-class-properties",
+    "transform-class-constructor-call",
     "transform-export-extensions",
     "transform-class-constructor-call",
     "transform-es2015-spread",
@@ -10,11 +12,6 @@
     "transform-es2015-parameters",
     "transform-es2015-block-scoping",
     "transform-es2015-classes",
-    "syntax-export-extensions",
-    "syntax-class-properties",
-    "syntax-class-constructor-call",
-    "syntax-jsx",
-    "check-es2015-constants",
     "transform-es2015-destructuring",
     "transform-es2015-literals",
     "transform-es2015-shorthand-properties",

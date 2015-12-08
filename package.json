@@ -48,6 +48,7 @@
     "babel-plugin-syntax-export-extensions": "^6.3.13",
     "babel-plugin-syntax-jsx": "^6.0.14",
     "babel-plugin-transform-class-constructor-call": "^6.3.13",
+    "babel-plugin-transform-class-properties": "^6.3.13",
     "babel-plugin-transform-es2015-arrow-functions": "^6.0.14",
     "babel-plugin-transform-es2015-block-scoping": "^6.3.13",
     "babel-plugin-transform-es2015-classes": "^6.3.15",
