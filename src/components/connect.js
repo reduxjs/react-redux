@@ -23,8 +23,8 @@ let nextVersion = 0
 
 export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
   const finalMergeProps = mergeProps || defaultMergeProps
-  const finalMapStateToPropsFactory = mapStateToPropsFactory || () => defaultMapStateToProps
-  const finalMapDispatchToPropsFactory = mapDispatchToPropsFactory || () => defaultMapDispatchToProps
+  const finalMapStateToPropsFactory = mapStateToPropsFactory || (() => defaultMapStateToProps)
+  const finalMapDispatchToPropsFactory = mapDispatchToPropsFactory || (() => defaultMapDispatchToProps)
   const { pure = true, withRef = false } = options
 
   // Helps track hot reloading.
