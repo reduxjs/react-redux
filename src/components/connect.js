@@ -239,8 +239,8 @@ export function connect(mapStateToProps, mapDispatchToProps, mergeProps, options
     wrapActionCreators(mapDispatchToProps) :
     mapDispatchToProps
   return connectComponent(
-    mapStateToProps ? () => mapStateToProps : null,
-    configuredMapDispatch ? () => configuredMapDispatch : null,
+    mapStateToProps ? (() => mapStateToProps) : null,
+    configuredMapDispatch ? (() => configuredMapDispatch) : null,
     mergeProps,
     options
   )
