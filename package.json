@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
   "jsnext:main": "./src/index.js",
