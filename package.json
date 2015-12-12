@@ -22,7 +22,8 @@
   "files": [
     "dist",
     "lib",
-    "src"
+    "src",
+    "native.js"
   ],
   "keywords": [
     "react",
