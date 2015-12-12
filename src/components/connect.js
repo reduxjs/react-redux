@@ -30,7 +30,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
   const finalMergeProps = mergeProps || defaultMergeProps
   const shouldUpdateStateProps = finalMapStateToProps.length > 1
   const shouldUpdateDispatchProps = finalMapDispatchToProps.length > 1
-  const { pure = true, withRef = false } = options
+  const { pure = true, withRef = false, arePropsEqual = shallowEqual } = options
 
   // Helps track hot reloading.
   const version = nextVersion++
@@ -84,7 +84,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         }
 
         const storeChanged = nextState.storeState !== this.state.storeState
-        const propsChanged = !shallowEqual(nextProps, this.props)
+        const propsChanged = !arePropsEqual(nextProps, this.props)
         let mapStateProducedChange = false
         let dispatchPropsChanged = false
 
@@ -132,7 +132,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
       updateStateProps(props = this.props) {
         const nextStateProps = computeStateProps(this.store, props)
-        if (shallowEqual(nextStateProps, this.stateProps)) {
+        if (arePropsEqual(nextStateProps, this.stateProps)) {
           return false
         }
 
@@ -142,7 +142,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
       updateDispatchProps(props = this.props) {
         const nextDispatchProps = computeDispatchProps(this.store, props)
-        if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
+        if (arePropsEqual(nextDispatchProps, this.dispatchProps)) {
           return false
         }
 
