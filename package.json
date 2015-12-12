@@ -20,6 +20,11 @@
     "type": "git",
     "url": "https://github.com/gaearon/react-redux.git"
   },
+  "files": [
+    "dist",
+    "lib",
+    "src"
+  ],
   "keywords": [
     "react",
     "reactjs",
