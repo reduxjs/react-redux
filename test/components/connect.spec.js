@@ -142,12 +142,12 @@ describe('React', () => {
         }
 
         render() {
-          expect(this.props.string).toBe('a');
+          expect(this.props.string).toBe('a')
           return <Passthrough {...this.props}/>
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(
+      TestUtils.renderIntoDocument(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
