@@ -142,6 +142,7 @@ describe('React', () => {
         }
 
         render() {
+          expect(this.props.string).toBe('a');
           return <Passthrough {...this.props}/>
         }
       }
@@ -151,9 +152,6 @@ describe('React', () => {
           <Container />
         </ProviderMock>
       )
-
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
-      expect(stub.props.string).toBe('a')
     })
 
     it('should handle additional prop changes in addition to slice', () => {
