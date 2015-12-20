@@ -513,7 +513,7 @@ describe('React', () => {
       outerComponent.setFoo('BAR')
       outerComponent.setFoo('DID')
 
-      expect(invocationCount).toEqual(4)
+      expect(invocationCount).toEqual(3)
     })
 
     it('should invoke mapState every time props are changed if it has a second argument', () => {
