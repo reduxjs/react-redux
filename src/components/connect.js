@@ -21,7 +21,7 @@ function getDisplayName(WrappedComponent) {
 // Helps track hot reloading.
 let nextVersion = 0
 
-export default function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
+export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
   const finalMapStateToPropsFactory = mapStateToPropsFactory || (() => defaultMapStateToProps)
   const finalMapDispatchToPropsFactory = mapDispatchToPropsFactory || (() => defaultMapDispatchToProps)
   const finalMergeProps = mergeProps || defaultMergeProps
