@@ -201,6 +201,44 @@ describe('React', () => {
       expect(stub.props.pass).toEqual('through')
     })
 
+    it('should handle unexpected prop changes with forceUpdate()', () => {
+      const store = createStore(() => ({}))
+
+      @connect(state => state)
+      class ConnectContainer extends Component {
+        render() {
+          return (
+            <Passthrough {...this.props} pass={this.props.bar} />
+          )
+        }
+      }
+
+      class Container extends Component {
+        constructor() {
+          super()
+          this.bar = 'baz'
+        }
+
+        componentDidMount() {
+          this.bar = 'foo'
+          this.forceUpdate()
+          this.c.forceUpdate()
+        }
+
+        render() {
+          return (
+            <ProviderMock store={store}>
+              <ConnectContainer bar={this.bar} ref={c => this.c = c} />
+            </ProviderMock>
+          )
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(<Container />)
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props.bar).toEqual('foo')
+    })
+
     it('should remove undefined props', () => {
       const store = createStore(() => ({}))
       let props = { x: true }
@@ -323,7 +361,7 @@ describe('React', () => {
           return (
             <ProviderMock store={store}>
               <ConnectContainer bar={this.state.bar} />
-             </ProviderMock>
+            </ProviderMock>
           )
         }
       }
