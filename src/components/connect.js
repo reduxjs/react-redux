@@ -1,4 +1,4 @@
-import React, { Component, createElement } from 'react'
+import { Component, createElement } from 'react'
 import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import isPlainObject from '../utils/isPlainObject'
