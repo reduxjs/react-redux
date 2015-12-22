@@ -323,7 +323,7 @@ describe('React', () => {
           return (
             <ProviderMock store={store}>
               <ConnectContainer bar={this.state.bar} />
-             </ProviderMock>
+            </ProviderMock>
           )
         }
       }
