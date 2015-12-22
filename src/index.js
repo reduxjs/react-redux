@@ -1,2 +1,2 @@
 export { default as Provider } from './components/Provider'
-export { connect, connectComponent } from './components/connect'
+export { connect, connectCreator } from './components/connect'

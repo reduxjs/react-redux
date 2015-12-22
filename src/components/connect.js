@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import { Component, createElement } from 'react'
 import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import isPlainObject from '../utils/isPlainObject'
@@ -21,10 +21,10 @@ function getDisplayName(WrappedComponent) {
 // Helps track hot reloading.
 let nextVersion = 0
 
-export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
-  const finalMergeProps = mergeProps || defaultMergeProps
+export default function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFactory, mergeProps, options = {}) {
   const finalMapStateToPropsFactory = mapStateToPropsFactory || (() => defaultMapStateToProps)
   const finalMapDispatchToPropsFactory = mapDispatchToPropsFactory || (() => defaultMapDispatchToProps)
+  const finalMergeProps = mergeProps || defaultMergeProps
   const { pure = true, withRef = false } = options
 
   // Helps track hot reloading.
@@ -32,33 +32,8 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
 
   return function wrapWithConnect(WrappedComponent) {
     class Connect extends Component {
-      shouldComponentUpdate(nextProps, nextState) {
-        if (!pure) {
-          this.updateStateProps(nextProps)
-          this.updateDispatchProps(nextProps)
-          this.updateState(nextProps)
-          return true
-        }
-
-        const storeChanged = nextState.storeState !== this.state.storeState
-        const propsChanged = !shallowEqual(nextProps, this.props)
-        let mapStateProducedChange = false
-        let dispatchPropsChanged = false
-
-        if (storeChanged || (propsChanged && this.shouldUpdateStateProps)) {
-          mapStateProducedChange = this.updateStateProps(nextProps)
-        }
-
-        if (propsChanged && this.shouldUpdateDispatchProps) {
-          dispatchPropsChanged = this.updateDispatchProps(nextProps)
-        }
-
-        if (propsChanged || mapStateProducedChange || dispatchPropsChanged) {
-          this.updateState(nextProps)
-          return true
-        }
-
-        return false
+      shouldComponentUpdate() {
+        return !pure || this.haveOwnPropsChanged || this.hasStoreStateChanged
       }
 
       constructor(props, context) {
@@ -74,23 +49,22 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
         )
 
         this.configure()
-        this.stateProps = this.computeStateProps()
-        this.dispatchProps = this.computeDispatchProps()
-        this.state = { storeState: null }
-        this.updateState()
+        const storeState = this.store.getState()
+        this.state = { storeState }
+        this.clearCache()
       }
 
       configure() {
         this.shouldSubscribe = Boolean(mapStateToPropsFactory)
         this.finalMapStateToProps = finalMapStateToPropsFactory()
         this.finalMapDispatchToProps = finalMapDispatchToPropsFactory()
-        this.shouldUpdateStateProps = this.finalMapStateToProps.length > 1
-        this.shouldUpdateDispatchProps = this.finalMapDispatchToProps.length > 1
+        this.doStatePropsDependOnOwnProps = this.finalMapStateToProps.length !== 1
+        this.doDispatchPropsDependOnOwnProps = this.finalMapDispatchToProps.length !== 1
       }
 
-      computeStateProps(props = this.props) {
-        const state = this.store.getState()
-        const stateProps = this.shouldUpdateStateProps ?
+      computeStateProps(store, props) {
+        const state = store.getState()
+        const stateProps = this.doStatePropsDependOnOwnProps ?
           this.finalMapStateToProps(state, props) :
           this.finalMapStateToProps(state)
 
@@ -102,9 +76,9 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
         return stateProps
       }
 
-      computeDispatchProps(props = this.props) {
-        const { dispatch } = this.store
-        const dispatchProps = this.shouldUpdateDispatchProps ?
+      computeDispatchProps(store, props) {
+        const { dispatch } = store
+        const dispatchProps = this.doDispatchPropsDependOnOwnProps ?
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
 
@@ -116,8 +90,8 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
         return dispatchProps
       }
 
-      computeNextState(parentProps = this.props) {
-        const mergedProps = finalMergeProps(this.stateProps, this.dispatchProps, parentProps)
+      computeMergedProps(stateProps, dispatchProps, parentProps) {
+        const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
         invariant(
           isPlainObject(mergedProps),
           '`mergeProps` must return an object. Instead received %s.',
@@ -126,9 +100,9 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
         return mergedProps
       }
 
-      updateStateProps(props = this.props) {
-        const nextStateProps = this.computeStateProps(props)
-        if (shallowEqual(nextStateProps, this.stateProps)) {
+      updateStatePropsIfNeeded() {
+        const nextStateProps = this.computeStateProps(this.store, this.props)
+        if (this.stateProps && shallowEqual(nextStateProps, this.stateProps)) {
           return false
         }
 
@@ -136,9 +110,9 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
         return true
       }
 
-      updateDispatchProps(props = this.props) {
-        const nextDispatchProps = this.computeDispatchProps(props)
-        if (shallowEqual(nextDispatchProps, this.dispatchProps)) {
+      updateDispatchPropsIfNeeded() {
+        const nextDispatchProps = this.computeDispatchProps(this.store, this.props)
+        if (this.dispatchProps && shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false
         }
 
@@ -146,8 +120,12 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
         return true
       }
 
-      updateState(props = this.props) {
-        this.nextState = this.computeNextState(props)
+      updateMergedProps() {
+        this.mergedProps = this.computeMergedProps(
+          this.stateProps,
+          this.dispatchProps,
+          this.props
+        )
       }
 
       isSubscribed() {
@@ -156,7 +134,7 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
 
       trySubscribe() {
         if (this.shouldSubscribe && !this.unsubscribe) {
-          this.unsubscribe = this.store.subscribe(::this.handleChange)
+          this.unsubscribe = this.store.subscribe(() => this.handleChange())
           this.handleChange()
         }
       }
@@ -172,8 +150,24 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
         this.trySubscribe()
       }
 
+      componentWillReceiveProps(nextProps) {
+        if (!pure || !shallowEqual(nextProps, this.props)) {
+          this.haveOwnPropsChanged = true
+        }
+      }
+
       componentWillUnmount() {
         this.tryUnsubscribe()
+        this.clearCache()
+      }
+
+      clearCache() {
+        this.dispatchProps = null
+        this.stateProps = null
+        this.mergedProps = null
+        this.haveOwnPropsChanged = true
+        this.hasStoreStateChanged = true
+        this.renderedElement = null
       }
 
       handleChange() {
@@ -181,9 +175,13 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
           return
         }
 
-        this.setState({
-          storeState: this.store.getState()
-        })
+        const prevStoreState = this.state.storeState
+        const storeState = this.store.getState()
+
+        if (!pure || prevStoreState !== storeState) {
+          this.hasStoreStateChanged = true
+          this.setState({ storeState })
+        }
       }
 
       getWrappedInstance() {
@@ -196,10 +194,61 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
       }
 
       render() {
-        const ref = withRef ? 'wrappedInstance' : null
-        return (
-          <WrappedComponent {...this.nextState} ref={ref} />
-        )
+        const {
+          haveOwnPropsChanged,
+          hasStoreStateChanged,
+          renderedElement
+        } = this
+
+        this.haveOwnPropsChanged = false
+        this.hasStoreStateChanged = false
+
+        let shouldUpdateStateProps = true
+        let shouldUpdateDispatchProps = true
+        if (pure && renderedElement) {
+          shouldUpdateStateProps = hasStoreStateChanged || (
+            haveOwnPropsChanged && this.doStatePropsDependOnOwnProps
+          )
+          shouldUpdateDispatchProps =
+            haveOwnPropsChanged && this.doDispatchPropsDependOnOwnProps
+        }
+
+        let haveStatePropsChanged = false
+        let haveDispatchPropsChanged = false
+        if (shouldUpdateStateProps) {
+          haveStatePropsChanged = this.updateStatePropsIfNeeded()
+        }
+        if (shouldUpdateDispatchProps) {
+          haveDispatchPropsChanged = this.updateDispatchPropsIfNeeded()
+        }
+
+        let haveMergedPropsChanged = true
+        if (
+          haveStatePropsChanged ||
+          haveDispatchPropsChanged ||
+          haveOwnPropsChanged
+        ) {
+          this.updateMergedProps()
+        } else {
+          haveMergedPropsChanged = false
+        }
+
+        if (!haveMergedPropsChanged && renderedElement) {
+          return renderedElement
+        }
+
+        if (withRef) {
+          this.renderedElement = createElement(WrappedComponent, {
+            ...this.mergedProps,
+            ref: 'wrappedInstance'
+          })
+        } else {
+          this.renderedElement = createElement(WrappedComponent,
+            this.mergedProps
+          )
+        }
+
+        return this.renderedElement
       }
     }
 
@@ -220,13 +269,9 @@ export function connectComponent(mapStateToPropsFactory, mapDispatchToPropsFacto
 
         // We are hot reloading!
         this.version = version
-
-        // Update the state and bindings.
         this.configure()
         this.trySubscribe()
-        this.updateStateProps()
-        this.updateDispatchProps()
-        this.updateState()
+        this.clearCache()
       }
     }
 

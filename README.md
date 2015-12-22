@@ -23,7 +23,7 @@ If you don’t yet use [npm](http://npmjs.com/) or a modern module bundler, and 
 
 ## React Native
 
-Until [React Native is compatible with React 0.14](https://github.com/facebook/react-native/issues/2985), you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/rackt/react-redux/tree/v3.1.0).
+Until [React Native works on top of React instead of shipping a fork of React](https://github.com/facebook/react-native/issues/2985), you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/rackt/react-redux/tree/v3.1.0).
 
 ## Documentation
 
