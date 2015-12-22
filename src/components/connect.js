@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import React, { Component, createElement } from 'react'
 import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import isPlainObject from '../utils/isPlainObject'
@@ -229,14 +229,21 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           haveMergedPropsChanged = false
         }
 
-        if (!haveMergedPropsChanged && this.renderedElement) {
-          return this.renderedElement
+        if (!haveMergedPropsChanged && renderedElement) {
+          return renderedElement
         }
 
-        const ref = withRef ? 'wrappedInstance' : null
-        this.renderedElement = (
-          <WrappedComponent {...this.mergedProps} ref={ref} />
-        )
+        if (withRef) {
+          this.renderedElement = createElement(WrappedComponent, {
+            ...this.mergedProps,
+            ref: 'wrappedInstance'
+          })
+        } else {
+          this.renderedElement = createElement(WrappedComponent,
+            this.mergedProps
+          )
+        }
+
         return this.renderedElement
       }
     }
