@@ -1,2 +1,4 @@
-export { default as Provider } from './components/Provider'
-export { default as connect } from './components/connect'
+import Provider from './components/Provider'
+import connect from './components/connect'
+
+export { Provider, connect }
