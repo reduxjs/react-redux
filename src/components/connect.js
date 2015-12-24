@@ -6,7 +6,7 @@ import wrapActionCreators from '../utils/wrapActionCreators'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 
-const defaultMapStateToProps = () => ({})
+const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
 const defaultMergeProps = (stateProps, dispatchProps, parentProps) => ({
   ...parentProps,
