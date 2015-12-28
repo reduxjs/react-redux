@@ -1,4 +1,4 @@
-import Provider from './components/Provider'
-import connect from './components/connect'
+const Provider = require('./components/Provider')
+const connect = require('./components/connect')
 
-export { Provider, connect }
+module.exports = { Provider, connect }

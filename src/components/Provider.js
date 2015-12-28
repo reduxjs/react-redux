@@ -1,5 +1,5 @@
-import { Component, PropTypes, Children } from 'react'
-import storeShape from '../utils/storeShape'
+const { Component, PropTypes, Children } = require('react')
+const storeShape = require('../utils/storeShape')
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
@@ -17,7 +17,7 @@ function warnAboutReceivingStore() {
   )
 }
 
-export default class Provider extends Component {
+class Provider extends Component {
   getChildContext() {
     return { store: this.store }
   }
@@ -49,3 +49,5 @@ Provider.propTypes = {
 Provider.childContextTypes = {
   store: storeShape.isRequired
 }
+
+module.exports = Provider

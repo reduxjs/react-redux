@@ -1,5 +1,7 @@
 import { bindActionCreators } from 'redux'
 
-export default function wrapActionCreators(actionCreators) {
+function wrapActionCreators(actionCreators) {
   return dispatch => bindActionCreators(actionCreators, dispatch)
 }
+
+module.exports = wrapActionCreators
