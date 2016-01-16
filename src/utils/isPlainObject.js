@@ -4,7 +4,7 @@ const fnToString = (fn) => Function.prototype.toString.call(fn)
  * @param {any} obj The object to inspect.
  * @returns {boolean} True if the argument appears to be a plain object.
  */
-function isPlainObject(obj) {
+export default function isPlainObject(obj) {
   if (!obj || typeof obj !== 'object') {
     return false
   }
@@ -23,5 +23,3 @@ function isPlainObject(obj) {
     && constructor instanceof constructor
     && fnToString(constructor) === fnToString(Object)
 }
-
-module.exports = isPlainObject
