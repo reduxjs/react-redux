@@ -1,6 +1,12 @@
 {
-  "presets": ["es2015-loose", "stage-0", "react"],
-  "plugins": [
-    "transform-decorators-legacy"
-  ]
+  "env": {
+    "development": {
+      "presets": ["es2015-loose", "stage-0", "react"],
+      "plugins": ["transform-decorators-legacy"]
+    },
+    "buildmodule": {
+      "presets": ["es2015-loose-rollup", "stage-0", "react"],
+      "plugins": ["transform-decorators-legacy"]
+    }
+  }
 }

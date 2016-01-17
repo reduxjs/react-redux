@@ -3,13 +3,14 @@
   "version": "4.0.6",
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
-  "jsnext:main": "./src/index.js",
+  "jsnext:main": "./mod/index.js",
   "scripts": {
     "build:lib": "babel src --out-dir lib",
+    "build:mod": "BABEL_ENV=buildmodule babel src --out-dir mod",
     "build:umd": "webpack src/index.js dist/react-redux.js --config webpack.config.development.js",
     "build:umd:min": "webpack src/index.js dist/react-redux.min.js --config webpack.config.production.js",
-    "build": "npm run build:lib && npm run build:umd && npm run build:umd:min",
-    "clean": "rimraf lib dist coverage",
+    "build": "npm run build:lib && npm run build:mod && npm run build:umd && npm run build:umd:min",
+    "clean": "rimraf lib mod dist coverage",
     "lint": "eslint src test",
     "prepublish": "npm run clean && npm run build",
     "test": "mocha --compilers js:babel-core/register --recursive --require ./test/setup.js",
@@ -23,7 +24,7 @@
   "files": [
     "dist",
     "lib",
-    "src"
+    "mod"
   ],
   "keywords": [
     "react",
@@ -49,6 +50,7 @@
     "babel-loader": "^6.2.0",
     "babel-plugin-transform-decorators-legacy": "^1.2.0",
     "babel-preset-es2015-loose": "^6.1.4",
+    "babel-preset-es2015-loose-rollup": "^7.0.0",
     "babel-preset-react": "^6.3.13",
     "babel-preset-stage-0": "^6.3.13",
     "eslint": "^1.7.1",
