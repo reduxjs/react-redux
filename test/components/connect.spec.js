@@ -14,10 +14,6 @@ describe('React', () => {
     }
 
     class ProviderMock extends Component {
-      static childContextTypes = {
-        store: PropTypes.object.isRequired
-      }
-
       getChildContext() {
         return { store: this.props.store }
       }
@@ -25,6 +21,10 @@ describe('React', () => {
       render() {
         return Children.only(this.props.children)
       }
+    }
+
+    ProviderMock.childContextTypes = {
+      store: PropTypes.object.isRequired
     }
 
     function stringBuilder(prev = '', action) {
@@ -1184,13 +1184,13 @@ describe('React', () => {
 
     it('should hoist non-react statics from wrapped component', () => {
       class Container extends Component {
-        static howIsRedux = () => 'Awesome!'
-        static foo = 'bar'
-
         render() {
           return <Passthrough />
         }
       }
+
+      Container.howIsRedux = () => 'Awesome!'
+      Container.foo = 'bar'
 
       const decorator = connect(state => state)
       const decorated = decorator(Container)
@@ -1304,25 +1304,22 @@ describe('React', () => {
       const store = createStore(() => ({}))
 
       class ImpureComponent extends Component {
-        static contextTypes = {
-          statefulValue: React.PropTypes.number
-        }
-
         render() {
           return <Passthrough statefulValue={this.context.statefulValue} />
         }
+      }
+
+      ImpureComponent.contextTypes = {
+        statefulValue: React.PropTypes.number
       }
 
       const decorator = connect(state => state, null, null, { pure: false })
       const Decorated = decorator(ImpureComponent)
 
       class StatefulWrapper extends Component {
-        state = {
-          value: 0
-        }
-
-        static childContextTypes = {
-          statefulValue: React.PropTypes.number
+        constructor() {
+          super()
+          this.state = { value: 0 }
         }
 
         getChildContext() {
@@ -1334,6 +1331,10 @@ describe('React', () => {
         render() {
           return <Decorated />
         }
+      }
+
+      StatefulWrapper.childContextTypes = {
+        statefulValue: React.PropTypes.number
       }
 
       const tree = TestUtils.renderIntoDocument(
@@ -1376,14 +1377,17 @@ describe('React', () => {
       const Decorated = decorator(ImpureComponent)
 
       class StatefulWrapper extends Component {
-        state = {
-          storeGetter: { storeKey: 'foo' }
+        constructor() {
+          super()
+          this.state = {
+            storeGetter: { storeKey: 'foo' }
+          }
         }
-
         render() {
           return <Decorated storeGetter={this.state.storeGetter} />
         }
       }
+
 
       const tree = TestUtils.renderIntoDocument(
         <ProviderMock store={store}>

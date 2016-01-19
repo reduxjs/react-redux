@@ -7,13 +7,14 @@ import { Provider } from '../../src/index'
 describe('React', () => {
   describe('Provider', () => {
     class Child extends Component {
-      static contextTypes = {
-        store: PropTypes.object.isRequired
-      }
 
       render() {
         return <div />
       }
+    }
+
+    Child.contextTypes = {
+      store: PropTypes.object.isRequired
     }
 
     it('should enforce a single child', () => {
@@ -68,8 +69,10 @@ describe('React', () => {
       const store3 = createStore((state = 10) => state * state)
 
       class ProviderContainer extends Component {
-        state = { store: store1 }
-
+        constructor() {
+          super()
+          this.state = { store: store1 }
+        }
         render() {
           return (
             <Provider store={this.state.store}>
