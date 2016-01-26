@@ -1267,7 +1267,7 @@ describe('React', () => {
       )
     })
 
-    it('should return the instance of the wrapped component for use in calling child methods', () => {
+    it('should return the instance of the wrapped component with its child custom methods', () => {
       const store = createStore(() => ({}))
 
       const someData = {
@@ -1295,7 +1295,7 @@ describe('React', () => {
 
       const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated)
 
-      expect(() => decorated.someInstanceMethod()).toThrow()
+      expect(decorated.someInstanceMethod()).toBe(someData)
       expect(decorated.getWrappedInstance().someInstanceMethod()).toBe(someData)
       expect(decorated.refs.wrappedInstance.someInstanceMethod()).toBe(someData)
     })

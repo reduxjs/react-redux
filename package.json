@@ -67,7 +67,7 @@
     "webpack": "^1.11.0"
   },
   "dependencies": {
-    "hoist-non-react-statics": "^1.0.3",
+    "hoist-non-react-methods": "^1.0.2",
     "invariant": "^2.0.0"
   },
   "peerDependencies": {
