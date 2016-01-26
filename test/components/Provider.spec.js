@@ -14,7 +14,7 @@ describe('React', () => {
     }
 
     Child.contextTypes = {
-      store: PropTypes.object.isRequired
+      redux: PropTypes.object.isRequired
     }
 
     it('should enforce a single child', () => {
@@ -60,7 +60,7 @@ describe('React', () => {
       expect(spy.calls.length).toBe(0)
 
       const child = TestUtils.findRenderedComponentWithType(tree, Child)
-      expect(child.context.store).toBe(store)
+      expect(child.context.redux).toBe(store)
     })
 
     it('should warn once when receiving a new store in props', () => {
@@ -84,13 +84,13 @@ describe('React', () => {
 
       const container = TestUtils.renderIntoDocument(<ProviderContainer />)
       const child = TestUtils.findRenderedComponentWithType(container, Child)
-      expect(child.context.store.getState()).toEqual(11)
+      expect(child.context.redux.getState()).toEqual(11)
 
       let spy = expect.spyOn(console, 'error')
       container.setState({ store: store2 })
       spy.destroy()
 
-      expect(child.context.store.getState()).toEqual(11)
+      expect(child.context.redux.getState()).toEqual(11)
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toBe(
         '<Provider> does not support changing `store` on the fly. ' +
@@ -104,7 +104,7 @@ describe('React', () => {
       container.setState({ store: store3 })
       spy.destroy()
 
-      expect(child.context.store.getState()).toEqual(11)
+      expect(child.context.redux.getState()).toEqual(11)
       expect(spy.calls.length).toBe(0)
     })
   })

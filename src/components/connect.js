@@ -82,10 +82,10 @@ function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) 
       constructor(props, context) {
         super(props, context)
         this.version = version
-        this.store = props.store || context.store
+        this.store = props.store || context.redux
 
         invariant(this.store,
-          `Could not find "store" in either the context or ` +
+          `Could not find "redux" in the context or "store" in the ` +
           `props of "${this.constructor.displayName}". ` +
           `Either wrap the root component in a <Provider>, ` +
           `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
@@ -251,7 +251,7 @@ function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) 
     Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`
     Connect.WrappedComponent = WrappedComponent
     Connect.contextTypes = {
-      store: storeShape
+      redux: storeShape
     }
     Connect.propTypes = {
       store: storeShape

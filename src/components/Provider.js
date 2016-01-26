@@ -19,7 +19,7 @@ function warnAboutReceivingStore() {
 
 class Provider extends Component {
   getChildContext() {
-    return { store: this.store }
+    return { redux: this.store }
   }
 
   constructor(props, context) {
@@ -47,7 +47,7 @@ Provider.propTypes = {
   children: PropTypes.element.isRequired
 }
 Provider.childContextTypes = {
-  store: storeShape.isRequired
+  redux: storeShape.isRequired
 }
 
 module.exports = Provider
