@@ -15,7 +15,7 @@ describe('React', () => {
 
     class ProviderMock extends Component {
       getChildContext() {
-        return { store: this.props.store }
+        return { redux: this.props.store }
       }
 
       render() {
@@ -24,7 +24,7 @@ describe('React', () => {
     }
 
     ProviderMock.childContextTypes = {
-      store: PropTypes.object.isRequired
+      redux: PropTypes.object.isRequired
     }
 
     function stringBuilder(prev = '', action) {
@@ -50,7 +50,7 @@ describe('React', () => {
       )
 
       const container = TestUtils.findRenderedComponentWithType(tree, Container)
-      expect(container.context.store).toBe(store)
+      expect(container.context.redux).toBe(store)
     })
 
     it('should pass state and props to the given component', () => {
@@ -1239,7 +1239,7 @@ describe('React', () => {
       expect(() =>
         TestUtils.renderIntoDocument(<Decorated />)
       ).toThrow(
-        /Could not find "store"/
+        /Could not find "redux"/
       )
     })
 
