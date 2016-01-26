@@ -3,8 +3,8 @@ const storeShape = require('../utils/storeShape')
 const shallowEqual = require('../utils/shallowEqual')
 const isPlainObject = require('../utils/isPlainObject')
 const wrapActionCreators = require('../utils/wrapActionCreators')
-const hoistStatics = require('hoist-non-react-statics')
 const invariant = require('invariant')
+import hoistMethods from 'hoist-non-react-methods'
 
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
@@ -270,7 +270,7 @@ function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) 
       }
     }
 
-    return hoistStatics(Connect, WrappedComponent)
+    return hoistMethods(Connect, WrappedComponent, w => w.getWrappedInstance())
   }
 }
 
