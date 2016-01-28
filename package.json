@@ -73,5 +73,10 @@
   "peerDependencies": {
     "react": "^0.14.0",
     "redux": "^2.0.0 || ^3.0.0"
+  },
+  "browserify": {
+    "transform": [
+      "loose-envify"
+    ]
   }
 }
