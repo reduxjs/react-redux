@@ -68,7 +68,8 @@
   },
   "dependencies": {
     "hoist-non-react-statics": "^1.0.3",
-    "invariant": "^2.0.0"
+    "invariant": "^2.0.0",
+    "loose-envify": "^1.1.0"
   },
   "peerDependencies": {
     "react": "^0.14.0",
