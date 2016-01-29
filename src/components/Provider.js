@@ -1,20 +1,28 @@
 const { Component, PropTypes, Children } = require('react')
 const storeShape = require('../utils/storeShape')
 
-let didWarnAboutReceivingStore = false
-function warnAboutReceivingStore() {
-  if (didWarnAboutReceivingStore) {
-    return
-  }
+if (process.env.NODE_ENV !== 'production') {
+  let didWarnAboutReceivingStore = false
+  /* eslint-disable no-var */
+  var warnAboutReceivingStore = function () {
+    /* eslint-enable no-var */
+    if (didWarnAboutReceivingStore) {
+      return
+    }
+    didWarnAboutReceivingStore = true
 
-  didWarnAboutReceivingStore = true
-  console.error( // eslint-disable-line no-console
-    '<Provider> does not support changing `store` on the fly. ' +
-    'It is most likely that you see this error because you updated to ' +
-    'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
-    'automatically. See https://github.com/rackt/react-redux/releases/' +
-    'tag/v2.0.0 for the migration instructions.'
-  )
+    /* eslint-disable no-console */
+    if (typeof console !== 'undefined' && typeof console.error === 'function') {
+      console.error(
+        '<Provider> does not support changing `store` on the fly. ' +
+        'It is most likely that you see this error because you updated to ' +
+        'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
+        'automatically. See https://github.com/rackt/react-redux/releases/' +
+        'tag/v2.0.0 for the migration instructions.'
+      )
+    }
+    /* eslint-disable no-console */
+  }
 }
 
 class Provider extends Component {
@@ -27,18 +35,20 @@ class Provider extends Component {
     this.store = props.store
   }
 
-  componentWillReceiveProps(nextProps) {
+  render() {
+    let { children } = this.props
+    return Children.only(children)
+  }
+}
+
+if (process.env.NODE_ENV !== 'production') {
+  Provider.prototype.componentWillReceiveProps = function (nextProps) {
     const { store } = this
     const { store: nextStore } = nextProps
 
     if (store !== nextStore) {
       warnAboutReceivingStore()
     }
-  }
-
-  render() {
-    let { children } = this.props
-    return Children.only(children)
   }
 }
 
