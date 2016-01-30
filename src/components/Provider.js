@@ -1,5 +1,5 @@
-const { Component, PropTypes, Children } = require('react')
-const storeShape = require('../utils/storeShape')
+import { Component, PropTypes, Children } from 'react'
+import storeShape from '../utils/storeShape'
 
 if (process.env.NODE_ENV !== 'production') {
   let didWarnAboutReceivingStore = false
@@ -25,7 +25,7 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
-class Provider extends Component {
+export default class Provider extends Component {
   getChildContext() {
     return { store: this.store }
   }
@@ -59,5 +59,3 @@ Provider.propTypes = {
 Provider.childContextTypes = {
   store: storeShape.isRequired
 }
-
-module.exports = Provider

@@ -1,10 +1,10 @@
-const { Component, createElement } = require('react')
-const storeShape = require('../utils/storeShape')
-const shallowEqual = require('../utils/shallowEqual')
-const isPlainObject = require('../utils/isPlainObject')
-const wrapActionCreators = require('../utils/wrapActionCreators')
-const hoistStatics = require('hoist-non-react-statics')
-const invariant = require('invariant')
+import { Component, createElement } from 'react'
+import storeShape from '../utils/storeShape'
+import shallowEqual from '../utils/shallowEqual'
+import isPlainObject from '../utils/isPlainObject'
+import wrapActionCreators from '../utils/wrapActionCreators'
+import hoistStatics from 'hoist-non-react-statics'
+import invariant from 'invariant'
 
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
@@ -21,7 +21,7 @@ function getDisplayName(WrappedComponent) {
 // Helps track hot reloading.
 let nextVersion = 0
 
-function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
+export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
   const finalMapStateToProps = mapStateToProps || defaultMapStateToProps
   const finalMapDispatchToProps = isPlainObject(mapDispatchToProps) ?
@@ -273,5 +273,3 @@ function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) 
     return hoistStatics(Connect, WrappedComponent)
   }
 }
-
-module.exports = connect
