@@ -6,8 +6,8 @@
   "jsnext:main": "./src/index.js",
   "scripts": {
     "build:lib": "babel src --out-dir lib",
-    "build:umd": "webpack src/index.js dist/react-redux.js --config webpack.config.development.js",
-    "build:umd:min": "webpack src/index.js dist/react-redux.min.js --config webpack.config.production.js",
+    "build:umd": "cross-env NODE_ENV=development webpack src/index.js dist/react-redux.js",
+    "build:umd:min": "cross-env NODE_ENV=production webpack src/index.js dist/react-redux.min.js",
     "build": "npm run build:lib && npm run build:umd && npm run build:umd:min",
     "clean": "rimraf lib dist coverage",
     "lint": "eslint src test",
@@ -51,6 +51,7 @@
     "babel-preset-es2015-loose": "^6.1.4",
     "babel-preset-react": "^6.3.13",
     "babel-preset-stage-0": "^6.3.13",
+    "cross-env": "^1.0.7",
     "eslint": "^1.7.1",
     "eslint-config-rackt": "1.1.0",
     "eslint-plugin-react": "^3.6.3",
