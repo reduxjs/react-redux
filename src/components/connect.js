@@ -1,8 +1,8 @@
 const { Component, createElement } = require('react')
 const storeShape = require('../utils/storeShape')
 const shallowEqual = require('../utils/shallowEqual')
-const isPlainObject = require('../utils/isPlainObject')
 const wrapActionCreators = require('../utils/wrapActionCreators')
+const isPlainObject = require('lodash/isPlainObject')
 const hoistStatics = require('hoist-non-react-statics')
 const invariant = require('invariant')
 
