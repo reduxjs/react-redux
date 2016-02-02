@@ -45,7 +45,7 @@
   "devDependencies": {
     "babel-cli": "^6.3.17",
     "babel-core": "^6.3.26",
-    "babel-eslint": "^5.0.0-beta4",
+    "babel-eslint": "^5.0.0-beta9",
     "babel-loader": "^6.2.0",
     "babel-plugin-transform-decorators-legacy": "^1.2.0",
     "babel-preset-es2015-loose": "^6.1.4",
