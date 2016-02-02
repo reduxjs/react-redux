@@ -27,7 +27,7 @@ Until [React Native works on top of React instead of shipping a fork of React](h
 
 ## Documentation
 
-- [Quick Start](docs/quick-start.md#quick-start)
+- [Redux: Usage with React](http://redux.js.org/docs/basics/UsageWithReact.html)
 - [API](docs/api.md#api)
   - [`<Provider store>`](docs/api.md#provider-store)
   - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](docs/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
