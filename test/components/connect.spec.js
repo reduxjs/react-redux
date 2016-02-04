@@ -39,7 +39,7 @@ describe('React', () => {
       @connect()
       class Container extends Component {
         render() {
-          return <div {...this.props} />
+          return <Passthrough {...this.props} />
         }
       }
 
@@ -1534,7 +1534,7 @@ describe('React', () => {
           updatedCount++
         }
         render() {
-          return <div {...this.props} />
+          return <Passthrough {...this.props} />
         }
       }
 
@@ -1612,5 +1612,32 @@ describe('React', () => {
       expect(memoizedReturnCount).toBe(2)
     })
 
+    it('should not call update if mergeProps return value has not changed', () => {
+      let mapStateCalls = 0
+      let renderCalls = 0
+      const store = createStore(stringBuilder)
+
+      @connect(() => ({ a: ++mapStateCalls }), null, () => ({ changed: false }))
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(1)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+
+      expect(mapStateCalls).toBe(2)
+      expect(renderCalls).toBe(1)
+    })
   })
 })

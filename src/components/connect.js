@@ -82,6 +82,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         if (!this.finalMapStateToProps) {
           return this.configureFinalMapState(store, props)
         }
+
         const state = store.getState()
         const stateProps = this.doStatePropsDependOnOwnProps ?
           this.finalMapStateToProps(state, props) :
@@ -93,28 +94,38 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       configureFinalMapState(store, props) {
         const mappedState = mapState(store.getState(), props)
         const isFactory = typeof mappedState === 'function'
+
         this.finalMapStateToProps = isFactory ? mappedState : mapState
         this.doStatePropsDependOnOwnProps = this.finalMapStateToProps.length !== 1
-        return isFactory ? this.computeStateProps(store, props) : checkStateShape(mappedState)
+
+        return isFactory ?
+          this.computeStateProps(store, props) :
+          checkStateShape(mappedState)
       }
 
       computeDispatchProps(store, props) {
         if (!this.finalMapDispatchToProps) {
           return this.configureFinalMapDispatch(store, props)
         }
+
         const { dispatch } = store
         const dispatchProps = this.doDispatchPropsDependOnOwnProps ?
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
+
         return checkStateShape(dispatchProps, true)
       }
 
       configureFinalMapDispatch(store, props) {
         const mappedDispatch = mapDispatch(store.dispatch, props)
         const isFactory = typeof mappedDispatch === 'function'
+
         this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
         this.doDispatchPropsDependOnOwnProps = this.finalMapDispatchToProps.length !== 1
-        return isFactory ? this.computeDispatchProps(store, props) : checkStateShape(mappedDispatch, true)
+
+        return isFactory ?
+          this.computeDispatchProps(store, props) :
+          checkStateShape(mappedDispatch, true)
       }
 
       updateStatePropsIfNeeded() {
