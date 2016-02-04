@@ -39,7 +39,7 @@ describe('React', () => {
       @connect()
       class Container extends Component {
         render() {
-          return <div {...this.props} />
+          return <Passthrough {...this.props} />
         }
       }
 
@@ -1507,6 +1507,136 @@ describe('React', () => {
       // After store a change mapState has been called
       expect(mapStateCalls).toBe(2)
       // But render is not because it did not make any actual changes
+      expect(renderCalls).toBe(1)
+    })
+
+    it('should allow providing a factory function to mapStateToProps', () => {
+      let updatedCount = 0
+      let memoizedReturnCount = 0
+      const store = createStore(() => ({ value: 1 }))
+
+      const mapStateFactory = () => {
+        let lastProp, lastVal, lastResult
+        return (state, props) => {
+          if (props.name === lastProp && lastVal === state.value) {
+            memoizedReturnCount++
+            return lastResult
+          }
+          lastProp = props.name
+          lastVal = state.value
+          return lastResult = { someObject: { prop: props.name, stateVal: state.value } }
+        }
+      }
+
+      @connect(mapStateFactory)
+      class Container extends Component {
+        componentWillUpdate() {
+          updatedCount++
+        }
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Container name="a" />
+            <Container name="b" />
+          </div>
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(0)
+      expect(memoizedReturnCount).toBe(2)
+    })
+
+    it('should allow providing a factory function to mapDispatchToProps', () => {
+      let updatedCount = 0
+      let memoizedReturnCount = 0
+      const store = createStore(() => ({ value: 1 }))
+
+      const mapDispatchFactory = () => {
+        let lastProp, lastResult
+        return (dispatch, props) => {
+          if (props.name === lastProp) {
+            memoizedReturnCount++
+            return lastResult
+          }
+          lastProp = props.name
+          return lastResult = { someObject: { dispatchFn: dispatch } }
+        }
+      }
+      function mergeParentDispatch(stateProps, dispatchProps, parentProps) {
+        return { ...stateProps, ...dispatchProps, name: parentProps.name }
+      }
+
+      @connect(null, mapDispatchFactory, mergeParentDispatch)
+      class Passthrough extends Component {
+        componentWillUpdate() {
+          updatedCount++
+        }
+        render() {
+          return <div {...this.props} />
+        }
+      }
+
+      class Container extends Component {
+        constructor(props) {
+          super(props)
+          this.state = { count: 0 }
+        }
+        componentDidMount() {
+          this.setState({ count: 1 })
+        }
+        render() {
+          const { count } = this.state
+          return (
+            <div>
+              <Passthrough count={count} name="a" />
+              <Passthrough count={count} name="b" />
+            </div>
+          )
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(0)
+      expect(memoizedReturnCount).toBe(2)
+    })
+
+    it('should not call update if mergeProps return value has not changed', () => {
+      let mapStateCalls = 0
+      let renderCalls = 0
+      const store = createStore(stringBuilder)
+
+      @connect(() => ({ a: ++mapStateCalls }), null, () => ({ changed: false }))
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(1)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+
+      expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
     })
   })
