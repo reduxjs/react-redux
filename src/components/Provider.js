@@ -1,5 +1,6 @@
 import { Component, PropTypes, Children } from 'react'
 import storeShape from '../utils/storeShape'
+import batchedUpdates from '../utils/batchedUpdates'
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
@@ -21,6 +22,65 @@ function warnAboutReceivingStore() {
   /* eslint-disable no-console */
 }
 
+function batchListenerCalls(store) {
+  let currentListeners = []
+  let nextListeners = currentListeners
+
+  const ensureCanMutateNextListeners = () => {
+    if (nextListeners === currentListeners) {
+      nextListeners = currentListeners.slice()
+    }
+  }
+
+  let notifyListeners = () => {
+    const listeners = currentListeners = nextListeners
+    for (let i = 0; i < listeners.length; i++) {
+      listeners[i]()
+    }
+  }
+
+  let batchListener = () => {
+    batchedUpdates(notifyListeners)
+  }
+
+  let unsubscribeBatchListener
+
+  return {
+    ...store,
+    subscribe(listener) {
+      if (typeof listener !== 'function') {
+        throw new Error('Expected listener to be a function.')
+      }
+
+      let isSubscribed = true
+
+      ensureCanMutateNextListeners()
+      nextListeners.push(listener)
+
+      if (!unsubscribeBatchListener) {
+        unsubscribeBatchListener = store.subscribe(batchListener)
+      }
+
+      return () => {
+        if (!isSubscribed) {
+          return
+        }
+
+        isSubscribed = false
+
+        ensureCanMutateNextListeners()
+        const index = nextListeners.indexOf(listener)
+        nextListeners.splice(index, 1)
+
+        if (!nextListeners.length && unsubscribeBatchListener) {
+          unsubscribeBatchListener()
+          unsubscribeBatchListener = null
+        }
+      }
+    }
+  }
+}
+
 export default class Provider extends Component {
   getChildContext() {
     return { store: this.store }
@@ -28,7 +88,7 @@ export default class Provider extends Component {
 
   constructor(props, context) {
     super(props, context)
-    this.store = props.store
+    this.store = batchListenerCalls(props.store)
   }
 
   render() {

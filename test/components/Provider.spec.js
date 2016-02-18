@@ -1,8 +1,9 @@
 import expect from 'expect'
 import React, { PropTypes, Component } from 'react'
+import ReactDOM from 'react-dom'
 import TestUtils from 'react-addons-test-utils'
 import { createStore } from 'redux'
-import { Provider } from '../../src/index'
+import { Provider, connect } from '../../src/index'
 
 describe('React', () => {
   describe('Provider', () => {
@@ -60,7 +61,10 @@ describe('React', () => {
       expect(spy.calls.length).toBe(0)
 
       const child = TestUtils.findRenderedComponentWithType(tree, Child)
-      expect(child.context.store).toBe(store)
+      expect(child.context.store).toExist()
+      expect(child.context.store.dispatch).toBeA('function')
+      expect(child.context.store.getState).toBeA('function')
+      expect(child.context.store.subscribe).toBeA('function')
     })
 
     it('should warn once when receiving a new store in props', () => {
@@ -106,6 +110,71 @@ describe('React', () => {
 
       expect(child.context.store.getState()).toEqual(11)
       expect(spy.calls.length).toBe(0)
+    })
+
+    it('should pass state consistently to mapState', () => {
+      function stringBuilder(prev = '', action) {
+        return action.type === 'APPEND'
+          ? prev + action.body
+          : prev
+      }
+
+      const store = createStore(stringBuilder)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      let childMapStateInvokes = 0
+
+      @connect(state => ({ state }), null, null, { withRef: true })
+      class Container extends Component {
+        emitChange() {
+          store.dispatch({ type: 'APPEND', body: 'b' })
+        }
+
+        render() {
+          return (
+            <div>
+              <button ref="button" onClick={this.emitChange.bind(this)}>change</button>
+              <ChildContainer parentState={this.props.state} />
+            </div>
+          )
+        }
+      }
+
+      @connect((state, parentProps) => {
+        childMapStateInvokes++
+        // The state from parent props should always be consistent with the current state
+        expect(state).toEqual(parentProps.parentState)
+        return {}
+      })
+      class ChildContainer extends Component {
+        render() {
+          return <div {...this.props} />
+        }
+      }
+
+      const tree = TestUtils.renderIntoDocument(
+        <Provider store={store}>
+          <Container />
+        </Provider>
+      )
+
+      expect(childMapStateInvokes).toBe(1)
+
+      // The store state stays consistent when setState calls are batched
+      ReactDOM.unstable_batchedUpdates(() => {
+        store.dispatch({ type: 'APPEND', body: 'c' })
+      })
+      expect(childMapStateInvokes).toBe(2)
+
+      // setState calls DOM handlers are batched
+      const container = TestUtils.findRenderedComponentWithType(tree, Container)
+      const node = container.getWrappedInstance().refs.button
+      TestUtils.Simulate.click(node)
+      expect(childMapStateInvokes).toBe(3)
+
+      // Provider uses unstable_batchedUpdates() under the hood
+      store.dispatch({ type: 'APPEND', body: 'd' })
+      expect(childMapStateInvokes).toBe(4)
     })
   })
 })

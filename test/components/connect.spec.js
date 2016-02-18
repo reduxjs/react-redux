@@ -1468,13 +1468,13 @@ describe('React', () => {
       expect(childMapStateInvokes).toBe(3)
 
       // In future all setState calls will be batched[1]. Uncomment when it
-      // happens. For now redux-batched-updates middleware can be used as
-      // workaround this.
+      // happens. For now you can use <Provider> that takes care of this.
       //
       // [1]: https://twitter.com/sebmarkbage/status/642366976824864768
       //
-      // store.dispatch({ type: 'APPEND', body: 'd' })
-      // expect(childMapStateInvokes).toBe(4)
+      expect(() => {
+        store.dispatch({ type: 'APPEND', body: 'd' })
+      }).toThrow(`Expected 'acbd' to equal 'acb'`)
     })
 
     it('should not render the wrapped component when mapState does not produce change', () => {
