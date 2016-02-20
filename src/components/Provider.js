@@ -32,7 +32,7 @@ export default class Provider extends Component {
   }
 
   render() {
-    let { children } = this.props
+    const { children } = this.props
     return Children.only(children)
   }
 }
