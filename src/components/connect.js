@@ -76,6 +76,8 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         const storeState = this.store.getState()
         this.state = { storeState }
         this.clearCache()
+        
+        this.handleChange = this.handleChange.bind(this)
       }
 
       computeStateProps(store, props) {
@@ -164,7 +166,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
       trySubscribe() {
         if (shouldSubscribe && !this.unsubscribe) {
-          this.unsubscribe = this.store.subscribe(this.handleChange.bind(this))
+          this.unsubscribe = this.store.subscribe(this.handleChange)
           this.handleChange()
         }
       }
