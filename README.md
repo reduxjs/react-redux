@@ -1,7 +1,7 @@
 React Redux
 =========================
 
-Official React bindings for [Redux](https://github.com/rackt/redux).  
+Official React bindings for [Redux](https://github.com/reactjs/redux).  
 Performant and flexible.
 
 [![build status](https://img.shields.io/travis/reactjs/react-redux/master.svg?style=flat-square)](https://travis-ci.org/reactjs/react-redux) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
@@ -23,7 +23,7 @@ If you don’t yet use [npm](http://npmjs.com/) or a modern module bundler, and 
 
 ## React Native
 
-Until [React Native works on top of React instead of shipping a fork of React](https://github.com/facebook/react-native/issues/2985), you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/rackt/react-redux/tree/v3.1.0).
+Until [React Native works on top of React instead of shipping a fork of React](https://github.com/facebook/react-native/issues/2985), you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/reactjs/react-redux/tree/v3.1.0).
 
 ## Documentation
 
