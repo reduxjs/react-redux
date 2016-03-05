@@ -23,7 +23,7 @@ If you don’t yet use [npm](http://npmjs.com/) or a modern module bundler, and 
 
 ## React Native
 
-Until [React Native works on top of React instead of shipping a fork of React](https://github.com/facebook/react-native/issues/2985), you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/rackt/react-redux/tree/v3.1.0).
+As of 0.18, react-redux works with React Native. If you are on an older version, you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/rackt/react-redux/tree/v3.1.0) because of [this problem](https://github.com/facebook/react-native/issues/2985)
 
 ## Documentation
 
