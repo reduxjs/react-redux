@@ -12,7 +12,7 @@ In short,
 
 ### My views aren’t updating on route change with React Router 0.13
 
-If you’re using React Router 0.13, you might [bump into this problem](https://github.com/rackt/react-redux/issues/43). The solution is simple: whenever you use `<RouteHandler>` or the `Handler` provided by `Router.run`, pass the router state to it.
+If you’re using React Router 0.13, you might [bump into this problem](https://github.com/reactjs/react-redux/issues/43). The solution is simple: whenever you use `<RouteHandler>` or the `Handler` provided by `Router.run`, pass the router state to it.
 
 Root view:
 
