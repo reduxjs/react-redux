@@ -176,7 +176,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         }
       }
 
-      componentDidMount() {
+      componentWillMount() {
         this.trySubscribe()
       }
 
