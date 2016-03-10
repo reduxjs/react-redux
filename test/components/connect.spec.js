@@ -1398,8 +1398,8 @@ describe('React', () => {
       const target = TestUtils.findRenderedComponentWithType(tree, Passthrough)
       const wrapper = TestUtils.findRenderedComponentWithType(tree, StatefulWrapper)
 
-      expect(mapStateSpy.calls.length).toBe(2)
-      expect(mapDispatchSpy.calls.length).toBe(2)
+      expect(mapStateSpy.calls.length).toBe(1)
+      expect(mapDispatchSpy.calls.length).toBe(1)
       expect(target.props.statefulValue).toEqual('foo')
 
       // Impure update
@@ -1407,8 +1407,8 @@ describe('React', () => {
       storeGetter.storeKey = 'bar'
       wrapper.setState({ storeGetter })
 
-      expect(mapStateSpy.calls.length).toBe(3)
-      expect(mapDispatchSpy.calls.length).toBe(3)
+      expect(mapStateSpy.calls.length).toBe(2)
+      expect(mapDispatchSpy.calls.length).toBe(2)
       expect(target.props.statefulValue).toEqual('bar')
     })
 
@@ -1638,6 +1638,66 @@ describe('React', () => {
 
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
+    })
+
+    it('should give new state to children before parents', (done) => {
+      function valueSet(prev = 'a', action) {
+        return action.type === 'SET'
+          ? action.value
+          : prev
+      }
+
+      const store = createStore(valueSet)
+
+      @connect(state => ({ component: state }))
+      class Parent extends Component {
+        render() {
+          if (this.props.component === 'a') {
+            return <A />
+          } else {
+            return <B />
+          }
+        }
+      }
+
+      const aSpy = expect.createSpy()
+
+      @connect(state => {
+        aSpy(state)
+        return { component: state }
+      })
+      class A extends Component {
+        render() {
+          return <div>{this.props.component}</div>
+        }
+      }
+
+      const bSpy = expect.createSpy()
+
+      @connect(state => {
+        bSpy(state)
+        return { component: state }
+      })
+      class B extends Component {
+        render() {
+          return <div>{this.props.component}</div>
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Parent />
+        </ProviderMock>
+      )
+
+      setTimeout(() => {
+        store.dispatch({ type: 'SET', value: 'b' })
+        expect(aSpy.calls.length).toBe(1)
+        expect(aSpy.calls[0].arguments).toEqual([ 'a' ])
+        expect(bSpy.calls.length).toBe(1)
+        expect(bSpy.calls[0].arguments).toEqual([ 'b' ])
+        done()
+      }, 0)
     })
   })
 })
