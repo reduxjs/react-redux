@@ -53,7 +53,7 @@ ReactDOM.render(
 
 Connects a React component to a Redux store.
 
-It does not modify the component class passed to it.
+It does not modify the component class passed to it.  
 Instead, it *returns* a new, connected component class, for you to use.
 
 #### Arguments
@@ -108,8 +108,8 @@ export default connect()(TodoApp)
 
 ##### Inject `dispatch` and every field in the global state
 
->Don’t do this! It kills any performance optimizations because `TodoApp` will rerender after every action.
->It’s better to have more granular `connect()` on several components in your view hierarchy that each only
+>Don’t do this! It kills any performance optimizations because `TodoApp` will rerender after every action.  
+>It’s better to have more granular `connect()` on several components in your view hierarchy that each only  
 >listen to a relevant slice of the state.
 
 ```js

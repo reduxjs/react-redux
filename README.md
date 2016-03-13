@@ -1,7 +1,7 @@
 React Redux
 =========================
 
-Official React bindings for [Redux](https://github.com/reactjs/redux).
+Official React bindings for [Redux](https://github.com/reactjs/redux).  
 Performant and flexible.
 
 [![build status](https://img.shields.io/travis/reactjs/react-redux/master.svg?style=flat-square)](https://travis-ci.org/reactjs/react-redux) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
@@ -37,7 +37,7 @@ If you are on an older version of React Native, you’ll need to keep using [Rea
 
 ## How Does It Work?
 
-We do a deep dive on how React Redux works in [this readthesource episode](https://www.youtube.com/watch?v=VJ38wSFbM3A).
+We do a deep dive on how React Redux works in [this readthesource episode](https://www.youtube.com/watch?v=VJ38wSFbM3A).  
 Enjoy!
 
 ## License
