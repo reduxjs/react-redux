@@ -233,6 +233,23 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
+##### Inject `todos` with shorthand syntax, and all todoActionCreators and counterActionCreators directly as props
+
+```js
+import * as todoActionCreators from './todoActionCreators'
+import * as counterActionCreators from './counterActionCreators'
+import { bindActionCreators } from 'redux'
+
+
+const todosSelector = state => state.todos
+
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators(Object.assign({}, todoActionCreators, counterActionCreators), dispatch)
+}
+
+export default connect({todos: todosSelector}, mapDispatchToProps)(TodoApp)
+```
+
 ##### Inject `todos` of a specific user depending on props
 
 ```js
