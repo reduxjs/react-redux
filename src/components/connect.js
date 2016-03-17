@@ -31,9 +31,37 @@ function checkStateShape(stateProps, dispatch) {
 // Helps track hot reloading.
 let nextVersion = 0
 
+
+function mapValues(obj, fn) {
+  return Object.keys(obj).reduce((result, key) => {
+    result[key] = fn(obj[key], key)
+    return result
+  }, {})
+}
+
+function handleShorthandSyntax(mapStateToProps) {
+  if ( mapStateToProps !== null && typeof mapStateToProps === 'object' ) {
+    Object.keys(mapStateToProps).forEach(key => {
+      if ( typeof mapStateToProps[key] !== 'function' ) {
+        throw new Error('You are using the shorthand mapStateToProps syntax. ' +
+          'All the shorthand keys should be associated to a function (\"selector\") that receive state as parameter. Bad key='+key)
+      }
+    })
+    return state => {
+      return mapValues(mapStateToProps,stateSelectorFn => {
+        return stateSelectorFn(state)
+      })
+    }
+  }
+  else {
+    return mapStateToProps
+  }
+}
+
+
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
-  const mapState = mapStateToProps || defaultMapStateToProps
+  const mapState = handleShorthandSyntax(mapStateToProps) || defaultMapStateToProps
   const mapDispatch = isPlainObject(mapDispatchToProps) ?
     wrapActionCreators(mapDispatchToProps) :
     mapDispatchToProps || defaultMapDispatchToProps
