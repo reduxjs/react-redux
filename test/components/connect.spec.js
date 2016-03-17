@@ -118,7 +118,7 @@ describe('React', () => {
       expect(() =>
         @connect({
           foo: state => state.foo,
-          baz: "badValue"
+          baz: 'badValue'
         })
         class Container extends Component {
           render() {
