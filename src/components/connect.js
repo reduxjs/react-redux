@@ -18,10 +18,11 @@ function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
 }
 
-function checkStateShape(stateProps, dispatch) {
+function checkStateShape(componentDisplayName, stateProps, dispatch) {
   invariant(
     isPlainObject(stateProps),
-    '`%sToProps` must return an object. Instead received %s.',
+    '`%s %sToProps` must return an object. Instead received %s.',
+    componentDisplayName,
     dispatch ? 'mapDispatch' : 'mapState',
     stateProps
   )
@@ -45,11 +46,12 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
   // Helps track hot reloading.
   const version = nextVersion++
 
-  function computeMergedProps(stateProps, dispatchProps, parentProps) {
+  function computeMergedProps(componentDisplayName, stateProps, dispatchProps, parentProps) {
     const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
     invariant(
       isPlainObject(mergedProps),
-      '`mergeProps` must return an object. Instead received %s.',
+      '`%s mergeProps` must return an object. Instead received %s.',
+      componentDisplayName,
       mergedProps
     )
     return mergedProps
@@ -88,7 +90,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapStateToProps(state, props) :
           this.finalMapStateToProps(state)
 
-        return checkStateShape(stateProps)
+        return checkStateShape(this.constructor.displayName, stateProps)
       }
 
       configureFinalMapState(store, props) {
@@ -100,7 +102,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         return isFactory ?
           this.computeStateProps(store, props) :
-          checkStateShape(mappedState)
+          checkStateShape(this.constructor.displayName, mappedState)
       }
 
       computeDispatchProps(store, props) {
@@ -113,7 +115,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
 
-        return checkStateShape(dispatchProps, true)
+        return checkStateShape(this.constructor.displayName, dispatchProps, true)
       }
 
       configureFinalMapDispatch(store, props) {
@@ -125,7 +127,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         return isFactory ?
           this.computeDispatchProps(store, props) :
-          checkStateShape(mappedDispatch, true)
+          checkStateShape(this.constructor.displayName, mappedDispatch, true)
       }
 
       updateStatePropsIfNeeded() {
@@ -149,7 +151,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateMergedPropsIfNeeded() {
-        const nextMergedProps = computeMergedProps(this.stateProps, this.dispatchProps, this.props)
+        const nextMergedProps = computeMergedProps(this.constructor.displayName, this.stateProps, this.dispatchProps, this.props)
         if (this.mergedProps && checkMergedEquals && shallowEqual(nextMergedProps, this.mergedProps)) {
           return false
         }
