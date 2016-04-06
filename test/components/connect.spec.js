@@ -1639,5 +1639,38 @@ describe('React', () => {
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
     })
+
+    it('should update impure components with custom mergeProps', () => {
+      let store = createStore(() => ({}))
+      let renderCount = 0
+
+      @connect(null, null, () => ({ a: 1 }), { pure: false })
+      class Container extends React.Component {
+        render() {
+          ++renderCount
+          return <div />
+        }
+      }
+
+      class Parent extends React.Component {
+        componentDidMount() {
+          this.forceUpdate()
+        }
+        render() {
+          return <Container />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Parent>
+            <Container />
+          </Parent>
+        </ProviderMock>
+      )
+
+      expect(renderCount).toBe(2)
+    })
+
   })
 })
