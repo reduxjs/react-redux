@@ -39,8 +39,8 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     mapDispatchToProps || defaultMapDispatchToProps
 
   const finalMergeProps = mergeProps || defaultMergeProps
-  const checkMergedEquals = finalMergeProps !== defaultMergeProps
   const { pure = true, withRef = false } = options
+  const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps
 
   // Helps track hot reloading.
   const version = nextVersion++
