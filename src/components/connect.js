@@ -18,15 +18,15 @@ function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
 }
 
-function checkStateShape(componentDisplayName, stateProps, dispatch) {
+function checkStateShape(componentDisplayName, props, methodName) {
   invariant(
-    isPlainObject(stateProps),
-    '`%s %sToProps` must return an object. Instead received %s.',
+    isPlainObject(props),
+    '`%s %s` must return an object. Instead received %s.',
     componentDisplayName,
-    dispatch ? 'mapDispatch' : 'mapState',
-    stateProps
+    methodName,
+    props
   )
-  return stateProps
+  return props
 }
 
 // Helps track hot reloading.
@@ -48,16 +48,12 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
   function computeMergedProps(componentDisplayName, stateProps, dispatchProps, parentProps) {
     const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
-    invariant(
-      isPlainObject(mergedProps),
-      '`%s mergeProps` must return an object. Instead received %s.',
-      componentDisplayName,
-      mergedProps
-    )
-    return mergedProps
+    return checkStateShape(componentDisplayName, mergedProps, 'mergeProps')
   }
 
   return function wrapWithConnect(WrappedComponent) {
+    const connectDisplayName = `Connect(${getDisplayName(WrappedComponent)})`
+
     class Connect extends Component {
       shouldComponentUpdate() {
         return !pure || this.haveOwnPropsChanged || this.hasStoreStateChanged
@@ -70,9 +66,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         invariant(this.store,
           `Could not find "store" in either the context or ` +
-          `props of "${this.constructor.displayName}". ` +
+          `props of "${connectDisplayName}". ` +
           `Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
+          `or explicitly pass "store" as a prop to "${connectDisplayName}".`
         )
 
         const storeState = this.store.getState()
@@ -90,7 +86,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapStateToProps(state, props) :
           this.finalMapStateToProps(state)
 
-        return checkStateShape(this.constructor.displayName, stateProps)
+        return checkStateShape(connectDisplayName, stateProps, 'mapStateToProps')
       }
 
       configureFinalMapState(store, props) {
@@ -102,7 +98,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         return isFactory ?
           this.computeStateProps(store, props) :
-          checkStateShape(this.constructor.displayName, mappedState)
+          checkStateShape(connectDisplayName, mappedState, 'mapStateToProps')
       }
 
       computeDispatchProps(store, props) {
@@ -115,7 +111,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
 
-        return checkStateShape(this.constructor.displayName, dispatchProps, true)
+        return checkStateShape(connectDisplayName, dispatchProps, 'mapDispatchToProps')
       }
 
       configureFinalMapDispatch(store, props) {
@@ -127,7 +123,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         return isFactory ?
           this.computeDispatchProps(store, props) :
-          checkStateShape(this.constructor.displayName, mappedDispatch, true)
+          checkStateShape(connectDisplayName, mappedDispatch, 'mapDispatchToProps')
       }
 
       updateStatePropsIfNeeded() {
@@ -151,7 +147,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateMergedPropsIfNeeded() {
-        const nextMergedProps = computeMergedProps(this.constructor.displayName, this.stateProps, this.dispatchProps, this.props)
+        const nextMergedProps = computeMergedProps(connectDisplayName, this.stateProps, this.dispatchProps, this.props)
         if (this.mergedProps && checkMergedEquals && shallowEqual(nextMergedProps, this.mergedProps)) {
           return false
         }
@@ -286,7 +282,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
     }
 
-    Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`
+    Connect.displayName = connectDisplayName
     Connect.WrappedComponent = WrappedComponent
     Connect.contextTypes = {
       store: storeShape
