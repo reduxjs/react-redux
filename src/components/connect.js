@@ -222,7 +222,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           `{ withRef: true } as the fourth argument of the connect() call.`
         )
 
-        return this.refs.wrappedInstance
+        return this.wrappedInstanceRef
       }
 
       render() {
@@ -272,7 +272,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         if (withRef) {
           this.renderedElement = createElement(WrappedComponent, {
             ...this.mergedProps,
-            ref: 'wrappedInstance'
+            ref: (ref) => this.wrappedInstanceRef = ref
           })
         } else {
           this.renderedElement = createElement(WrappedComponent,
