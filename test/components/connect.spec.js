@@ -1082,7 +1082,6 @@ describe('React', () => {
       )
       spy.destroy()
 
-
       spy = expect.spyOn(console, 'error')
       TestUtils.renderIntoDocument(
         <ProviderMock store={store}>
@@ -1545,6 +1544,51 @@ describe('React', () => {
       expect(mapStateCalls).toBe(2)
       // But render is not because it did not make any actual changes
       expect(renderCalls).toBe(1)
+    })
+
+    it('should bail out early if mapState does not depend on props', () => {
+      const store = createStore(stringBuilder)
+      let renderCalls = 0
+      let mapStateCalls = 0
+
+      @connect(state => {
+        mapStateCalls++
+        return state === 'aaa' ? { change: 1 } : {}
+      })
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(1)
+
+      const spy = expect.spyOn(Container.prototype, 'setState').andCallThrough()
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(mapStateCalls).toBe(2)
+      expect(renderCalls).toBe(1)
+      expect(spy.calls.length).toBe(0)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(mapStateCalls).toBe(3)
+      expect(renderCalls).toBe(1)
+      expect(spy.calls.length).toBe(0)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(mapStateCalls).toBe(4)
+      expect(renderCalls).toBe(2)
+      expect(spy.calls.length).toBe(1)
+
+      spy.destroy()
     })
 
     it('should allow providing a factory function to mapStateToProps', () => {
