@@ -219,6 +219,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.mergedProps = null
         this.haveOwnPropsChanged = true
         this.hasStoreStateChanged = true
+        this.haveStatePropsBeenPrecalculated = false
         this.renderedElement = null
         this.finalMapDispatchToProps = null
         this.finalMapStateToProps = null
@@ -229,13 +230,21 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           return
         }
 
-        const prevStoreState = this.state.storeState
         const storeState = this.store.getState()
-
-        if (!pure || prevStoreState !== storeState) {
-          this.hasStoreStateChanged = true
-          this.setState({ storeState })
+        const prevStoreState = this.state.storeState
+        if (pure && prevStoreState === storeState) {
+          return
         }
+
+        if (pure && !this.doStatePropsDependOnOwnProps) {
+          if (!this.updateStatePropsIfNeeded()) {
+            return
+          }
+          this.haveStatePropsBeenPrecalculated = true
+        }
+
+        this.hasStoreStateChanged = true
+        this.setState({ storeState })
       }
 
       getWrappedInstance() {
@@ -251,11 +260,13 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         const {
           haveOwnPropsChanged,
           hasStoreStateChanged,
+          haveStatePropsBeenPrecalculated,
           renderedElement
         } = this
 
         this.haveOwnPropsChanged = false
         this.hasStoreStateChanged = false
+        this.haveStatePropsBeenPrecalculated = false
 
         let shouldUpdateStateProps = true
         let shouldUpdateDispatchProps = true
@@ -269,7 +280,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         let haveStatePropsChanged = false
         let haveDispatchPropsChanged = false
-        if (shouldUpdateStateProps) {
+        if (haveStatePropsBeenPrecalculated) {
+          haveStatePropsChanged = true
+        } else if (shouldUpdateStateProps) {
           haveStatePropsChanged = this.updateStatePropsIfNeeded()
         }
         if (shouldUpdateDispatchProps) {
