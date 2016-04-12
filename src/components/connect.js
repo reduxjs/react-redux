@@ -2,6 +2,7 @@ import { Component, createElement } from 'react'
 import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
+import warning from '../utils/warning'
 import isPlainObject from 'lodash/isPlainObject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
@@ -24,9 +25,15 @@ let nextVersion = 0
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
   const mapState = mapStateToProps || defaultMapStateToProps
-  const mapDispatch = isPlainObject(mapDispatchToProps) ?
-    wrapActionCreators(mapDispatchToProps) :
-    mapDispatchToProps || defaultMapDispatchToProps
+
+  let mapDispatch
+  if (typeof mapDispatchToProps === 'function') {
+    mapDispatch = mapDispatchToProps
+  } else if (!mapDispatchToProps) {
+    mapDispatch = defaultMapDispatchToProps
+  } else {
+    mapDispatch = wrapActionCreators(mapDispatchToProps)
+  }
 
   const finalMergeProps = mergeProps || defaultMergeProps
   const { pure = true, withRef = false } = options
@@ -39,19 +46,20 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     const connectDisplayName = `Connect(${getDisplayName(WrappedComponent)})`
 
     function checkStateShape(props, methodName) {
-      invariant(
-        isPlainObject(props),
-        '`%s %s` must return an object. Instead received %s.',
-        connectDisplayName,
-        methodName,
-        props
-      )
-      return props
+      if (!isPlainObject(props)) {
+        warning(
+          `${methodName}() in ${connectDisplayName} must return a plain object. ` +
+          `Instead received ${props}.`
+        )
+      }
     }
 
     function computeMergedProps(stateProps, dispatchProps, parentProps) {
       const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
-      return checkStateShape(mergedProps, 'mergeProps')
+      if (process.env.NODE_ENV !== 'production') {
+        checkStateShape(mergedProps, 'mergeProps')
+      }
+      return mergedProps
     }
 
     class Connect extends Component {
@@ -86,7 +94,10 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapStateToProps(state, props) :
           this.finalMapStateToProps(state)
 
-        return checkStateShape(stateProps, 'mapStateToProps')
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(stateProps, 'mapStateToProps')
+        }
+        return stateProps
       }
 
       configureFinalMapState(store, props) {
@@ -96,9 +107,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.finalMapStateToProps = isFactory ? mappedState : mapState
         this.doStatePropsDependOnOwnProps = this.finalMapStateToProps.length !== 1
 
-        return isFactory ?
-          this.computeStateProps(store, props) :
+        if (isFactory) {
+          return this.computeStateProps(store, props)
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
           checkStateShape(mappedState, 'mapStateToProps')
+        }
+        return mappedState
       }
 
       computeDispatchProps(store, props) {
@@ -111,7 +127,10 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
 
-        return checkStateShape(dispatchProps, 'mapDispatchToProps')
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(dispatchProps, 'mapDispatchToProps')
+        }
+        return dispatchProps
       }
 
       configureFinalMapDispatch(store, props) {
@@ -121,9 +140,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
         this.doDispatchPropsDependOnOwnProps = this.finalMapDispatchToProps.length !== 1
 
-        return isFactory ?
-          this.computeDispatchProps(store, props) :
+        if (isFactory) {
+          return this.computeDispatchProps(store, props)
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
           checkStateShape(mappedDispatch, 'mapDispatchToProps')
+        }
+        return mappedDispatch
       }
 
       updateStatePropsIfNeeded() {

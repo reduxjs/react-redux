@@ -998,77 +998,114 @@ describe('React', () => {
 
       function AwesomeMap() { }
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => 1, () => ({}), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mapState/)
+      let spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => 1, () => ({}), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => 'hey', () => ({}), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mapState/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => 'hey', () => ({}), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mapState/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => 1, () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mapDispatch/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => 1, () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => 'hey', () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mapDispatch/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => 'hey', () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mapDispatch/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => ({}), () => 1)}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mergeProps/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => ({}), () => 1)}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => ({}), () => 'hey')}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mergeProps/)
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
-          </ProviderMock>
-        )
-      }).toThrow(/Connect\(Container\) mergeProps/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => ({}), () => 'hey')}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
+
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
     })
 
     it('should recalculate the state and rebind the actions on hot update', () => {

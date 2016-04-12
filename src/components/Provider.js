@@ -1,5 +1,6 @@
 import { Component, PropTypes, Children } from 'react'
 import storeShape from '../utils/storeShape'
+import warning from '../utils/warning'
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
@@ -10,7 +11,7 @@ function warnAboutReceivingStore() {
 
   /* eslint-disable no-console */
   if (typeof console !== 'undefined' && typeof console.error === 'function') {
-    console.error(
+    warning(
       '<Provider> does not support changing `store` on the fly. ' +
       'It is most likely that you see this error because you updated to ' +
       'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
