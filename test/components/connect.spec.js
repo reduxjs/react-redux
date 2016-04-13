@@ -859,6 +859,41 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    it('should not attempt to set state when dispatching in componentWillUnmount', () => {
+      const store = createStore(stringBuilder)
+      let mapStateToPropsCalls = 0
+
+      /*eslint-disable no-unused-vars */
+      @connect(
+        (state) => ({ calls: mapStateToPropsCalls++ }),
+        dispatch => ({ dispatch })
+      )
+      /*eslint-enable no-unused-vars */
+      class Container extends Component {
+        componentWillUnmount() {
+          this.props.dispatch({ type: 'APPEND', body: 'a' })
+        }
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const div = document.createElement('div')
+      ReactDOM.render(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>,
+        div
+      )
+      expect(mapStateToPropsCalls).toBe(1)
+
+      const spy = expect.spyOn(console, 'error')
+      ReactDOM.unmountComponentAtNode(div)
+      spy.destroy()
+      expect(spy.calls.length).toBe(0)
+      expect(mapStateToPropsCalls).toBe(1)
+    })
+
     it('should shallowly compare the selected state to prevent unnecessary updates', () => {
       const store = createStore(stringBuilder)
       const spy = expect.createSpy(() => ({}))
