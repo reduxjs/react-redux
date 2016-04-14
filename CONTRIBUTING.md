@@ -56,7 +56,7 @@ Please open an issue with a proposal for a new feature or refactoring before sta
 
 ###Style
 
-[reactjs](https://github.com/reactjs) is trying to keep a standard style across its various projects, which can be found over in [eslint-config-reactjs](https://github.com/reactjs/eslint-config-reactjs). If you have a style change proposal, it should first be proposed there. If accepted, we will be happy to accept a PR to implement it here.
+[reactjs](https://github.com/reactjs) is trying to keep a standard style across its various projects, which can be found over in [eslint-config-rackt](https://github.com/pwmckenna/eslint-config-rackt). If you have a style change proposal, it should first be proposed there. If accepted, we will be happy to accept a PR to implement it here.
 
 ## Submitting Changes
 
