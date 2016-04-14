@@ -1626,6 +1626,39 @@ describe('React', () => {
       spy.destroy()
     })
 
+    it('should not swallow errors when bailing out early', () => {
+      const store = createStore(stringBuilder)
+      let renderCalls = 0
+      let mapStateCalls = 0
+
+      @connect(state => {
+        mapStateCalls++
+        if (state === 'a') {
+          throw new Error('Oops')
+        } else {
+          return {}
+        }
+      })
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(1)
+      expect(
+        () => store.dispatch({ type: 'APPEND', body: 'a' })
+      ).toThrow('Oops')
+    })
+
     it('should allow providing a factory function to mapStateToProps', () => {
       let updatedCount = 0
       let memoizedReturnCount = 0
@@ -1788,5 +1821,52 @@ describe('React', () => {
       expect(renderCount).toBe(2)
     })
 
+    it('should allow to clean up child state in parent componentWillUnmount', () => {
+      function reducer(state = { data: null }, action) {
+        switch (action.type) {
+          case 'fetch':
+            return { data: { profile: { name: 'April' } } }
+          case 'clean':
+            return { data: null }
+          default:
+            return state
+        }
+      }
+
+      @connect(null)
+      class Parent extends React.Component {
+        componentWillMount() {
+          this.props.dispatch({ type: 'fetch' })
+        }
+
+        componentWillUnmount() {
+          this.props.dispatch({ type: 'clean' })
+        }
+
+        render() {
+          return <Child />
+        }
+      }
+
+      @connect(state => ({
+        profile: state.data.profile
+      }))
+      class Child extends React.Component {
+        render() {
+          return null
+        }
+      }
+
+      const store = createStore(reducer)
+      const div = document.createElement('div')
+      ReactDOM.render(
+        <ProviderMock store={store}>
+          <Parent />
+        </ProviderMock>,
+        div
+      )
+
+      ReactDOM.unmountComponentAtNode(div)
+    })
   })
 })
