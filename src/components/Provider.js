@@ -29,8 +29,7 @@ export default class Provider extends Component {
   }
 
   render() {
-    const { children } = this.props
-    return Children.only(children)
+    return Children.only(this.props.children)
   }
 }
 
