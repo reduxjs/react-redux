@@ -3,7 +3,6 @@ import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
 import warning from '../utils/warning'
-import isFunction from 'lodash/isFunction'
 import isPlainObject from 'lodash/isPlainObject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
@@ -22,7 +21,7 @@ function getDisplayName(WrappedComponent) {
 
 function getMapDispatch(value) {
   switch (true) {
-    case isFunction(value): return value
+    case (typeof value === 'function'): return value
     case isPlainObject(value): return wrapActionCreators(value)
     default: return defaultMapDispatchToProps
   }
