@@ -3,6 +3,7 @@ import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
 import warning from '../utils/warning'
+import isFunction from 'lodash/isFunction'
 import isPlainObject from 'lodash/isPlainObject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
@@ -17,6 +18,14 @@ const defaultMergeProps = (stateProps, dispatchProps, parentProps) => ({
 
 function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
+}
+
+function getMapDispatch(value) {
+  switch (true) {
+    case isFunction(value): return value
+    case isPlainObject(value): return wrapActionCreators(value)
+    default: return defaultMapDispatchToProps
+  }
 }
 
 let errorObject = { value: null }
@@ -35,15 +44,7 @@ let nextVersion = 0
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
   const mapState = mapStateToProps || defaultMapStateToProps
-
-  let mapDispatch
-  if (typeof mapDispatchToProps === 'function') {
-    mapDispatch = mapDispatchToProps
-  } else if (!mapDispatchToProps) {
-    mapDispatch = defaultMapDispatchToProps
-  } else {
-    mapDispatch = wrapActionCreators(mapDispatchToProps)
-  }
+  const mapDispatch = getMapDispatch(mapDispatchToProps)
 
   const finalMergeProps = mergeProps || defaultMergeProps
   const { pure = true, withRef = false } = options
