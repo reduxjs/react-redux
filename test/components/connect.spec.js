@@ -907,6 +907,41 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    it('should not attempt to set state when dispatching in componentWillUnmount', () => {
+      const store = createStore(stringBuilder)
+      let mapStateToPropsCalls = 0
+
+      /*eslint-disable no-unused-vars */
+      @connect(
+        (state) => ({ calls: mapStateToPropsCalls++ }),
+        dispatch => ({ dispatch })
+      )
+      /*eslint-enable no-unused-vars */
+      class Container extends Component {
+        componentWillUnmount() {
+          this.props.dispatch({ type: 'APPEND', body: 'a' })
+        }
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const div = document.createElement('div')
+      ReactDOM.render(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>,
+        div
+      )
+      expect(mapStateToPropsCalls).toBe(1)
+
+      const spy = expect.spyOn(console, 'error')
+      ReactDOM.unmountComponentAtNode(div)
+      spy.destroy()
+      expect(spy.calls.length).toBe(0)
+      expect(mapStateToPropsCalls).toBe(1)
+    })
+
     it('should shallowly compare the selected state to prevent unnecessary updates', () => {
       const store = createStore(stringBuilder)
       const spy = expect.createSpy(() => ({}))
@@ -1046,77 +1081,113 @@ describe('React', () => {
 
       function AwesomeMap() { }
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => 1, () => ({}), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/mapState/)
+      let spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => 1, () => ({}), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => 'hey', () => ({}), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/mapState/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => 'hey', () => ({}), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/mapState/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => 1, () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/mapDispatch/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => 1, () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => 'hey', () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/mapDispatch/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => 'hey', () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
-          </ProviderMock>
-        )
-      }).toThrow(/mapDispatch/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => ({}), () => 1)}
-          </ProviderMock>
-        )
-      }).toThrow(/mergeProps/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => ({}), () => 1)}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => ({}), () => 'hey')}
-          </ProviderMock>
-        )
-      }).toThrow(/mergeProps/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => ({}), () => 'hey')}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
 
-      expect(() => {
-        TestUtils.renderIntoDocument(
-          <ProviderMock store={store}>
-            {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
-          </ProviderMock>
-        )
-      }).toThrow(/mergeProps/)
+      spy = expect.spyOn(console, 'error')
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
+        </ProviderMock>
+      )
+      expect(spy.calls.length).toBe(1)
+      expect(spy.calls[0].arguments[0]).toMatch(
+        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+      )
+      spy.destroy()
     })
 
     it('should recalculate the state and rebind the actions on hot update', () => {
@@ -1558,6 +1629,84 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
     })
 
+    it('should bail out early if mapState does not depend on props', () => {
+      const store = createStore(stringBuilder)
+      let renderCalls = 0
+      let mapStateCalls = 0
+
+      @connect(state => {
+        mapStateCalls++
+        return state === 'aaa' ? { change: 1 } : {}
+      })
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(1)
+
+      const spy = expect.spyOn(Container.prototype, 'setState').andCallThrough()
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(mapStateCalls).toBe(2)
+      expect(renderCalls).toBe(1)
+      expect(spy.calls.length).toBe(0)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(mapStateCalls).toBe(3)
+      expect(renderCalls).toBe(1)
+      expect(spy.calls.length).toBe(0)
+
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(mapStateCalls).toBe(4)
+      expect(renderCalls).toBe(2)
+      expect(spy.calls.length).toBe(1)
+
+      spy.destroy()
+    })
+
+    it('should not swallow errors when bailing out early', () => {
+      const store = createStore(stringBuilder)
+      let renderCalls = 0
+      let mapStateCalls = 0
+
+      @connect(state => {
+        mapStateCalls++
+        if (state === 'a') {
+          throw new Error('Oops')
+        } else {
+          return {}
+        }
+      })
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(1)
+      expect(
+        () => store.dispatch({ type: 'APPEND', body: 'a' })
+      ).toThrow('Oops')
+    })
+
     it('should allow providing a factory function to mapStateToProps', () => {
       let updatedCount = 0
       let memoizedReturnCount = 0
@@ -1686,6 +1835,86 @@ describe('React', () => {
 
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
+    })
+
+    it('should update impure components with custom mergeProps', () => {
+      let store = createStore(() => ({}))
+      let renderCount = 0
+
+      @connect(null, null, () => ({ a: 1 }), { pure: false })
+      class Container extends React.Component {
+        render() {
+          ++renderCount
+          return <div />
+        }
+      }
+
+      class Parent extends React.Component {
+        componentDidMount() {
+          this.forceUpdate()
+        }
+        render() {
+          return <Container />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Parent>
+            <Container />
+          </Parent>
+        </ProviderMock>
+      )
+
+      expect(renderCount).toBe(2)
+    })
+
+    it('should allow to clean up child state in parent componentWillUnmount', () => {
+      function reducer(state = { data: null }, action) {
+        switch (action.type) {
+          case 'fetch':
+            return { data: { profile: { name: 'April' } } }
+          case 'clean':
+            return { data: null }
+          default:
+            return state
+        }
+      }
+
+      @connect(null)
+      class Parent extends React.Component {
+        componentWillMount() {
+          this.props.dispatch({ type: 'fetch' })
+        }
+
+        componentWillUnmount() {
+          this.props.dispatch({ type: 'clean' })
+        }
+
+        render() {
+          return <Child />
+        }
+      }
+
+      @connect(state => ({
+        profile: state.data.profile
+      }))
+      class Child extends React.Component {
+        render() {
+          return null
+        }
+      }
+
+      const store = createStore(reducer)
+      const div = document.createElement('div')
+      ReactDOM.render(
+        <ProviderMock store={store}>
+          <Parent />
+        </ProviderMock>,
+        div
+      )
+
+      ReactDOM.unmountComponentAtNode(div)
     })
   })
 })

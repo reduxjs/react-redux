@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "4.4.1",
+  "version": "4.4.5",
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
   "scripts": {
@@ -95,7 +95,7 @@
     "loose-envify": "^1.1.0"
   },
   "peerDependencies": {
-    "react": "^0.14.0 || ^15.0.0-rc.1",
+    "react": "^0.14.0 || ^15.0.0-0",
     "redux": "^2.0.0 || ^3.0.0"
   },
   "browserify": {

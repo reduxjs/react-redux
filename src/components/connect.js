@@ -2,6 +2,8 @@ import { Component, createElement } from 'react'
 import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
+import warning from '../utils/warning'
+import wrapMapStateObject from '../utils/wrapMapStateObject'
 import isPlainObject from 'lodash/isPlainObject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
@@ -18,72 +20,68 @@ function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
 }
 
-function checkStateShape(stateProps, dispatch) {
-  invariant(
-    isPlainObject(stateProps),
-    '`%sToProps` must return an object. Instead received %s.',
-    dispatch ? 'mapDispatch' : 'mapState',
-    stateProps
-  )
-  return stateProps
+let errorObject = { value: null }
+function tryCatch(fn, ctx) {
+  try {
+    return fn.apply(ctx)
+  } catch (e) {
+    errorObject.value = e
+    return errorObject
+  }
 }
 
 // Helps track hot reloading.
 let nextVersion = 0
 
-
-function mapValues(obj, fn) {
-  return Object.keys(obj).reduce((result, key) => {
-    result[key] = fn(obj[key], key)
-    return result
-  }, {})
-}
-
 function handleShorthandSyntax(mapStateToProps) {
   if ( mapStateToProps !== null && typeof mapStateToProps === 'object' ) {
-    Object.keys(mapStateToProps).forEach(key => {
-      if ( typeof mapStateToProps[key] !== 'function' ) {
-        throw new Error('You are using the shorthand mapStateToProps syntax. ' +
-          'All the shorthand keys should be associated to a function (\"selector\") that receive state as parameter. Bad key='+key)
-      }
-    })
-    return state => {
-      return mapValues(mapStateToProps,stateSelectorFn => {
-        return stateSelectorFn(state)
-      })
-    }
+    return wrapMapStateObject(mapStateToProps)
   }
   else {
     return mapStateToProps
   }
 }
 
-
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
   const mapState = handleShorthandSyntax(mapStateToProps) || defaultMapStateToProps
-  const mapDispatch = isPlainObject(mapDispatchToProps) ?
-    wrapActionCreators(mapDispatchToProps) :
-    mapDispatchToProps || defaultMapDispatchToProps
+
+  let mapDispatch
+  if (typeof mapDispatchToProps === 'function') {
+    mapDispatch = mapDispatchToProps
+  } else if (!mapDispatchToProps) {
+    mapDispatch = defaultMapDispatchToProps
+  } else {
+    mapDispatch = wrapActionCreators(mapDispatchToProps)
+  }
 
   const finalMergeProps = mergeProps || defaultMergeProps
-  const checkMergedEquals = finalMergeProps !== defaultMergeProps
   const { pure = true, withRef = false } = options
+  const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps
 
   // Helps track hot reloading.
   const version = nextVersion++
 
-  function computeMergedProps(stateProps, dispatchProps, parentProps) {
-    const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
-    invariant(
-      isPlainObject(mergedProps),
-      '`mergeProps` must return an object. Instead received %s.',
-      mergedProps
-    )
-    return mergedProps
-  }
-
   return function wrapWithConnect(WrappedComponent) {
+    const connectDisplayName = `Connect(${getDisplayName(WrappedComponent)})`
+
+    function checkStateShape(props, methodName) {
+      if (!isPlainObject(props)) {
+        warning(
+          `${methodName}() in ${connectDisplayName} must return a plain object. ` +
+          `Instead received ${props}.`
+        )
+      }
+    }
+
+    function computeMergedProps(stateProps, dispatchProps, parentProps) {
+      const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
+      if (process.env.NODE_ENV !== 'production') {
+        checkStateShape(mergedProps, 'mergeProps')
+      }
+      return mergedProps
+    }
+
     class Connect extends Component {
       shouldComponentUpdate() {
         return !pure || this.haveOwnPropsChanged || this.hasStoreStateChanged
@@ -96,9 +94,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         invariant(this.store,
           `Could not find "store" in either the context or ` +
-          `props of "${this.constructor.displayName}". ` +
+          `props of "${connectDisplayName}". ` +
           `Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "store" as a prop to "${this.constructor.displayName}".`
+          `or explicitly pass "store" as a prop to "${connectDisplayName}".`
         )
 
         const storeState = this.store.getState()
@@ -116,7 +114,10 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapStateToProps(state, props) :
           this.finalMapStateToProps(state)
 
-        return checkStateShape(stateProps)
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(stateProps, 'mapStateToProps')
+        }
+        return stateProps
       }
 
       configureFinalMapState(store, props) {
@@ -126,9 +127,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.finalMapStateToProps = isFactory ? mappedState : mapState
         this.doStatePropsDependOnOwnProps = this.finalMapStateToProps.length !== 1
 
-        return isFactory ?
-          this.computeStateProps(store, props) :
-          checkStateShape(mappedState)
+        if (isFactory) {
+          return this.computeStateProps(store, props)
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(mappedState, 'mapStateToProps')
+        }
+        return mappedState
       }
 
       computeDispatchProps(store, props) {
@@ -141,7 +147,10 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
 
-        return checkStateShape(dispatchProps, true)
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(dispatchProps, 'mapDispatchToProps')
+        }
+        return dispatchProps
       }
 
       configureFinalMapDispatch(store, props) {
@@ -151,9 +160,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
         this.doDispatchPropsDependOnOwnProps = this.finalMapDispatchToProps.length !== 1
 
-        return isFactory ?
-          this.computeDispatchProps(store, props) :
-          checkStateShape(mappedDispatch, true)
+        if (isFactory) {
+          return this.computeDispatchProps(store, props)
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(mappedDispatch, 'mapDispatchToProps')
+        }
+        return mappedDispatch
       }
 
       updateStatePropsIfNeeded() {
@@ -225,6 +239,8 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.mergedProps = null
         this.haveOwnPropsChanged = true
         this.hasStoreStateChanged = true
+        this.haveStatePropsBeenPrecalculated = false
+        this.statePropsPrecalculationError = null
         this.renderedElement = null
         this.finalMapDispatchToProps = null
         this.finalMapStateToProps = null
@@ -235,13 +251,25 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           return
         }
 
-        const prevStoreState = this.state.storeState
         const storeState = this.store.getState()
-
-        if (!pure || prevStoreState !== storeState) {
-          this.hasStoreStateChanged = true
-          this.setState({ storeState })
+        const prevStoreState = this.state.storeState
+        if (pure && prevStoreState === storeState) {
+          return
         }
+
+        if (pure && !this.doStatePropsDependOnOwnProps) {
+          const haveStatePropsChanged = tryCatch(this.updateStatePropsIfNeeded, this)
+          if (!haveStatePropsChanged) {
+            return
+          }
+          if (haveStatePropsChanged === errorObject) {
+            this.statePropsPrecalculationError = errorObject.value
+          }
+          this.haveStatePropsBeenPrecalculated = true
+        }
+
+        this.hasStoreStateChanged = true
+        this.setState({ storeState })
       }
 
       getWrappedInstance() {
@@ -257,11 +285,19 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         const {
           haveOwnPropsChanged,
           hasStoreStateChanged,
+          haveStatePropsBeenPrecalculated,
+          statePropsPrecalculationError,
           renderedElement
         } = this
 
         this.haveOwnPropsChanged = false
         this.hasStoreStateChanged = false
+        this.haveStatePropsBeenPrecalculated = false
+        this.statePropsPrecalculationError = null
+
+        if (statePropsPrecalculationError) {
+          throw statePropsPrecalculationError
+        }
 
         let shouldUpdateStateProps = true
         let shouldUpdateDispatchProps = true
@@ -275,7 +311,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         let haveStatePropsChanged = false
         let haveDispatchPropsChanged = false
-        if (shouldUpdateStateProps) {
+        if (haveStatePropsBeenPrecalculated) {
+          haveStatePropsChanged = true
+        } else if (shouldUpdateStateProps) {
           haveStatePropsChanged = this.updateStatePropsIfNeeded()
         }
         if (shouldUpdateDispatchProps) {
@@ -312,7 +350,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
     }
 
-    Connect.displayName = `Connect(${getDisplayName(WrappedComponent)})`
+    Connect.displayName = connectDisplayName
     Connect.WrappedComponent = WrappedComponent
     Connect.contextTypes = {
       store: storeShape

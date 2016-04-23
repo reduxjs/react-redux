@@ -108,6 +108,14 @@ Returns the wrapped component instance. Only available if you pass `{ withRef: t
 export default connect()(TodoApp)
 ```
 
+##### Inject all action creators  (`addTodo`, `completeTodo`, ...) without subscribing to the store
+
+```js
+import * as actionCreators from './actionCreators'
+
+export default connect(null, actionCreators)(TodoApp)
+```
+
 ##### Inject `dispatch` and every field in the global state
 
 >Don’t do this! It kills any performance optimizations because `TodoApp` will rerender after every action.  
@@ -128,7 +136,7 @@ function mapStateToProps(state) {
 export default connect(mapStateToProps)(TodoApp)
 ```
 
-##### Inject `todos` and all action creators (`addTodo`, `completeTodo`, ...)
+##### Inject `todos` and all action creators
 
 ```js
 import * as actionCreators from './actionCreators'

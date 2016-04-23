@@ -25,6 +25,23 @@ describe('Utils', () => {
           { a: 1, b: 2, c: o }
         )
       ).toBe(true)
+
+      const d = function () {return 1}
+      expect(
+        shallowEqual(
+          { a: 1, b: 2, c: o, d },
+          { a: 1, b: 2, c: o, d }
+        )
+      ).toBe(true)
+    })
+
+    it('should return false if arguments fields are different function identities', () => {
+      expect(
+        shallowEqual(
+          { a: 1, b: 2, d: function () {return 1} },
+          { a: 1, b: 2, d: function () {return 1} }
+        )
+      ).toBe(false)
     })
 
     it('should return false if first argument has too many keys', () => {
