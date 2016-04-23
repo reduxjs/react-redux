@@ -126,7 +126,7 @@ describe('React', () => {
           }
         }
       ).toThrow(
-        /All the shorthand keys should be associated to a function/
+        /mapStateToProps object key baz expected to be a function, instead saw string/
       )
     })
 
