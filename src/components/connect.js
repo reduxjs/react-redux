@@ -94,12 +94,25 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.clearCache()
       }
 
-      computeStateProps(store, props) {
+      computeStateProps(props) {
+        const state = this.store.getState()
+
+        // Handle special case where user-provided mapStateToProps is a factory
+        // We can only know it after running the function once
         if (!this.finalMapStateToProps) {
-          return this.configureFinalMapState(store, props)
+          const mappedState = mapState(state, props)
+          const isFactory = typeof mappedState === 'function'
+          this.finalMapStateToProps = isFactory ? mappedState : mapState
+          this.doStatePropsDependOnOwnProps = this.finalMapStateToProps.length !== 1
+          if (isFactory) {
+            return this.computeStateProps(props)
+          }
+          if (process.env.NODE_ENV !== 'production') {
+            checkStateShape(mappedState, 'mapStateToProps')
+          }
+          return mappedState
         }
 
-        const state = store.getState()
         const stateProps = this.doStatePropsDependOnOwnProps ?
           this.finalMapStateToProps(state, props) :
           this.finalMapStateToProps(state)
@@ -110,29 +123,25 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         return stateProps
       }
 
-      configureFinalMapState(store, props) {
-        const mappedState = mapState(store.getState(), props)
-        const isFactory = typeof mappedState === 'function'
+      computeDispatchProps(props) {
+        const { dispatch } = this.store
 
-        this.finalMapStateToProps = isFactory ? mappedState : mapState
-        this.doStatePropsDependOnOwnProps = this.finalMapStateToProps.length !== 1
-
-        if (isFactory) {
-          return this.computeStateProps(store, props)
-        }
-
-        if (process.env.NODE_ENV !== 'production') {
-          checkStateShape(mappedState, 'mapStateToProps')
-        }
-        return mappedState
-      }
-
-      computeDispatchProps(store, props) {
+        // Handle special case where user-provided mapDispatchToProps is a factory
+        // We can only know it after running the function once
         if (!this.finalMapDispatchToProps) {
-          return this.configureFinalMapDispatch(store, props)
+          const mappedDispatch = mapDispatch(dispatch, props)
+          const isFactory = typeof mappedDispatch === 'function'
+          this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
+          this.doDispatchPropsDependOnOwnProps = this.finalMapDispatchToProps.length !== 1
+          if (isFactory) {
+            return this.computeDispatchProps(props)
+          }
+          if (process.env.NODE_ENV !== 'production') {
+            checkStateShape(mappedDispatch, 'mapDispatchToProps')
+          }
+          return mappedDispatch
         }
 
-        const { dispatch } = store
         const dispatchProps = this.doDispatchPropsDependOnOwnProps ?
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
@@ -143,25 +152,8 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         return dispatchProps
       }
 
-      configureFinalMapDispatch(store, props) {
-        const mappedDispatch = mapDispatch(store.dispatch, props)
-        const isFactory = typeof mappedDispatch === 'function'
-
-        this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
-        this.doDispatchPropsDependOnOwnProps = this.finalMapDispatchToProps.length !== 1
-
-        if (isFactory) {
-          return this.computeDispatchProps(store, props)
-        }
-
-        if (process.env.NODE_ENV !== 'production') {
-          checkStateShape(mappedDispatch, 'mapDispatchToProps')
-        }
-        return mappedDispatch
-      }
-
       updateStatePropsIfNeeded() {
-        const nextStateProps = this.computeStateProps(this.store, this.props)
+        const nextStateProps = this.computeStateProps(this.props)
         if (this.stateProps && shallowEqual(nextStateProps, this.stateProps)) {
           return false
         }
@@ -171,7 +163,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateDispatchPropsIfNeeded() {
-        const nextDispatchProps = this.computeDispatchProps(this.store, this.props)
+        const nextDispatchProps = this.computeDispatchProps(this.props)
         if (this.dispatchProps && shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false
         }
