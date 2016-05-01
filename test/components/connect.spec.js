@@ -1482,7 +1482,7 @@ describe('React', () => {
       expect(target.props.statefulValue).toEqual('bar')
     })
 
-    it.only('should pass state consistently to mapState', () => {
+    it('should pass state consistently to mapState', () => {
       const store = createStore(stringBuilder)
 
       store.dispatch({ type: 'APPEND', body: 'a' })

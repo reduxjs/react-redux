@@ -24,6 +24,7 @@ function tryCatch(fn, ctx) {
   try {
     return fn.apply(ctx)
   } catch (e) {
+    console.error(e)
     errorObject.value = e
     return errorObject
   }
@@ -88,6 +89,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         console.log("shouldComponentUpdate nextState.mergedPropsUpdated",nextState.mergedPropsUpdated)
         */
           console.log("################## shouldComponentUpdate",nextState.mergedPropsUpdated)
+          console.log("################## shouldComponentUpdate",nextState)
           return !pure || nextState.mergedPropsUpdated
       }
 
@@ -250,6 +252,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
 
         // Fast track: bailout early because we don't need access to fresh props here
+        console.log("isStateChange",isStateChange)
+        console.log("pure",pure)
+        console.log("!this.doStatePropsDependOnOwnProps",!this.doStatePropsDependOnOwnProps)
         if (isStateChange && pure && !this.doStatePropsDependOnOwnProps) {
           setStatePropsIfNeeded(this.props)
           if (!statePropsUpdated) {
@@ -259,8 +264,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         }
 
 
-        // Normal track: we precompute everything for shouldComponentUpdate, and try to reuse already done computation
-        this.setState((previousState, currentProps) => {
+
+        const setStateFunction = (previousState, currentProps) => {
+
           console.log("-> normal track with props=",currentProps)
 
           setStatePropsIfNeeded(currentProps);
@@ -278,7 +284,6 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           console.log("mergedProps",mergedProps)
           console.log("mergedPropsUpdated",mergedPropsUpdated)
 
-
           return {
             error: undefined,
             storeState,
@@ -287,7 +292,20 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
             mergedProps,
             mergedPropsUpdated
           }
+        }
+
+
+
+        this.lastSetStateFunction = setStateFunction
+        this.setState((previousState, currentProps) => {
+          if ( this.lastSetStateFunction === setStateFunction ) {
+            return setStateFunction(previousState,currentProps)
+          }
+          else {
+            return previousState
+          }
         });
+
       }
 
       getWrappedInstance() {
