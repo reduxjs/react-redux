@@ -24,7 +24,6 @@ function tryCatch(fn, ctx) {
   try {
     return fn.apply(ctx)
   } catch (e) {
-    console.error(e)
     errorObject.value = e
     return errorObject
   }
@@ -48,7 +47,6 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
   const finalMergeProps = mergeProps || defaultMergeProps
   const { pure = true, withRef = false } = options
-  const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps
 
   // Helps track hot reloading.
   const version = nextVersion++
@@ -75,22 +73,12 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
     class Connect extends Component {
 
-      shouldComponentUpdate(nextProps,nextState) {
-
+      shouldComponentUpdate() {
         if ( this.skipNextRender ) {
-          this.skipNextRender = false;
-          return false;
+          this.skipNextRender = false
+          return false
         }
-
-        /*
-        console.log("shouldComponentUpdate",!pure || nextState.mergedPropsUpdated)
-        console.log("shouldComponentUpdate",!pure || nextState.mergedPropsUpdated)
-        console.log("shouldComponentUpdate",nextState)
-        console.log("shouldComponentUpdate nextState.mergedPropsUpdated",nextState.mergedPropsUpdated)
-        */
-          console.log("################## shouldComponentUpdate",nextState.mergedPropsUpdated)
-          console.log("################## shouldComponentUpdate",nextState)
-          return !pure || nextState.mergedPropsUpdated
+        return true
       }
 
       constructor(props, context) {
@@ -171,10 +159,12 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       trySubscribe() {
-        console.log("trySubscribe")
         if (shouldSubscribe && !this.unsubscribe) {
           this.unsubscribe = this.store.subscribe(() => {
             if (!this.unsubscribe) {
+              return
+            }
+            if (pure && (this.store.getState() === this.state.storeState)) {
               return
             }
             this.handleChange(false,false,true)
@@ -197,12 +187,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       componentWillReceiveProps(nextProps) {
         if (pure) {
           const propsUpdated = !shallowEqual(nextProps, this.props)
-          if ( propsUpdated ) {
-            this.handleChange(false,true,false)
-          }
-          else {
-            this.skipNextRender = true;
-          }
+          propsUpdated ?
+            this.handleChange(false,true,false) :
+            this.skipNextRender = true
         }
         else {
           this.handleChange(false,true,false)
@@ -217,26 +204,19 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       clearCache() {
         this.finalMapDispatchToProps = null
         this.finalMapStateToProps = null
+        this.skipNextRender = null
       }
 
-      handleChange(isInit,isPropsChange,isStateChange) {
-        const result = tryCatch(() => this.doHandleChange(isInit,isPropsChange,isStateChange))
+      handleChange(isInit,isPropsChange,isStoreStateChange) {
+        const result = tryCatch(() => this.doHandleChange(isInit,isPropsChange,isStoreStateChange))
         if ( result === errorObject ) {
-          this.setState({error: errorObject.value})
+          this.setState({ handleChangeError: errorObject.value })
         }
       }
 
-        // TODO can we have a better method signature? it seems spread does not work?
-      doHandleChange(isInit,isPropsChange,isStateChange) {
-        console.log("################## handleChange for "+(isInit ? "init" : isPropsChange ? "props" : "state"))
+      doHandleChange(isInit,isPropsChange,isStoreStateChange) {
 
-        const storeState = this.store.getState()
-        if (isStateChange && pure && (storeState === this.state.storeState)) {
-          console.log("handleChange same state: return")
-          return
-        }
-
-        // This is put outside because it's used in both the fast and normal paths
+        // Put outside because it's used in both the fast and normal paths
         let stateProps
         let statePropsUpdated
         const setStatePropsIfNeeded = (props) => {
@@ -245,48 +225,39 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
               this.state.stateProps :
               this.computeStateProps(props)
             statePropsUpdated = !this.state.stateProps || !shallowEqual(stateProps, this.state.stateProps)
-            console.log("stateProps",stateProps)
-            console.log("statePropsUpdated",statePropsUpdated)
           }
         }
 
-
-        // Fast track: bailout early because we don't need access to fresh props here
-        console.log("isStateChange",isStateChange)
-        console.log("pure",pure)
-        console.log("!this.doStatePropsDependOnOwnProps",!this.doStatePropsDependOnOwnProps)
-        if (isStateChange && pure && !this.doStatePropsDependOnOwnProps) {
-          setStatePropsIfNeeded(this.props)
+        // Bail out early if we can
+        if (isStoreStateChange && pure && !this.doStatePropsDependOnOwnProps) {
+          setStatePropsIfNeeded(undefined) // Props not needed here
           if (!statePropsUpdated) {
-            console.log("-> fast track return")
             return
           }
         }
 
-
-
-        const setStateFunction = (previousState, currentProps) => {
-
-          console.log("-> normal track with props=",currentProps)
-
-          setStatePropsIfNeeded(currentProps);
+        const setStateFunction = (prevState, props) => {
+          // State props
+          setStatePropsIfNeeded(props)
+          // Dispatch props
           const dispatchProps = (!isInit && pure && isPropsChange && !this.doDispatchPropsDependOnOwnProps) ?
             this.state.dispatchProps :
-            this.computeDispatchProps(currentProps)
+            this.computeDispatchProps(props)
           const dispatchPropsUpdated = !this.state.dispatchProps || !shallowEqual(dispatchProps, this.state.dispatchProps)
-          console.log("dispatchProps",dispatchProps)
-          console.log("dispatchPropsUpdated",dispatchPropsUpdated)
-
-          const mergedProps = (statePropsUpdated || dispatchPropsUpdated || isPropsChange) ?
-            computeMergedProps(stateProps, dispatchProps, currentProps) :
-            this.state.mergedProps
+          // Merged props
+          const mergedProps = (!statePropsUpdated && !dispatchPropsUpdated && !isPropsChange) ?
+            this.state.mergedProps :
+            computeMergedProps(stateProps, dispatchProps, props)
           const mergedPropsUpdated = !this.state.mergedProps || !shallowEqual(mergedProps, this.state.mergedProps)
-          console.log("mergedProps",mergedProps)
-          console.log("mergedPropsUpdated",mergedPropsUpdated)
+
+          // From there we already know if we should call render or not
+          if ( pure && !mergedPropsUpdated ) {
+            this.skipNextRender = true
+          }
 
           return {
-            error: undefined,
-            storeState,
+            handleChangeError: undefined,
+            storeState: this.store.getState(),
             stateProps,
             dispatchProps,
             mergedProps,
@@ -294,17 +265,15 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           }
         }
 
-
-
+        // See #86 and #368
+        // We need to avoid computng state multiple times per batch so we only run the last one
         this.lastSetStateFunction = setStateFunction
-        this.setState((previousState, currentProps) => {
-          if ( this.lastSetStateFunction === setStateFunction ) {
-            return setStateFunction(previousState,currentProps)
-          }
-          else {
-            return previousState
-          }
-        });
+        this.setState((prevState, props) => {
+          const isLast = this.lastSetStateFunction === setStateFunction
+          return isLast ?
+            setStateFunction(prevState,props) :
+            prevState
+        })
 
       }
 
@@ -316,24 +285,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         return this.refs.wrappedInstance
       }
 
-      getRenderedElementProps() {
-        if ( withRef ) {
-          return {
-            ...this.state.mergedProps,
-            ref: 'wrappedInstance'
-          }
-        }
-        else {
-          return this.state.mergedProps
-        }
-      }
-
       render() {
-        console.log("################## render")
-        if ( this.state.error ) {
-          throw this.state.error;
+        if ( this.state.handleChangeError ) {
+          throw this.state.handleChangeError
         }
-        return createElement(WrappedComponent,this.getRenderedElementProps())
+        const finalProps = withRef ?
+          ({ ...this.state.mergedProps, ref: 'wrappedInstance' }) :
+          this.state.mergedProps
+        return createElement(WrappedComponent,finalProps)
       }
 
     }

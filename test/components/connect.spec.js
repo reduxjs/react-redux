@@ -1666,8 +1666,6 @@ describe('React', () => {
       const mapStateFactory = () => {
         let lastProp, lastVal, lastResult
         return (state, props) => {
-          console.log("state=",state)
-          console.log("props=",props)
           if (props.name === lastProp && lastVal === state.value) {
             memoizedReturnCount++
             return lastResult
