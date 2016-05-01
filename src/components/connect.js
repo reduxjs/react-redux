@@ -257,7 +257,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         }
 
         // See #86 and #368
-        // We need to avoid computng state multiple times per batch so we only run the last one
+        // We need to avoid computing state multiple times per batch so we only run the last one
         this.lastSetStateFunction = setStateFunction
         this.setState((prevState, props) => {
           const isLast = this.lastSetStateFunction === setStateFunction
