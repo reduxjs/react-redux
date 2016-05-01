@@ -19,16 +19,6 @@ function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
 }
 
-let errorObject = { value: null }
-function tryCatch(fn, ctx) {
-  try {
-    return fn.apply(ctx)
-  } catch (e) {
-    errorObject.value = e
-    return errorObject
-  }
-}
-
 // Helps track hot reloading.
 let nextVersion = 0
 
@@ -208,9 +198,10 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       handleChange(isInit,isPropsChange,isStoreStateChange) {
-        const result = tryCatch(() => this.doHandleChange(isInit,isPropsChange,isStoreStateChange))
-        if ( result === errorObject ) {
-          this.setState({ handleChangeError: errorObject.value })
+        try {
+          this.doHandleChange(isInit,isPropsChange,isStoreStateChange)
+        } catch(e) {
+          this.setState({ handleChangeError: e })
         }
       }
 
@@ -274,7 +265,6 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
             setStateFunction(prevState,props) :
             prevState
         })
-
       }
 
       getWrappedInstance() {
