@@ -352,11 +352,9 @@ describe('React', () => {
         componentDidMount() {
           // Simulate deep object mutation
           this.state.bar.baz = 'through'
-
-          // TODO before setTimeout was not required. can I modify this test safely? it seems not a bid deal
-          setTimeout(() => this.setState({
+          this.setState({
             bar: this.state.bar
-          }),0)
+          })
         }
 
         render() {
