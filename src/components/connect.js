@@ -159,8 +159,11 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
             }
             this.handleChange(false,false,true)
           })
+          // Because the state may have been updated be a child's componentWillMount
+          if (this.store.getState() !== this.state.storeState) {
+            this.handleChange(false,false,true)
+          }
         }
-        this.handleChange(true,false,false)
       }
 
       tryUnsubscribe() {
@@ -171,6 +174,10 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       componentWillMount() {
+        this.handleChange(true,false,false)
+      }
+
+      componentDidMount() {
         this.trySubscribe()
       }
 
@@ -306,6 +313,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.version = version
         this.clearCache()
         this.setState({},() => {
+          this.handleChange(true,false,false)
           this.trySubscribe()
         })
       }
