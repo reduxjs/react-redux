@@ -1,0 +1,19 @@
+[ignore]
+<PROJECT_ROOT>/node_modules/fbjs/.*
+
+[include]
+
+[libs]
+
+[options]
+module.use_strict=true
+munge_underscores=true
+suppress_comment= \\(.\\|\n\\)*\\$FlowDisableLine
+suppress_comment= \\(.\\|\n\\)*\\$FlowBug
+esproposal.class_static_fields=enable
+esproposal.class_instance_fields=enable
+esproposal.decorators=ignore
+traces=3
+
+[version]
+>=0.25.0
