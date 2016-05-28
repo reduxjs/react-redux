@@ -46,14 +46,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
   }
 
   const finalMergeProps = mergeProps || defaultMergeProps
-  const { pure = true, withRef = false } = options
+  const { pure = true, withRef = false, displayName = 'Connect' } = options
   const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps
 
   // Helps track hot reloading.
   const version = nextVersion++
 
   return function wrapWithConnect(WrappedComponent) {
-    const connectDisplayName = `Connect(${getDisplayName(WrappedComponent)})`
+    const connectDisplayName = `${displayName}(${getDisplayName(WrappedComponent)})`
 
     function checkStateShape(props, methodName) {
       if (!isPlainObject(props)) {
