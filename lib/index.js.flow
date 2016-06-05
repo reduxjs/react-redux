@@ -2,12 +2,14 @@
 type ConnectAll = <D, P, S, C: React$Component<D, P, S>, SP, DP, Dispatch: Function>(
   mapStateToProps: (state: Object) => SP,
   mapDispatchToProps: (dispatch: Dispatch) => DP,
+  mergeProps: null | void,
   options?: {pure?: boolean, withRef?: boolean}
 ) => (component: Class<C>) => Class<React$Component<D, $Diff<$Diff<P, DP>, SP>, S>>
 
 type ConnectAllStateless = <P, SP, DP, Dispatch: Function>(
   mapStateToProps: (state: Object) => SP,
   mapDispatchToProps: (dispatch: Dispatch) => DP,
+  mergeProps: null | void,
   options?: {pure?: boolean, withRef?: boolean}
 ) => (component: (props: P) => any) => Class<React$Component<void, $Diff<$Diff<P, DP>, SP>, void>>
 
@@ -28,22 +30,28 @@ type ConnectMergedStateless = <P, SP, DP, MP, Dispatch: Function>(
 type ConnectNoState = <D, P, S, C: React$Component<D, P, S>, DP, Dispatch: Function>(
     mapStateToProps: null | void,
     mapDispatchToProps: (dispatch: Dispatch) => DP,
+    mergeProps: null | void,
     options?: {pure?: boolean, withRef?: boolean}
   ) => (component: Class<C>) => Class<React$Component<D, $Diff<P, DP>, S>>
 
 type ConnectNoStateStatless = <P, DP, Dispatch: Function>(
     mapStateToProps: null | void,
     mapDispatchToProps: (dispatch: Dispatch) => DP,
+    mergeProps: null | void,
     options?: {pure?: boolean, withRef?: boolean}
   ) => (component: (props: P) => any) => Class<React$Component<void, $Diff<P, DP>, void>>
 
-type ConnectDisptch = <D, P, S, C: React$Component<D, P, S>, SP, Dispatch: Function>(
+type ConnectDispatch = <D, P, S, C: React$Component<D, P, S>, SP, Dispatch: Function>(
   mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: null | void,
+  mergeProps: null | void,
   options?: {pure?: boolean, withRef?: boolean}
 ) => (component: Class<C>) => Class<React$Component<D, $Diff<$Diff<P, {dispatch: Dispatch}>, SP>, S>>
 
-type ConnectDisptchStateless = <P, SP, Dispatch: Function>(
+type ConnectDispatchStateless = <P, SP, Dispatch: Function>(
   mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: null | void,
+  mergeProps: null | void,
   options?: {pure?: boolean, withRef?: boolean}
 ) => (component: (props: P) => any) => Class<React$Component<void, $Diff<$Diff<P, {dispatch: Dispatch}>, SP>, void>>
 
@@ -60,8 +68,8 @@ declare export var connect
     & ConnectMergedStateless
     & ConnectNoState
     & ConnectNoStateStatless
-    & ConnectDisptch
-    & ConnectDisptchStateless
+    & ConnectDispatch
+    & ConnectDispatchStateless
     & ConnectDefault
     & ConnectDefaultStateless;
 declare export var Provider: ReactClass<{store: Object, children?: any}>;
