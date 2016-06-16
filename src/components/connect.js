@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux'
 import { createSelector } from 'reselect'
 import warning from '../utils/warning'
 
-import connectToStore, { createShallowEqualSelector } from './connectToStore'
+import connectAdvanced, { createShallowEqualSelector } from './connectAdvanced'
 
 const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
   ...ownProps,
@@ -98,7 +98,7 @@ export default function connect(
     ))
   }
 
-  return connectToStore(
+  return connectAdvanced(
     selectorFactory,
     {
       pure,

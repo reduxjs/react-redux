@@ -34,12 +34,12 @@ export function dispatchable(actionCreator, ...selectorsToPartiallyApply) {
 
 let hotReloadingVersion = 0
 
-export default function connectToStore(
+export default function connectAdvanced(
   /*
-    this func is responsible for returning the selector function used to compute new props from
-    state, props, and dispatch. For example:
+    selectorFactory is a func is responsible for returning the selector function used to compute new
+    props from state, props, and dispatch. For example:
 
-      export default connectToStore(() => (state, props, dispatch) => ({
+      export default connectAdvanced(() => (state, props, dispatch) => ({
         thing: state.things[props.thingId],
         saveThing: fields => dispatch(actionCreators.saveThing(props.thingId, fields)),
       }))(YourComponent)
@@ -47,7 +47,7 @@ export default function connectToStore(
     Alternatively, it can return a plain object which will be passed to reselect's
     'createStructuredSelector' function to create the selector. For example:
 
-      return connectToStore(() => ({
+      return connectAdvanced(() => ({
         thing: (state, props) => state.things[props.thingId],
         saveThing: (_, props, dispatch) => fields => (
           dispatch(actionCreators.saveThing(props.thingId, fields))
@@ -57,9 +57,9 @@ export default function connectToStore(
     This is equivalent to wrapping the returned object in a call to `createStructuredSelector`,
     but is supported as a convenience; This is the recommended approach to defining your
     selectorFactory methods. The above example can be simplfied by using the `dispatchable` helper
-    method provided with connectToStore:
+    method provided with connectAdvanced:
 
-      connectToStore(() => ({
+      connectAdvanced(() => ({
         thing: (state, props) => state.things[props.thingId],
         saveThing: dispatchable(actionCreators.saveThing, (_, props) => props.thingId),
       }))(YourComponent)
@@ -73,10 +73,10 @@ export default function connectToStore(
   // options object:
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
-    getDisplayName = name => `connectToStore(${name})`,
+    getDisplayName = name => `connectAdvanced(${name})`,
 
     // shown in error messages
-    methodName = 'connectToStore',
+    methodName = 'connectAdvanced',
 
     // if true, shouldComponentUpdate will only be true of the selector recomputes for nextProps.
     // if false, shouldComponentUpdate will always be true.
