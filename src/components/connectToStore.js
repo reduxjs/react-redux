@@ -103,12 +103,13 @@ export default function connectToStore(
     const { displayName, store } = this
     const factoryResult = selectorFactory({ displayName })
     const ref = withRef ? 'wrappedInstance' : undefined
+    const empty = {}
 
     const selector = createShallowEqualSelector(
       // original props selector:
       shouldIncludeOriginalProps
         ? ((_, props) => props)
-        : (() => null),
+        : (() => empty),
 
       // sourceSelector
       typeof factoryResult === 'function'
