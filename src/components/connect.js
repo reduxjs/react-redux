@@ -1,9 +1,10 @@
 import isPlainObject from 'lodash/isPlainObject'
 import { bindActionCreators } from 'redux'
 import { createSelector } from 'reselect'
-import warning from '../utils/warning'
 
-import connectAdvanced, { createShallowEqualSelector } from './connectAdvanced'
+import connectAdvanced from './connectAdvanced'
+import createShallowEqualSelector from '../utils/createShallowEqualSelector'
+import warning from '../utils/warning'
 
 const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
   ...ownProps,
