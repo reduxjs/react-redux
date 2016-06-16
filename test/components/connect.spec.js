@@ -1469,8 +1469,8 @@ describe('React', () => {
       const target = TestUtils.findRenderedComponentWithType(tree, Passthrough)
       const wrapper = TestUtils.findRenderedComponentWithType(tree, StatefulWrapper)
 
-      expect(mapStateSpy.calls.length).toBe(2)
-      expect(mapDispatchSpy.calls.length).toBe(2)
+      expect(mapStateSpy.calls.length).toBe(1)
+      expect(mapDispatchSpy.calls.length).toBe(1)
       expect(target.props.statefulValue).toEqual('foo')
 
       // Impure update
@@ -1478,8 +1478,8 @@ describe('React', () => {
       storeGetter.storeKey = 'bar'
       wrapper.setState({ storeGetter })
 
-      expect(mapStateSpy.calls.length).toBe(3)
-      expect(mapDispatchSpy.calls.length).toBe(3)
+      expect(mapStateSpy.calls.length).toBe(2)
+      expect(mapDispatchSpy.calls.length).toBe(2)
       expect(target.props.statefulValue).toEqual('bar')
     })
 
@@ -1611,17 +1611,17 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
-      expect(spy.calls.length).toBe(0)
+      expect(spy.calls.length).toBe(1)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(3)
       expect(renderCalls).toBe(1)
-      expect(spy.calls.length).toBe(0)
+      expect(spy.calls.length).toBe(2)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(4)
       expect(renderCalls).toBe(2)
-      expect(spy.calls.length).toBe(1)
+      expect(spy.calls.length).toBe(3)
 
       spy.destroy()
     })
