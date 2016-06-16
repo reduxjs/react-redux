@@ -1,7 +1,6 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
-import { createStructuredSelector } from 'reselect'
 
 import createShallowEqualSelector from '../utils/createShallowEqualSelector'
 import storeShape from '../utils/storeShape'
@@ -17,37 +16,12 @@ export default function connectAdvanced(
         thing: state.things[props.thingId],
         saveThing: fields => dispatch(actionCreators.saveThing(props.thingId, fields)),
       }))(YourComponent)
-
-    Alternatively, it can return a plain object which will be passed to reselect's
-    'createStructuredSelector' function to create the selector. For example:
-
-      return connectAdvanced(() => ({
-        thing: (state, props) => state.things[props.thingId],
-        saveThing: (_, props, dispatch) => fields => (
-          dispatch(actionCreators.saveThing(props.thingId, fields))
-        ),
-      }))(YourComponent)
-
-    This is equivalent to wrapping the returned object in a call to `createStructuredSelector`,
-    but is supported as a convenience; This is the recommended approach to defining your
-    selectorFactory methods. The above example can be simplfied by using the `dispatchable` helper
-    method provided with connectAdvanced:
-
-      connectAdvanced(() => ({
-        thing: (state, props) => state.things[props.thingId],
-        saveThing: dispatchable(actionCreators.saveThing, (_, props) => props.thingId),
-      }))(YourComponent)
-
-    A verbose but descriptive name for `dispatchable` would be `createBoundActionCreatorSelector`.
-    `dispatchable` will return a selector that binds the passed action creator arg to dispatch. Any
-    additional args given will be treated as selectors whose results should be partially applied to
-    the action creator.
   */
   selectorFactory,
   // options object:
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
-    getDisplayName = name => `connectAdvanced(${name})`,
+    getDisplayName = name => `ConnectAdvanced(${name})`,
 
     // shown in error messages
     methodName = 'connectAdvanced',
@@ -58,12 +32,8 @@ export default function connectAdvanced(
 
     // the name of the property passed to the wrapped element indicating the number of.
     // recomputations since it was mounted. useful for watching for unnecessary re-renders.
-    recomputationsProp = process.env.NODE_ENV !== 'production' ? '__recomputations' : null,
-
-    // if true, the props passed to this HOC are merged with the results of the selector; in the
-    // case of key collision, selector value is kept and prop is discared. if false, only the
-    // selector results are passed to the wrapped element.
-    shouldIncludeOriginalProps = true,
+    recomputationsProp = '__recomputations',
+    shouldIncludeRecomputationsProp = process.env.NODE_ENV !== 'production',
 
     // if true, the selector receieves the current store state as the first arg, and this HOC
     // subscribes to store changes. if false, null is passed as the first arg of selector.
@@ -76,44 +46,21 @@ export default function connectAdvanced(
     withRef = false
   } = {}
 ) {
-  function buildSelector() {
-    const { displayName, store } = this
-    const factoryResult = selectorFactory({ displayName })
-    const ref = withRef ? (c => { this.wrappedInstance = c }) : undefined
-    const empty = {}
-
+  function buildSelector({ displayName, store }) {
+    // wrap the source selector in a shallow equals because props objects with
+    // same properties are symantically equal to React... no need to re-render.
     const selector = createShallowEqualSelector(
-      // original props selector:
-      shouldIncludeOriginalProps
-        ? ((_, props) => props)
-        : (() => empty),
+      selectorFactory({ displayName, dispatch: store.dispatch }),
+      result => result
+    )
 
-      // sourceSelector
-      typeof factoryResult === 'function'
-        ? factoryResult
-        : createStructuredSelector(factoryResult),
+    return function runSelector(ownProps) {
+      const before = selector.recomputations()
+      const state = shouldUseState ? store.getState() : null
+      const props = selector(state, ownProps, store.dispatch)
+      const recomputations = selector.recomputations()
 
-      // combine original props + selector props + ref
-      (props, sourceSelectorResults) => ({
-        ...props,
-        ...sourceSelectorResults,
-        ref
-      }))
-
-    return function runSelector(props) {
-      const recomputationsBefore = selector.recomputations()
-      const storeState = shouldUseState ? store.getState() : null
-      const selectorResults = selector(storeState, props, store.dispatch)
-      const recomputationsAfter = selector.recomputations()
-
-      const finalProps = recomputationsProp
-        ? { ...selectorResults, [recomputationsProp]: recomputationsAfter }
-        : selectorResults
-
-      return {
-        props: finalProps,
-        shouldUpdate: recomputationsBefore !== recomputationsAfter
-      }
+      return { props, recomputations, shouldUpdate: before !== recomputations }
     }
   }
 
@@ -123,14 +70,11 @@ export default function connectAdvanced(
     class Connect extends Component {
       constructor(props, context) {
         super(props, context)
-        this.state = {}
+        this.state = { storeUpdates: 0 }
       }
 
       componentWillMount() {
-        this.version = version
-        this.displayName = Connect.displayName
         this.store = this.props[storeKey] || this.context[storeKey]
-
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or ` +
           `props of "${Connect.displayName}". ` +
@@ -138,8 +82,7 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${Connect.displayName}".`
         )
 
-        this.selector = buildSelector.call(this)
-        this.trySubscribe()
+        this.init()
       }
 
       shouldComponentUpdate(nextProps) {
@@ -149,8 +92,27 @@ export default function connectAdvanced(
       componentWillUnmount() {
         if (this.unsubscribe) this.unsubscribe()
         this.unsubscribe = null
-        this.selector = () => ({ props: {}, shouldUpdate: false })
         this.store = null
+        this.selector = () => ({ props: {}, shouldUpdate: false })
+      }
+
+      init() {
+        this.version = version
+        
+        this.selector = buildSelector({
+          displayName: Connect.displayName,
+          store: this.store
+        })
+
+        if (shouldUseState) {
+          if (this.unsubscribe) this.unsubscribe()
+
+          this.unsubscribe = this.store.subscribe(() => {
+            if (this.unsubscribe) {
+              this.setState(state => ({ storeUpdates: state.storeUpdates++ }))
+            }
+          })
+        }
       }
 
       getWrappedInstance() {
@@ -158,17 +120,7 @@ export default function connectAdvanced(
           `To access the wrapped instance, you need to specify ` +
           `{ withRef: true } in the options argument of the ${methodName}() call.`
         )
-
         return this.wrappedInstance
-      }
-
-      trySubscribe() {
-        if (!shouldUseState || this.unsubscribe) return
-
-        let storeUpdates = 0
-        this.unsubscribe = this.store.subscribe(() => {
-          if (this.unsubscribe) this.setState({ storeUpdates: storeUpdates++ })
-        })
       }
 
       isSubscribed() {
@@ -176,8 +128,13 @@ export default function connectAdvanced(
       }
 
       render() {
-        const { props } = this.selector(this.props)
-        return createElement(WrappedComponent, props)
+        const { props, recomputations } = this.selector(this.props)
+        
+        return createElement(WrappedComponent, {
+          ...props,
+          ref: withRef ? (c => { this.wrappedInstance = c }) : undefined,
+          [recomputationsProp]: shouldIncludeRecomputationsProp ? recomputations : undefined
+        })
       }
     }
 
@@ -192,12 +149,8 @@ export default function connectAdvanced(
 
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
-        if (this.version === version) return
-
         // We are hot reloading!
-        this.version = version
-        this.trySubscribe()
-        this.selector = buildSelector.call(this)
+        if (this.version !== version) this.init()
       }
     }
 
