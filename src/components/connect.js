@@ -21,7 +21,7 @@ export default function connect(
     mapStateIsFactory,
     mapDispatchIsFactory,
     pure = true,
-    withRef = false
+    ...options
   } = {}
 ) {
   function selectorFactory({ displayName }) {
@@ -102,10 +102,10 @@ export default function connect(
     selectorFactory,
     {
       pure,
-      withRef,
       getDisplayName: name => `Connect(${name})`,
-      methodName: 'connect',
       recomputationsProp: null,
+      ...options,
+      methodName: 'connect',
       shouldIncludeOriginalProps: !mergeProps,
       shouldUseState: Boolean(mapStateToProps)
     }
