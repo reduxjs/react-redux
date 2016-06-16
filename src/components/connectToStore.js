@@ -75,6 +75,9 @@ export default function connectToStore(
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
     getDisplayName = name => `connectToStore(${name})`,
 
+    // shown in error messages
+    methodName = 'connectToStore',
+
     // if true, shouldComponentUpdate will only be true of the selector recomputes for nextProps.
     // if false, shouldComponentUpdate will always be true.
     pure = true,
@@ -155,10 +158,10 @@ export default function connectToStore(
         this.store = this.props[storeKey] || this.context[storeKey]
 
         invariant(this.store,
-          `Could not find "store" in either the context or ` +
+          `Could not find "${storeKey}" in either the context or ` +
           `props of "${Connect.displayName}". ` +
           `Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "store" as a prop to "${Connect.displayName}".`
+          `or explicitly pass "${storeKey}" as a prop to "${Connect.displayName}".`
         )
 
         this.selector = buildSelector.call(this)
@@ -179,7 +182,7 @@ export default function connectToStore(
       getWrappedInstance() {
         invariant(withRef,
           `To access the wrapped instance, you need to specify ` +
-          `{ withRef: true } as the fourth argument of the connect() call.`
+          `{ withRef: true } in the options argument of the ${methodName}() call.`
         )
 
         return this.wrappedInstance
