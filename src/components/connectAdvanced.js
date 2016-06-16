@@ -93,7 +93,7 @@ export default function connectAdvanced(
         if (this.unsubscribe) this.unsubscribe()
         this.unsubscribe = null
         this.store = null
-        this.selector = () => ({ props: {}, shouldUpdate: false })
+        this.selector = null
       }
 
       init() {
