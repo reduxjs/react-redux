@@ -18,6 +18,8 @@ export default function connect(
   mapDispatchToProps,
   mergeProps,
   {
+    mapStateIsFactory,
+    mapDispatchIsFactory,
     pure = true,
     withRef = false
   } = {}
@@ -46,52 +48,46 @@ export default function connect(
     )
 
     function getStatePropsSelector() {
-      if (!mapStateToProps) return () => empty
+      const mstp = mapStateIsFactory ? mapStateToProps() : mapStateToProps
+
+      if (!mstp) {
+        return () => empty
+      }
 
       if (!pure) {
-        return (state, props) => mapStateToProps(state, props)
+        return (state, props) => mstp(state, props)
       }
 
       if (mapStateToProps.length === 1) {
-        return createSelector(
-          state => state,
-          mapStateToProps
-        )
+        return createSelector(state => state, mstp)
       }
 
-      return createSelector(
-        state => state,
-        ownPropsSelector,
-        mapStateToProps
-      )
+      return createSelector(state => state, ownPropsSelector, mstp)
     }
 
     function getDispatchPropsSelector() {
-      if (!mapDispatchToProps) return (_, __, dispatch) => ({ dispatch })
+      const mdtp = mapDispatchIsFactory ? mapDispatchToProps() : mapDispatchToProps
 
-      if (typeof mapDispatchToProps !== 'function') {
+      if (!mdtp) {
+        return (_, __, dispatch) => ({ dispatch })
+      }
+
+      if (typeof mdtp !== 'function') {
         return createSelector(
           (_, __, dispatch) => dispatch,
-          dispatch => bindActionCreators(mapDispatchToProps, dispatch)
+          dispatch => bindActionCreators(mdtp, dispatch)
         )
       }
 
       if (!pure) {
-        return (_, props, dispatch) => mapDispatchToProps(dispatch, props)
+        return (_, props, dispatch) => mdtp(dispatch, props)
       }
 
       if (mapDispatchToProps.length === 1) {
-        return createSelector(
-          (_, __, dispatch) => dispatch,
-          mapDispatchToProps
-        )
+        return createSelector((_, __, dispatch) => dispatch, mdtp)
       }
 
-      return createSelector(
-        (_, __, dispatch) => dispatch,
-        ownPropsSelector,
-        mapDispatchToProps
-      )
+      return createSelector((_, __, dispatch) => dispatch, ownPropsSelector, mdtp)
     }
 
     return verify('mergeProps', createShallowEqualSelector(
