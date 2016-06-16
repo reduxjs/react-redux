@@ -102,7 +102,7 @@ export default function connectToStore(
   function buildSelector() {
     const { displayName, store } = this
     const factoryResult = selectorFactory({ displayName })
-    const ref = withRef ? 'wrappedInstance' : undefined
+    const ref = withRef ? (c => { this.wrappedInstance = c }) : undefined
     const empty = {}
 
     const selector = createShallowEqualSelector(
@@ -182,7 +182,7 @@ export default function connectToStore(
           `{ withRef: true } as the fourth argument of the connect() call.`
         )
 
-        return this.refs.wrappedInstance
+        return this.wrappedInstance
       }
 
       trySubscribe() {
