@@ -1,36 +1,10 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
-import {
-  createSelector,
-  createSelectorCreator,
-  createStructuredSelector,
-  defaultMemoize
-} from 'reselect'
+import { createStructuredSelector } from 'reselect'
 
-import shallowEqual from '../utils/shallowEqual'
+import createShallowEqualSelector from '../utils/createShallowEqualSelector'
 import storeShape from '../utils/storeShape'
-
-export { createSelector as createSelector }
-export { createStructuredSelector as createStructuredSelector }
-export const createShallowEqualSelector = createSelectorCreator(defaultMemoize, shallowEqual)
-
-export const selectDispatch = (_, __, dispatch) => dispatch
-
-export function dispatchable(actionCreator, ...selectorsToPartiallyApply) {
-  if (selectorsToPartiallyApply.length === 0) {
-    return createSelector(
-      selectDispatch,
-      dispatch => (...args) => dispatch(actionCreator(...args))
-    )
-  }
-
-  return createSelector(
-    selectDispatch,
-    ...selectorsToPartiallyApply,
-    (dispatch, ...partialArgs) => (...args) => dispatch(actionCreator(...partialArgs, ...args))
-  )
-}
 
 let hotReloadingVersion = 0
 
