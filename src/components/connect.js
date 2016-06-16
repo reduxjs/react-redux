@@ -14,6 +14,19 @@ const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
 
 const empty = {}
 
+function verify(displayName, methodName, selector) {
+  return (...args) => {
+    const props = selector(...args)
+    if (!isPlainObject(props)) {
+      warning(
+        `${methodName}() in ${displayName} must return a plain object. ` +
+        `Instead received ${props}.`
+      )
+    }
+    return props
+  }
+}
+
 export default function connect(
   mapStateToProps,
   mapDispatchToProps,
@@ -25,75 +38,55 @@ export default function connect(
     ...options
   } = {}
 ) {
+  function getStatePropsSelector(ownPropsSelector) {
+    const mstp = mapStateIsFactory ? mapStateToProps() : mapStateToProps
+
+    if (!mstp) {
+      return () => empty
+    }
+
+    if (!pure) {
+      return (state, props) => mstp(state, props)
+    }
+
+    if (mapStateToProps.length === 1) {
+      return createSelector(state => state, mstp)
+    }
+
+    return createSelector(state => state, ownPropsSelector, mstp)
+  }
+
+  function getDispatchPropsSelector(ownPropsSelector) {
+    const mdtp = mapDispatchIsFactory ? mapDispatchToProps() : mapDispatchToProps
+
+    if (!mdtp) {
+      return (_, __, dispatch) => ({ dispatch })
+    }
+
+    if (typeof mdtp !== 'function') {
+      return createSelector(
+        (_, __, dispatch) => dispatch,
+        dispatch => bindActionCreators(mdtp, dispatch)
+      )
+    }
+
+    if (!pure) {
+      return (_, props, dispatch) => mdtp(dispatch, props)
+    }
+
+    if (mapDispatchToProps.length === 1) {
+      return createSelector((_, __, dispatch) => dispatch, mdtp)
+    }
+
+    return createSelector((_, __, dispatch) => dispatch, ownPropsSelector, mdtp)
+  }
+
   function selectorFactory({ displayName }) {
-    function checkStateShape(props, methodName) {
-      if (!isPlainObject(props)) {
-        warning(
-          `${methodName}() in ${displayName} must return a plain object. ` +
-          `Instead received ${props}.`
-        )
-      }
-    }
+    const ownPropsSelector = createShallowEqualSelector((_, props) => props, props => props)
 
-    function verify(methodName, selector) {
-      return (...args) => {
-        const result = selector(...args)
-        checkStateShape(result, methodName)
-        return result
-      }
-    }
-
-    const ownPropsSelector = createShallowEqualSelector(
-      (_, props) => props,
-      props => props
-    )
-
-    function getStatePropsSelector() {
-      const mstp = mapStateIsFactory ? mapStateToProps() : mapStateToProps
-
-      if (!mstp) {
-        return () => empty
-      }
-
-      if (!pure) {
-        return (state, props) => mstp(state, props)
-      }
-
-      if (mapStateToProps.length === 1) {
-        return createSelector(state => state, mstp)
-      }
-
-      return createSelector(state => state, ownPropsSelector, mstp)
-    }
-
-    function getDispatchPropsSelector() {
-      const mdtp = mapDispatchIsFactory ? mapDispatchToProps() : mapDispatchToProps
-
-      if (!mdtp) {
-        return (_, __, dispatch) => ({ dispatch })
-      }
-
-      if (typeof mdtp !== 'function') {
-        return createSelector(
-          (_, __, dispatch) => dispatch,
-          dispatch => bindActionCreators(mdtp, dispatch)
-        )
-      }
-
-      if (!pure) {
-        return (_, props, dispatch) => mdtp(dispatch, props)
-      }
-
-      if (mapDispatchToProps.length === 1) {
-        return createSelector((_, __, dispatch) => dispatch, mdtp)
-      }
-
-      return createSelector((_, __, dispatch) => dispatch, ownPropsSelector, mdtp)
-    }
-
-    return verify('mergeProps', createShallowEqualSelector(
-      verify('mapStateToProps', getStatePropsSelector()),
-      verify('mapDispatchToProps', getDispatchPropsSelector()),
+    return verify(displayName, 'mergeProps', createShallowEqualSelector(
+      verify(displayName, 'mapStateToProps', getStatePropsSelector(ownPropsSelector)),
+      verify(displayName, 'mapDispatchToProps', getDispatchPropsSelector(ownPropsSelector)),
       ownPropsSelector,
       mergeProps || defaultMergeProps
     ))
@@ -104,10 +97,9 @@ export default function connect(
     {
       pure,
       getDisplayName: name => `Connect(${name})`,
-      recomputationsProp: null,
+      shouldIncludeRecomputationsProp: false,
       ...options,
       methodName: 'connect',
-      shouldIncludeOriginalProps: !mergeProps,
       shouldUseState: Boolean(mapStateToProps)
     }
   )
