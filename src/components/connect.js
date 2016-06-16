@@ -104,6 +104,7 @@ export default function connect(
       pure,
       withRef,
       getDisplayName: name => `Connect(${name})`,
+      methodName: 'connect',
       recomputationsProp: null,
       shouldIncludeOriginalProps: !mergeProps,
       shouldUseState: Boolean(mapStateToProps)
