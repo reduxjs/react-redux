@@ -143,6 +143,11 @@ export default function connectToStore(
 
   return function wrapWithConnect(WrappedComponent) {
     class Connect extends Component {
+      constructor(props, context) {
+        super(props, context)
+        this.state = {}
+      }
+
       componentWillMount() {
         this.version = version
         this.displayName = Connect.displayName
@@ -182,8 +187,9 @@ export default function connectToStore(
       trySubscribe() {
         if (!shouldUseState || this.unsubscribe) return
 
+        let storeUpdates = 0
         this.unsubscribe = this.store.subscribe(() => {
-          if (this.selector(this.props).shouldUpdate) this.forceUpdate()
+          if (this.unsubscribe) this.setState({ storeUpdates: storeUpdates++ })
         })
       }
 
