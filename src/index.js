@@ -1,5 +1,5 @@
 import Provider from './components/Provider'
 import connect from './components/connect'
-import connectToStore, { dispatchable } from './components/connectToStore'
+import connectAdvanced, { dispatchable } from './components/connectAdvanced'
 
-export { Provider, connect, connectToStore, dispatchable }
+export { Provider, connect, connectAdvanced, dispatchable }
