@@ -1469,8 +1469,8 @@ describe('React', () => {
       const target = TestUtils.findRenderedComponentWithType(tree, Passthrough)
       const wrapper = TestUtils.findRenderedComponentWithType(tree, StatefulWrapper)
 
-      expect(mapStateSpy.calls.length).toBe(1)
-      expect(mapDispatchSpy.calls.length).toBe(1)
+      expect(mapStateSpy.calls.length).toBe(2)
+      expect(mapDispatchSpy.calls.length).toBe(2)
       expect(target.props.statefulValue).toEqual('foo')
 
       // Impure update
@@ -1478,8 +1478,8 @@ describe('React', () => {
       storeGetter.storeKey = 'bar'
       wrapper.setState({ storeGetter })
 
-      expect(mapStateSpy.calls.length).toBe(2)
-      expect(mapDispatchSpy.calls.length).toBe(2)
+      expect(mapStateSpy.calls.length).toBe(3)
+      expect(mapDispatchSpy.calls.length).toBe(3)
       expect(target.props.statefulValue).toEqual('bar')
     })
 

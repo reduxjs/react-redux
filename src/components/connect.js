@@ -16,15 +16,16 @@ const empty = {}
 
 function verify(displayName, methodName, func) {
   if (process.env.NODE_ENV === 'production') return func
-
+  let hasVerified = false
   return (...args) => {
     const props = func(...args)
-    if (!isPlainObject(props)) {
+    if (!hasVerified && !isPlainObject(props)) {
       warning(
         `${methodName}() in ${displayName} must return a plain object. ` +
         `Instead received ${props}.`
       )
     }
+    hasVerified = true
     return props
   }
 }
