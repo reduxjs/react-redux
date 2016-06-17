@@ -69,10 +69,8 @@ export default function connectAdvanced(
       constructor(props, context) {
         super(props, context)
         this.state = { storeUpdates: 0 }
-      }
-
-      componentWillMount() {
         this.store = this.props[storeKey] || this.context[storeKey]
+
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or ` +
           `props of "${Connect.displayName}". ` +
@@ -81,6 +79,11 @@ export default function connectAdvanced(
         )
 
         this.init()
+      }
+
+      componentWillMount() {
+        // TODO this is bad. needs to be didMount, but fails a test.
+        this.trySubscribe()
       }
 
       shouldComponentUpdate(nextProps) {
@@ -96,14 +99,16 @@ export default function connectAdvanced(
 
       init() {
         this.version = version
-        
+       
         this.selector = buildSelector({
           displayName: Connect.displayName,
           store: this.store,
           selectorFactory,
           shouldUseState
         })
+      }
 
+      trySubscribe() {
         if (shouldUseState) {
           if (this.unsubscribe) this.unsubscribe()
 
@@ -150,7 +155,10 @@ export default function connectAdvanced(
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
         // We are hot reloading!
-        if (this.version !== version) this.init()
+        if (this.version !== version) {
+          this.init()
+          this.trySubscribe()
+        }
       }
     }
 
