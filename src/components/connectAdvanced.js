@@ -11,31 +11,42 @@ function buildSelector({
     ref,
     selectorFactory,
     recomputationsProp,
-    shouldIncludeRecomputationsProp,
     shouldUseState,
     store
   }) {
   // wrap the source selector in a shallow equals because props objects with same properties are
-  // symantically equal to React... no need to re-render. make a shallow copy of the result so that
-  // mutations for ref and recomputationsProp don't get leaked to the original result
+  // symantically equal to React... no need to re-render.
   const selector = createSelectorCreator(defaultMemoize, shallowEqual)(
-    selectorFactory({ displayName, dispatch: store.dispatch }),
-    result => ({ ...result })
+
+    // get the source selector from the factory
+    selectorFactory({
+      // useful for selector factories to show in error messages
+      displayName,
+      // useful for selectors that want to bind action creators before returning their selector
+      dispatch: store.dispatch
+    }),
+    
+    // make a shallow copy so that mutations don't leak to the original selector. any additional
+    // mutations added to the mutateProps func below should be checked for here
+    ref || recomputationsProp
+      ? (result => ({ ...result }))
+      : (result => result)
   )
+
+  function mutateProps(props, before, recomputations) {
+    if (before === recomputations) return
+    if (ref) props.ref = ref
+    if (recomputationsProp) props[recomputationsProp] = recomputations
+  }
 
   return function runSelector(ownProps) {
     const before = selector.recomputations()
     const state = shouldUseState ? store.getState() : null
     const props = selector(state, ownProps, store.dispatch)
     const recomputations = selector.recomputations()
-    const shouldUpdate = before !== recomputations
 
-    if (shouldUpdate) {
-      props.ref = ref
-      if (shouldIncludeRecomputationsProp) props[recomputationsProp] = recomputations
-    }
-
-    return { props, recomputations, shouldUpdate }
+    mutateProps(props, before, recomputations)
+    return { props, recomputations }
   }
 }
 
@@ -54,22 +65,25 @@ export default function connectAdvanced(
   // options object:
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
+    // probably overridden by wrapper functions such as connect()
     getDisplayName = name => `ConnectAdvanced(${name})`,
 
     // shown in error messages
+    // probably overridden by wrapper functions such as connect()
     methodName = 'connectAdvanced',
 
     // if true, shouldComponentUpdate will only be true of the selector recomputes for nextProps.
     // if false, shouldComponentUpdate will always be true.
     pure = true,
 
-    // the name of the property passed to the wrapped element indicating the number of.
-    // recomputations since it was mounted. useful for watching for unnecessary re-renders.
-    recomputationsProp = '__recomputations',
-    shouldIncludeRecomputationsProp = process.env.NODE_ENV !== 'production',
+    // if defined, the name of the property passed to the wrapped element indicating the number of
+    // recomputations since it was mounted. useful for watching in react devtools for unnecessary
+    // re-renders.
+    recomputationsProp = undefined,
 
     // if true, the selector receieves the current store state as the first arg, and this HOC
-    // subscribes to store changes. if false, null is passed as the first arg of selector.
+    // subscribes to store changes during componentDidMount. if false, null is passed as the first
+    // arg of selector and store.subscribe() is never called.
     shouldUseState = true,
 
     // the key of props/context to get the store
@@ -85,7 +99,7 @@ export default function connectAdvanced(
       constructor(props, context) {
         super(props, context)
         this.version = version
-        this.state = { storeUpdates: 0 }
+        this.state = {}
         this.store = this.props[storeKey] || this.context[storeKey]
 
         invariant(this.store,
@@ -101,13 +115,13 @@ export default function connectAdvanced(
       componentDidMount() {
         this.trySubscribe()
 
-        if (this.recomputations !== this.selector(this.props).recomputations) {
-          this.forceUpdate()
-        }
+        // check for recomputations that happened after this component has rendered, such as
+        // when a child component dispatches an action in its componentWillMount
+        if (this.hasUnrenderedRecomputations(this.props)) this.forceUpdate()
       }
 
       shouldComponentUpdate(nextProps) {
-        return !pure || this.selector(nextProps).shouldUpdate
+        return !pure || this.hasUnrenderedRecomputations(nextProps)
       }
 
       componentWillUnmount() {
@@ -118,27 +132,33 @@ export default function connectAdvanced(
       }
 
       initSelector() {
+        this.recomputationsDuringLastRender = null
+
         this.selector = buildSelector({
           displayName: Connect.displayName,
           store: this.store,
           ref: withRef ? (ref => { this.wrappedInstance = ref }) : undefined,
           recomputationsProp,
           selectorFactory,
-          shouldIncludeRecomputationsProp,
           shouldUseState
         })
       }
 
-      trySubscribe() {
-        if (shouldUseState) {
-          if (this.unsubscribe) this.unsubscribe()
+      hasUnrenderedRecomputations(props) {
+        return this.recomputationsDuringLastRender !== this.selector(props).recomputations
+      }
 
-          this.unsubscribe = this.store.subscribe(() => {
-            if (this.unsubscribe) {
-              this.setState(state => ({ storeUpdates: state.storeUpdates++ }))
-            }
-          })
-        }
+      trySubscribe() {
+        if (!shouldUseState) return
+        if (this.unsubscribe) this.unsubscribe()
+
+        this.unsubscribe = this.store.subscribe(() => {
+          if (this.unsubscribe) {
+            // invoke setState() instead of forceUpdate() so that shouldComponentUpdate()
+            // gets a chance to prevent unneeded re-renders
+            this.setState({})
+          }
+        })
       }
 
       getWrappedInstance() {
@@ -155,7 +175,7 @@ export default function connectAdvanced(
 
       render() {
         const { props, recomputations } = this.selector(this.props)
-        this.recomputations = recomputations
+        this.recomputationsDuringLastRender = recomputations
         return createElement(WrappedComponent, props)
       }
     }
