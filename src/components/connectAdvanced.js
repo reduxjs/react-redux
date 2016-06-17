@@ -5,8 +5,25 @@ import { Component, createElement } from 'react'
 import createShallowEqualSelector from '../utils/createShallowEqualSelector'
 import storeShape from '../utils/storeShape'
 
-let hotReloadingVersion = 0
+function buildSelector({ displayName, store, selectorFactory, shouldUseState }) {
+  // wrap the source selector in a shallow equals because props objects with
+  // same properties are symantically equal to React... no need to re-render.
+  const selector = createShallowEqualSelector(
+    selectorFactory({ displayName, dispatch: store.dispatch }),
+    result => result
+  )
 
+  return function runSelector(ownProps) {
+    const before = selector.recomputations()
+    const state = shouldUseState ? store.getState() : null
+    const props = selector(state, ownProps, store.dispatch)
+    const recomputations = selector.recomputations()
+
+    return { props, recomputations, shouldUpdate: before !== recomputations }
+  }
+}
+
+let hotReloadingVersion = 0
 export default function connectAdvanced(
   /*
     selectorFactory is a func is responsible for returning the selector function used to compute new
@@ -46,26 +63,7 @@ export default function connectAdvanced(
     withRef = false
   } = {}
 ) {
-  function buildSelector({ displayName, store }) {
-    // wrap the source selector in a shallow equals because props objects with
-    // same properties are symantically equal to React... no need to re-render.
-    const selector = createShallowEqualSelector(
-      selectorFactory({ displayName, dispatch: store.dispatch }),
-      result => result
-    )
-
-    return function runSelector(ownProps) {
-      const before = selector.recomputations()
-      const state = shouldUseState ? store.getState() : null
-      const props = selector(state, ownProps, store.dispatch)
-      const recomputations = selector.recomputations()
-
-      return { props, recomputations, shouldUpdate: before !== recomputations }
-    }
-  }
-
   const version = hotReloadingVersion++
-
   return function wrapWithConnect(WrappedComponent) {
     class Connect extends Component {
       constructor(props, context) {
@@ -101,7 +99,9 @@ export default function connectAdvanced(
         
         this.selector = buildSelector({
           displayName: Connect.displayName,
-          store: this.store
+          store: this.store,
+          selectorFactory,
+          shouldUseState
         })
 
         if (shouldUseState) {
