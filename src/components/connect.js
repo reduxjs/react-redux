@@ -14,9 +14,9 @@ const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
 
 const empty = {}
 
-function verify(displayName, methodName, selector) {
+function verify(displayName, methodName, func) {
   return (...args) => {
-    const props = selector(...args)
+    const props = func(...args)
     if (!isPlainObject(props)) {
       warning(
         `${methodName}() in ${displayName} must return a plain object. ` +
@@ -84,12 +84,14 @@ export default function connect(
   function selectorFactory({ displayName }) {
     const ownPropsSelector = createShallowEqualSelector((_, props) => props, props => props)
 
-    return verify(displayName, 'mergeProps', createShallowEqualSelector(
+    return createShallowEqualSelector(
       verify(displayName, 'mapStateToProps', getStatePropsSelector(ownPropsSelector)),
       verify(displayName, 'mapDispatchToProps', getDispatchPropsSelector(ownPropsSelector)),
       ownPropsSelector,
-      mergeProps || defaultMergeProps
-    ))
+      mergeProps
+        ? verify(displayName, 'mergeProps', mergeProps)
+        : defaultMergeProps
+    )
   }
 
   return connectAdvanced(
