@@ -32,48 +32,59 @@ export default function connect(
   mapDispatchToProps,
   mergeProps,
   {
-    mapStateIsFactory,
-    mapDispatchIsFactory,
     pure = true,
     ...options
   } = {}
 ) {
-  const equalityCheck = pure
-    ? ((a, b) => a === b)
-    : ((a, b) => a === empty && b === empty)
+  function createFactoryAwareSelector(selectFirstArg, ownPropsSelector, mapSomethingToProps) {
+    const equalityCheck = pure
+      ? ((a, b) => a === b)
+      : ((a, b) => a === empty && b === empty)
 
-  function getStatePropsSelector(ownPropsSelector) {
-    const mstp = mapStateIsFactory ? mapStateToProps() : mapStateToProps
-
-    if (!mstp) {
-      return () => empty
+    let map = mapSomethingToProps
+    let proxy = (...args) => {
+      const result = map(...args)
+      if (typeof result !== 'function') return result
+      map = result
+      proxy = map
+      return map(...args)
     }
 
     return createSelectorCreator(defaultMemoize, equalityCheck)(
+      selectFirstArg,
+      (...args) => map && map.length !== 1 ? ownPropsSelector(...args) : empty,
+      (...args) => proxy(...args)
+    )
+  }
+
+  function getStatePropsSelector(ownPropsSelector) {
+    if (!mapStateToProps) {
+      return () => empty
+    }
+
+    return createFactoryAwareSelector(
       state => state,
-      (...args) => mstp && mstp.length !== 1 ? ownPropsSelector(...args) : empty,
-      mstp
+      ownPropsSelector,
+      mapStateToProps  
     )
   }
 
   function getDispatchPropsSelector(ownPropsSelector) {
-    const mdtp = mapDispatchIsFactory ? mapDispatchToProps() : mapDispatchToProps
-
-    if (!mdtp) {
+    if (!mapDispatchToProps) {
       return (_, __, dispatch) => ({ dispatch })
     }
 
-    if (typeof mdtp !== 'function') {
+    if (typeof mapDispatchToProps !== 'function') {
       return createSelector(
         (_, __, dispatch) => dispatch,
-        dispatch => bindActionCreators(mdtp, dispatch)
+        dispatch => bindActionCreators(mapDispatchToProps, dispatch)
       )
     }
 
-    return createSelectorCreator(defaultMemoize, equalityCheck)(
+    return createFactoryAwareSelector(
       (_, __, dispatch) => dispatch,
-      (...args) => mdtp && mdtp.length !== 1 ? ownPropsSelector(...args) : empty,
-      mdtp
+      ownPropsSelector,
+      mapDispatchToProps
     )
   }
 
