@@ -1,6 +1,6 @@
 import isPlainObject from 'lodash/isPlainObject'
 import { bindActionCreators } from 'redux'
-import { createSelector } from 'reselect'
+import { createSelector, createSelectorCreator, defaultMemoize } from 'reselect'
 
 import connectAdvanced from './connectAdvanced'
 import createShallowEqualSelector from '../utils/createShallowEqualSelector'
@@ -38,6 +38,10 @@ export default function connect(
     ...options
   } = {}
 ) {
+  const equalityCheck = pure
+    ? ((a, b) => a === b)
+    : ((a, b) => a === empty && b === empty)
+
   function getStatePropsSelector(ownPropsSelector) {
     const mstp = mapStateIsFactory ? mapStateToProps() : mapStateToProps
 
@@ -45,15 +49,11 @@ export default function connect(
       return () => empty
     }
 
-    if (!pure) {
-      return (state, props) => mstp(state, props)
-    }
-
-    if (mapStateToProps.length === 1) {
-      return createSelector(state => state, mstp)
-    }
-
-    return createSelector(state => state, ownPropsSelector, mstp)
+    return createSelectorCreator(defaultMemoize, equalityCheck)(
+      state => state,
+      (...args) => mstp && mstp.length !== 1 ? ownPropsSelector(...args) : empty,
+      mstp
+    )
   }
 
   function getDispatchPropsSelector(ownPropsSelector) {
@@ -70,15 +70,11 @@ export default function connect(
       )
     }
 
-    if (!pure) {
-      return (_, props, dispatch) => mdtp(dispatch, props)
-    }
-
-    if (mapDispatchToProps.length === 1) {
-      return createSelector((_, __, dispatch) => dispatch, mdtp)
-    }
-
-    return createSelector((_, __, dispatch) => dispatch, ownPropsSelector, mdtp)
+    return createSelectorCreator(defaultMemoize, equalityCheck)(
+      (_, __, dispatch) => dispatch,
+      (...args) => mdtp && mdtp.length !== 1 ? ownPropsSelector(...args) : empty,
+      mdtp
+    )
   }
 
   function selectorFactory({ displayName }) {
