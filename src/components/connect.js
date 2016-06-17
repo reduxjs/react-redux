@@ -3,7 +3,7 @@ import { bindActionCreators } from 'redux'
 import { createSelector, createSelectorCreator, defaultMemoize } from 'reselect'
 
 import connectAdvanced from './connectAdvanced'
-import createShallowEqualSelector from '../utils/createShallowEqualSelector'
+import shallowEqual from '../utils/shallowEqual'
 import warning from '../utils/warning'
 
 const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
@@ -92,9 +92,12 @@ export default function connect(
   }
 
   function selectorFactory({ displayName }) {
-    const ownPropsSelector = createShallowEqualSelector((_, props) => props, props => props)
+    const ownPropsSelector = createSelectorCreator(defaultMemoize, shallowEqual)(
+      (_, props) => props,
+      props => props
+    )
 
-    return createShallowEqualSelector(
+    return createSelectorCreator(defaultMemoize, shallowEqual)(
       verify(displayName, 'mapStateToProps', getStatePropsSelector(ownPropsSelector)),
       verify(displayName, 'mapDispatchToProps', getDispatchPropsSelector(ownPropsSelector)),
       ownPropsSelector,
