@@ -15,6 +15,8 @@ const defaultMergeProps = (stateProps, dispatchProps, ownProps) => ({
 const empty = {}
 
 function verify(displayName, methodName, func) {
+  if (process.env.NODE_ENV === 'production') return func
+
   return (...args) => {
     const props = func(...args)
     if (!isPlainObject(props)) {
