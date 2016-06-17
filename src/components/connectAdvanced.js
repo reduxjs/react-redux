@@ -81,9 +81,12 @@ export default function connectAdvanced(
         this.init()
       }
 
-      componentWillMount() {
-        // TODO this is bad. needs to be didMount, but fails a test.
+      componentDidMount() {
         this.trySubscribe()
+
+        if (this.recomputations !== this.selector(this.props).recomputations) {
+          this.forceUpdate()
+        }
       }
 
       shouldComponentUpdate(nextProps) {
@@ -134,6 +137,7 @@ export default function connectAdvanced(
 
       render() {
         const { props, recomputations } = this.selector(this.props)
+        this.recomputations = recomputations
         
         return createElement(WrappedComponent, {
           ...props,
