@@ -1,14 +1,15 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
+import { createSelectorCreator, defaultMemoize } from 'reselect'
 
-import createShallowEqualSelector from '../utils/createShallowEqualSelector'
+import shallowEqual from '../utils/shallowEqual'
 import storeShape from '../utils/storeShape'
 
 function buildSelector({ displayName, store, selectorFactory, shouldUseState }) {
   // wrap the source selector in a shallow equals because props objects with
   // same properties are symantically equal to React... no need to re-render.
-  const selector = createShallowEqualSelector(
+  const selector = createSelectorCreator(defaultMemoize, shallowEqual)(
     selectorFactory({ displayName, dispatch: store.dispatch }),
     result => result
   )
