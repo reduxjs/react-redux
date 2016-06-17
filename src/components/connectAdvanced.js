@@ -6,12 +6,21 @@ import { createSelectorCreator, defaultMemoize } from 'reselect'
 import shallowEqual from '../utils/shallowEqual'
 import storeShape from '../utils/storeShape'
 
-function buildSelector({ displayName, store, selectorFactory, shouldUseState }) {
-  // wrap the source selector in a shallow equals because props objects with
-  // same properties are symantically equal to React... no need to re-render.
+function buildSelector({
+    displayName,
+    ref,
+    selectorFactory,
+    recomputationsProp,
+    shouldIncludeRecomputationsProp,
+    shouldUseState,
+    store
+  }) {
+  // wrap the source selector in a shallow equals because props objects with same properties are
+  // symantically equal to React... no need to re-render. make a shallow copy of the result so that
+  // mutations for ref and recomputationsProp don't get leaked to the original result
   const selector = createSelectorCreator(defaultMemoize, shallowEqual)(
     selectorFactory({ displayName, dispatch: store.dispatch }),
-    result => result
+    result => ({ ...result })
   )
 
   return function runSelector(ownProps) {
@@ -19,8 +28,14 @@ function buildSelector({ displayName, store, selectorFactory, shouldUseState }) 
     const state = shouldUseState ? store.getState() : null
     const props = selector(state, ownProps, store.dispatch)
     const recomputations = selector.recomputations()
+    const shouldUpdate = before !== recomputations
 
-    return { props, recomputations, shouldUpdate: before !== recomputations }
+    if (shouldUpdate) {
+      props.ref = ref
+      if (shouldIncludeRecomputationsProp) props[recomputationsProp] = recomputations
+    }
+
+    return { props, recomputations, shouldUpdate }
   }
 }
 
@@ -69,6 +84,7 @@ export default function connectAdvanced(
     class Connect extends Component {
       constructor(props, context) {
         super(props, context)
+        this.version = version
         this.state = { storeUpdates: 0 }
         this.store = this.props[storeKey] || this.context[storeKey]
 
@@ -79,7 +95,7 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${Connect.displayName}".`
         )
 
-        this.init()
+        this.initSelector()
       }
 
       componentDidMount() {
@@ -101,13 +117,14 @@ export default function connectAdvanced(
         this.selector = null
       }
 
-      init() {
-        this.version = version
-       
+      initSelector() {
         this.selector = buildSelector({
           displayName: Connect.displayName,
           store: this.store,
+          ref: withRef ? (ref => { this.wrappedInstance = ref }) : undefined,
+          recomputationsProp,
           selectorFactory,
+          shouldIncludeRecomputationsProp,
           shouldUseState
         })
       }
@@ -139,12 +156,7 @@ export default function connectAdvanced(
       render() {
         const { props, recomputations } = this.selector(this.props)
         this.recomputations = recomputations
-        
-        return createElement(WrappedComponent, {
-          ...props,
-          ref: withRef ? (c => { this.wrappedInstance = c }) : undefined,
-          [recomputationsProp]: shouldIncludeRecomputationsProp ? recomputations : undefined
-        })
+        return createElement(WrappedComponent, props)
       }
     }
 
@@ -161,7 +173,8 @@ export default function connectAdvanced(
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
         // We are hot reloading!
         if (this.version !== version) {
-          this.init()
+          this.version = version
+          this.initSelector()
           this.trySubscribe()
         }
       }
