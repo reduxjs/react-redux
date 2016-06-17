@@ -1677,7 +1677,7 @@ describe('React', () => {
         }
       }
 
-      @connect(mapStateFactory, null, null, { mapStateIsFactory: true })
+      @connect(mapStateFactory)
       class Container extends Component {
         componentWillUpdate() {
           updatedCount++
@@ -1721,7 +1721,7 @@ describe('React', () => {
         return { ...stateProps, ...dispatchProps, name: parentProps.name }
       }
 
-      @connect(null, mapDispatchFactory, mergeParentDispatch, { mapDispatchIsFactory: true })
+      @connect(null, mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
         componentWillUpdate() {
           updatedCount++
