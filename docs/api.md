@@ -49,6 +49,22 @@ ReactDOM.render(
 )
 ```
 
+##### React Router 2.0
+
+```js
+ReactDOM.render(
+  <Provider store={store}>
+    <Router history={history}>
+      <Route path="/" component={App}>
+        <Route path="foo" component={Foo}/>
+        <Route path="bar" component={Bar}/>
+      </Route>
+    </Router>
+  </Provider>,
+  document.getElementById('root')
+)
+```
+
 ### `connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`
 
 Connects a React component to a Redux store.
