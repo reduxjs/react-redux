@@ -2,7 +2,7 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
 
-import buildSelector from '../utils/buildSelector'
+import defaultBuildSelector from '../utils/buildSelector'
 import storeShape from '../utils/storeShape'
 
 let hotReloadingVersion = 0
@@ -19,6 +19,12 @@ export default function connectAdvanced(
   selectorFactory,
   // options object:
   {
+    // this is the function that invokes the selectorFactory and enhances it with a few important
+    // behaviors. you probably want to leave this alone unless you've read and understand the source
+    // for components/connectAdvanced.js and utils/buildSelector.js, then maybe you can use this as
+    // an injection point for custom behavior, for example hooking in some custom devtools.
+    buildSelector = defaultBuildSelector,
+
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
     // probably overridden by wrapper functions such as connect()
     getDisplayName = name => `ConnectAdvanced(${name})`,
@@ -91,11 +97,16 @@ export default function connectAdvanced(
 
         this.selector = buildSelector({
           displayName: Connect.displayName,
-          store: this.store,
+          dispatch: this.store.dispatch,
+          getState: shouldUseState ? this.store.getState : (() => null),
           ref: withRef ? (ref => { this.wrappedInstance = ref }) : undefined,
-          recomputationsProp,
           selectorFactory,
-          shouldUseState
+          recomputationsProp,
+          methodName,
+          pure,
+          shouldUseState,
+          storeKey,
+          withRef
         })
       }
 
