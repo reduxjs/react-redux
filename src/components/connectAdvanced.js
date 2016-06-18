@@ -73,6 +73,7 @@ export default function connectAdvanced(
         )
 
         this.subscribeNestedListener = this.subscribeNestedListener.bind(this)
+        this.notifyNestedSubs = this.notifyNestedSubs.bind(this)
         this.initSelector()
       }
 
@@ -124,7 +125,7 @@ export default function connectAdvanced(
         this.unsubscribe = subscribe(() => {
           if (!this.unsubscribe) return 
           if (this.shouldComponentUpdate(this.props)) {
-            this.setState({}, () => this.notifyNestedSubs())
+            this.setState({}, this.notifyNestedSubs)
           }
           else {
             this.notifyNestedSubs()
