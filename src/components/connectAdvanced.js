@@ -63,7 +63,7 @@ export default function connectAdvanced(
         this.version = version
         this.state = {}
         this.store = this.props[storeKey] || this.context[storeKey]
-        this.childSubs = {}
+        this.nestedSubs = {}
 
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or ` +
@@ -77,7 +77,7 @@ export default function connectAdvanced(
 
       getChildContext() {
         return {
-          [subscribeKey]: listener => this.trySubscribe(listener)
+          [subscribeKey]: listener => this.subscribeNestedListener(listener)
         }
       }
 
@@ -96,7 +96,7 @@ export default function connectAdvanced(
       componentWillUnmount() {
         this.tryUnsubscribe()
         this.store = null
-        this.selector = null
+        this.selector = () => this.last
       }
 
       initSelector() {
@@ -118,47 +118,48 @@ export default function connectAdvanced(
       }
 
       hasUnrenderedRecomputations(props) {
-        return this.recomputationsDuringLastRender !== this.selector(props).recomputations
+        return this.last.recomputations !== this.selector(props).recomputations
       }
 
-      trySubscribe(childListener) {
+      trySubscribe(force) {
+        if (!shouldUseState && !force) return
+        if (this.isSubscribed()) return
+
         const subscribe = this.context[subscribeKey] || this.store.subscribe
+        this.unsubscribe = subscribe(() => {
+          if (!this.unsubscribe) return 
+          if (this.shouldComponentUpdate(this.props)) {
+            this.setState({}, () => this.notifyNestedSubs())
+          }
+          else {
+            this.notifyNestedSubs()
+          }
+        })
+      }
 
-        if ((shouldUseState || childListener) && !this.isSubscribed()) {
-          this.unsubscribe = subscribe(() => {
-            if (this.unsubscribe && this.shouldComponentUpdate(this.props)) {
-              // invoke setState() instead of forceUpdate() so that shouldComponentUpdate()
-              // gets a chance to prevent unneeded re-renders
-              this.setState({}, () => {
-                const keys = Object.keys(this.childSubs)
-                for (let i = 0; i < keys.length; i++) {
-                  this.childSubs[keys[i]].listener()
-                }
-              })
-            }
-          })
+      notifyNestedSubs() {
+        const keys = Object.keys(this.nestedSubs)
+        for (let i = 0; i < keys.length; i++) {
+          this.nestedSubs[keys[i]].listener()
         }
+      }
 
-        if (childListener) {
-          //const unsubscribe = subscribe(childListener)
-          const id = this.lastChildSubId++
-          this.childSubs[id] = { listener: childListener }
+      subscribeNestedListener(listener) {
+        this.trySubscribe(true)
 
-          return () => {
-            if (this.childSubs[id]) {
-              //this.childSubs[id].unsubscribe()
-              delete this.childSubs[id]
-            }
+        const id = this.lastNestedSubId++
+        this.nestedSubs[id] = { listener: listener }
+        return () => {
+          if (this.nestedSubs[id]) {
+            delete this.nestedSubs[id]
           }
         }
-
-        return undefined
       }
 
       tryUnsubscribe() {
         if (this.unsubscribe) this.unsubscribe()
         this.unsubscribe = null
-        this.childSubs = {}
+        this.nestedSubs = {}
       }
 
       getWrappedInstance() {
@@ -174,9 +175,9 @@ export default function connectAdvanced(
       }
 
       render() {
-        const { props, recomputations } = this.selector(this.props)
-        this.recomputationsDuringLastRender = recomputations
-        return createElement(WrappedComponent, props)
+        const results = this.selector(this.props)
+        this.last = results
+        return createElement(WrappedComponent, results.props)
       }
     }
 
@@ -195,7 +196,6 @@ export default function connectAdvanced(
     Connect.childContextTypes = {
       [subscribeKey]: PropTypes.func
     }
-
 
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
