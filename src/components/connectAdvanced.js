@@ -25,6 +25,11 @@ export default function connectAdvanced(
     // an injection point for custom behavior, for example hooking in some custom devtools.
     buildSelector = defaultBuildSelector,
 
+    // if true, the selector receieves the current store state as the first arg, and this HOC
+    // subscribes to store changes during componentDidMount. if false, null is passed as the first
+    // arg of selector and store.subscribe() is never called.
+    dependsOnState = true,
+
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
     // probably overridden by wrapper functions such as connect()
     getDisplayName = name => `ConnectAdvanced(${name})`,
@@ -41,11 +46,6 @@ export default function connectAdvanced(
     // recomputations since it was mounted. useful for watching in react devtools for unnecessary
     // re-renders.
     recomputationsProp = undefined,
-
-    // if true, the selector receieves the current store state as the first arg, and this HOC
-    // subscribes to store changes during componentDidMount. if false, null is passed as the first
-    // arg of selector and store.subscribe() is never called.
-    shouldUseState = true,
 
     // the key of props/context to get the store
     storeKey = 'store',
@@ -104,20 +104,20 @@ export default function connectAdvanced(
         this.selector = buildSelector({
           displayName: Connect.displayName,
           dispatch: this.store.dispatch,
-          getState: shouldUseState ? this.store.getState : (() => null),
+          getState: dependsOnState ? this.store.getState : (() => null),
           ref: withRef ? (ref => { this.wrappedInstance = ref }) : undefined,
           selectorFactory,
           recomputationsProp,
           methodName,
           pure,
-          shouldUseState,
+          dependsOnState,
           storeKey,
           withRef
         })
       }
 
       trySubscribe(force) {
-        if (!shouldUseState && !force) return
+        if (!dependsOnState && !force) return
         if (this.isSubscribed()) return
 
         const subscribe = this.context[subscribeKey] || this.store.subscribe
