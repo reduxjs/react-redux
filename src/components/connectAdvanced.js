@@ -63,6 +63,7 @@ export default function connectAdvanced(
         this.version = version
         this.state = {}
         this.store = this.props[storeKey] || this.context[storeKey]
+        this.childSubs = {}
 
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or ` +
@@ -76,7 +77,7 @@ export default function connectAdvanced(
 
       getChildContext() {
         return {
-          [subscribeKey]: listener => { this.trySubscribe(listener) }
+          [subscribeKey]: listener => this.trySubscribe(listener)
         }
       }
 
@@ -123,23 +124,41 @@ export default function connectAdvanced(
       trySubscribe(childListener) {
         const subscribe = this.context[subscribeKey] || this.store.subscribe
 
-        if (shouldUseState && !this.isSubscribed()) {
-
+        if ((shouldUseState || childListener) && !this.isSubscribed()) {
           this.unsubscribe = subscribe(() => {
             if (this.unsubscribe && this.shouldComponentUpdate(this.props)) {
               // invoke setState() instead of forceUpdate() so that shouldComponentUpdate()
               // gets a chance to prevent unneeded re-renders
-              this.setState({})
+              this.setState({}, () => {
+                const keys = Object.keys(this.childSubs)
+                for (let i = 0; i < keys.length; i++) {
+                  this.childSubs[keys[i]].listener()
+                }
+              })
             }
           })
         }
 
-        if (childListener) subscribe(childListener)
+        if (childListener) {
+          //const unsubscribe = subscribe(childListener)
+          const id = this.lastChildSubId++
+          this.childSubs[id] = { listener: childListener }
+
+          return () => {
+            if (this.childSubs[id]) {
+              //this.childSubs[id].unsubscribe()
+              delete this.childSubs[id]
+            }
+          }
+        }
+
+        return undefined
       }
 
       tryUnsubscribe() {
         if (this.unsubscribe) this.unsubscribe()
         this.unsubscribe = null
+        this.childSubs = {}
       }
 
       getWrappedInstance() {
