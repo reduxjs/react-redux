@@ -107,6 +107,7 @@ export default function connectAdvanced(
           dispatch: this.store.dispatch,
           getState: dependsOnState ? this.store.getState : (() => null),
           ref: withRef ? (ref => { this.wrappedInstance = ref }) : undefined,
+          WrappedComponent,
           selectorFactory,
           recomputationsProp,
           methodName,
