@@ -46,6 +46,6 @@ export default function buildSelector({
     const recomputations = masterSelector.recomputations()
 
     if (mightMutateProps) mutateProps(props, before, recomputations)
-    return { props, recomputations }
+    return props
   }
 }

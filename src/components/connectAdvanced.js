@@ -86,21 +86,21 @@ export default function connectAdvanced(
 
         // check for recomputations that happened after this component has rendered, such as
         // when a child component dispatches an action in its componentWillMount
-        if (this.hasUnrenderedRecomputations(this.props)) this.forceUpdate()
+        if (this.lastRenderedProps !== this.selector(this.props)) this.forceUpdate()
       }
 
       shouldComponentUpdate(nextProps) {
-        return !pure || this.hasUnrenderedRecomputations(nextProps)
+        return !pure || this.lastRenderedProps !== this.selector(nextProps)
       }
 
       componentWillUnmount() {
         this.tryUnsubscribe()
         this.store = null
-        this.selector = () => this.last
+        this.selector = () => this.lastRenderedProps
       }
 
       initSelector() {
-        this.recomputationsDuringLastRender = null
+        this.lastRenderedProps = null
 
         this.selector = buildSelector({
           displayName: Connect.displayName,
@@ -115,10 +115,6 @@ export default function connectAdvanced(
           storeKey,
           withRef
         })
-      }
-
-      hasUnrenderedRecomputations(props) {
-        return this.last.recomputations !== this.selector(props).recomputations
       }
 
       trySubscribe(force) {
@@ -175,9 +171,10 @@ export default function connectAdvanced(
       }
 
       render() {
-        const results = this.selector(this.props)
-        this.last = results
-        return createElement(WrappedComponent, results.props)
+        return createElement(
+          WrappedComponent,
+          this.lastRenderedProps = this.selector(this.props)
+        )
       }
     }
 
