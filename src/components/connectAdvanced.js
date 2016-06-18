@@ -1,6 +1,6 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, createElement } from 'react'
+import { Component, PropTypes, createElement } from 'react'
 
 import defaultBuildSelector from '../utils/buildSelector'
 import storeShape from '../utils/storeShape'
@@ -54,6 +54,7 @@ export default function connectAdvanced(
     withRef = false
   } = {}
 ) {
+  const subscribeKey = storeKey + 'Subscribe'
   const version = hotReloadingVersion++
   return function wrapWithConnect(WrappedComponent) {
     class Connect extends Component {
@@ -73,6 +74,12 @@ export default function connectAdvanced(
         this.initSelector()
       }
 
+      getChildContext() {
+        return {
+          [subscribeKey]: listener => { this.trySubscribe(listener) }
+        }
+      }
+
       componentDidMount() {
         this.trySubscribe()
 
@@ -86,8 +93,7 @@ export default function connectAdvanced(
       }
 
       componentWillUnmount() {
-        if (this.unsubscribe) this.unsubscribe()
-        this.unsubscribe = null
+        this.tryUnsubscribe()
         this.store = null
         this.selector = null
       }
@@ -114,17 +120,26 @@ export default function connectAdvanced(
         return this.recomputationsDuringLastRender !== this.selector(props).recomputations
       }
 
-      trySubscribe() {
-        if (!shouldUseState) return
-        if (this.unsubscribe) this.unsubscribe()
+      trySubscribe(childListener) {
+        const subscribe = this.context[subscribeKey] || this.store.subscribe
 
-        this.unsubscribe = this.store.subscribe(() => {
-          if (this.unsubscribe) {
-            // invoke setState() instead of forceUpdate() so that shouldComponentUpdate()
-            // gets a chance to prevent unneeded re-renders
-            this.setState({})
-          }
-        })
+        if (shouldUseState && !this.isSubscribed()) {
+
+          this.unsubscribe = subscribe(() => {
+            if (this.unsubscribe && this.shouldComponentUpdate(this.props)) {
+              // invoke setState() instead of forceUpdate() so that shouldComponentUpdate()
+              // gets a chance to prevent unneeded re-renders
+              this.setState({})
+            }
+          })
+        }
+
+        if (childListener) subscribe(childListener)
+      }
+
+      tryUnsubscribe() {
+        if (this.unsubscribe) this.unsubscribe()
+        this.unsubscribe = null
       }
 
       getWrappedInstance() {
@@ -152,8 +167,16 @@ export default function connectAdvanced(
 
     Connect.displayName = getDisplayName(wrappedComponentName)
     Connect.WrappedComponent = WrappedComponent
-    Connect.contextTypes = { [storeKey]: storeShape }
     Connect.propTypes = { [storeKey]: storeShape }
+
+    Connect.contextTypes = {
+      [storeKey]: storeShape,
+      [subscribeKey]: PropTypes.func
+    }
+    Connect.childContextTypes = {
+      [subscribeKey]: PropTypes.func
+    }
+
 
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
@@ -161,6 +184,7 @@ export default function connectAdvanced(
         if (this.version !== version) {
           this.version = version
           this.initSelector()
+          this.tryUnsubscribe()
           this.trySubscribe()
         }
       }
