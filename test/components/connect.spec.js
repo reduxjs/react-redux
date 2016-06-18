@@ -1611,17 +1611,17 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
-      expect(spy.calls.length).toBe(1)
+      expect(spy.calls.length).toBe(0)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(3)
       expect(renderCalls).toBe(1)
-      expect(spy.calls.length).toBe(2)
+      expect(spy.calls.length).toBe(0)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(4)
       expect(renderCalls).toBe(2)
-      expect(spy.calls.length).toBe(3)
+      expect(spy.calls.length).toBe(1)
 
       spy.destroy()
     })
