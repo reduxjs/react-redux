@@ -146,7 +146,7 @@ export default function connect(
       getDisplayName: name => `Connect(${name})`,
       ...options,
       methodName: 'connect',
-      shouldUseState: Boolean(mapStateToProps)
+      dependsOnState: Boolean(mapStateToProps)
     }
   )
 }
