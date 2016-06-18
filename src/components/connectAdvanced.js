@@ -72,13 +72,12 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${Connect.displayName}".`
         )
 
+        this.subscribeNestedListener = this.subscribeNestedListener.bind(this)
         this.initSelector()
       }
 
       getChildContext() {
-        return {
-          [subscribeKey]: listener => this.subscribeNestedListener(listener)
-        }
+        return { [subscribeKey]: this.subscribeNestedListener }
       }
 
       componentDidMount() {
@@ -136,7 +135,7 @@ export default function connectAdvanced(
       notifyNestedSubs() {
         const keys = Object.keys(this.nestedSubs)
         for (let i = 0; i < keys.length; i++) {
-          this.nestedSubs[keys[i]].listener()
+          this.nestedSubs[keys[i]]()
         }
       }
 
@@ -144,7 +143,7 @@ export default function connectAdvanced(
         this.trySubscribe(true)
 
         const id = this.lastNestedSubId++
-        this.nestedSubs[id] = { listener: listener }
+        this.nestedSubs[id] = listener
         return () => {
           if (this.nestedSubs[id]) {
             delete this.nestedSubs[id]
