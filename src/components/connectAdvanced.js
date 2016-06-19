@@ -2,6 +2,7 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, PropTypes, createElement } from 'react'
 
+import Subscription from '../utils/Subscription'
 import defaultBuildSelector from '../utils/buildSelector'
 import storeShape from '../utils/storeShape'
 
@@ -54,16 +55,18 @@ export default function connectAdvanced(
     withRef = false
   } = {}
 ) {
-  const subscribeKey = storeKey + 'Subscribe'
+  const subscriptionKey = storeKey + 'Subscription'
   const version = hotReloadingVersion++
+
   return function wrapWithConnect(WrappedComponent) {
     class Connect extends Component {
       constructor(props, context) {
         super(props, context)
+
         this.version = version
         this.state = {}
         this.store = this.props[storeKey] || this.context[storeKey]
-        this.nestedSubs = {}
+        this.parentSub = this.props[subscriptionKey] || this.context[subscriptionKey]
 
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or ` +
@@ -72,21 +75,24 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${Connect.displayName}".`
         )
 
-        this.subscribeNestedListener = this.subscribeNestedListener.bind(this)
-        this.notifyNestedSubs = this.notifyNestedSubs.bind(this)
         this.initSelector()
+        this.initSubscription()
       }
 
       getChildContext() {
-        return { [subscribeKey]: this.subscribeNestedListener }
+        return { [subscriptionKey]: this.subscription }
       }
 
       componentDidMount() {
-        this.trySubscribe()
+        if (!dependsOnState) return
+
+        this.subscription.trySubscribe()
 
         // check for recomputations that happened after this component has rendered, such as
         // when a child component dispatches an action in its componentWillMount
-        if (this.lastRenderedProps !== this.selector(this.props)) this.forceUpdate()
+        if (this.lastRenderedProps !== this.selector(this.props)) {
+          this.forceUpdate()
+        }
       }
 
       shouldComponentUpdate(nextProps) {
@@ -94,9 +100,21 @@ export default function connectAdvanced(
       }
 
       componentWillUnmount() {
-        this.tryUnsubscribe()
+        this.subscription.tryUnsubscribe()
+        // these are just to guard against extra memory leakage if a parent element doesn't
+        // dereference this instance properly, such as an async callback that never finishes
+        this.subscription = { isSubscribed: () => false }
         this.store = null
+        this.parentSub = null
         this.selector = () => this.lastRenderedProps
+      }
+
+      getWrappedInstance() {
+        invariant(withRef,
+          `To access the wrapped instance, you need to specify ` +
+          `{ withRef: true } in the options argument of the ${methodName}() call.`
+        )
+        return this.wrappedInstance
       }
 
       initSelector() {
@@ -118,57 +136,20 @@ export default function connectAdvanced(
         })
       }
 
-      trySubscribe(force) {
-        if (!dependsOnState && !force) return
-        if (this.isSubscribed()) return
-
-        const subscribe = this.context[subscribeKey] || this.store.subscribe
-        this.unsubscribe = subscribe(() => {
-          if (!this.unsubscribe) return 
-          if (this.shouldComponentUpdate(this.props)) {
-            this.setState({}, this.notifyNestedSubs)
-          }
-          else {
-            this.notifyNestedSubs()
-          }
-        })
-      }
-
-      notifyNestedSubs() {
-        const keys = Object.keys(this.nestedSubs)
-        for (let i = 0; i < keys.length; i++) {
-          this.nestedSubs[keys[i]]()
-        }
-      }
-
-      subscribeNestedListener(listener) {
-        this.trySubscribe(true)
-
-        const id = this.lastNestedSubId++
-        this.nestedSubs[id] = listener
-        return () => {
-          if (this.nestedSubs[id]) {
-            delete this.nestedSubs[id]
-          }
-        }
-      }
-
-      tryUnsubscribe() {
-        if (this.unsubscribe) this.unsubscribe()
-        this.unsubscribe = null
-        this.nestedSubs = {}
-      }
-
-      getWrappedInstance() {
-        invariant(withRef,
-          `To access the wrapped instance, you need to specify ` +
-          `{ withRef: true } in the options argument of the ${methodName}() call.`
+      initSubscription() {
+        this.subscription = new Subscription(
+          this.store,
+          this.parentSub,
+          this.onStateChange.bind(this)
         )
-        return this.wrappedInstance
       }
 
-      isSubscribed() {
-        return typeof this.unsubscribe === 'function'
+      onStateChange(callback) {
+        if (dependsOnState && this.shouldComponentUpdate(this.props)) {
+          this.setState({}, callback)
+        } else {
+          callback()
+        }
       }
 
       render() {
@@ -185,14 +166,17 @@ export default function connectAdvanced(
 
     Connect.displayName = getDisplayName(wrappedComponentName)
     Connect.WrappedComponent = WrappedComponent
-    Connect.propTypes = { [storeKey]: storeShape }
-
+    
+    Connect.propTypes = {
+      [storeKey]: storeShape,
+      [subscriptionKey]: PropTypes.instanceOf(Subscription)
+    }
     Connect.contextTypes = {
       [storeKey]: storeShape,
-      [subscribeKey]: PropTypes.func
+      [subscriptionKey]: PropTypes.instanceOf(Subscription)
     }
     Connect.childContextTypes = {
-      [subscribeKey]: PropTypes.func
+      [subscriptionKey]: PropTypes.instanceOf(Subscription).isRequired
     }
 
     if (process.env.NODE_ENV !== 'production') {
@@ -201,8 +185,10 @@ export default function connectAdvanced(
         if (this.version !== version) {
           this.version = version
           this.initSelector()
-          this.tryUnsubscribe()
-          this.trySubscribe()
+
+          this.subscription.tryUnsubscribe()
+          this.initSubscription()
+          if (dependsOnState) this.subscription.trySubscribe()
         }
       }
     }
