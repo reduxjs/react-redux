@@ -144,6 +144,10 @@ export default function connectAdvanced(
         )
       }
 
+      isSubscribed() {
+        return this.subscription.isSubscribed()
+      }
+
       onStateChange(callback) {
         if (dependsOnState && this.shouldComponentUpdate(this.props)) {
           this.setState({}, callback)

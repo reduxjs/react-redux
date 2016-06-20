@@ -456,7 +456,7 @@ describe('React', () => {
         TestUtils.findRenderedComponentWithType(container, Container)
       ).toNotThrow()
       const decorated = TestUtils.findRenderedComponentWithType(container, Container)
-      expect(decorated.subscription.isSubscribed()).toBe(true)
+      expect(decorated.isSubscribed()).toBe(true)
     })
 
     it('should not invoke mapState when props change if it only has one argument', () => {
@@ -781,7 +781,7 @@ describe('React', () => {
           TestUtils.findRenderedComponentWithType(container, Container)
         ).toNotThrow()
         const decorated = TestUtils.findRenderedComponentWithType(container, Container)
-        expect(decorated.subscription.isSubscribed()).toBe(false)
+        expect(decorated.isSubscribed()).toBe(false)
       }
 
       runCheck()
