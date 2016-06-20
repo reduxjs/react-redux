@@ -1,136 +1,77 @@
-import { bindActionCreators } from 'redux'
-import { createSelector, createSelectorCreator, defaultMemoize } from 'reselect'
-
 import connectAdvanced from './connectAdvanced'
 import shallowEqual from '../utils/shallowEqual'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
-const createShallowSelector = createSelectorCreator(defaultMemoize, shallowEqual)
+import {
+  buildDispatchPropsSelector,
+  buildOwnPropsSelector,
+  buildStatePropsSelector
+} from '../selectors'
 
-export function getOwnPropsSelector(pure) {
-  return pure
-    ? createShallowSelector((_, props) => props, props => props)
-    : ((_, props) => props)
+export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
+  return {
+    ...ownProps,
+    ...stateProps,
+    ...dispatchProps
+  }
 }
 
+export function wrapWithVerify(displayName, { getState, getDispatch, getOwn, merge }) {
+  return {
+    getState: verifyPlainObject(displayName, 'mapStateToProps', getState),
+    getDispatch: verifyPlainObject(displayName, 'mapDispatchToProps', getDispatch),
+    getOwn,
+    merge: merge !== defaultMergeProps
+      ? verifyPlainObject(displayName, 'mergeProps', merge)
+      : merge
+  }
+}
 
-// used by getStatePropsSelector and getDispatchPropsSelector to create a memoized selector function
-// based on the given mapStateOrDispatchToProps function. It also detects if that function is a
-// factory based on its first returned result.
-// if not pure, then results should always be recomputed (except if it's ignoring prop changes)
-export function createFactoryAwareSelector(
-  pure,
-  ownPropsSelector,
-  selectStateOrDispatch,
-  mapStateOrDispatchToProps
-) {
-  // propsSelector. if the map function only takes 1 arg, it shouldn't recompute results for props
-  // changes. since this depends on map, which is mutable, propsSelector must be recomputed when
-  // map changes
-  const noProps = {}
-  const getPropsSelector = func => (func.length !== 1 ? ownPropsSelector : (() => noProps))
-  let propsSelector = getPropsSelector(mapStateOrDispatchToProps)
+export function buildImpureSelector({ getState, getDispatch, getOwn, merge }) {
+  return function impureSelector(state, props, dispatch) {
+    return merge(
+      getState(state, props, dispatch),
+      getDispatch(state, props, dispatch),
+      getOwn(state, props, dispatch)
+    )
+  }
+}
 
-  // factory detection. if the first result of mapSomethingToProps is a function, use that as the
-  // true mapSomethingToProps
-  let map = mapStateOrDispatchToProps
-  let mapProxy = (...args) => {
-    const result = map(...args)
-    if (typeof result === 'function') {
-      map = result
-      propsSelector = getPropsSelector(map)
-      mapProxy = map
-      return map(...args)
-    } else {
-      mapProxy = map
-      return result
+export function buildPureSelector({ getState, getDispatch, getOwn, merge }) {
+  let lastOwn = undefined
+  let lastState = undefined
+  let lastDispatch = undefined
+  let lastResult = undefined
+  return function pureSelector(state, props, dispatch) {
+    const nextOwn = getOwn(state, props, dispatch)
+    const nextState = getState(state, props, dispatch)
+    const nextDispatch = getDispatch(state, props, dispatch)
+
+    if (lastOwn !== nextOwn || lastState !== nextState || lastDispatch !== nextDispatch) {
+      lastOwn = nextOwn
+      lastState = nextState
+      lastDispatch = nextDispatch
+
+      const nextResult = merge(nextState, nextDispatch, nextOwn)
+      if (!lastResult || !shallowEqual(lastResult, nextResult)) {
+        lastResult = nextResult
+      }
     }
+
+    return lastResult
   }
-  
-  if (pure) {
-    return createSelector(
-      selectStateOrDispatch,
-      propsSelector,
-      (...args) => mapProxy(...args)
-    )
-  } else {
-    return (...args) => mapProxy(
-      selectStateOrDispatch(...args),
-      propsSelector(...args)
-    )
-  }
-}
-
-
-// normalizes the possible values of mapStateToProps into a selector
-export function getStatePropsSelector(pure, ownPropsSelector, mapStateToProps) {
-  if (!mapStateToProps) {
-    const empty = {}
-    return () => empty
-  }
-
-  return createFactoryAwareSelector(
-    pure,
-    ownPropsSelector,
-    state => state,
-    mapStateToProps
-  )
-}
-
-
-// normalizes the possible values of mapDispatchToProps into a selector
-export function getDispatchPropsSelector(pure, ownPropsSelector, mapDispatchToProps, dispatch) {
-  if (!mapDispatchToProps) {
-    const dispatchProps = { dispatch }
-    return () => dispatchProps
-  }
-
-  if (typeof mapDispatchToProps !== 'function') {
-    const bound = bindActionCreators(mapDispatchToProps, dispatch)
-    return () => bound
-  }
-
-  return createFactoryAwareSelector(
-    pure,
-    ownPropsSelector,
-    () => dispatch,
-    mapDispatchToProps
-  )
-}
-
-
-// merges the 3 props selectors into a final selector.
-const defaultMergeProps = (state, dispatch, own) => ({ ...own, ...state, ...dispatch })
-export function getMergedPropsSelector(
-  displayName,
-  statePropsSelector,
-  dispatchPropsSelector,
-  ownPropsSelector,
-  mergeProps
-) {
-  return createShallowSelector(
-    verifyPlainObject(displayName, 'mapStateToProps', statePropsSelector),
-    verifyPlainObject(displayName, 'mapDispatchToProps', dispatchPropsSelector),
-    ownPropsSelector,
-    mergeProps
-      ? verifyPlainObject(displayName, 'mergeProps', mergeProps)
-      : defaultMergeProps
-  )
 }
 
 // create a connectAdvanced-compatible selectorFactory function that applies the results of
 // mapStateToProps, mapDispatchToProps, and mergeProps
-export function makeSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps) {
-  return function selectorFactory({ dispatch, displayName, pure }) {
-    const ownPropsSelector = getOwnPropsSelector(pure)
+export function buildSelectorFactory(mapStateToProps, mapDispatchToProps, merge) {
+  return function selectorFactory({ displayName, pure }) {
+    const getOwn = buildOwnPropsSelector(pure)
+    const getState = buildStatePropsSelector(pure, getOwn, mapStateToProps)
+    const getDispatch = buildDispatchPropsSelector(pure, getOwn, mapDispatchToProps)
 
-    return getMergedPropsSelector(
-      displayName,
-      getStatePropsSelector(pure, ownPropsSelector, mapStateToProps),
-      getDispatchPropsSelector(pure, ownPropsSelector, mapDispatchToProps, dispatch),
-      ownPropsSelector,
-      mergeProps
-    )
+    const build = pure ? buildPureSelector : buildImpureSelector
+    return build(wrapWithVerify(displayName, { getState, getDispatch, getOwn, merge }))
   }
 }
 
@@ -141,7 +82,7 @@ export default function connect(
   options
 ) {
   return connectAdvanced(
-    makeSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps),
+    buildSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps || defaultMergeProps),
     {
       getDisplayName: name => `Connect(${name})`,
       ...options,
