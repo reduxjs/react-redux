@@ -94,8 +94,7 @@
     "hoist-non-react-statics": "^1.0.3",
     "invariant": "^2.0.0",
     "lodash": "^4.2.0",
-    "loose-envify": "^1.1.0",
-    "reselect": "^2.5.1"
+    "loose-envify": "^1.1.0"
   },
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0-0",
