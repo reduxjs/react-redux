@@ -47,14 +47,14 @@ export function buildPureFactoryAwareSelector(getOwnProps, getStorePart, mapToPr
     const nextProps = map.dependsOnProps() ? getOwnProps(state, props, dispatch) : noProps
 
     if (lastStorePart !== nextStorePart || lastProps !== nextProps) {
-      lastStorePart = nextStorePart
-      lastProps = nextProps
       const nextResult = map(nextStorePart, nextProps)
 
       if (!lastResult || !shallowEqual(lastResult, nextResult)) {
         lastResult = nextResult
       }
     }
+    lastStorePart = nextStorePart
+    lastProps = nextProps
     return lastResult
   }
 }

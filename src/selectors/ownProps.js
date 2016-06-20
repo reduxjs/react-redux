@@ -6,11 +6,13 @@ export function impureOwnPropsSelector(_, props) {
 
 export function buildPureOwnPropsSelector() {
   let lastProps = undefined
+  let lastResult = undefined
   return function pureOwnPropsSelector(_, nextProps) {
     if (!lastProps || !shallowEqual(lastProps, nextProps)) {
-      lastProps = nextProps
+      lastResult = nextProps
     }
-    return lastProps
+    lastProps = nextProps
+    return lastResult
   }
 }
 
