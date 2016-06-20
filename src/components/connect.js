@@ -38,6 +38,7 @@ export function buildPureSelector({ getState, getDispatch, getOwn, merge }) {
   let lastOwn = undefined
   let lastState = undefined
   let lastDispatch = undefined
+  let lastMerged = undefined
   let lastResult = undefined
   return function pureSelector(state, props, dispatch) {
     const nextOwn = getOwn(state, props, dispatch)
@@ -45,16 +46,15 @@ export function buildPureSelector({ getState, getDispatch, getOwn, merge }) {
     const nextDispatch = getDispatch(state, props, dispatch)
 
     if (lastOwn !== nextOwn || lastState !== nextState || lastDispatch !== nextDispatch) {
-      lastOwn = nextOwn
-      lastState = nextState
-      lastDispatch = nextDispatch
-
-      const nextResult = merge(nextState, nextDispatch, nextOwn)
-      if (!lastResult || !shallowEqual(lastResult, nextResult)) {
-        lastResult = nextResult
+      const nextMerged = merge(nextState, nextDispatch, nextOwn)
+      if (!lastMerged || !shallowEqual(lastMerged, nextMerged)) {
+        lastResult = nextMerged
       }
+      lastMerged = nextMerged
     }
-
+    lastOwn = nextOwn
+    lastState = nextState
+    lastDispatch = nextDispatch
     return lastResult
   }
 }
