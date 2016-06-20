@@ -1,53 +1,55 @@
 import shallowEqual from '../utils/shallowEqual'
 
-// used by getStatePropsSelector and getDispatchPropsSelector to create a memoized selector function
-// based on the given mapStateOrDispatchToProps function. It also detects if that function is a
-// factory based on its first returned result.
-// if not pure, then results should always be recomputed (except if it's ignoring prop changes)
-export default function buildFactoryAwareSelector(
-  pure,
-  ownPropsSelector,
-  selectStateOrDispatch,
-  mapStateOrDispatchToProps
-) {
-  const noProps = {}
-
-  // factory detection. if the first result of mapSomethingToProps is a function, use that as the
-  // true mapSomethingToProps
-  let map = mapStateOrDispatchToProps
-  let mapProxy = function initialMapProxy(...args) {
-    const result = map(...args)
+// factory detection. if the first result of mapToProps is a function, use that as the
+// true mapToProps
+export default function buildMapOrMapFactoryProxy(mapToProps) {
+  let map = undefined
+  function firstRun(storePart, props) {
+    const result = mapToProps(storePart, props)
     if (typeof result === 'function') {
       map = result
-      mapProxy = map
-      return map(...args)
+      return map(storePart, props)
     } else {
-      mapProxy = map
+      map = mapToProps
       return result
     }
   }
-  
-  if (!pure) {
-    return function impureFactoryAwareSelector(state, props, dispatch) {
-      return mapProxy(
-        selectStateOrDispatch(state, props, dispatch),
-        ownPropsSelector(state, props, dispatch)
-      )
-    }
-  }
 
-  let lastStateOrDispatch = undefined
+  function proxy(storePart, props) {
+    return (map || firstRun)(storePart, props)
+  }
+  proxy.dependsOnProps = function dependsOnProps() {
+    return (map || mapToProps).length !== 1
+  }
+  return proxy
+}
+
+export function buildImpureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
+  const map = buildMapOrMapFactoryProxy(mapToProps)
+
+  return function impureFactoryAwareSelector(state, props, dispatch) {
+    return map(
+      getStorePart(state, props, dispatch),
+      getOwnProps(state, props, dispatch)
+    )
+  }
+}
+
+export function buildPureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
+  const map = buildMapOrMapFactoryProxy(mapToProps)
+  const noProps = {}
+  let lastStorePart = undefined
   let lastProps = undefined
   let lastResult = undefined
 
   return function pureFactoryAwareSelector(state, props, dispatch) {
-    const nextStateOrDispatch = selectStateOrDispatch(state, props, dispatch)
-    const nextProps = map.length === 1 ? noProps : ownPropsSelector(state, props, dispatch)
+    const nextStorePart = getStorePart(state, props, dispatch)
+    const nextProps = map.dependsOnProps() ? getOwnProps(state, props, dispatch) : noProps
 
-    if (lastStateOrDispatch !== nextStateOrDispatch || lastProps !== nextProps) {
-      lastStateOrDispatch = nextStateOrDispatch
+    if (lastStorePart !== nextStorePart || lastProps !== nextProps) {
+      lastStorePart = nextStorePart
       lastProps = nextProps
-      const nextResult = mapProxy(nextStateOrDispatch, nextProps)
+      const nextResult = map(nextStorePart, nextProps)
 
       if (!lastResult || !shallowEqual(lastResult, nextResult)) {
         lastResult = nextResult
@@ -55,4 +57,9 @@ export default function buildFactoryAwareSelector(
     }
     return lastResult
   }
+}
+
+export default function buildFactoryAwareSelector(pure, getOwnProps, getStorePart, mapToProps) {
+  const build = pure ? buildPureFactoryAwareSelector : buildImpureFactoryAwareSelector
+  return build(getOwnProps, getStorePart, mapToProps)
 }

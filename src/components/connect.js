@@ -1,12 +1,9 @@
 import connectAdvanced from './connectAdvanced'
+import { buildDispatchPropsSelector } from '../selectors/dispatch'
+import { buildOwnPropsSelector } from '../selectors/ownProps'
+import { buildStatePropsSelector } from '../selectors/state'
 import shallowEqual from '../utils/shallowEqual'
 import verifyPlainObject from '../utils/verifyPlainObject'
-
-import {
-  buildDispatchPropsSelector,
-  buildOwnPropsSelector,
-  buildStatePropsSelector
-} from '../selectors'
 
 export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
   return {
