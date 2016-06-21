@@ -4,7 +4,7 @@ export function impureOwnPropsSelector(_, props) {
   return props
 }
 
-export function buildPureOwnPropsSelector() {
+export function createPureOwnPropsSelector() {
   let lastProps = undefined
   let lastResult = undefined
   return function pureOwnPropsSelector(_, nextProps) {
@@ -16,8 +16,8 @@ export function buildPureOwnPropsSelector() {
   }
 }
 
-export function buildOwnPropsSelector(pure) {
+export function createOwnPropsSelector(pure) {
   return pure
-    ? buildPureOwnPropsSelector()
+    ? createPureOwnPropsSelector()
     : impureOwnPropsSelector
 }

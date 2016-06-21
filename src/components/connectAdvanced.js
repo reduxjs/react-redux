@@ -52,7 +52,9 @@ export default function connectAdvanced(
     storeKey = 'store',
 
     // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
-    withRef = false
+    withRef = false,
+
+    ...connectOptions
   } = {}
 ) {
   const subscriptionKey = storeKey + 'Subscription'
@@ -121,6 +123,7 @@ export default function connectAdvanced(
         this.lastRenderedProps = null
 
         this.selector = buildSelector({
+          ...connectOptions,
           displayName: Connect.displayName,
           dispatch: this.store.dispatch,
           getState: dependsOnState ? this.store.getState : (() => null),

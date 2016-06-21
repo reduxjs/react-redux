@@ -1,90 +1,45 @@
 import connectAdvanced from './connectAdvanced'
-import { buildDispatchPropsSelector } from '../selectors/dispatch'
-import { buildOwnPropsSelector } from '../selectors/ownProps'
-import { buildStatePropsSelector } from '../selectors/state'
-import shallowEqual from '../utils/shallowEqual'
 import verifyPlainObject from '../utils/verifyPlainObject'
+import { createFinalPropsComponents, createFinalPropsSelector } from '../selectors/getFinalProps'
 
-export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
-  return {
-    ...ownProps,
-    ...stateProps,
-    ...dispatchProps
-  }
-}
-
-export function wrapWithVerify(displayName, { getState, getDispatch, getOwn, merge }) {
+export function wrapWithVerify(displayName, { getState, getDispatch, getOwnProps, mergeProps }) {
   return {
     getState: verifyPlainObject(displayName, 'mapStateToProps', getState),
     getDispatch: verifyPlainObject(displayName, 'mapDispatchToProps', getDispatch),
-    getOwn,
-    merge: merge !== defaultMergeProps
-      ? verifyPlainObject(displayName, 'mergeProps', merge)
-      : merge
-  }
-}
-
-export function buildImpureSelector({ getState, getDispatch, getOwn, merge }) {
-  return function impureSelector(state, props, dispatch) {
-    return merge(
-      getState(state, props, dispatch),
-      getDispatch(state, props, dispatch),
-      getOwn(state, props, dispatch)
-    )
-  }
-}
-
-export function buildPureSelector({ getState, getDispatch, getOwn, merge }) {
-  let lastOwn = undefined
-  let lastState = undefined
-  let lastDispatch = undefined
-  let lastMerged = undefined
-  let lastResult = undefined
-  return function pureSelector(state, props, dispatch) {
-    const nextOwn = getOwn(state, props, dispatch)
-    const nextState = getState(state, props, dispatch)
-    const nextDispatch = getDispatch(state, props, dispatch)
-
-    if (lastOwn !== nextOwn || lastState !== nextState || lastDispatch !== nextDispatch) {
-      const nextMerged = merge(nextState, nextDispatch, nextOwn)
-      if (!lastMerged || !shallowEqual(lastMerged, nextMerged)) {
-        lastResult = nextMerged
-      }
-      lastMerged = nextMerged
-    }
-    lastOwn = nextOwn
-    lastState = nextState
-    lastDispatch = nextDispatch
-    return lastResult
+    getOwnProps,
+    mergeProps: !mergeProps.isDefault
+      ? verifyPlainObject(displayName, 'mergeProps', mergeProps)
+      : mergeProps
   }
 }
 
 // create a connectAdvanced-compatible selectorFactory function that applies the results of
 // mapStateToProps, mapDispatchToProps, and mergeProps
-export function buildSelectorFactory(mapStateToProps, mapDispatchToProps, merge) {
-  return function selectorFactory({ displayName, pure }) {
-    const getOwn = buildOwnPropsSelector(pure)
-    const getState = buildStatePropsSelector(pure, getOwn, mapStateToProps)
-    const getDispatch = buildDispatchPropsSelector(pure, getOwn, mapDispatchToProps)
+export function selectorFactory(options) {
+  return createFinalPropsSelector(
+    options.pure,
+    wrapWithVerify(
+      options.displayName,
+      createFinalPropsComponents(options)
+    )
+  )
+}
 
-    const build = pure ? buildPureSelector : buildImpureSelector
-    return build(wrapWithVerify(displayName, { getState, getDispatch, getOwn, merge }))
+export function buildOptions(mapStateToProps, mapDispatchToProps, mergeProps, options) {
+  return {
+    getDisplayName: name => `Connect(${name})`,
+    ...options,
+    mapStateToProps,
+    mapDispatchToProps,
+    mergeProps, 
+    methodName: 'connect',
+    dependsOnState: Boolean(mapStateToProps)
   }
 }
 
-export default function connect(
-  mapStateToProps,
-  mapDispatchToProps,
-  mergeProps,
-  options
-) {
+export default function connect() {
   return connectAdvanced(
-    buildSelectorFactory(mapStateToProps, mapDispatchToProps, mergeProps || defaultMergeProps),
-    {
-      getDisplayName: name => `Connect(${name})`,
-      ...options,
-      methodName: 'connect',
-      dependsOnState: Boolean(mapStateToProps)
-    }
+    selectorFactory,
+    buildOptions.apply(undefined, arguments)
   )
 }

@@ -2,7 +2,7 @@ import shallowEqual from '../utils/shallowEqual'
 
 // factory detection. if the first result of mapToProps is a function, use that as the
 // true mapToProps
-export default function buildMapOrMapFactoryProxy(mapToProps) {
+export default function createMapOrMapFactoryProxy(mapToProps) {
   let map = undefined
   function firstRun(storePart, props) {
     const result = mapToProps(storePart, props)
@@ -24,8 +24,8 @@ export default function buildMapOrMapFactoryProxy(mapToProps) {
   return proxy
 }
 
-export function buildImpureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
-  const map = buildMapOrMapFactoryProxy(mapToProps)
+export function createImpureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
+  const map = createMapOrMapFactoryProxy(mapToProps)
 
   return function impureFactoryAwareSelector(state, props, dispatch) {
     return map(
@@ -35,8 +35,8 @@ export function buildImpureFactoryAwareSelector(getOwnProps, getStorePart, mapTo
   }
 }
 
-export function buildPureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
-  const map = buildMapOrMapFactoryProxy(mapToProps)
+export function createPureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
+  const map = createMapOrMapFactoryProxy(mapToProps)
   const noProps = {}
   let lastStorePart = undefined
   let lastProps = undefined
@@ -59,7 +59,7 @@ export function buildPureFactoryAwareSelector(getOwnProps, getStorePart, mapToPr
   }
 }
 
-export default function buildFactoryAwareSelector(pure, getOwnProps, getStorePart, mapToProps) {
-  const build = pure ? buildPureFactoryAwareSelector : buildImpureFactoryAwareSelector
-  return build(getOwnProps, getStorePart, mapToProps)
+export default function createFactoryAwareSelector(pure, getOwnProps, getStorePart, mapToProps) {
+  const create = pure ? createPureFactoryAwareSelector : createImpureFactoryAwareSelector
+  return create(getOwnProps, getStorePart, mapToProps)
 }
