@@ -8,7 +8,7 @@ export function whenMapStateIsMissing({ mapStateToProps }) {
   }
 }
 
-export function whenMapStateIsFunction({ mapStateToProps, pure }, getOwnProps) {
+export function whenMapStateIsFunction({ mapStateToProps, pure, getOwnProps }) {
   if (typeof mapStateToProps === 'function') {
     return createFactoryAwareSelector(pure, getOwnProps, state => state, mapStateToProps)
   }
@@ -21,10 +21,11 @@ export function getDefaultMapStateFactories() {
   ]
 }
 
-export function createMapStateSelector({ mapStateFactories, ...options }, getOwnProps) {
-  return createMatchingSelector(
-    mapStateFactories || getDefaultMapStateFactories(),
-    options,
-    getOwnProps
-  )
+export function createMapStateSelector(options) {
+  return createMatchingSelector(options.mapStateFactories, options)
+}
+
+export function addGetState(options) {
+  const getState = createMapStateSelector(options)
+  return { getState, ...options }
 }

@@ -1,45 +1,48 @@
+import { flow } from 'lodash'
+
 import connectAdvanced from './connectAdvanced'
 import verifyPlainObject from '../utils/verifyPlainObject'
-import { createFinalPropsComponents, createFinalPropsSelector } from '../selectors/getFinalProps'
+import { createFinalPropsSelector } from '../selectors/getFinalProps'
+import { addGetOwnProps } from '../selectors/getOwnProps'
+import { addGetDispatch, getDefaultMapDispatchFactories } from '../selectors/mapDispatch'
+import { addGetState, getDefaultMapStateFactories } from '../selectors/mapState'
+import { defaultMergeProps } from '../selectors/mergeProps'
 
-export function wrapWithVerify(displayName, { getState, getDispatch, getOwnProps, mergeProps }) {
+export function wrapWithVerify({ getState, getDispatch, mergeProps, ...options }) {
+  const verify = (methodName, func) => verifyPlainObject(options.displayName, methodName, func)
   return {
-    getState: verifyPlainObject(displayName, 'mapStateToProps', getState),
-    getDispatch: verifyPlainObject(displayName, 'mapDispatchToProps', getDispatch),
-    getOwnProps,
-    mergeProps: !mergeProps.isDefault
-      ? verifyPlainObject(displayName, 'mergeProps', mergeProps)
-      : mergeProps
+    ...options,
+    getState: verify('mapStateToProps', getState),
+    getDispatch: verify('mapDispatchToProps', getDispatch),
+    mergeProps: verify('mergeProps', mergeProps)
   }
 }
 
-// create a connectAdvanced-compatible selectorFactory function that applies the results of
-// mapStateToProps, mapDispatchToProps, and mergeProps
 export function selectorFactory(options) {
-  return createFinalPropsSelector(
-    options.pure,
-    wrapWithVerify(
-      options.displayName,
-      createFinalPropsComponents(options)
-    )
-  )
+  return flow(
+    addGetOwnProps,
+    addGetState,
+    addGetDispatch,
+    wrapWithVerify,
+    createFinalPropsSelector
+  )(options)
 }
 
 export function buildOptions(mapStateToProps, mapDispatchToProps, mergeProps, options) {
   return {
     getDisplayName: name => `Connect(${name})`,
+    mapDispatchFactories: getDefaultMapDispatchFactories(),
+    mapStateFactories: getDefaultMapStateFactories(),
     ...options,
     mapStateToProps,
     mapDispatchToProps,
-    mergeProps, 
+    mergeProps: mergeProps || defaultMergeProps, 
     methodName: 'connect',
     dependsOnState: Boolean(mapStateToProps)
   }
 }
 
-export default function connect() {
-  return connectAdvanced(
-    selectorFactory,
-    buildOptions.apply(undefined, arguments)
-  )
+export default function connect(...args) {
+  const options = buildOptions(...args)
+  return connectAdvanced(selectorFactory, options)
 }
