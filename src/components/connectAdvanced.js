@@ -133,11 +133,13 @@ export default function connectAdvanced(
           WrappedComponent
         })
 
-        const memoizedSelector = memoizeProps(sourceSelector)
+        const memoizeOwn = pure ? memoizeProps() : (props => props)
+        const memoizeFinal = memoizeProps()
 
         this.selector = function selector(ownProps) {
           const state = dependsOnState ? this.store.getState() : null
-          return memoizedSelector(state, ownProps, this.store.dispatch)
+          const props = memoizeOwn(ownProps)
+          return memoizeFinal(sourceSelector(state, props, this.store.dispatch))
         }
       }
 

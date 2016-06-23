@@ -3,7 +3,6 @@ import { flow } from 'lodash'
 import connectAdvanced from './connectAdvanced'
 import verifyPlainObject from '../utils/verifyPlainObject'
 import { createFinalPropsSelector } from '../selectors/getFinalProps'
-import { addGetOwnProps } from '../selectors/getOwnProps'
 import { addGetDispatch, getDefaultMapDispatchFactories } from '../selectors/mapDispatch'
 import { addGetState, getDefaultMapStateFactories } from '../selectors/mapState'
 import { defaultMergeProps } from '../selectors/mergeProps'
@@ -20,7 +19,6 @@ export function wrapWithVerify({ getState, getDispatch, mergeProps, ...options }
 
 export function selectorFactory(options) {
   return flow(
-    addGetOwnProps,
     addGetState,
     addGetDispatch,
     wrapWithVerify,

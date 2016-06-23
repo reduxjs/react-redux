@@ -1,20 +1,20 @@
-export function createImpureFinalPropsSelector({ getState, getDispatch, getOwnProps, mergeProps }) {
+export function createImpureFinalPropsSelector({ getState, getDispatch, mergeProps }) {
   return function impureSelector(state, props, dispatch) {
     return mergeProps(
       getState(state, props, dispatch),
       getDispatch(state, props, dispatch),
-      getOwnProps(state, props, dispatch)
+      props
     )
   }
 }
 
-export function createPureFinalPropsSelector({ getState, getDispatch, getOwnProps, mergeProps }) {
+export function createPureFinalPropsSelector({ getState, getDispatch, mergeProps }) {
   let lastOwn = undefined
   let lastState = undefined
   let lastDispatch = undefined
   let lastMerged = undefined
   return function pureSelector(state, props, dispatch) {
-    const nextOwn = getOwnProps(state, props, dispatch)
+    const nextOwn = props
     const nextState = getState(state, props, dispatch)
     const nextDispatch = getDispatch(state, props, dispatch)
 
