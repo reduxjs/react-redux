@@ -16,8 +16,13 @@ export function createPureOwnPropsSelector() {
   }
 }
 
-export function createOwnPropsSelector(pure) {
+export function createOwnPropsSelector({ pure }) {
   return pure
     ? createPureOwnPropsSelector()
     : impureOwnPropsSelector
+}
+
+export function addGetOwnProps(options) {
+  const getOwnProps = createOwnPropsSelector(options)
+  return { getOwnProps, ...options }
 }
