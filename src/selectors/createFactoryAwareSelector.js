@@ -24,18 +24,18 @@ export default function createMapOrMapFactoryProxy(mapToProps) {
   return proxy
 }
 
-export function createImpureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
+export function createImpureFactoryAwareSelector(getStorePart, mapToProps) {
   const map = createMapOrMapFactoryProxy(mapToProps)
 
   return function impureFactoryAwareSelector(state, props, dispatch) {
     return map(
       getStorePart(state, props, dispatch),
-      getOwnProps(state, props, dispatch)
+      props
     )
   }
 }
 
-export function createPureFactoryAwareSelector(getOwnProps, getStorePart, mapToProps) {
+export function createPureFactoryAwareSelector(getStorePart, mapToProps) {
   const map = createMapOrMapFactoryProxy(mapToProps)
   const noProps = {}
   let lastStorePart = undefined
@@ -44,7 +44,7 @@ export function createPureFactoryAwareSelector(getOwnProps, getStorePart, mapToP
 
   return function pureFactoryAwareSelector(state, props, dispatch) {
     const nextStorePart = getStorePart(state, props, dispatch)
-    const nextProps = map.dependsOnProps() ? getOwnProps(state, props, dispatch) : noProps
+    const nextProps = map.dependsOnProps() ? props : noProps
 
     if (lastStorePart !== nextStorePart || lastProps !== nextProps) {
       const nextResult = map(nextStorePart, nextProps)
@@ -59,7 +59,7 @@ export function createPureFactoryAwareSelector(getOwnProps, getStorePart, mapToP
   }
 }
 
-export default function createFactoryAwareSelector(pure, getOwnProps, getStorePart, mapToProps) {
+export default function createFactoryAwareSelector(pure, getStorePart, mapToProps) {
   const create = pure ? createPureFactoryAwareSelector : createImpureFactoryAwareSelector
-  return create(getOwnProps, getStorePart, mapToProps)
+  return create(getStorePart, mapToProps)
 }
