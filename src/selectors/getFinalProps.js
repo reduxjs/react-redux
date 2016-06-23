@@ -41,7 +41,7 @@ export function createFinalPropsSelector(options) {
     : createImpureFinalPropsSelector(options)
 }
 
-export function memoizeFinalPropsSelector(selector, enhance) {
+export function memoizeFinalPropsSelector(selector) {
   let lastProps = undefined
   let lastResult = undefined
 
@@ -51,7 +51,7 @@ export function memoizeFinalPropsSelector(selector, enhance) {
     // wrap the source selector in a shallow equals because props objects with same properties are
     // semantically equal to React... no need to return a new object.
     if (!lastProps || !shallowEqual(lastProps, nextProps)) {
-      lastResult = enhance(nextProps)
+      lastResult = nextProps
     }
     lastProps = nextProps
 
