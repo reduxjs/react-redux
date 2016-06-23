@@ -17,7 +17,7 @@ export function whenMapDispatchIsObject({ mapDispatchToProps, dispatch }) {
   }
 }
 
-export function whenMapDispatchIsFunction({ mapDispatchToProps, pure, dispatch }, getOwnProps) {
+export function whenMapDispatchIsFunction({ mapDispatchToProps, pure, dispatch, getOwnProps }) {
   if (typeof mapDispatchToProps === 'function') {
     return createFactoryAwareSelector(pure, getOwnProps, () => dispatch, mapDispatchToProps)    
   }
@@ -31,10 +31,11 @@ export function getDefaultMapDispatchFactories() {
   ]
 }
 
-export function createMapDispatchSelector({ mapDispatchFactories, ...options }, getOwnProps) {
-  return createMatchingSelector(
-    mapDispatchFactories || getDefaultMapDispatchFactories(),
-    options,
-    getOwnProps
-  )
+export function createMapDispatchSelector(options) {
+  return createMatchingSelector(options.mapDispatchFactories, options)
+}
+
+export function addGetDispatch(options) {
+  const getDispatch = createMapDispatchSelector(options)
+  return { getDispatch, ...options }
 }

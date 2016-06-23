@@ -1,28 +1,4 @@
-import { createOwnPropsSelector } from '../selectors/getOwnProps'
-import { createMapDispatchSelector } from '../selectors/mapDispatch'
-import { createMapStateSelector } from '../selectors/mapState'
 import shallowEqual from '../utils/shallowEqual'
-
-export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
-  return {
-    ...ownProps,
-    ...stateProps,
-    ...dispatchProps
-  }
-}
-defaultMergeProps.isDefault = true
-
-export function createFinalPropsComponents({ mergeProps, ...options }) {
-  const getOwnProps = createOwnPropsSelector(options.pure)
-  const getState = createMapStateSelector(options, getOwnProps)
-  const getDispatch = createMapDispatchSelector(options, getOwnProps)
-  return {
-    getState,
-    getDispatch,
-    getOwnProps,
-    mergeProps: mergeProps || defaultMergeProps
-  }
-}
 
 export function createImpureFinalPropsSelector({ getState, getDispatch, getOwnProps, mergeProps }) {
   return function impureSelector(state, props, dispatch) {
@@ -59,8 +35,8 @@ export function createPureFinalPropsSelector({ getState, getDispatch, getOwnProp
   }
 }
 
-export function createFinalPropsSelector(pure, components) {
-  return pure
-    ? createPureFinalPropsSelector(components)
-    : createImpureFinalPropsSelector(components)
+export function createFinalPropsSelector(options) {
+  return options.pure
+    ? createPureFinalPropsSelector(options)
+    : createImpureFinalPropsSelector(options)
 }
