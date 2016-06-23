@@ -1,5 +1,3 @@
-import shallowEqual from '../utils/shallowEqual'
-
 export function createImpureFinalPropsSelector({ getState, getDispatch, getOwnProps, mergeProps }) {
   return function impureSelector(state, props, dispatch) {
     return mergeProps(
@@ -15,23 +13,18 @@ export function createPureFinalPropsSelector({ getState, getDispatch, getOwnProp
   let lastState = undefined
   let lastDispatch = undefined
   let lastMerged = undefined
-  let lastResult = undefined
   return function pureSelector(state, props, dispatch) {
     const nextOwn = getOwnProps(state, props, dispatch)
     const nextState = getState(state, props, dispatch)
     const nextDispatch = getDispatch(state, props, dispatch)
 
     if (lastOwn !== nextOwn || lastState !== nextState || lastDispatch !== nextDispatch) {
-      const nextMerged = mergeProps(nextState, nextDispatch, nextOwn)
-      if (!lastMerged || !shallowEqual(lastMerged, nextMerged)) {
-        lastResult = nextMerged
-      }
-      lastMerged = nextMerged
+      lastMerged = mergeProps(nextState, nextDispatch, nextOwn)
+      lastOwn = nextOwn
+      lastState = nextState
+      lastDispatch = nextDispatch
     }
-    lastOwn = nextOwn
-    lastState = nextState
-    lastDispatch = nextDispatch
-    return lastResult
+    return lastMerged
   }
 }
 
@@ -39,22 +32,4 @@ export function createFinalPropsSelector(options) {
   return options.pure
     ? createPureFinalPropsSelector(options)
     : createImpureFinalPropsSelector(options)
-}
-
-export function memoizeFinalPropsSelector(selector) {
-  let lastProps = undefined
-  let lastResult = undefined
-
-  return function memoize(state, ownProps, dispatch) {
-    const nextProps = selector(state, ownProps, dispatch)
-
-    // wrap the source selector in a shallow equals because props objects with same properties are
-    // semantically equal to React... no need to return a new object.
-    if (!lastProps || !shallowEqual(lastProps, nextProps)) {
-      lastResult = nextProps
-    }
-    lastProps = nextProps
-
-    return lastResult
-  }
 }
