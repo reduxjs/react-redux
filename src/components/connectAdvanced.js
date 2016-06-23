@@ -61,6 +61,7 @@ export default function connectAdvanced(
 
         this.version = version
         this.state = {}
+        this.recomputations = 0
         this.store = this.props[storeKey] || this.context[storeKey]
         this.parentSub = this.props[subscriptionKey] || this.context[subscriptionKey]
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
@@ -119,19 +120,6 @@ export default function connectAdvanced(
 
       initSelector() {
         this.lastRenderedProps = null
-        this.recomputations = 0
-
-        function addExtraProps(props) {
-          if (!withRef && !recomputationsProp) return props
-          // make a shallow copy so that fields added don't leak to the original selector.
-          // this is especially important for 'ref' since that's a reference back to the component
-          // instance. a singleton memoized selector would then be holding a reference to the
-          // instance, preventing the instance from being garbage collected, and that would be bad
-          const result = { ...props }
-          if (withRef) result.ref = this.setWrappedInstance
-          if (recomputationsProp) result[recomputationsProp] = this.recomputations++
-          return result
-        }
 
         const sourceSelector = selectorFactory({
           // most options passed to connectAdvanced are passed along to the selectorFactory
@@ -145,10 +133,7 @@ export default function connectAdvanced(
           WrappedComponent
         })
 
-        const memoizedSelector = memoizeFinalPropsSelector(
-          sourceSelector,
-          addExtraProps.bind(this)
-        )
+        const memoizedSelector = memoizeFinalPropsSelector(sourceSelector)
 
         this.selector = function selector(ownProps) {
           const state = dependsOnState ? this.store.getState() : null
@@ -176,10 +161,24 @@ export default function connectAdvanced(
         return this.subscription.isSubscribed()
       }
 
+      addExtraProps(props) {
+        if (!withRef && !recomputationsProp) return props
+        // make a shallow copy so that fields added don't leak to the original selector.
+        // this is especially important for 'ref' since that's a reference back to the component
+        // instance. a singleton memoized selector would then be holding a reference to the
+        // instance, preventing the instance from being garbage collected, and that would be bad
+        const withExtras = { ...props }
+        if (withRef) withExtras.ref = this.setWrappedInstance
+        if (recomputationsProp) withExtras[recomputationsProp] = this.recomputations++
+        return withExtras
+      }
+
       render() {
+        this.lastRenderedProps = this.selector(this.props)
+
         return createElement(
           WrappedComponent,
-          this.lastRenderedProps = this.selector(this.props)
+          this.addExtraProps(this.lastRenderedProps)
         )
       }
     }
