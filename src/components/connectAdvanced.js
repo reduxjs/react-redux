@@ -2,8 +2,8 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, PropTypes, createElement } from 'react'
 
+import { memoizeFinalPropsSelector } from '../selectors/getFinalProps'
 import Subscription from '../utils/Subscription'
-import defaultBuildSelector from '../utils/buildSelector'
 import storeShape from '../utils/storeShape'
 
 let hotReloadingVersion = 0
@@ -20,12 +20,6 @@ export default function connectAdvanced(
   selectorFactory,
   // options object:
   {
-    // this is the function that invokes the selectorFactory and enhances it with a few important
-    // behaviors. you probably want to leave this alone unless you've read and understand the source
-    // for components/connectAdvanced.js and utils/buildSelector.js, then maybe you can use this as
-    // an injection point for custom behavior, for example hooking in some custom devtools.
-    buildSelector = defaultBuildSelector,
-
     // if true, the selector receieves the current store state as the first arg, and this HOC
     // subscribes to store changes during componentDidMount. if false, null is passed as the first
     // arg of selector and store.subscribe() is never called.
@@ -69,6 +63,7 @@ export default function connectAdvanced(
         this.state = {}
         this.store = this.props[storeKey] || this.context[storeKey]
         this.parentSub = this.props[subscriptionKey] || this.context[subscriptionKey]
+        this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or ` +
@@ -118,45 +113,67 @@ export default function connectAdvanced(
         )
         return this.wrappedInstance
       }
+      setWrappedInstance(ref) {
+        this.wrappedInstance = ref
+      }
 
       initSelector() {
         this.lastRenderedProps = null
+        this.recomputations = 0
 
-        this.selector = buildSelector({
-          ...connectOptions,
-          displayName: Connect.displayName,
+        function addExtraProps(props) {
+          if (!withRef && !recomputationsProp) return props
+          // make a shallow copy so that fields added don't leak to the original selector.
+          // this is especially important for 'ref' since that's a reference back to the component
+          // instance. a singleton memoized selector would then be holding a reference to the
+          // instance, preventing the instance from being garbage collected, and that would be bad
+          const result = { ...props }
+          if (withRef) result.ref = this.setWrappedInstance
+          if (recomputationsProp) result[recomputationsProp] = this.recomputations++
+          return result
+        }
+
+        const sourceSelector = selectorFactory({
+          // most options passed to connectAdvanced are passed along to the selectorFactory
+          dependsOnState, methodName, pure, storeKey, withRef, ...connectOptions,
+          // useful for factories that want to bind action creators outside the selector
           dispatch: this.store.dispatch,
-          getState: dependsOnState ? this.store.getState : (() => null),
-          ref: withRef ? (ref => { this.wrappedInstance = ref }) : undefined,
-          WrappedComponent,
-          selectorFactory,
-          recomputationsProp,
-          methodName,
-          pure,
-          dependsOnState,
-          storeKey,
-          withRef
+          // useful for error messages
+          displayName: Connect.displayName,
+          // useful if a factory wants to use attributes of the component to build the selector,
+          // for example: one could use its propTypes as a props whitelist
+          WrappedComponent
         })
+
+        const memoizedSelector = memoizeFinalPropsSelector(
+          sourceSelector,
+          addExtraProps.bind(this)
+        )
+
+        this.selector = function selector(ownProps) {
+          const state = dependsOnState ? this.store.getState() : null
+          return memoizedSelector(state, ownProps, this.store.dispatch)
+        }
       }
 
       initSubscription() {
+        function onStoreStateChange(notifyNestedSubs) {
+          if (dependsOnState && this.shouldComponentUpdate(this.props)) {
+            this.setState({}, notifyNestedSubs)
+          } else {
+            notifyNestedSubs()
+          }
+        }
+
         this.subscription = new Subscription(
           this.store,
           this.parentSub,
-          this.onStateChange.bind(this)
+          onStoreStateChange.bind(this)
         )
       }
 
       isSubscribed() {
         return this.subscription.isSubscribed()
-      }
-
-      onStateChange(callback) {
-        if (dependsOnState && this.shouldComponentUpdate(this.props)) {
-          this.setState({}, callback)
-        } else {
-          callback()
-        }
       }
 
       render() {
