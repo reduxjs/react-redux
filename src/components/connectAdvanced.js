@@ -2,7 +2,7 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, PropTypes, createElement } from 'react'
 
-import { memoizeFinalPropsSelector } from '../selectors/getFinalProps'
+import memoizeProps from '../utils/memoizeProps'
 import Subscription from '../utils/Subscription'
 import storeShape from '../utils/storeShape'
 
@@ -133,7 +133,7 @@ export default function connectAdvanced(
           WrappedComponent
         })
 
-        const memoizedSelector = memoizeFinalPropsSelector(sourceSelector)
+        const memoizedSelector = memoizeProps(sourceSelector)
 
         this.selector = function selector(ownProps) {
           const state = dependsOnState ? this.store.getState() : null
