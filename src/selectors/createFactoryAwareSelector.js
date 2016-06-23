@@ -1,4 +1,4 @@
-import shallowEqual from '../utils/shallowEqual'
+import memoizeProps from '../utils/memoizeProps'
 
 // factory detection. if the first result of mapToProps is a function, use that as the
 // true mapToProps
@@ -37,25 +37,22 @@ export function createImpureFactoryAwareSelector(getStorePart, mapToProps) {
 
 export function createPureFactoryAwareSelector(getStorePart, mapToProps) {
   const map = createMapOrMapFactoryProxy(mapToProps)
+  const memoizeMapResult = memoizeProps()
   const noProps = {}
   let lastStorePart = undefined
   let lastProps = undefined
-  let lastResult = undefined
+  let result = undefined
 
   return function pureFactoryAwareSelector(state, props, dispatch) {
     const nextStorePart = getStorePart(state, props, dispatch)
     const nextProps = map.dependsOnProps() ? props : noProps
 
     if (lastStorePart !== nextStorePart || lastProps !== nextProps) {
-      const nextResult = map(nextStorePart, nextProps)
-
-      if (!lastResult || !shallowEqual(lastResult, nextResult)) {
-        lastResult = nextResult
-      }
+      result = memoizeMapResult(map(nextStorePart, nextProps))
+      lastStorePart = nextStorePart
+      lastProps = nextProps
     }
-    lastStorePart = nextStorePart
-    lastProps = nextProps
-    return lastResult
+    return result
   }
 }
 
