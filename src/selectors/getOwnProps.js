@@ -1,19 +1,11 @@
-import shallowEqual from '../utils/shallowEqual'
+import memoizeProps from '../utils/memoizeProps'
 
 export function impureOwnPropsSelector(_, props) {
   return props
 }
 
 export function createPureOwnPropsSelector() {
-  let lastProps = undefined
-  let lastResult = undefined
-  return function pureOwnPropsSelector(_, nextProps) {
-    if (!lastProps || !shallowEqual(lastProps, nextProps)) {
-      lastResult = nextProps
-    }
-    lastProps = nextProps
-    return lastResult
-  }
+  return memoizeProps((_, props) => props)
 }
 
 export function createOwnPropsSelector({ pure }) {
