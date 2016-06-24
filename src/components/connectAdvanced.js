@@ -38,9 +38,8 @@ export default function connectAdvanced(
     pure = true,
 
     // if defined, the name of the property passed to the wrapped element indicating the number of
-    // recomputations since it was mounted. useful for watching in react devtools for unnecessary
-    // re-renders.
-    recomputationsProp = undefined,
+    // calls to render. useful for watching in react devtools for unnecessary re-renders.
+    renderCountProp = undefined,
 
     // the key of props/context to get the store
     storeKey = 'store',
@@ -61,7 +60,7 @@ export default function connectAdvanced(
 
         this.version = version
         this.state = {}
-        this.recomputations = 0
+        this.renderCount = 0
         this.store = this.props[storeKey] || this.context[storeKey]
         this.parentSub = this.props[subscriptionKey] || this.context[subscriptionKey]
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
@@ -164,14 +163,14 @@ export default function connectAdvanced(
       }
 
       addExtraProps(props) {
-        if (!withRef && !recomputationsProp) return props
+        if (!withRef && !renderCountProp) return props
         // make a shallow copy so that fields added don't leak to the original selector.
         // this is especially important for 'ref' since that's a reference back to the component
         // instance. a singleton memoized selector would then be holding a reference to the
         // instance, preventing the instance from being garbage collected, and that would be bad
         const withExtras = { ...props }
         if (withRef) withExtras.ref = this.setWrappedInstance
-        if (recomputationsProp) withExtras[recomputationsProp] = this.recomputations++
+        if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
         return withExtras
       }
 
