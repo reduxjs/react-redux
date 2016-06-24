@@ -1,11 +1,27 @@
-import { flow } from 'lodash'
+import flow from 'lodash/flow'
 
 import connectAdvanced from './connectAdvanced'
 import verifyPlainObject from '../utils/verifyPlainObject'
 import { createFinalPropsSelector } from '../selectors/getFinalProps'
-import { addGetDispatch, getDefaultMapDispatchFactories } from '../selectors/mapDispatch'
-import { addGetState, getDefaultMapStateFactories } from '../selectors/mapState'
+import defaultMapDispatchFactories from '../selectors/mapDispatch'
+import defaultMapStateFactories from '../selectors/mapState'
 import { defaultMergeProps } from '../selectors/mergeProps'
+
+export function addStateAndDispatchSelectors(options) {
+  function match(factories) {
+    for (let i = factories.length - 1; i >= 0; i--) {
+      const selector = factories[i](options)
+      if (selector) return selector
+    }
+    return undefined
+  }
+
+  return {
+    ...options,
+    getState: match(options.mapStateFactories),
+    getDispatch: match(options.mapDispatchFactories)
+  }
+}
 
 export function wrapWithVerify({ getState, getDispatch, mergeProps, ...options }) {
   const verify = (methodName, func) => verifyPlainObject(options.displayName, methodName, func)
@@ -19,8 +35,7 @@ export function wrapWithVerify({ getState, getDispatch, mergeProps, ...options }
 
 export function selectorFactory(options) {
   return flow(
-    addGetState,
-    addGetDispatch,
+    addStateAndDispatchSelectors,
     wrapWithVerify,
     createFinalPropsSelector
   )(options)
@@ -29,8 +44,8 @@ export function selectorFactory(options) {
 export function buildOptions(mapStateToProps, mapDispatchToProps, mergeProps, options) {
   return {
     getDisplayName: name => `Connect(${name})`,
-    mapDispatchFactories: getDefaultMapDispatchFactories(),
-    mapStateFactories: getDefaultMapStateFactories(),
+    mapDispatchFactories: defaultMapDispatchFactories,
+    mapStateFactories: defaultMapStateFactories,
     ...options,
     mapStateToProps,
     mapDispatchToProps,

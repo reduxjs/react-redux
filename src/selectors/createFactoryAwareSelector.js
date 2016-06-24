@@ -2,7 +2,7 @@ import memoizeProps from '../utils/memoizeProps'
 
 // factory detection. if the first result of mapToProps is a function, use that as the
 // true mapToProps
-export default function createMapOrMapFactoryProxy(mapToProps) {
+export function createMapOrMapFactoryProxy(mapToProps) {
   let map = undefined
   function firstRun(storePart, props) {
     const result = mapToProps(storePart, props)
