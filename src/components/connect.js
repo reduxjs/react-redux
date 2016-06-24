@@ -41,12 +41,13 @@ export function selectorFactory(options) {
   )(options)
 }
 
-export function buildOptions(mapStateToProps, mapDispatchToProps, mergeProps, options) {
+export function buildOptions(mapStateToProps, mapDispatchToProps, mergeProps, { pure, withRef } = {}) {
   return {
     getDisplayName: name => `Connect(${name})`,
     mapDispatchFactories: defaultMapDispatchFactories,
     mapStateFactories: defaultMapStateFactories,
-    ...options,
+    withRef,
+    pure,
     mapStateToProps,
     mapDispatchToProps,
     mergeProps: mergeProps || defaultMergeProps, 
