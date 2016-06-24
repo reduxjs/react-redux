@@ -1,7 +1,5 @@
 import { bindActionCreators } from 'redux'
-
 import createFactoryAwareSelector from './createFactoryAwareSelector'
-import createMatchingSelector from '../selectors/createMatchingSelector'
 
 export function whenMapDispatchIsMissing({ mapDispatchToProps, dispatch }) {
   if (!mapDispatchToProps) {
@@ -23,19 +21,8 @@ export function whenMapDispatchIsFunction({ mapDispatchToProps, pure, dispatch }
   }
 }
 
-export function getDefaultMapDispatchFactories() {
-  return [
-    whenMapDispatchIsMissing,
-    whenMapDispatchIsFunction,
-    whenMapDispatchIsObject
-  ]
-}
-
-export function createMapDispatchSelector(options) {
-  return createMatchingSelector(options.mapDispatchFactories, options)
-}
-
-export function addGetDispatch(options) {
-  const getDispatch = createMapDispatchSelector(options)
-  return { getDispatch, ...options }
-}
+export default [
+  whenMapDispatchIsMissing,
+  whenMapDispatchIsFunction,
+  whenMapDispatchIsObject
+]
