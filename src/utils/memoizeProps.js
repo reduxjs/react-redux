@@ -1,4 +1,4 @@
-import shallowEqual from '../shallowEqual'
+import shallowEqual from './shallowEqual'
 
 // wrap the source props in a shallow equals because props objects with same properties are
 // semantically equal in the eyes of React... no need to return a new object.
