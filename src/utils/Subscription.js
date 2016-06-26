@@ -1,5 +1,5 @@
 
-// enapsulates the subscription logic for connecting a component to the redux store, as well as
+// encapsulates the subscription logic for connecting a component to the redux store, as well as
 // nesting subscriptions of decendant components, so that we can ensure the ancestor components
 // re-render before descendants
 export default class Subscription {
