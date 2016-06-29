@@ -74,7 +74,7 @@ Instead, it *returns* a new, connected component class, for you to use.
 
 > Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if formal definition of the function contains one mandatory parameter (function has length 1). For example, function defined like below won't receive `ownProps` as the second argument.
 ```javascript
-function mapDispatchToProps(state) {
+function mapStateToProps(state) {
   console.log(state); // state
   console.log(arguments[1]); // undefined
 }
