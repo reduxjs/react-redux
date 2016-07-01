@@ -72,16 +72,10 @@ Instead, it *returns* a new, connected component class, for you to use.
   * [`pure = true`] *(Boolean)*: If true, implements `shouldComponentUpdate` and shallowly compares the result of `mergeProps`, preventing unnecessary updates, assuming that the component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state. *Defaults to `true`.*
   * [`withRef = false`] *(Boolean)*: If true, stores a ref to the wrapped component instance and makes it available via `getWrappedInstance()` method. *Defaults to `false`.*
 
-> Note: `ownProps` is passed to `mapStateToProps` and `mapDispatchToProps` only if formal definition of the function contains two mandatory parameters (function length has to be greater or equal 2). For example, functions defined like below won't receive `ownProps` as the second argument.
+> Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if formal definition of the function contains one mandatory parameter (function has length 1). For example, function defined like below won't receive `ownProps` as the second argument.
 ```javascript
-function mapStateToProps() {
-  console.log(arguments[0]); // state
-  console.log(arguments[1]); // undefined
-}
-```
-```javascript
-const mapStateToProps = (...args) => {
-  console.log(arguments[0]); // state
+function mapStateToProps(state) {
+  console.log(state); // state
   console.log(arguments[1]); // undefined
 }
 ```
@@ -91,6 +85,26 @@ const mapStateToProps = (state, ownProps = {}) => {
   console.log(ownProps); // undefined
 }
 ```
+Functions with no mandatory parameters or two parameters **will receive** `ownProps`.
+```javascript
+const mapStateToProps = (state, ownProps) => {
+  console.log(state); // state
+  console.log(ownProps); // ownProps
+}
+```
+```javascript
+function mapStateToProps() {
+  console.log(arguments[0]); // state
+  console.log(arguments[1]); // ownProps
+}
+```
+```javascript
+const mapStateToProps = (...args) => {
+  console.log(arguments[0]); // state
+  console.log(arguments[1]); // ownProps
+}
+```
+
 
 #### Returns
 
