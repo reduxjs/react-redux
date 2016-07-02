@@ -35,7 +35,8 @@ export default class Subscription {
   notifyNestedSubs() {
     const keys = Object.keys(this.nestedSubs)
     for (let i = 0; i < keys.length; i++) {
-      this.nestedSubs[keys[i]]()
+      const sub = this.nestedSubs[keys[i]]
+      if (sub) sub()
     }
   }
 
