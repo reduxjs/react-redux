@@ -1868,5 +1868,28 @@ describe('React', () => {
 
       ReactDOM.unmountComponentAtNode(div)
     })
+
+    it('should update impure components whenever the state of the store changes', () => {
+      const store = createStore(() => ({}))
+      let renderCount = 0
+
+      @connect(() => ({}), null, null, { pure: false })
+      class ImpureComponent extends React.Component {
+        render() {
+          ++renderCount
+          return <div />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <ImpureComponent />
+        </ProviderMock>
+      )
+
+      const rendersBeforeStateChange = renderCount
+      store.dispatch({ type: 'ACTION' })
+      expect(renderCount).toBe(rendersBeforeStateChange + 1)
+    })
   })
 })

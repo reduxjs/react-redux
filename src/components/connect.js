@@ -321,7 +321,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           haveMergedPropsChanged = false
         }
 
-        if (!haveMergedPropsChanged && renderedElement) {
+        if (pure && !haveMergedPropsChanged && renderedElement) {
           return renderedElement
         }
 
