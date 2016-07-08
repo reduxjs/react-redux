@@ -100,8 +100,8 @@ function mapStateToProps() {
 ```
 ```javascript
 const mapStateToProps = (...args) => {
-  console.log(arguments[0]); // state
-  console.log(arguments[1]); // ownProps
+  console.log(args[0]); // state
+  console.log(args[1]); // ownProps
 }
 ```
 
