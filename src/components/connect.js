@@ -50,7 +50,14 @@ import { defaultMergeProps } from '../selectors/mergeProps'
   props or is notified by the store subscription.
  */
 
-export function buildOptions(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
+export function buildOptions(
+  mapStateToProps,
+  mapDispatchToProps,
+  mergeProps,
+  {
+    pure = true,
+    withRef // ...options
+  } = {}) {
   return {
     // used to compute the Connect component's displayName from the wrapped component's displayName.
     getDisplayName: name => `Connect(${name})`,
@@ -65,10 +72,16 @@ export function buildOptions(mapStateToProps, mapDispatchToProps, mergeProps, op
     // whether it's a function or missing.
     mapStateFactories: defaultMapStateFactories,
 
+    // if true, the selector returned by selectorFactory will memoize its results, allowing
+    // connectAdvanced's shouldComponentUpdate to return false if final props have not changed.
+    // if false, the selector will always return a new object and shouldComponentUpdate will always
+    // return true.
+    pure,
+
     // in addition to setting withRef, pure, storeKey, and renderCountProp, options can override
     // getDisplayName, mapDispatchFactories, or mapStateFactories.
     // TODO: REPLACE WITH ...OPTIONS ONCE IT'S OK TO EXPOSE NEW FUNCTIONALITY.
-    withRef: options.withRef, pure: options.pure,
+    withRef,
 
     // passed through to selectorFactory
     mapStateToProps,
