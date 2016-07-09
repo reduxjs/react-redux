@@ -33,29 +33,26 @@ export function createImpureFactoryAwareSelector(mapToProps) {
 
 export function createPureFactoryAwareSelector(mapToProps) {
   const proxy = createMapOrMapFactoryProxy(mapToProps)
-  const noProps = {}
   let lastStorePart = undefined
   let lastProps = undefined
   let result = undefined
 
-  function pureFactoryAwareSelector(storePart, props) {
-    const nextStorePart = storePart
-    const nextProps = proxy.dependsOnProps ? props : noProps
-
-    if (lastStorePart !== nextStorePart || lastProps !== nextProps) {
+  return function pureFactoryAwareSelector(nextStorePart, nextProps) {
+    if (
+      lastStorePart !== nextStorePart ||
+      (proxy.dependsOnProps && lastProps !== nextProps)
+    ) {
       result = proxy.mapToProps(nextStorePart, nextProps)
       lastStorePart = nextStorePart
       lastProps = nextProps
-      pureFactoryAwareSelector.dependsOnProps = proxy.dependsOnProps    
     }
+
     return result
   }
-
-  pureFactoryAwareSelector.dependsOnProps = proxy.dependsOnProps
-  return pureFactoryAwareSelector
 }
 
-export default function createFactoryAwareSelector(pure, mapToProps) {
-  const create = pure ? createPureFactoryAwareSelector : createImpureFactoryAwareSelector
-  return create(mapToProps)
+export default function createFactoryAwareSelector(mapToProps, pure) {
+  return pure
+    ? createPureFactoryAwareSelector(mapToProps)
+    : createImpureFactoryAwareSelector(mapToProps)
 }
