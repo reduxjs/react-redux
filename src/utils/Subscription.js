@@ -1,7 +1,7 @@
-
 // encapsulates the subscription logic for connecting a component to the redux store, as well as
 // nesting subscriptions of decendant components, so that we can ensure the ancestor components
 // re-render before descendants
+
 export default class Subscription {
   constructor(store, parentSub, onStateChange) {
     this.subscribe = parentSub
@@ -9,22 +9,24 @@ export default class Subscription {
       : store.subscribe
 
     this.onStateChange = onStateChange
-    this.lastNestedSubId = 0
     this.unsubscribe = null
-    this.nestedSubs = {}
-
+    this.nestedSubs = []
     this.notifyNestedSubs = this.notifyNestedSubs.bind(this)
   }
 
   addNestedSub(listener) {
     this.trySubscribe()
+    this.nestedSubs = this.nestedSubs.concat(listener)
 
-    const id = this.lastNestedSubId++
-    this.nestedSubs[id] = listener
+    let subscribed = true
     return () => {
-      if (this.nestedSubs[id]) {
-        delete this.nestedSubs[id]
-      }
+      if (!subscribed) return
+      subscribed = false
+
+      const subs = this.nestedSubs.slice()
+      const index = subs.indexOf(listener)
+      subs.splice(index, 1)
+      this.nestedSubs = subs
     }
   }
 
@@ -33,10 +35,9 @@ export default class Subscription {
   }
 
   notifyNestedSubs() {
-    const keys = Object.keys(this.nestedSubs)
-    for (let i = 0; i < keys.length; i++) {
-      const sub = this.nestedSubs[keys[i]]
-      if (sub) sub()
+    const subs = this.nestedSubs
+    for (let i = subs.length - 1; i >= 0; i--) {
+      subs[i]()
     }
   }
 
