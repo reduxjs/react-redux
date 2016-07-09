@@ -13,11 +13,9 @@ import { defaultMergeProps } from '../selectors/mergeProps'
   pieces of that final selector.
 
   First, buildOptions combines its args with some meta into an options object that's passed to
-  connectAdvanced, which will pass a modified version of that options object to selectorFactory.
+  connectAdvanced, which will pass a modified* version of that options object to selectorFactory.
 
-    options modifications:
-      added: dispatch, displayName, WrappedComponent
-      removed: getDisplayName, renderCountProp
+    *values added to options: dispatch, displayName, WrappedComponent
 
   Each time selectorFactory is called (whenever an instance of the component in connectAdvanced is
   constructed or hot reloaded), it uses the modified options object to build a selector function:
@@ -96,8 +94,7 @@ export function buildOptions(
     methodName: 'connect',
 
     // if mapStateToProps is not given a value, the Connect component doesn't subscribe to the store
-    // or pass state to the selector returned by selectorFactory.
-    dependsOnState: Boolean(mapStateToProps)
+    shouldHandleStateChanges: Boolean(mapStateToProps)
   }
 }
 
@@ -127,12 +124,12 @@ export function wrapWithVerify({ getState, getDispatch, mergeProps, ...options }
   }
 }
 
-export function selectorFactory(options) {
+export function selectorFactory(dispatch, options) {
   return flow(
     addStateAndDispatchSelectors,
     wrapWithVerify,
     createFinalPropsSelector
-  )(options)
+  )({ ...options, dispatch })
 }
 
 export default function connect(...args) {
