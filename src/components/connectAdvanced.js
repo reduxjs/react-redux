@@ -2,7 +2,6 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, PropTypes, createElement } from 'react'
 
-import memoizeProps from '../utils/memoizeProps'
 import Subscription from '../utils/Subscription'
 import storeShape from '../utils/storeShape'
 
@@ -32,10 +31,6 @@ export default function connectAdvanced(
     // shown in error messages
     // probably overridden by wrapper functions such as connect()
     methodName = 'connectAdvanced',
-
-    // if true, shouldComponentUpdate will only be true of the selector recomputes for nextProps.
-    // if false, shouldComponentUpdate will always be true.
-    pure = true,
 
     // if defined, the name of the property passed to the wrapped element indicating the number of
     // calls to render. useful for watching in react devtools for unnecessary re-renders.
@@ -84,16 +79,18 @@ export default function connectAdvanced(
         if (!dependsOnState) return
 
         this.subscription.trySubscribe()
-
         // check for recomputations that happened after this component has rendered, such as
         // when a child component dispatches an action in its componentWillMount
-        if (this.lastRenderedProps !== this.selector(this.props)) {
-          this.forceUpdate()
-        }
+        this.runSelector(this.props)
+        if (this.shouldComponentUpdate()) this.forceUpdate()
       }
 
-      shouldComponentUpdate(nextProps) {
-        return !pure || this.lastRenderedProps !== this.selector(nextProps)
+      componentWillReceiveProps(nextProps) {
+        this.runSelector(nextProps)
+      }
+
+      shouldComponentUpdate() {
+        return this.lastRenderedProps !== this.nextRenderedProps
       }
 
       componentWillUnmount() {
@@ -103,7 +100,7 @@ export default function connectAdvanced(
         this.subscription = { isSubscribed: () => false }
         this.store = null
         this.parentSub = null
-        this.selector = () => this.lastRenderedProps
+        this.runSelector = () => {}
       }
 
       getWrappedInstance() {
@@ -113,16 +110,15 @@ export default function connectAdvanced(
         )
         return this.wrappedInstance
       }
+
       setWrappedInstance(ref) {
         this.wrappedInstance = ref
       }
 
       initSelector() {
-        this.lastRenderedProps = null
-
-        const sourceSelector = selectorFactory({
+        const selector = selectorFactory({
           // most options passed to connectAdvanced are passed along to the selectorFactory
-          dependsOnState, methodName, pure, storeKey, withRef, ...connectOptions,
+          dependsOnState, methodName, storeKey, withRef, ...connectOptions,
           // useful for factories that want to bind action creators outside the selector
           dispatch: this.store.dispatch,
           // useful for error messages
@@ -132,30 +128,29 @@ export default function connectAdvanced(
           WrappedComponent
         })
 
-        const memoizeOwn = pure ? memoizeProps() : (props => props)
-        const memoizeFinal = memoizeProps()
-
-        this.selector = function selector(ownProps) {
+        this.runSelector = function runSelector(ownProps) {
           const state = dependsOnState ? this.store.getState() : null
-          const props = memoizeOwn(ownProps)
-          return memoizeFinal(sourceSelector(state, props, this.store.dispatch))
+          this.nextRenderedProps = selector(state, ownProps, this.store.dispatch)
         }
+        this.lastRenderedProps = null
+        this.runSelector(this.props)
       }
 
       initSubscription() {
         function onStoreStateChange(notifyNestedSubs) {
-          if (dependsOnState && this.shouldComponentUpdate(this.props)) {
+          this.runSelector(this.props)
+          if (this.shouldComponentUpdate()) {
             this.setState({}, notifyNestedSubs)
           } else {
             notifyNestedSubs()
           }
         }
 
-        this.subscription = new Subscription(
-          this.store,
-          this.parentSub,
-          onStoreStateChange.bind(this)
-        )
+        const onChange = dependsOnState
+          ? onStoreStateChange.bind(this)
+          : (notifyNestedSubs => notifyNestedSubs())
+
+        this.subscription = new Subscription(this.store, this.parentSub, onChange)
       }
 
       isSubscribed() {
@@ -175,7 +170,7 @@ export default function connectAdvanced(
       }
 
       render() {
-        this.lastRenderedProps = this.selector(this.props)
+        this.lastRenderedProps = this.nextRenderedProps
 
         return createElement(
           WrappedComponent,
