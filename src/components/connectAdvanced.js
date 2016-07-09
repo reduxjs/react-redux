@@ -11,19 +11,23 @@ export default function connectAdvanced(
     selectorFactory is a func is responsible for returning the selector function used to compute new
     props from state, props, and dispatch. For example:
 
-      export default connectAdvanced(() => (state, props, dispatch) => ({
+      export default connectAdvanced((dispatch, options) => (state, props) => ({
         thing: state.things[props.thingId],
         saveThing: fields => dispatch(actionCreators.saveThing(props.thingId, fields)),
       }))(YourComponent)
+
+    Access to dispatch is provided to the factory. selectorFactories can bind actionCreators
+    outside of their selector as an optimization
+    options passed to connectAdvanced are passed to the selectorFactory, along with displayName
+    and WrappedComponent. 
+
+    Note that selectorFactory is responisible for all caching/memoization of inbound and outbound
+    props. Do not use connectAdvanced directly without memoizing results between calls to your
+    selector, otherwise the Connect component will re-render on every state or props change.
   */
   selectorFactory,
   // options object:
   {
-    // if true, the selector receieves the current store state as the first arg, and this HOC
-    // subscribes to store changes during componentDidMount. if false, null is passed as the first
-    // arg of selector and store.subscribe() is never called.
-    dependsOnState = true,
-
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
     // probably overridden by wrapper functions such as connect()
     getDisplayName = name => `ConnectAdvanced(${name})`,
@@ -36,19 +40,49 @@ export default function connectAdvanced(
     // calls to render. useful for watching in react devtools for unnecessary re-renders.
     renderCountProp = undefined,
 
+    // determines whether this HOC subscribes to store changes
+    shouldHandleStateChanges = true,
+
     // the key of props/context to get the store
     storeKey = 'store',
 
     // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
     withRef = false,
 
+    // additional options are passed through to the selectorFactory
     ...connectOptions
   } = {}
 ) {
   const subscriptionKey = storeKey + 'Subscription'
   const version = hotReloadingVersion++
 
+  const contextTypes = {
+    [storeKey]: storeShape,
+    [subscriptionKey]: PropTypes.instanceOf(Subscription)
+  }
+  const childContextTypes = {
+    [subscriptionKey]: PropTypes.instanceOf(Subscription).isRequired
+  }  
+
   return function wrapWithConnect(WrappedComponent) {
+    const wrappedComponentName = WrappedComponent.displayName
+      || WrappedComponent.name
+      || 'Component'
+
+    const displayName = getDisplayName(wrappedComponentName)
+
+    const selectorFactoryOptions = {
+      ...connectOptions,
+      getDisplayName,
+      methodName,
+      renderCountProp,
+      shouldHandleStateChanges,
+      storeKey,
+      withRef,
+      displayName,
+      WrappedComponent
+    }
+
     class Connect extends Component {
       constructor(props, context) {
         super(props, context)
@@ -62,9 +96,9 @@ export default function connectAdvanced(
 
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or ` +
-          `props of "${Connect.displayName}". ` +
+          `props of "${displayName}". ` +
           `Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "${storeKey}" as a prop to "${Connect.displayName}".`
+          `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
 
         this.initSelector()
@@ -76,21 +110,25 @@ export default function connectAdvanced(
       }
 
       componentDidMount() {
-        if (!dependsOnState) return
+        if (!shouldHandleStateChanges) return
 
+        // componentWillMount fires during server side rendering, but componentDidMount and
+        // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
+        // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
+        // To handle the case where a child component may have triggered a state change by
+        // dispatching an action in its componentWillMount, we have to re-run the select and maybe
+        // re-render.
         this.subscription.trySubscribe()
-        // check for recomputations that happened after this component has rendered, such as
-        // when a child component dispatches an action in its componentWillMount
-        this.runSelector(this.props)
+        this.selector.run(this.props)
         if (this.shouldComponentUpdate()) this.forceUpdate()
       }
 
       componentWillReceiveProps(nextProps) {
-        this.runSelector(nextProps)
+        this.selector.run(nextProps)
       }
 
       shouldComponentUpdate() {
-        return this.lastRenderedProps !== this.nextRenderedProps
+        return this.selector.lastProps !== this.selector.nextProps
       }
 
       componentWillUnmount() {
@@ -100,7 +138,7 @@ export default function connectAdvanced(
         this.subscription = { isSubscribed: () => false }
         this.store = null
         this.parentSub = null
-        this.runSelector = () => {}
+        this.selector.run = () => {}
       }
 
       getWrappedInstance() {
@@ -116,29 +154,23 @@ export default function connectAdvanced(
       }
 
       initSelector() {
-        const selector = selectorFactory({
-          // most options passed to connectAdvanced are passed along to the selectorFactory
-          dependsOnState, methodName, storeKey, withRef, ...connectOptions,
-          // useful for factories that want to bind action creators outside the selector
-          dispatch: this.store.dispatch,
-          // useful for error messages
-          displayName: Connect.displayName,
-          // useful if a factory wants to use attributes of the component to build the selector,
-          // for example: one could use its propTypes as a props whitelist
-          WrappedComponent
-        })
+        const store = this.store
+        const selector = selectorFactory(store.dispatch, selectorFactoryOptions)
 
-        this.runSelector = function runSelector(ownProps) {
-          const state = dependsOnState ? this.store.getState() : null
-          this.nextRenderedProps = selector(state, ownProps, this.store.dispatch)
+        // wrap the selector in an object that tracks its results between runs
+        const wrapper = {
+          lastProps: null,
+          nextProps: selector(store.getState(), this.props),
+          run(props) {
+            wrapper.nextProps = selector(store.getState(), props)
+          }
         }
-        this.lastRenderedProps = null
-        this.runSelector(this.props)
+        this.selector = wrapper
       }
 
       initSubscription() {
         function onStoreStateChange(notifyNestedSubs) {
-          this.runSelector(this.props)
+          this.selector.run(this.props)
           if (this.shouldComponentUpdate()) {
             this.setState({}, notifyNestedSubs)
           } else {
@@ -146,7 +178,7 @@ export default function connectAdvanced(
           }
         }
 
-        const onChange = dependsOnState
+        const onChange = shouldHandleStateChanges
           ? onStoreStateChange.bind(this)
           : (notifyNestedSubs => notifyNestedSubs())
 
@@ -170,33 +202,18 @@ export default function connectAdvanced(
       }
 
       render() {
-        this.lastRenderedProps = this.nextRenderedProps
-
         return createElement(
           WrappedComponent,
-          this.addExtraProps(this.lastRenderedProps)
+          this.addExtraProps(this.selector.lastProps = this.selector.nextProps)
         )
       }
     }
 
-    const wrappedComponentName = WrappedComponent.displayName
-      || WrappedComponent.name
-      || 'Component'
-
-    Connect.displayName = getDisplayName(wrappedComponentName)
     Connect.WrappedComponent = WrappedComponent
-    
-    Connect.propTypes = {
-      [storeKey]: storeShape,
-      [subscriptionKey]: PropTypes.instanceOf(Subscription)
-    }
-    Connect.contextTypes = {
-      [storeKey]: storeShape,
-      [subscriptionKey]: PropTypes.instanceOf(Subscription)
-    }
-    Connect.childContextTypes = {
-      [subscriptionKey]: PropTypes.instanceOf(Subscription).isRequired
-    }
+    Connect.displayName = displayName
+    Connect.childContextTypes = childContextTypes
+    Connect.contextTypes = contextTypes
+    Connect.propTypes = contextTypes
 
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
@@ -207,7 +224,7 @@ export default function connectAdvanced(
 
           this.subscription.tryUnsubscribe()
           this.initSubscription()
-          if (dependsOnState) this.subscription.trySubscribe()
+          if (shouldHandleStateChanges) this.subscription.trySubscribe()
         }
       }
     }

@@ -9,7 +9,7 @@ export function whenMapStateIsMissing({ mapStateToProps }) {
 
 export function whenMapStateIsFunction({ mapStateToProps, pure }) {
   if (typeof mapStateToProps === 'function') {
-    return createFactoryAwareSelector(pure, state => state, mapStateToProps)
+    return createFactoryAwareSelector(pure, mapStateToProps)
   }
 }
 

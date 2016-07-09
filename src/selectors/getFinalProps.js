@@ -1,40 +1,40 @@
 import memoizeProps from '../utils/memoizeProps'
 
-export function createImpureFinalPropsSelector({ getState, getDispatch, mergeProps }) {
-  return function impureSelector(state, props, dispatch) {
+export function createImpureFinalPropsSelector({ dispatch, getState, getDispatch, mergeProps }) {
+  return function impureSelector(state, props) {
     return mergeProps(
-      getState(state, props, dispatch),
-      getDispatch(state, props, dispatch),
+      getState(state, props),
+      getDispatch(dispatch, props),
       props
     )
   }
 }
 
-export function createPureFinalPropsSelector({ getState, getDispatch, mergeProps }) {
-  const memoizeOwn = memoizeProps()
-  const memoizeGetState = memoizeProps()
-  const memoizeGetDispatch = memoizeProps()
+export function createPureFinalPropsSelector({ dispatch, getState, getDispatch, mergeProps }) {
+  const memoizeOwnProps = memoizeProps()
+  const memoizeStateProps = memoizeProps()
+  const memoizeDispatchProps = memoizeProps()
   const memoizeFinal = memoizeProps()
-  let lastOwn = undefined
-  let lastState = undefined
-  let lastDispatch = undefined
-  let lastMerged = undefined
+  let lastOwnProps = undefined
+  let lastStateProps = undefined
+  let lastDispatchProps = undefined
+  let lastFinalProps = undefined
 
-  return function pureSelector(state, props, dispatch) {
-    const nextOwn = memoizeOwn(props)
-    const nextState = memoizeGetState(getState(state, nextOwn, dispatch))
-    const nextDispatch = memoizeGetDispatch(getDispatch(state, nextOwn, dispatch))
+  return function pureSelector(state, props) {
+    const nextOwnProps = memoizeOwnProps(props)
+    const nextStateProps = memoizeStateProps(getState(state, nextOwnProps))
+    const nextDispatchProps = memoizeDispatchProps(getDispatch(dispatch, nextOwnProps))
 
-    if (lastOwn !== nextOwn
-      || lastState !== nextState
-      || lastDispatch !== nextDispatch) {
-      lastMerged = memoizeFinal(mergeProps(nextState, nextDispatch, nextOwn))
-      lastOwn = nextOwn
-      lastState = nextState
-      lastDispatch = nextDispatch
+    if (lastOwnProps !== nextOwnProps
+      || lastStateProps !== nextStateProps
+      || lastDispatchProps !== nextDispatchProps) {
+      lastFinalProps = memoizeFinal(mergeProps(nextStateProps, nextDispatchProps, nextOwnProps))
+      lastOwnProps = nextOwnProps
+      lastStateProps = nextStateProps
+      lastDispatchProps = nextDispatchProps
     }
 
-    return lastMerged
+    return lastFinalProps
   }
 }
 

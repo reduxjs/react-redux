@@ -15,9 +15,9 @@ export function whenMapDispatchIsObject({ mapDispatchToProps, dispatch }) {
   }
 }
 
-export function whenMapDispatchIsFunction({ mapDispatchToProps, pure, dispatch }) {
+export function whenMapDispatchIsFunction({ mapDispatchToProps, pure }) {
   if (typeof mapDispatchToProps === 'function') {
-    return createFactoryAwareSelector(pure, () => dispatch, mapDispatchToProps)    
+    return createFactoryAwareSelector(pure, mapDispatchToProps)    
   }
 }
 
