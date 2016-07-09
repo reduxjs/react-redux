@@ -169,10 +169,11 @@ export default function connectAdvanced(
       }
 
       initSubscription() {
+        const dummyState = {}
         function onStoreStateChange(notifyNestedSubs) {
           this.selector.run(this.props)
           if (this.shouldComponentUpdate()) {
-            this.setState({}, notifyNestedSubs)
+            this.setState(dummyState, notifyNestedSubs)
           } else {
             notifyNestedSubs()
           }
