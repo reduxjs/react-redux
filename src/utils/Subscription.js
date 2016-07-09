@@ -1,7 +1,42 @@
-// encapsulates the subscription logic for connecting a component to the redux store, as well as
-// nesting subscriptions of decendant components, so that we can ensure the ancestor components
-// re-render before descendants
 
+// a linked list of nest subscription listeners. Implementing as a LL instead of an array
+// makes for cheaper subscriptions & unsubscriptions vs cloning/mutating an array. Also, it
+// was nice to implement a linked list for the first time in like 15 years.
+function createNestedSubList() {
+  const head = {}
+
+  return {
+    subscribe(listener) {
+      const first = head.next
+      let current = head.next = { listener, prev: head, next: first }
+      if (first) first.prev = current
+
+      return function unsubscribe() {
+        if (!current) return
+
+        // unsubscribe takes itself out of the list, by updating its neighbors to point to
+        // each other
+        const { next, prev } = current
+        if (next) next.prev = prev
+        prev.next = next
+        current = null
+      }
+    },
+    notifyAll() {
+      let current = head.next
+
+      while (current) {
+        current.listener()
+        current = current.next
+      }
+    }
+  }
+}
+
+
+// encapsulates the subscription logic for connecting a component to the redux store, as
+// well as nesting subscriptions of descendant components, so that we can ensure the
+// ancestor components re-render before descendants
 export default class Subscription {
   constructor(store, parentSub, onStateChange) {
     this.subscribe = parentSub
@@ -10,42 +45,23 @@ export default class Subscription {
 
     this.onStateChange = onStateChange
     this.unsubscribe = null
-    this.nestedSubs = []
-    this.notifyNestedSubs = this.notifyNestedSubs.bind(this)
+    this.nestedSubs = createNestedSubList()
   }
 
   addNestedSub(listener) {
     this.trySubscribe()
-    this.nestedSubs = this.nestedSubs.concat(listener)
-
-    let subscribed = true
-    return () => {
-      if (!subscribed) return
-      subscribed = false
-
-      const subs = this.nestedSubs.slice()
-      const index = subs.indexOf(listener)
-      subs.splice(index, 1)
-      this.nestedSubs = subs
-    }
+    return this.nestedSubs.subscribe(listener)
   }
 
   isSubscribed() {
     return Boolean(this.unsubscribe)
   }
 
-  notifyNestedSubs() {
-    const subs = this.nestedSubs
-    for (let i = subs.length - 1; i >= 0; i--) {
-      subs[i]()
-    }
-  }
-
   trySubscribe() {
     if (this.unsubscribe) return
 
     this.unsubscribe = this.subscribe(() => {
-      this.onStateChange(this.notifyNestedSubs)
+      this.onStateChange(this.nestedSubs.notifyAll)
     })
   }
 
