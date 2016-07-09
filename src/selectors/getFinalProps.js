@@ -25,9 +25,11 @@ export function createPureFinalPropsSelector({ dispatch, getState, getDispatch, 
     const nextStateProps = memoizeStateProps(getState(state, nextOwnProps))
     const nextDispatchProps = memoizeDispatchProps(getDispatch(dispatch, nextOwnProps))
 
-    if (lastOwnProps !== nextOwnProps
-      || lastStateProps !== nextStateProps
-      || lastDispatchProps !== nextDispatchProps) {
+    if (
+      lastOwnProps !== nextOwnProps ||
+      lastStateProps !== nextStateProps ||
+      lastDispatchProps !== nextDispatchProps
+    ) {
       lastFinalProps = memoizeFinal(mergeProps(nextStateProps, nextDispatchProps, nextOwnProps))
       lastOwnProps = nextOwnProps
       lastStateProps = nextStateProps
