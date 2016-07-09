@@ -8,18 +8,17 @@ import storeShape from '../utils/storeShape'
 let hotReloadingVersion = 0
 export default function connectAdvanced(
   /*
-    selectorFactory is a func is responsible for returning the selector function used to compute new
-    props from state, props, and dispatch. For example:
+    selectorFactory is a func that is responsible for returning the selector function used to
+    compute new props from state, props, and dispatch. For example:
 
       export default connectAdvanced((dispatch, options) => (state, props) => ({
         thing: state.things[props.thingId],
         saveThing: fields => dispatch(actionCreators.saveThing(props.thingId, fields)),
       }))(YourComponent)
 
-    Access to dispatch is provided to the factory. selectorFactories can bind actionCreators
-    outside of their selector as an optimization
-    options passed to connectAdvanced are passed to the selectorFactory, along with displayName
-    and WrappedComponent. 
+    Access to dispatch is provided to the factory so selectorFactories can bind actionCreators
+    outside of their selector as an optimization. Options passed to connectAdvanced are passed to
+    the selectorFactory, along with displayName and WrappedComponent, as the second argument. 
 
     Note that selectorFactory is responisible for all caching/memoization of inbound and outbound
     props. Do not use connectAdvanced directly without memoizing results between calls to your
