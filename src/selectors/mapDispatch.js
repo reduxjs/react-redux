@@ -1,28 +1,47 @@
 import { bindActionCreators } from 'redux'
-import createFactoryAwareSelector from './createFactoryAwareSelector'
+import createMapOrMapFactoryProxy from './createMapOrMapFactoryProxy'
 
 export function whenMapDispatchIsMissing({ mapDispatchToProps, dispatch }) {
   if (!mapDispatchToProps) {
     const dispatchProp = { dispatch }
-    return () => dispatchProp
+    return function justDispatch() { return dispatchProp }
   }
 }
 
 export function whenMapDispatchIsObject({ mapDispatchToProps, dispatch }) {
   if (mapDispatchToProps && typeof mapDispatchToProps === 'object') {
     const bound = bindActionCreators(mapDispatchToProps, dispatch)
-    return () => bound
+    return function boundAcitonCreators() { return bound }
   }
 }
 
-export function whenMapDispatchIsFunction({ mapDispatchToProps, pure }) {
-  if (typeof mapDispatchToProps === 'function') {
-    return createFactoryAwareSelector(mapDispatchToProps, pure)    
+export function whenMapDispatchIsFunctionAndNotPure({ mapDispatchToProps, dispatch, pure }) {
+  if (!pure && typeof mapDispatchToProps === 'function') {
+    const proxy = createMapOrMapFactoryProxy(mapDispatchToProps)
+    return function impureMapDispatchToProps(props) { return proxy.mapToProps(dispatch, props) }
+  }
+}
+
+export function whenMapDispatchIsFunctionAndPure({ mapDispatchToProps, dispatch, pure }) {
+  if (pure && typeof mapDispatchToProps === 'function') {
+    const proxy = createMapOrMapFactoryProxy(mapDispatchToProps)
+    let lastProps = undefined
+    let result = undefined
+
+    return function pureMapDispatchToProps(nextProps) {
+      if (!lastProps || (proxy.dependsOnProps && lastProps !== nextProps)) {
+        result = proxy.mapToProps(dispatch, nextProps)
+        lastProps = nextProps
+      }
+
+      return result
+    }
   }
 }
 
 export default [
   whenMapDispatchIsMissing,
-  whenMapDispatchIsFunction,
+  whenMapDispatchIsFunctionAndNotPure,
+  whenMapDispatchIsFunctionAndPure,
   whenMapDispatchIsObject
 ]
