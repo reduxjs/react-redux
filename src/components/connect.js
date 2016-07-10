@@ -3,8 +3,8 @@ import flow from 'lodash/flow'
 import connectAdvanced from './connectAdvanced'
 import verifyPlainObject from '../utils/verifyPlainObject'
 import { createFinalPropsSelector } from '../selectors/getFinalProps'
-import defaultMapDispatchFactories from '../selectors/mapDispatch'
-import defaultMapStateFactories from '../selectors/mapState'
+import defaultMapDispatchFactories from '../selectors/mapDispatchToProps'
+import defaultMapStateFactories from '../selectors/mapStateToProps'
 import { defaultMergeProps } from '../selectors/mergeProps'
 
 /*
@@ -23,16 +23,16 @@ import { defaultMergeProps } from '../selectors/mergeProps'
     1. Create the getState selector by matching mapStateToProps to the mapStateFactories array
        passed in from buildOptions.
 
-       The default behaviors (from mapState.js) check mapStateToProps for a function or missing
-       value. This could be overridden by supplying a custom value to the mapStateFactories
-       property of connect's options argument
+       The default behaviors (from mapStateToProps.js) check mapStateToProps for a function
+       or missing value. This could be overridden by supplying a custom value to the
+       mapStateFactories property of connect's options argument
     
     2. Create the getDispatch selector by matching mapDispatchToProps to the mapDispatchFactories
        array passed in from buildOptions.
 
-       The default behaviors (from mapDispatch.js) check mapDispatchToProps for a function, object,
-       or missing value. The could be overridden by supplying a custom value to the
-       mapDispatchFactories property of connect's options argument.
+       The default behaviors (from mapDispatchToProps.js) check mapDispatchToProps for a
+       function, object, or missing value. The could be overridden by supplying a custom
+       value to the mapDispatchFactories property of connect's options argument.
     
     3. Wrap the getState, getDispatch, and mergeProps selectors in functions that check that their
        return values are plain objects (on their first invocation.)
