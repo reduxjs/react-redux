@@ -8,12 +8,10 @@ export default function memoizeProps() {
   let result = undefined
 
   return function memoize(nextProps) {
-    if (lastProps !== nextProps) {
-      if (!lastProps || !equal(lastProps, nextProps)) {
-        result = nextProps
-      }
-      lastProps = nextProps
+    if (!lastProps || !equal(lastProps, nextProps)) {
+      result = nextProps
     }
+    lastProps = nextProps
     return result
   }
 }

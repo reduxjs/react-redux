@@ -1,16 +1,16 @@
 import memoizeProps from '../utils/memoizeProps'
 
-export function createImpureFinalPropsSelector({ dispatch, getState, getDispatch, mergeProps }) {
+export function createImpureFinalPropsSelector({ getState, getDispatch, mergeProps }) {
   return function impureSelector(state, props) {
     return mergeProps(
       getState(state, props),
-      getDispatch(dispatch, props),
+      getDispatch(props),
       props
     )
   }
 }
 
-export function createPureFinalPropsSelector({ dispatch, getState, getDispatch, mergeProps }) {
+export function createPureFinalPropsSelector({ getState, getDispatch, mergeProps }) {
   const memoizeOwnProps = memoizeProps()
   const memoizeStateProps = memoizeProps()
   const memoizeDispatchProps = memoizeProps()
@@ -23,7 +23,7 @@ export function createPureFinalPropsSelector({ dispatch, getState, getDispatch, 
   return function pureSelector(state, props) {
     const nextOwnProps = memoizeOwnProps(props)
     const nextStateProps = memoizeStateProps(getState(state, nextOwnProps))
-    const nextDispatchProps = memoizeDispatchProps(getDispatch(dispatch, nextOwnProps))
+    const nextDispatchProps = memoizeDispatchProps(getDispatch(nextOwnProps))
 
     if (
       lastOwnProps !== nextOwnProps ||
