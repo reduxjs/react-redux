@@ -24,32 +24,7 @@ ReactDOM.render(
 )
 ```
 
-##### React Router 0.13
-
-```js
-Router.run(routes, Router.HistoryLocation, (Handler, routerState) => { // note "routerState" here
-  ReactDOM.render(
-    <Provider store={store}>
-      {/* note "routerState" here: important to pass it down */}
-      <Handler routerState={routerState} />
-    </Provider>,
-    document.getElementById('root')
-  )
-})
-```
-
-##### React Router 1.0
-
-```js
-ReactDOM.render(
-  <Provider store={store}>
-    <Router history={history}>...</Router>
-  </Provider>,
-  targetEl
-)
-```
-
-##### React Router 2.0
+##### React Router
 
 ```js
 ReactDOM.render(
