@@ -7,7 +7,7 @@ export default function verifyPlainObject(displayName, methodName, func) {
   if (!func) throw new Error('Missing ' + methodName)
 
   let hasVerified = false
-  return (...args) => {
+  return function verify(...args) {
     const result = func(...args)
     if (hasVerified) return result
     hasVerified = true

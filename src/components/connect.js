@@ -115,7 +115,11 @@ export function addStateAndDispatchSelectors(options) {
 }
 
 export function wrapWithVerify({ getState, getDispatch, mergeProps, ...options }) {
-  const verify = (methodName, func) => verifyPlainObject(options.displayName, methodName, func)
+  const verify = (methodName, func) => {
+    const withVerify = verifyPlainObject(options.displayName, methodName, func)
+    withVerify.meta = func.meta
+    return withVerify
+  }
   return {
     ...options,
     getState: verify('mapStateToProps', getState),
