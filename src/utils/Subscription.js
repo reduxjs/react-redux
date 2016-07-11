@@ -1,39 +1,3 @@
-
-// a linked list of nest subscription listeners. Implementing as a LL instead of an array
-// makes for cheaper subscriptions & unsubscriptions vs cloning/mutating an array. Also, it
-// was nice to implement a linked list for the first time in like 15 years.
-function createNestedSubList() {
-  const head = {}
-
-  return {
-    subscribe(listener) {
-      const first = head.next
-      let current = head.next = { listener, prev: head, next: first }
-      if (first) first.prev = current
-
-      return function unsubscribe() {
-        if (!current) return
-
-        // unsubscribe takes itself out of the list, by updating its neighbors to point to
-        // each other
-        const { next, prev } = current
-        if (next) next.prev = prev
-        prev.next = next
-        current = null
-      }
-    },
-    notifyAll() {
-      let current = head.next
-
-      while (current) {
-        current.listener()
-        current = current.next
-      }
-    }
-  }
-}
-
-
 // encapsulates the subscription logic for connecting a component to the redux store, as
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
@@ -45,12 +9,38 @@ export default class Subscription {
 
     this.onStateChange = onStateChange
     this.unsubscribe = null
-    this.nestedSubs = createNestedSubList()
+    this.nextListeners = this.currentListeners = []
+  }
+
+  ensureCanMutateNextListeners() {
+    if (this.nextListeners === this.currentListeners) {
+      this.nextListeners = this.currentListeners.slice()
+    }
   }
 
   addNestedSub(listener) {
     this.trySubscribe()
-    return this.nestedSubs.subscribe(listener)
+
+    let isSubscribed = true
+    this.ensureCanMutateNextListeners()
+    this.nextListeners.push(listener)
+
+    return function unsubscribe() {
+      if (!isSubscribed) return
+      isSubscribed = false
+
+      this.ensureCanMutateNextListeners()
+      const index = this.nextListeners.indexOf(listener)
+      this.nextListeners.splice(index, 1)
+    }
+  }
+
+  notifyNestedSubs() {
+    const listeners = this.currentListeners = this.nextListeners
+    const length = listeners.length
+    for (let i = 0; i < length; i++) {
+      listeners[i]()
+    }
   }
 
   isSubscribed() {
@@ -60,9 +50,10 @@ export default class Subscription {
   trySubscribe() {
     if (this.unsubscribe) return
 
-    this.unsubscribe = this.subscribe(() => {
-      this.onStateChange(this.nestedSubs.notifyAll)
-    })
+    const notifyNestedSubs = this.notifyNestedSubs.bind(this)
+    const onStateChange = this.onStateChange
+    function listener() { onStateChange(notifyNestedSubs) }
+    this.unsubscribe = this.subscribe(listener)
   }
 
   tryUnsubscribe() {
