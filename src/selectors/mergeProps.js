@@ -6,3 +6,4 @@ export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
     ...dispatchProps
   }
 }
+defaultMergeProps.meta = { skipShallowEqual: true }
