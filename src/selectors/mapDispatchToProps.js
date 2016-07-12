@@ -1,21 +1,23 @@
 import { bindActionCreators } from 'redux'
 import createMapOrMapFactoryProxy from './createMapOrMapFactoryProxy'
 
-export function whenMapDispatchToPropsIsMissing({ mapDispatchToProps, dispatch }) {
+export function whenMapDispatchToPropsIsMissing(mapDispatchToProps) {
   if (!mapDispatchToProps) {
-    const dispatchProp = { dispatch }
-    return function justDispatch() { return dispatchProp }
+    return function justDispatch(dispatch) { 
+      return { dispatch }
+    } 
   }
 }
 
-export function whenMapDispatchToPropsIsObject({ mapDispatchToProps, dispatch }) {
+export function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
   if (mapDispatchToProps && typeof mapDispatchToProps === 'object') {
-    const bound = bindActionCreators(mapDispatchToProps, dispatch)
-    return function boundActionCreators() { return bound }
+    return function boundActionCreators(dispatch) { 
+      return bindActionCreators(mapDispatchToProps, dispatch)
+    }
   }
 }
 
-export function whenMapDispatchToPropsIsFunction({ mapDispatchToProps }) {
+export function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
   if (typeof mapDispatchToProps === 'function') {
     return createMapOrMapFactoryProxy(mapDispatchToProps)
   }

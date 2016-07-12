@@ -1,22 +1,12 @@
 import isPlainObject from 'lodash/isPlainObject'
 import warning from './warning'
 
-// verifies that the first execution of func returns a plain object
-export default function verifyPlainObject(displayName, methodName, func) {
-  if (process.env.NODE_ENV === 'production') return func
-  if (!func) throw new Error('Missing ' + methodName)
-
-  let hasVerified = false
-  return function verify(...args) {
-    const result = func(...args)
-    if (hasVerified) return result
-    hasVerified = true
-    if (!isPlainObject(result)) {
+export default function verifyPlainObject(value, displayName, methodName) {
+  if (process.env.NODE_ENV !== 'production') {
+    if (!isPlainObject(value)) {
       warning(
-        `${methodName}() in ${displayName} must return a plain object. ` +
-        `Instead received ${result}.`
+        `${methodName}() in ${displayName} must return a plain object. Instead received ${value}.`
       )
     }
-    return result
   }
 }
