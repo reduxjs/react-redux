@@ -1,9 +1,8 @@
 import connectAdvanced from './connectAdvanced'
-import makeImpurePropsSelector from '../selectors/makeImpurePropsSelector'
-import makePurePropsSelector from '../selectors/makePurePropsSelector'
-import defaultMapDispatchFactories from '../selectors/mapDispatchToProps'
-import defaultMapStateFactories from '../selectors/mapStateToProps'
-import { defaultMergeProps } from '../selectors/mergeProps'
+import defaultMapDispatchToPropsFactories from '../selectors/mapDispatchToProps'
+import defaultMapStateToPropsFactories from '../selectors/mapStateToProps'
+import defaultMergePropsFactories from '../selectors/mergeProps'
+import selectorFactory from '../selectors/selectorFactory'
 
 /*
   connect combines mapStateToProps, mapDispatchToProps, and mergeProps into a final selector that
@@ -43,23 +42,20 @@ export function buildOptions(
   mapStateToProps,
   mapDispatchToProps,
   mergeProps,
-  {
-    pure = true,
-    withRef // ...options
-  } = {}) {
+  { pure = true, ...options } = {}
+) {
   return {
-    // used to compute the Connect component's displayName from the wrapped component's displayName.
-    getDisplayName: name => `Connect(${name})`,
+    // passed through to selectorFactory
+    mapStateToProps,
+    mapStateToPropsFactories: defaultMapStateToPropsFactories,
 
-    // passed through to selectorFactory. defaults to the array of funcs returned in
-    // mapDispatchToProps.js that determine the appropriate sub-selector to use for
-    // mapDispatchToProps, depending on whether it's a function, object, or missing.
-    mapDispatchFactories: defaultMapDispatchFactories,
+    // passed through to selectorFactory
+    mapDispatchToProps,
+    mapDispatchToPropsFactories: defaultMapDispatchToPropsFactories,
 
-    // passed through to selectorFactory. defaults to the array of funcs returned in
-    // mapStateToProps.js that determine the appropriate sub-selector to use for
-    // mapStateToProps, depending on whether it's a function or missing.
-    mapStateFactories: defaultMapStateFactories,
+    // passed through to selectorFactory
+    mergeProps,
+    mergePropsFactories: defaultMergePropsFactories,
 
     // if true, the selector returned by selectorFactory will memoize its results, allowing
     // connectAdvanced's shouldComponentUpdate to return false if final props have not changed.
@@ -67,42 +63,20 @@ export function buildOptions(
     // return true.
     pure,
 
-    // in addition to setting withRef, pure, storeKey, and renderCountProp, options can override
-    // getDisplayName, mapDispatchFactories, or mapStateFactories.
-    // TODO: REPLACE WITH ...OPTIONS ONCE IT'S OK TO EXPOSE NEW FUNCTIONALITY.
-    withRef,
-
-    // passed through to selectorFactory
-    mapStateToProps,
-
-    // passed through to selectorFactory
-    mapDispatchToProps,
-
-    // passed through to selectorFactory
-    mergeProps: mergeProps || defaultMergeProps,
-
-    // used in error messages
-    methodName: 'connect',
+    // used to compute the Connect component's displayName from the wrapped component's displayName.
+    getDisplayName: name => `Connect(${name})`,
 
     // if mapStateToProps is not given a value, the Connect component doesn't subscribe to the store
-    shouldHandleStateChanges: Boolean(mapStateToProps)
+    shouldHandleStateChanges: Boolean(mapStateToProps),
+
+    // in addition to setting withRef, pure, storeKey, and renderCountProp, options can override
+    // getDisplayName, mapDispatchFactories, or mapStateFactories.
+    // TODO: REPLACE with ...options ONCE IT'S OK TO EXPOSE NEW FUNCTIONALITY.
+    withRef: options.withRef, // ...options,
+
+    // used in error messages
+    methodName: 'connect'
   }
-}
-
-export function selectorFactory(dispatch, options) {
-  function match(mapToProps, factories) {
-    for (let i = factories.length - 1; i >= 0; i--) {
-      const selector = factories[i](mapToProps, options)
-      if (selector) return selector
-    }
-    return undefined
-  }
-
-  const mapStateToProps = match(options.mapStateToProps, options.mapStateFactories)
-  const mapDispatchToProps = match(options.mapDispatchToProps, options.mapDispatchFactories)
-  const factory = options.pure ? makePurePropsSelector : makeImpurePropsSelector
-
-  return factory(dispatch, { ...options, mapStateToProps, mapDispatchToProps })
 }
 
 export default function connect(...args) {
