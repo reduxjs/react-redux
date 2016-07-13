@@ -1,20 +1,18 @@
-import createMapOrMapFactoryProxy from './createMapOrMapFactoryProxy'
+import createMapToPropsProxy from './createMapToPropsProxy'
 
-export function whenMapStateToPropsIsMissing(mapStateToProps) {
-  if (!mapStateToProps) {
-    const empty = {}
-    // The state arg is to keep the args count equal to 1 so that it's
-    // detected as not depends on props
-    return function emptyState(state) { // eslint-disable-line no-unused-vars
-      return empty
-    }
-  }
+export function whenMapStateToPropsIsMissing({ mapStateToProps }) {
+  if (mapStateToProps) return undefined
+
+  const empty = {}
+  function emptyState() { return empty }
+  emptyState.meta = { dependsOnProps: false }
+  return emptyState
 }
 
-export function whenMapStateToPropsIsFunction(mapStateToProps) {
-  if (typeof mapStateToProps === 'function') {
-    return createMapOrMapFactoryProxy(mapStateToProps)
-  }
+export function whenMapStateToPropsIsFunction({ mapStateToProps, displayName }) {
+  return typeof mapStateToProps === 'function'
+    ? createMapToPropsProxy(mapStateToProps, displayName, 'mapStateToProps')
+    : undefined
 }
 
 export default [
