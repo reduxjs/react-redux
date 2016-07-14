@@ -1,85 +1,67 @@
-import connectAdvanced from './connectAdvanced'
-import defaultMapDispatchToPropsFactories from '../selectors/mapDispatchToProps'
-import defaultMapStateToPropsFactories from '../selectors/mapStateToProps'
-import defaultMergePropsFactories from '../selectors/mergeProps'
-import selectorFactory from '../selectors/selectorFactory'
+import connectAdvanced from '../components/connectAdvanced'
+import defaultMapDispatchToPropsFactories from './mapDispatchToProps'
+import defaultMapStateToPropsFactories from './mapStateToProps'
+import defaultMergePropsFactories from './mergeProps'
+import defaultSelectorFactory from './selectorFactory'
 
 /*
-  connect combines mapStateToProps, mapDispatchToProps, and mergeProps into a final selector that
-  is compatible with connectAdvanced. The functions in the selectors folder are the individual
-  pieces of that final selector.
+  connect is a facade over connectAdvanced. It turns its args into a compatible
+  selectorFactory, which has the signature:
 
-  First, buildOptions combines its args with some meta into an options object that's passed to
-  connectAdvanced, which will pass a modified* version of that options object to selectorFactory.
+    (dispatch, options) => (nextState, nextOwnProps) => nextFinalProps
+  
+  connect passes its args to connectAdvanced as options, which will in turn pass them to
+  selectorFactory each time a Connect component instance is instantiated or hot reloaded.
 
-    *values added to options: displayName, WrappedComponent
+  selectorFactory returns a final props selector from its mapStateToProps,
+  mapStateToPropsFactories, mapDispatchToProps, mapDispatchToPropsFactories, mergeProps,
+  mergePropsFactories, and pure args.
 
-  Each time selectorFactory is called (whenever an instance of the component in connectAdvanced is
-  constructed or hot reloaded), it uses the modified options object to build a selector function:
-
-    1. Convert mapStateToProps into a selector by matching it to the mapStateFactories array
-       passed in from buildOptions.
-
-       The default behaviors (from mapStateToProps.js) check mapStateToProps for a function
-       or missing value. This could be overridden by supplying a custom value to the
-       mapStateFactories property of connect's options argument
-    
-    2. Convert mapDispatchToProps into a selector by matching it to the mapDispatchFactories
-       array passed in from buildOptions.
-
-       The default behaviors (from mapDispatchToProps.js) check mapDispatchToProps for a
-       function, object, or missing value. This could be overridden by supplying a custom
-       value to the mapDispatchFactories property of connect's options argument.
-    
-    3. Combine mapStateToProps, mapDispatchToProps, and mergeProps selectors into either a pure
-       (makePurePropsSelector.js) or impure (makeImpurePropsSelector.js) final props selector.
-
-  The resulting final props selector is called by the component instance whenever it receives new
-  props or is notified by the store subscription.
+  The resulting final props selector is called by the Connect component instance whenever
+  it receives new props or store state.
  */
-
-export function buildOptions(
+export default function connect(
   mapStateToProps,
   mapDispatchToProps,
   mergeProps,
-  { pure = true, ...options } = {}
+  {
+    mapStateToPropsFactories = defaultMapStateToPropsFactories,
+    mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories,
+    mergePropsFactories = defaultMergePropsFactories,
+    selectorFactory = defaultSelectorFactory,
+    ...options
+  } = {}
 ) {
-  return {
-    // passed through to selectorFactory
-    mapStateToProps,
-    mapStateToPropsFactories: defaultMapStateToPropsFactories,
+  // !!!!!!!!!! TEMPORARY DISABLING OF NEW CUSTOMIZATION FEATURES !!!!!!!!!!
+  mapStateToPropsFactories = defaultMapStateToPropsFactories
+  mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories
+  mergePropsFactories = defaultMergePropsFactories
+  selectorFactory = defaultSelectorFactory
+  options = { pure: options.pure, withRef: options.withRef }
+  // !!!!!!!!!! REMOVE THESE STATEMENTS ONCE APPROVED !!!!!!!!!!
 
-    // passed through to selectorFactory
-    mapDispatchToProps,
-    mapDispatchToPropsFactories: defaultMapDispatchToPropsFactories,
+  return connectAdvanced(
+    selectorFactory,
+    {
+      // used in error messages
+      methodName: 'connect',
 
-    // passed through to selectorFactory
-    mergeProps,
-    mergePropsFactories: defaultMergePropsFactories,
+       // used to compute Connect's displayName from the wrapped component's displayName.
+      getDisplayName: name => `Connect(${name})`,
 
-    // if true, the selector returned by selectorFactory will memoize its results, allowing
-    // connectAdvanced's shouldComponentUpdate to return false if final props have not changed.
-    // if false, the selector will always return a new object and shouldComponentUpdate will always
-    // return true.
-    pure,
+      // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
+      shouldHandleStateChanges: Boolean(mapStateToProps),
 
-    // used to compute the Connect component's displayName from the wrapped component's displayName.
-    getDisplayName: name => `Connect(${name})`,
+      // any addional options args can override defaults of connect or connectAdvanced
+      ...options,
 
-    // if mapStateToProps is not given a value, the Connect component doesn't subscribe to the store
-    shouldHandleStateChanges: Boolean(mapStateToProps),
-
-    // in addition to setting withRef, pure, storeKey, and renderCountProp, options can override
-    // getDisplayName, mapDispatchFactories, or mapStateFactories.
-    // TODO: REPLACE with ...options ONCE IT'S OK TO EXPOSE NEW FUNCTIONALITY.
-    withRef: options.withRef, // ...options,
-
-    // used in error messages
-    methodName: 'connect'
-  }
-}
-
-export default function connect(...args) {
-  const options = buildOptions(...args)
-  return connectAdvanced(selectorFactory, options)
+      // passed through to selectorFactory
+      mapStateToProps,
+      mapStateToPropsFactories,
+      mapDispatchToProps,
+      mapDispatchToPropsFactories,
+      mergeProps,
+      mergePropsFactories
+    }
+  )
 }

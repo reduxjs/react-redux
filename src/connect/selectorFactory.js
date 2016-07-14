@@ -3,6 +3,7 @@ import shallowEqual from '../utils/shallowEqual'
 export function makeImpurePropsSelector(
   dispatch, { mapStateToProps, mapDispatchToProps, mergeProps }
 ) {
+  // TODO: cache mapDispatchToProps result if not dependent on ownProps
   return function impureSelector(state, ownProps) {
     return mergeProps(
       mapStateToProps(state, ownProps),
@@ -100,7 +101,14 @@ export function findMatchingSelector(name, options) {
   throw new Error(`Unexpected value for ${name} in ${options.displayName}.`)
 }
 
-export default function selectorFactory(dispatch, options) {
+// TODO: Add more comments
+
+// If pure is true, the selector returned by selectorFactory will memoize its results,
+// allowing connectAdvanced's shouldComponentUpdate to return false if final
+// props have not changed. If false, the selector will always return a new
+// object and shouldComponentUpdate will always return true.
+
+export default function selectorFactory(dispatch, { pure = true, ...options }) {
   const finalOptions = {
     ...options,
     mapStateToProps: findMatchingSelector('mapStateToProps', options),
@@ -108,7 +116,7 @@ export default function selectorFactory(dispatch, options) {
     mergeProps: findMatchingSelector('mergeProps', options)
   }
   
-  return options.pure
+  return pure
     ? makePurePropsSelector(dispatch, finalOptions)
     : makeImpurePropsSelector(dispatch, finalOptions)
 }
