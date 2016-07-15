@@ -267,11 +267,15 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           `To access the wrapped instance, you need to specify ` +
           `{ withRef: true } as the fourth argument of the connect() call.`
         )
-        let wrappedInstance = this.refs.wrappedInstance;
-				if (unwraps > 1) {
-          wrappedInstance = wrappedInstance.getWrappedInstance(unwraps - 1);
+        let wrappedInstance = this.refs.wrappedInstance
+        if (unwraps > 1) {
+          invariant(typeof wrappedInstance.getWrappedInstance !== 'function',
+            `Wrapped Instance did not have a getWrappedInstance method ` +
+            `to continuing unwrapping at level ${unwraps}`
+          )
+          wrappedInstance = wrappedInstance.getWrappedInstance(unwraps - 1)
         }
-				return wrappedInstance;
+        return wrappedInstance
       }
 
       render() {
