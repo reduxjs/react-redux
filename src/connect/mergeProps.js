@@ -1,43 +1,50 @@
+import shallowEqual from '../utils/shallowEqual'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
 export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
-  return {
-    ...ownProps,
-    ...stateProps,
-    ...dispatchProps
-  }
-}
-defaultMergeProps.meta = { skipShallowEqual: true }
-
-export function whenMergePropsIsMissing({ mergeProps }) {
-  return mergeProps
-    ? undefined
-    : defaultMergeProps
+  return { ...ownProps, ...stateProps, ...dispatchProps }
 }
 
-export function whenMergePropsIsFunction({ mergeProps, displayName }) {
-  if (typeof mergeProps !== 'function')
-    return undefined
+export function wrapMergePropsFunc(mergeProps) {
+  return function initMergePropsProxy(
+    dispatch, { displayName, pure, areMergedPropsEqual = shallowEqual }
+  ) {
+    let hasRunOnce = false
+    let mergedProps
 
-  let hasVerifiedOnce = false
+    return function mergePropsProxy(stateProps, dispatchProps, ownProps) {
+      const nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
 
-  function mergePropsProxy(stateProps, dispatchProps, ownProps) {
-    const mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
-    
-    if (process.env.NODE_ENV !== 'production') {
-      if (!hasVerifiedOnce) {
-        hasVerifiedOnce = true
-        verifyPlainObject(mergedProps, displayName, 'mergeProps')
+      if (hasRunOnce) {
+        if (!pure || !areMergedPropsEqual(nextMergedProps, mergedProps))
+          mergedProps = nextMergedProps
+
+      } else {
+        hasRunOnce = true
+        mergedProps = nextMergedProps
+
+        if (process.env.NODE_ENV !== 'production')
+          verifyPlainObject(mergedProps, displayName, 'mergeProps')
       }
-    }
 
-    return mergedProps
+      return mergedProps
+    }
   }
-  mergePropsProxy.meta = mergeProps.meta || { skipShallowEqual: false }
-  return mergePropsProxy
+}
+
+export function whenMergePropsIsFunction(mergeProps) {
+  return (typeof mergeProps === 'function')
+    ? wrapMergePropsFunc(mergeProps)
+    : undefined
+}
+
+export function whenMergePropsIsOmitted(mergeProps) {
+  return (!mergeProps)
+    ? () => defaultMergeProps
+    : undefined
 }
 
 export default [
-  whenMergePropsIsMissing,
-  whenMergePropsIsFunction
+  whenMergePropsIsFunction,
+  whenMergePropsIsOmitted
 ]

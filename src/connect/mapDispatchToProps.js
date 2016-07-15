@@ -1,32 +1,26 @@
 import { bindActionCreators } from 'redux'
-import createMapToPropsProxy from './createMapToPropsProxy'
+import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
 
-export function whenMapDispatchToPropsIsMissing({ mapDispatchToProps, dispatch }) {
-  if (mapDispatchToProps) return undefined
-
-  const props = { dispatch }
-  function justDispatch() { return props }
-  justDispatch.meta = { dependsOnProps: false }
-  return justDispatch
+export function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
+  return (typeof mapDispatchToProps === 'function')
+    ? wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps')
+    : undefined
 }
 
-export function whenMapDispatchToPropsIsObject({ mapDispatchToProps, dispatch }) {
-  if (!mapDispatchToProps || typeof mapDispatchToProps !== 'object') return undefined
-
-  const props = bindActionCreators(mapDispatchToProps, dispatch)
-  function boundActionCreators() { return props }
-  boundActionCreators.meta = { dependsOnProps: false }
-  return boundActionCreators
+export function whenMapDispatchToPropsIsMissing(mapDispatchToProps) {
+  return (!mapDispatchToProps)
+    ? wrapMapToPropsConstant(dispatch => ({ dispatch }))
+    : undefined
 }
 
-export function whenMapDispatchToPropsIsFunction({ mapDispatchToProps, displayName }) {
-  return typeof mapDispatchToProps === 'function'
-    ? createMapToPropsProxy(mapDispatchToProps, displayName, 'mapDispatchToProps')
+export function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
+  return (mapDispatchToProps && typeof mapDispatchToProps === 'object')
+    ? wrapMapToPropsConstant(dispatch => bindActionCreators(mapDispatchToProps, dispatch))
     : undefined
 }
 
 export default [
-  whenMapDispatchToPropsIsMissing,
   whenMapDispatchToPropsIsFunction,
+  whenMapDispatchToPropsIsMissing,
   whenMapDispatchToPropsIsObject
 ]
