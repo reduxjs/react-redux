@@ -29,39 +29,48 @@ export default function connect(
     mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories,
     mergePropsFactories = defaultMergePropsFactories,
     selectorFactory = defaultSelectorFactory,
+    pure = true,
+    __ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = false,
     ...options
   } = {}
 ) {
-  // !!!!!!!!!! TEMPORARY DISABLING OF NEW CUSTOMIZATION FEATURES !!!!!!!!!!
-  mapStateToPropsFactories = defaultMapStateToPropsFactories
-  mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories
-  mergePropsFactories = defaultMergePropsFactories
-  selectorFactory = defaultSelectorFactory
-  options = { pure: options.pure, withRef: options.withRef }
-  // !!!!!!!!!! REMOVE THESE STATEMENTS ONCE APPROVED !!!!!!!!!!
+  if (!__ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED) {
+    mapStateToPropsFactories = defaultMapStateToPropsFactories
+    mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories
+    mergePropsFactories = defaultMergePropsFactories
+    selectorFactory = defaultSelectorFactory
+    options = { withRef: options.withRef }
+  }
 
-  return connectAdvanced(
-    selectorFactory,
-    {
-      // used in error messages
-      methodName: 'connect',
+  const initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories)
+  const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories)
+  const initMergeProps = match(mergeProps, mergePropsFactories)
 
-       // used to compute Connect's displayName from the wrapped component's displayName.
-      getDisplayName: name => `Connect(${name})`,
+  return connectAdvanced(selectorFactory, {
+    // used in error messages
+    methodName: 'connect',
 
-      // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
-      shouldHandleStateChanges: Boolean(mapStateToProps),
+     // used to compute Connect's displayName from the wrapped component's displayName.
+    getDisplayName: name => `Connect(${name})`,
 
-      // any addional options args can override defaults of connect or connectAdvanced
-      ...options,
+    // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
+    shouldHandleStateChanges: Boolean(mapStateToProps),
 
-      // passed through to selectorFactory
-      mapStateToProps,
-      mapStateToPropsFactories,
-      mapDispatchToProps,
-      mapDispatchToPropsFactories,
-      mergeProps,
-      mergePropsFactories
-    }
-  )
+    // passed through to selectorFactory
+    initMapStateToProps,
+    initMapDispatchToProps,
+    initMergeProps,
+    pure,
+
+    // any addional options args can override defaults of connect or connectAdvanced
+    ...options
+  })
+}
+
+function match(arg, factories) {
+  for (let i = factories.length - 1; i >= 0; i--) {
+    const result = factories[i](arg)
+    if (result) return result
+  }
+  return undefined
 }

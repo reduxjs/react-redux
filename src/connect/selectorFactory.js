@@ -1,10 +1,13 @@
+import verifySubselectors from './verifySubselectors'
 import shallowEqual from '../utils/shallowEqual'
-
-export function makeImpurePropsSelector(
-  dispatch, { mapStateToProps, mapDispatchToProps, mergeProps }
+  
+export function impureFinalPropsSelectorFactory(
+  mapStateToProps,
+  mapDispatchToProps,
+  mergeProps,
+  dispatch
 ) {
-  // TODO: cache mapDispatchToProps result if not dependent on ownProps
-  return function impureSelector(state, ownProps) {
+  return function impureFinalPropsSelector(state, ownProps) {
     return mergeProps(
       mapStateToProps(state, ownProps),
       mapDispatchToProps(dispatch, ownProps),
@@ -13,8 +16,18 @@ export function makeImpurePropsSelector(
   }
 }
 
-export function makePurePropsSelector(
-  dispatch, { mapStateToProps, mapDispatchToProps, mergeProps }
+function strictEqual(a, b) { return a === b }
+
+export function pureFinalPropsSelectorFactory(
+  mapStateToProps,
+  mapDispatchToProps,
+  mergeProps,
+  dispatch,
+  {
+    areStatesEqual = strictEqual,
+    areOwnPropsEqual = shallowEqual,
+    areStatePropsEqual = shallowEqual
+  }
 ) {
   let hasRunAtLeastOnce = false
   let state
@@ -33,22 +46,14 @@ export function makePurePropsSelector(
     return mergedProps
   }
 
-  function mergeFinalProps() {
-    const nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
-
-    if (mergeProps.meta.skipShallowEqual || !shallowEqual(mergedProps, nextMergedProps))
-      mergedProps = nextMergedProps
-
-    return mergedProps
-  }
-
   function handleNewPropsAndNewState() {
     stateProps = mapStateToProps(state, ownProps)
 
     if (mapDispatchToProps.meta.dependsOnProps)
       dispatchProps = mapDispatchToProps(dispatch, ownProps)
 
-    return mergeFinalProps()
+    mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+    return mergedProps
   }
 
   function handleNewProps() {
@@ -58,22 +63,24 @@ export function makePurePropsSelector(
     if (mapDispatchToProps.meta.dependsOnProps)
       dispatchProps = mapDispatchToProps(dispatch, ownProps)
 
-    return mergeFinalProps()
+    mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+    return mergedProps
   }
 
   function handleNewState() {
     const nextStateProps = mapStateToProps(state, ownProps)
-    const statePropsChanged = !shallowEqual(nextStateProps, stateProps)
+    const statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps)
     stateProps = nextStateProps
     
-    return statePropsChanged
-      ? mergeFinalProps()
-      : mergedProps
+    if (statePropsChanged)
+      mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+
+    return mergedProps
   }
 
   function handleSubsequentCalls(nextState, nextOwnProps) {
-    const propsChanged = !shallowEqual(nextOwnProps, ownProps)
-    const stateChanged = nextState !== state
+    const propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps)
+    const stateChanged = !areStatesEqual(nextState, state)
     state = nextState
     ownProps = nextOwnProps
 
@@ -83,22 +90,11 @@ export function makePurePropsSelector(
     return mergedProps
   }
 
-  return function pureSelector(nextState, nextOwnProps) {
+  return function pureFinalPropsSelector(nextState, nextOwnProps) {
     return hasRunAtLeastOnce
       ? handleSubsequentCalls(nextState, nextOwnProps)
       : handleFirstCall(nextState, nextOwnProps)
   }
-}
-
-export function findMatchingSelector(name, options) {
-  const factories = options[name + 'Factories']
-
-  for (let i = factories.length - 1; i >= 0; i--) {
-    const selector = factories[i](options)
-    if (selector) return selector
-  }
-
-  throw new Error(`Unexpected value for ${name} in ${options.displayName}.`)
 }
 
 // TODO: Add more comments
@@ -108,15 +104,29 @@ export function findMatchingSelector(name, options) {
 // props have not changed. If false, the selector will always return a new
 // object and shouldComponentUpdate will always return true.
 
-export default function selectorFactory(dispatch, { pure = true, ...options }) {
-  const finalOptions = {
-    ...options,
-    mapStateToProps: findMatchingSelector('mapStateToProps', options),
-    mapDispatchToProps: findMatchingSelector('mapDispatchToProps', { ...options, dispatch }),
-    mergeProps: findMatchingSelector('mergeProps', options)
+export default function finalPropsSelectorFactory(dispatch, {
+  initMapStateToProps,
+  initMapDispatchToProps,
+  initMergeProps,
+  ...options
+}) {
+  const mapStateToProps = initMapStateToProps(dispatch, options)
+  const mapDispatchToProps = initMapDispatchToProps(dispatch, options)
+  const mergeProps = initMergeProps(dispatch, options)
+
+  if (process.env.NODE_ENV !== 'production') {
+    verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, options.displayName)
   }
-  
-  return pure
-    ? makePurePropsSelector(dispatch, finalOptions)
-    : makeImpurePropsSelector(dispatch, finalOptions)
+
+  const selectorFactory = options.pure
+    ? pureFinalPropsSelectorFactory
+    : impureFinalPropsSelectorFactory
+
+  return selectorFactory(
+    mapStateToProps,
+    mapDispatchToProps,
+    mergeProps,
+    dispatch,
+    options
+  )
 }
