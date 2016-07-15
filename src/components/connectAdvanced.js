@@ -20,7 +20,7 @@ export default function connectAdvanced(
     outside of their selector as an optimization. Options passed to connectAdvanced are passed to
     the selectorFactory, along with displayName and WrappedComponent, as the second argument. 
 
-    Note that selectorFactory is responisible for all caching/memoization of inbound and outbound
+    Note that selectorFactory is responsible for all caching/memoization of inbound and outbound
     props. Do not use connectAdvanced directly without memoizing results between calls to your
     selector, otherwise the Connect component will re-render on every state or props change.
   */

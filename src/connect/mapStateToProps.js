@@ -1,21 +1,18 @@
-import createMapToPropsProxy from './createMapToPropsProxy'
+import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
 
-export function whenMapStateToPropsIsMissing({ mapStateToProps }) {
-  if (mapStateToProps) return undefined
-
-  const empty = {}
-  function emptyState() { return empty }
-  emptyState.meta = { dependsOnProps: false }
-  return emptyState
+export function whenMapStateToPropsIsFunction(mapStateToProps) {
+  return (typeof mapStateToProps === 'function')
+    ? wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps')
+    : undefined
 }
 
-export function whenMapStateToPropsIsFunction({ mapStateToProps, displayName }) {
-  return typeof mapStateToProps === 'function'
-    ? createMapToPropsProxy(mapStateToProps, displayName, 'mapStateToProps')
+export function whenMapStateToPropsIsMissing(mapStateToProps) {
+  return (!mapStateToProps)
+    ? wrapMapToPropsConstant(() => ({}))
     : undefined
 }
 
 export default [
-  whenMapStateToPropsIsMissing,
-  whenMapStateToPropsIsFunction
+  whenMapStateToPropsIsFunction,
+  whenMapStateToPropsIsMissing
 ]
