@@ -5,25 +5,22 @@ export function wrapMapToPropsConstant(getConstant) {
     const constant = getConstant(dispatch, options)
 
     function constantSelector() { return constant }
-    constantSelector.meta = { dependsOnProps: false }
+    constantSelector.dependsOnOwnProps = false 
     return constantSelector
   }
 }
 
-// meta.dependsOnProps is used by createMapToPropsProxy to determine whether to pass props as args
+// dependsOnOwnProps is used by createMapToPropsProxy to determine whether to pass props as args
 // to the mapToProps function being wrapped. It is also used by makePurePropsSelector to determine
 // whether mapToProps needs to be invoked when props have changed.
 // 
 // A length of one signals that mapToProps does not depend on props from the parent component.
 // A length of zero is assumed to mean mapToProps is getting args via arguments or ...args and
 // therefore not reporting its length accurately..
-export function getMeta(mapToProps) {
-  if (mapToProps.meta) return mapToProps.meta
-  return { 
-    dependsOnProps: mapToProps.hasOwnProperty('dependsOnProps')
-      ? mapToProps.dependsOnProps
-      : mapToProps.length !== 1
-  }
+export function getDependsOnOwnProps(mapToProps) {
+  return (mapToProps.dependsOnOwnProps !== null && mapToProps.dependsOnOwnProps !== undefined)
+    ? Boolean(mapToProps.dependsOnOwnProps)
+    : mapToProps.length !== 1
 }
 
 // Used by whenMapStateToPropsIsFunction and whenMapDispatchToPropsIsFunction,
@@ -40,31 +37,30 @@ export function getMeta(mapToProps) {
 //    
 export function wrapMapToPropsFunc(mapToProps, methodName) {
   return function initProxySelector(dispatch, { displayName }) {
-    let proxiedMapToProps
-    function mapToPropsProxy(stateOrDispatch, ownProps) {
-      return mapToPropsProxy.meta.dependsOnProps
-        ? proxiedMapToProps(stateOrDispatch, ownProps)
-        : proxiedMapToProps(stateOrDispatch)
+    const proxy = function mapToPropsProxy(stateOrDispatch, ownProps) {
+      return proxy.dependsOnOwnProps
+        ? proxy.mapToProps(stateOrDispatch, ownProps)
+        : proxy.mapToProps(stateOrDispatch)
     }
-    mapToPropsProxy.meta = getMeta(mapToProps)
 
-    function detectFactoryAndVerify(stateOrDispatch, ownProps) {
-      proxiedMapToProps = mapToProps
-      let result = mapToPropsProxy(stateOrDispatch, ownProps)
+    proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps)
 
-      if (typeof result === 'function') {
-        proxiedMapToProps = result
-        mapToPropsProxy.meta = getMeta(result)
-        result = mapToPropsProxy(stateOrDispatch, ownProps)
+    proxy.mapToProps = function detectFactoryAndVerify(stateOrDispatch, ownProps) {
+      proxy.mapToProps = mapToProps
+      let props = proxy(stateOrDispatch, ownProps)
+
+      if (typeof props === 'function') {
+        proxy.mapToProps = props
+        proxy.dependsOnOwnProps = getDependsOnOwnProps(props)
+        props = proxy(stateOrDispatch, ownProps)
       }
 
       if (process.env.NODE_ENV !== 'production') 
-        verifyPlainObject(result, displayName, methodName)
+        verifyPlainObject(props, displayName, methodName)
 
-      return result
+      return props
     }
 
-    proxiedMapToProps = detectFactoryAndVerify
-    return mapToPropsProxy
+    return proxy
   }
 }
