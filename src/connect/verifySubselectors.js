@@ -5,9 +5,9 @@ function verify(selector, methodName, displayName) {
     throw new Error(`Unexpected value for ${methodName} in ${displayName}.`)
 
   } else if (methodName === 'mapStateToProps' || methodName === 'mapDispatchToProps') {
-    if (!selector.meta || !selector.meta.hasOwnProperty('dependsOnProps')) {
+    if (!selector.hasOwnProperty('dependsOnOwnProps')) {
       warning(
-        `The selector for ${methodName} of ${displayName} did not specify a value for dependsOnProps.`
+        `The selector for ${methodName} of ${displayName} did not specify a value for dependsOnOwnProps.`
       )
     }
   }
