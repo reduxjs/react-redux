@@ -49,7 +49,7 @@ export function pureFinalPropsSelectorFactory(
   function handleNewPropsAndNewState() {
     stateProps = mapStateToProps(state, ownProps)
 
-    if (mapDispatchToProps.meta.dependsOnProps)
+    if (mapDispatchToProps.dependsOnOwnProps)
       dispatchProps = mapDispatchToProps(dispatch, ownProps)
 
     mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
@@ -57,10 +57,10 @@ export function pureFinalPropsSelectorFactory(
   }
 
   function handleNewProps() {
-    if (mapStateToProps.meta.dependsOnProps)
+    if (mapStateToProps.dependsOnOwnProps)
       stateProps = mapStateToProps(state, ownProps)
 
-    if (mapDispatchToProps.meta.dependsOnProps)
+    if (mapDispatchToProps.dependsOnOwnProps)
       dispatchProps = mapDispatchToProps(dispatch, ownProps)
 
     mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
