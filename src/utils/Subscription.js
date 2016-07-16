@@ -2,12 +2,11 @@
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
 export default class Subscription {
-  constructor(store, parentSub, onStateChange) {
+  constructor(store, parentSub) {
     this.subscribe = parentSub
       ? parentSub.addNestedSub.bind(parentSub)
       : store.subscribe
 
-    this.onStateChange = onStateChange
     this.unsubscribe = null
     this.nextListeners = this.currentListeners = []
   }
@@ -48,12 +47,9 @@ export default class Subscription {
   }
 
   trySubscribe() {
-    if (this.unsubscribe) return
-
-    const notifyNestedSubs = this.notifyNestedSubs.bind(this)
-    const onStateChange = this.onStateChange
-    function listener() { onStateChange(notifyNestedSubs) }
-    this.unsubscribe = this.subscribe(listener)
+    if (!this.unsubscribe) {
+      this.unsubscribe = this.subscribe(this.onStateChange)
+    }
   }
 
   tryUnsubscribe() {
