@@ -1017,6 +1017,12 @@ describe('React', () => {
       expect(stub.props.passVal).toBe('otherval')
     })
 
+    it('should throw an error if a component is not passed to the function returned by connect', () => {
+      expect(connect()).toThrow(
+        /You must pass a component to the function/
+      )
+    })
+ 
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
       const store = createStore(() => ({}))
 
