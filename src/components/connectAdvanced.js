@@ -60,7 +60,7 @@ export default function connectAdvanced(
     [subscriptionKey]: PropTypes.instanceOf(Subscription)
   }
   const childContextTypes = {
-    [subscriptionKey]: PropTypes.instanceOf(Subscription).isRequired
+    [subscriptionKey]: PropTypes.instanceOf(Subscription)
   }  
 
   return function wrapWithConnect(WrappedComponent) {
@@ -119,7 +119,7 @@ export default function connectAdvanced(
         // re-render.
         this.subscription.trySubscribe()
         this.selector.run(this.props)
-        if (this.shouldComponentUpdate()) this.forceUpdate()
+        if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
 
       componentWillReceiveProps(nextProps) {
@@ -127,14 +127,14 @@ export default function connectAdvanced(
       }
 
       shouldComponentUpdate() {
-        return this.selector.lastProps !== this.selector.nextProps
+        return this.selector.shouldComponentUpdate
       }
 
       componentWillUnmount() {
-        this.subscription.tryUnsubscribe()
+        if (this.subscription) this.subscription.tryUnsubscribe()
         // these are just to guard against extra memory leakage if a parent element doesn't
         // dereference this instance properly, such as an async callback that never finishes
-        this.subscription = { isSubscribed: () => false }
+        this.subscription = null
         this.store = null
         this.parentSub = null
         this.selector.run = () => {}
@@ -153,40 +153,49 @@ export default function connectAdvanced(
       }
 
       initSelector() {
-        const store = this.store
-        const selector = selectorFactory(store.dispatch, selectorFactoryOptions)
+        const { dispatch, getState } = this.store
+        const sourceSelector = selectorFactory(dispatch, selectorFactoryOptions)
 
         // wrap the selector in an object that tracks its results between runs
-        const wrapper = {
-          lastProps: null,
-          nextProps: selector(store.getState(), this.props),
-          run(props) {
-            wrapper.nextProps = selector(store.getState(), props)
+        const selector = this.selector = {
+          shouldComponentUpdate: true,
+          props: sourceSelector(getState(), this.props),
+          run: function runComponentSelector(props) {
+            try {
+              const nextProps = sourceSelector(getState(), props)
+              if (selector.error || nextProps !== selector.props) {
+                selector.shouldComponentUpdate = true
+                selector.props = nextProps
+                selector.error = null
+              }
+            } catch (error) {
+              selector.shouldComponentUpdate = true
+              selector.error = error
+            }
           }
         }
-        this.selector = wrapper
       }
 
       initSubscription() {
-        const dummyState = {}
-        function onStoreStateChange(notifyNestedSubs) {
-          this.selector.run(this.props)
-          if (this.shouldComponentUpdate()) {
-            this.setState(dummyState, notifyNestedSubs)
-          } else {
-            notifyNestedSubs()
-          }
+        if (shouldHandleStateChanges) {
+          const subscription = this.subscription = new Subscription(this.store, this.parentSub)
+          const notifyNestedSubs = subscription.notifyNestedSubs.bind(subscription)
+          const dummyState = {}
+
+          subscription.onStateChange = function onStateChange() {
+            this.selector.run(this.props)
+
+            if (!this.selector.shouldComponentUpdate) {
+              subscription.notifyNestedSubs()
+            } else {
+              this.setState(dummyState, notifyNestedSubs)
+            }
+          }.bind(this)
         }
-
-        const onChange = shouldHandleStateChanges
-          ? onStoreStateChange.bind(this)
-          : (notifyNestedSubs => notifyNestedSubs())
-
-        this.subscription = new Subscription(this.store, this.parentSub, onChange)
       }
 
       isSubscribed() {
-        return this.subscription.isSubscribed()
+        return Boolean(this.subscription) && this.subscription.isSubscribed()
       }
 
       addExtraProps(props) {
@@ -202,10 +211,14 @@ export default function connectAdvanced(
       }
 
       render() {
-        return createElement(
-          WrappedComponent,
-          this.addExtraProps(this.selector.lastProps = this.selector.nextProps)
-        )
+        const selector = this.selector
+        selector.shouldComponentUpdate = false
+
+        if (selector.error) {
+          throw selector.error
+        } else {
+          return createElement(WrappedComponent, this.addExtraProps(selector.props))
+        }
       }
     }
 
@@ -222,7 +235,7 @@ export default function connectAdvanced(
           this.version = version
           this.initSelector()
 
-          this.subscription.tryUnsubscribe()
+          if (this.subscription) this.subscription.tryUnsubscribe()
           this.initSubscription()
           if (shouldHandleStateChanges) this.subscription.trySubscribe()
         }
