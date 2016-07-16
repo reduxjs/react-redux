@@ -64,6 +64,12 @@ export default function connectAdvanced(
   }  
 
   return function wrapWithConnect(WrappedComponent) {
+    invariant(
+      typeof WrappedComponent == 'function',
+      `You must pass a component to the function returned by ` +
+      `connect. Instead received ${WrappedComponent}`
+    )
+
     const wrappedComponentName = WrappedComponent.displayName
       || WrappedComponent.name
       || 'Component'
