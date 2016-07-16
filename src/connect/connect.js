@@ -20,7 +20,16 @@ import defaultSelectorFactory from './selectorFactory'
   The resulting final props selector is called by the Connect component instance whenever
   it receives new props or store state.
  */
-export default function connect(
+
+function match(arg, factories) {
+  for (let i = factories.length - 1; i >= 0; i--) {
+    const result = factories[i](arg)
+    if (result) return result
+  }
+  return undefined
+}
+
+export function buildConnectOptions(
   mapStateToProps,
   mapDispatchToProps,
   mergeProps,
@@ -46,7 +55,7 @@ export default function connect(
   const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories)
   const initMergeProps = match(mergeProps, mergePropsFactories)
 
-  return connectAdvanced(selectorFactory, {
+  return {
     // used in error messages
     methodName: 'connect',
 
@@ -57,6 +66,7 @@ export default function connect(
     shouldHandleStateChanges: Boolean(mapStateToProps),
 
     // passed through to selectorFactory
+    selectorFactory,
     initMapStateToProps,
     initMapDispatchToProps,
     initMergeProps,
@@ -64,13 +74,10 @@ export default function connect(
 
     // any addional options args can override defaults of connect or connectAdvanced
     ...options
-  })
+  }
 }
 
-function match(arg, factories) {
-  for (let i = factories.length - 1; i >= 0; i--) {
-    const result = factories[i](arg)
-    if (result) return result
-  }
-  return undefined
+export default function connect(...args) {
+  const options = buildConnectOptions(...args)
+  return connectAdvanced(options.selectorFactory, options)
 }
