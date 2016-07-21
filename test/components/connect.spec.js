@@ -3,10 +3,10 @@ import React, { createClass, Children, PropTypes, Component } from 'react'
 import ReactDOM from 'react-dom'
 import TestUtils from 'react-addons-test-utils'
 import { createStore } from 'redux'
-import { connect } from '../../src/index'
+import { ally } from '../../src/index'
 
 describe('React', () => {
-  describe('connect', () => {
+  describe('ally', () => {
     class Passthrough extends Component {
       render() {
         return <div {...this.props} />
@@ -36,7 +36,7 @@ describe('React', () => {
     it('should receive the store in the context', () => {
       const store = createStore(() => ({}))
 
-      @connect()
+      @ally()
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
@@ -60,7 +60,7 @@ describe('React', () => {
         hello: 'world'
       }))
 
-      @connect(({ foo, baz }) => ({ foo, baz }))
+      @ally({mapStateToProps: ({ foo, baz }) => ({ foo, baz })})
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
@@ -85,7 +85,7 @@ describe('React', () => {
     it('should subscribe class components to the store changes', () => {
       const store = createStore(stringBuilder)
 
-      @connect(state => ({ string: state }) )
+      @ally({mapStateToProps: state => ({ string: state }) })
       class Container extends Component {
         render() {
           return <Passthrough {...this.props}/>
@@ -109,9 +109,9 @@ describe('React', () => {
     it('should subscribe pure function components to the store changes', () => {
       const store = createStore(stringBuilder)
 
-      let Container = connect(
-        state => ({ string: state })
-      )(function Container(props) {
+      let Container = ally({
+        mapStateToProps: state => ({string: state})
+      })(function Container(props) {
         return <Passthrough {...props}/>
       })
 
@@ -135,7 +135,7 @@ describe('React', () => {
     it('should handle dispatches before componentDidMount', () => {
       const store = createStore(stringBuilder)
 
-      @connect(state => ({ string: state }) )
+      @ally({mapStateToProps: state => ({ string: state }) })
       class Container extends Component {
         componentWillMount() {
           store.dispatch({ type: 'APPEND', body: 'a' })
@@ -161,7 +161,7 @@ describe('React', () => {
         foo: 'bar'
       }))
 
-      @connect(state => state)
+      @ally({mapStateToProps: state => state})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -204,7 +204,7 @@ describe('React', () => {
     it('should handle unexpected prop changes with forceUpdate()', () => {
       const store = createStore(() => ({}))
 
-      @connect(state => state)
+      @ally({mapStateToDispatch: state => state})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -244,7 +244,7 @@ describe('React', () => {
       let props = { x: true }
       let container
 
-      @connect(() => ({}), () => ({}))
+      @ally({mapStateToProps: () => ({}), mapDispatchToProps: () => ({})})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -287,7 +287,7 @@ describe('React', () => {
       let props = { x: true }
       let container
 
-      @connect(() => ({}))
+      @ally({mapStateToProps: () => ({})})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -330,7 +330,7 @@ describe('React', () => {
         foo: 'bar'
       }))
 
-      @connect(state => state)
+      @ally({mapStateToProps: state => state})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -382,12 +382,12 @@ describe('React', () => {
         }
       }
 
-      @connect(
-        state => ({ stateThing: state }),
-        dispatch => ({
+      @ally({
+        mapStateToProps: state => ({stateThing: state}),
+        mapDispatchToProps: dispatch => ({
           doSomething: (whatever) => dispatch(doSomething(whatever))
         }),
-        (stateProps, actionProps, parentProps) => ({
+        mergeProps: (stateProps, actionProps, parentProps) => ({
           ...stateProps,
           ...actionProps,
           mergedDoSomething(thing) {
@@ -395,7 +395,7 @@ describe('React', () => {
             actionProps.doSomething(seed + thing + parentProps.extra)
           }
         })
-      )
+      })
       class Container extends Component {
         render() {
           return <Passthrough {...this.props}/>
@@ -434,10 +434,10 @@ describe('React', () => {
         foo: 'bar'
       }))
 
-      @connect(
-        state => state,
-        dispatch => ({ dispatch })
-      )
+      @ally({
+        mapStateToProps: state => state,
+        mapDispatchToProps: dispatch => ({dispatch})
+      })
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
@@ -465,9 +465,11 @@ describe('React', () => {
       let invocationCount = 0
 
       /*eslint-disable no-unused-vars */
-      @connect((arg1) => {
-        invocationCount++
-        return {}
+      @ally({
+        mapStateToProps: (arg1) => {
+          invocationCount++
+          return {}
+        }
       })
       /*eslint-enable no-unused-vars */
       class WithoutProps extends Component {
@@ -512,11 +514,12 @@ describe('React', () => {
 
       let invocationCount = 0
 
-      @connect(() => {
-        invocationCount++
-        return {}
+      @ally({
+        mapStateToProps: () => {
+          invocationCount++
+          return {}
+        }
       })
-
       class WithoutProps extends Component {
         render() {
           return <Passthrough {...this.props}/>
@@ -560,10 +563,12 @@ describe('React', () => {
       let propsPassedIn
       let invocationCount = 0
 
-      @connect((state, props) => {
-        invocationCount++
-        propsPassedIn = props
-        return {}
+      @ally({
+        mapStateToProps: (state, props) => {
+          invocationCount++
+          propsPassedIn = props
+          return {}
+        }
       })
       class WithProps extends Component {
         render() {
@@ -612,9 +617,12 @@ describe('React', () => {
       let invocationCount = 0
 
       /*eslint-disable no-unused-vars */
-      @connect(null, (arg1) => {
-        invocationCount++
-        return {}
+      @ally({
+        mapStateToProps: null, 
+        mapDispatchToProps: (arg1) => {
+          invocationCount++
+          return {}
+        }
       })
       /*eslint-enable no-unused-vars */
       class WithoutProps extends Component {
@@ -660,11 +668,13 @@ describe('React', () => {
 
       let invocationCount = 0
 
-      @connect(null, () => {
-        invocationCount++
-        return {}
+      @ally({
+        mapStateToProps: null, 
+        mapDispatchToProps: () => {
+          invocationCount++
+          return {}
+        }
       })
-
       class WithoutProps extends Component {
         render() {
           return <Passthrough {...this.props}/>
@@ -709,10 +719,13 @@ describe('React', () => {
       let propsPassedIn
       let invocationCount = 0
 
-      @connect(null, (dispatch, props) => {
-        invocationCount++
-        propsPassedIn = props
-        return {}
+      @ally({ 
+        mapStateToProps: null, 
+        mapDispatchToProps: (dispatch, props) => {
+          invocationCount++
+          propsPassedIn = props
+          return {}
+        }
       })
       class WithProps extends Component {
         render() {
@@ -761,7 +774,7 @@ describe('React', () => {
       }))
 
       function runCheck(...connectArgs) {
-        @connect(...connectArgs)
+        @ally(...connectArgs)
         class Container extends Component {
           render() {
             return <Passthrough {...this.props} />
@@ -784,9 +797,10 @@ describe('React', () => {
         expect(decorated.isSubscribed()).toBe(false)
       }
 
-      runCheck()
-      runCheck(null, null, null)
-      runCheck(false, false, false)
+      runCheck();
+      runCheck({});
+      runCheck({mapStateToProps: null, mapDispatchToProps: null, mergeProps: null});
+      runCheck({mapStateToProps: false, mapDispatchToProps: false, mergeProps: false});
     })
 
     it('should unsubscribe before unmounting', () => {
@@ -803,10 +817,10 @@ describe('React', () => {
         }
       }
 
-      @connect(
-        state => ({ string: state }),
-        dispatch => ({ dispatch })
-      )
+      @ally({
+        mapStateToProps: state => ({string: state}),
+        mapDispatchToProps: dispatch => ({dispatch})
+      })
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
@@ -830,10 +844,10 @@ describe('React', () => {
       const store = createStore(stringBuilder)
       let mapStateToPropsCalls = 0
 
-      @connect(
-        () => ({ calls: ++mapStateToPropsCalls }),
-        dispatch => ({ dispatch })
-      )
+      @ally({
+        mapStateToProps: () => ({calls: ++mapStateToPropsCalls}),
+        mapDispatchToProps: dispatch => ({dispatch})
+      })
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
@@ -864,10 +878,10 @@ describe('React', () => {
       let mapStateToPropsCalls = 0
 
       /*eslint-disable no-unused-vars */
-      @connect(
-        (state) => ({ calls: mapStateToPropsCalls++ }),
-        dispatch => ({ dispatch })
-      )
+      @ally({
+        mapStateToProps: (state) => ({calls: mapStateToPropsCalls++}),
+        mapDispatchToProps: dispatch => ({dispatch})
+      })
       /*eslint-enable no-unused-vars */
       class Container extends Component {
         componentWillUnmount() {
@@ -902,10 +916,10 @@ describe('React', () => {
         return <Passthrough string={string}/>
       }
 
-      @connect(
-        state => ({ string: state }),
-        dispatch => ({ dispatch })
-      )
+      @ally({
+        mapStateToProps: state => ({string: state}),
+        mapDispatchToProps: dispatch => ({dispatch})
+      })
       class Container extends Component {
         render() {
           return render(this.props)
@@ -937,15 +951,15 @@ describe('React', () => {
         return <Passthrough string={string} pass={pass} passVal={pass.val} />
       }
 
-      @connect(
-        state => ({ string: state }),
-        dispatch => ({ dispatch }),
-        (stateProps, dispatchProps, parentProps) => ({
+      @ally({
+        mapStateToProps: state => ({string: state}),
+        mapDispatchToProps: dispatch => ({dispatch}),
+        mergeProps: (stateProps, dispatchProps, parentProps) => ({
           ...dispatchProps,
           ...stateProps,
           ...parentProps
         })
-      )
+      })
       class Container extends Component {
         render() {
           return render(this.props)
@@ -1020,9 +1034,13 @@ describe('React', () => {
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
       const store = createStore(() => ({}))
 
-      function makeContainer(mapState, mapDispatch, mergeProps) {
+      function makeContainer(mapStateToProps, mapDispatchToProps, mergeProps) {
         return React.createElement(
-          @connect(mapState, mapDispatch, mergeProps)
+          @ally({
+            mapStateToProps: mapStateToProps, 
+            mapDispatchToProps: mapDispatchToProps, 
+            mergeProps: mergeProps
+          })
           class Container extends Component {
             render() {
               return <Passthrough />
@@ -1041,7 +1059,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+        /mapStateToProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1053,7 +1071,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+        /mapStateToProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1065,7 +1083,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+        /mapStateToProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1077,7 +1095,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+        /mapDispatchToProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1089,7 +1107,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+        /mapDispatchToProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1101,7 +1119,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+        /mapDispatchToProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1113,7 +1131,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+        /mergeProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1125,7 +1143,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+        /mergeProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
@@ -1137,7 +1155,7 @@ describe('React', () => {
       )
       expect(spy.calls.length).toBe(1)
       expect(spy.calls[0].arguments[0]).toMatch(
-        /mergeProps\(\) in Connect\(Container\) must return a plain object/
+        /mergeProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
     })
@@ -1145,10 +1163,10 @@ describe('React', () => {
     it('should recalculate the state and rebind the actions on hot update', () => {
       const store = createStore(() => {})
 
-      @connect(
-        null,
-        () => ({ scooby: 'doo' })
-      )
+      @ally({
+        mapStateToProps: null,
+        mapDispatchToProps: () => ({scooby: 'doo'})
+      })
       class ContainerBefore extends Component {
         render() {
           return (
@@ -1157,10 +1175,10 @@ describe('React', () => {
         }
       }
 
-      @connect(
-        () => ({ foo: 'baz' }),
-        () => ({ scooby: 'foo' })
-      )
+      @ally({
+        mapStateToProps: () => ({foo: 'baz'}),
+        mapDispatchToProps: () => ({scooby: 'foo'})
+      })
       class ContainerAfter extends Component {
         render() {
           return (
@@ -1169,10 +1187,10 @@ describe('React', () => {
         }
       }
 
-      @connect(
-        () => ({ foo: 'bar' }),
-        () => ({ scooby: 'boo' })
-      )
+      @ally({
+        mapStateToProps: () => ({foo: 'bar'}),
+        mapDispatchToProps: () => ({scooby: 'boo'})
+      })
       class ContainerNext extends Component {
         render() {
           return (
@@ -1214,30 +1232,30 @@ describe('React', () => {
     })
 
     it('should set the displayName correctly', () => {
-      expect(connect(state => state)(
+      expect(ally({mapStateToProps: state => state})(
         class Foo extends Component {
           render() {
             return <div />
           }
         }
-      ).displayName).toBe('Connect(Foo)')
+      ).displayName).toBe('Ally(Foo)')
 
-      expect(connect(state => state)(
+      expect(ally({mapStateToProps: state => state})(
         createClass({
           displayName: 'Bar',
           render() {
             return <div />
           }
         })
-      ).displayName).toBe('Connect(Bar)')
+      ).displayName).toBe('Ally(Bar)')
 
-      expect(connect(state => state)(
+      expect(ally({mapStateToProps: state => state})(
         createClass({
           render() {
             return <div />
           }
         })
-      ).displayName).toBe('Connect(Component)')
+      ).displayName).toBe('Ally(Component)')
     })
 
     it('should expose the wrapped component as WrappedComponent', () => {
@@ -1247,7 +1265,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state)
+      const decorator = ally({mapStateToProps: state => state})
       const decorated = decorator(Container)
 
       expect(decorated.WrappedComponent).toBe(Container)
@@ -1263,7 +1281,7 @@ describe('React', () => {
       Container.howIsRedux = () => 'Awesome!'
       Container.foo = 'bar'
 
-      const decorator = connect(state => state)
+      const decorator = ally({mapStateToProps: state => state})
       const decorated = decorator(Container)
 
       expect(decorated.howIsRedux).toBeA('function')
@@ -1281,9 +1299,11 @@ describe('React', () => {
       let actualState
 
       const expectedState = { foos: {} }
-      const decorator = connect(state => {
-        actualState = state
-        return {}
+      const decorator = ally({
+        mapStateToProps: state => {
+          actualState = state
+          return {}
+        }
       })
       const Decorated = decorator(Container)
       const mockStore = {
@@ -1304,7 +1324,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(() => {})
+      const decorator = ally({mapStateToProps: () => {}})
       const Decorated = decorator(Container)
 
       expect(() =>
@@ -1323,7 +1343,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state)
+      const decorator = ally({mapStateToProps: state => state})
       const Decorated = decorator(Container)
 
       const tree = TestUtils.renderIntoDocument(
@@ -1355,7 +1375,12 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state, null, null, { withRef: true })
+      const decorator = ally({
+        mapStateToProps: state => state, 
+        mapDispatchToProps: null, 
+        mergeProps: null, 
+        options: { withRef: true }
+      })
       const Decorated = decorator(Container)
 
       const tree = TestUtils.renderIntoDocument(
@@ -1384,7 +1409,12 @@ describe('React', () => {
         statefulValue: React.PropTypes.number
       }
 
-      const decorator = connect(state => state, null, null, { pure: false })
+      const decorator = ally({
+        mapStateToProps: state => state, 
+        mapDispatchToProps: null, 
+        mergeProps: null, 
+        options: { pure: false }
+      })
       const Decorated = decorator(ImpureComponent)
 
       class StatefulWrapper extends Component {
@@ -1436,15 +1466,15 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(
-        (state, { storeGetter }) => {
+      const decorator = ally({
+        mapStateToProps: (state, {storeGetter}) => {
           mapStateSpy()
-          return { value: state[storeGetter.storeKey] }
+          return {value: state[storeGetter.storeKey]}
         },
-        mapDispatchSpy,
-        null,
-        { pure: false }
-      )
+        mapDispatchToProps: mapDispatchSpy,
+        mergeProps: null,
+        options: {pure: false}
+      })
       const Decorated = decorator(ImpureComponent)
 
       class StatefulWrapper extends Component {
@@ -1489,7 +1519,12 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       let childMapStateInvokes = 0
 
-      @connect(state => ({ state }), null, null, { withRef: true })
+      @ally({
+        mapStateToProps: state => ({ state }), 
+        mapDispatchToProps: null, 
+        mergeProps: null, 
+        options: { withRef: true }
+      })
       class Container extends Component {
 
         emitChange() {
@@ -1506,11 +1541,13 @@ describe('React', () => {
         }
       }
 
-      @connect((state, parentProps) => {
+      @ally({
+        mapStateToProps: (state, parentProps) => {
         childMapStateInvokes++
         // The state from parent props should always be consistent with the current state
         expect(state).toEqual(parentProps.parentState)
         return {}
+      }
       })
       class ChildContainer extends Component {
         render() {
@@ -1553,9 +1590,11 @@ describe('React', () => {
       let renderCalls = 0
       let mapStateCalls = 0
 
-      @connect(() => {
-        mapStateCalls++
-        return {} // no change!
+      @ally({
+        mapStateToProps: () => {
+          mapStateCalls++
+          return {} // no change!
+        }
       })
       class Container extends Component {
         render() {
@@ -1586,10 +1625,10 @@ describe('React', () => {
       let renderCalls = 0
       let mapStateCalls = 0
 
-      @connect(state => {
+      @ally({mapStateToProps: state => {
         mapStateCalls++
         return state === 'aaa' ? { change: 1 } : {}
-      })
+      }})
       class Container extends Component {
         render() {
           renderCalls++
@@ -1631,14 +1670,14 @@ describe('React', () => {
       let renderCalls = 0
       let mapStateCalls = 0
 
-      @connect(state => {
+      @ally({mapStateToProps: state => {
         mapStateCalls++
         if (state === 'a') {
           throw new Error('Oops')
         } else {
           return {}
         }
-      })
+      }})
       class Container extends Component {
         render() {
           renderCalls++
@@ -1677,7 +1716,7 @@ describe('React', () => {
         }
       }
 
-      @connect(mapStateFactory)
+      @ally({mapStateToProps: mapStateFactory})
       class Container extends Component {
         componentWillUpdate() {
           updatedCount++
@@ -1721,7 +1760,11 @@ describe('React', () => {
         return { ...stateProps, ...dispatchProps, name: parentProps.name }
       }
 
-      @connect(null, mapDispatchFactory, mergeParentDispatch)
+      @ally({
+        mapStateToProps: null, 
+        mapDispatchToProps: mapDispatchFactory, 
+        mergeProps: mergeParentDispatch
+      })
       class Passthrough extends Component {
         componentWillUpdate() {
           updatedCount++
@@ -1766,7 +1809,11 @@ describe('React', () => {
       let renderCalls = 0
       const store = createStore(stringBuilder)
 
-      @connect(() => ({ a: ++mapStateCalls }), null, () => ({ changed: false }))
+      @ally({
+        mapStateToProps: () => ({a: ++mapStateCalls}),
+        mapDispatchToProps: null,
+        mergeProps: () => ({changed: false})
+      })
       class Container extends Component {
         render() {
           renderCalls++
@@ -1793,7 +1840,12 @@ describe('React', () => {
       let store = createStore(() => ({}))
       let renderCount = 0
 
-      @connect(null, null, () => ({ a: 1 }), { pure: false })
+      @ally({
+        mapStateToProps: null, 
+        mapDispatchToProps: null, 
+        mergeProps: () => ({ a: 1 }), 
+        options: { pure: false }
+      })
       class Container extends React.Component {
         render() {
           ++renderCount
@@ -1833,7 +1885,7 @@ describe('React', () => {
         }
       }
 
-      @connect(null)
+      @ally({mapStateToProps: null})
       class Parent extends React.Component {
         componentWillMount() {
           this.props.dispatch({ type: 'fetch' })
@@ -1848,9 +1900,11 @@ describe('React', () => {
         }
       }
 
-      @connect(state => ({
+      @ally({
+        mapStateToProps: state => ({
         profile: state.data.profile
-      }))
+      })
+      })
       class Child extends React.Component {
         render() {
           return null

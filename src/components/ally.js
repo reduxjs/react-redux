@@ -9,11 +9,12 @@ import invariant from 'invariant'
 
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
-const defaultMergeProps = (stateProps, dispatchProps, parentProps) => ({
+const defaultMergeProps = (stateProps, dispatchProps, parentProps, allyProps) => ({
   ...parentProps,
   ...stateProps,
+  ...allyProps,
   ...dispatchProps
-})
+});
 
 function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
@@ -30,13 +31,24 @@ function tryCatch(fn, ctx) {
 }
 
 // Helps track hot reloading.
-let nextVersion = 0
+let nextVersion = 0;
 
-export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
-  const shouldSubscribe = Boolean(mapStateToProps)
-  const mapState = mapStateToProps || defaultMapStateToProps
+// export default function ally(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
+export default function ally(allyOptions = {}) {
+  const defaultAllyOptions = {
+    fields: [],
+    mapStateToProps: null,
+    mapDispatchToProps: null,
+    mergeProps: null,
+    options: {}
+  };
+  allyOptions = Object.assign({}, defaultAllyOptions, allyOptions);
+  const {fields, mapStateToProps, mapDispatchToProps, mergeProps, options} = allyOptions;
+  
+  const shouldSubscribe = Boolean(mapStateToProps || fields.length > 0);
+  const mapState = mapStateToProps || defaultMapStateToProps;
 
-  let mapDispatch
+  let mapDispatch;
   if (typeof mapDispatchToProps === 'function') {
     mapDispatch = mapDispatchToProps
   } else if (!mapDispatchToProps) {
@@ -45,20 +57,20 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     mapDispatch = wrapActionCreators(mapDispatchToProps)
   }
 
-  const finalMergeProps = mergeProps || defaultMergeProps
-  const { pure = true, withRef = false } = options
-  const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps
+  const finalMergeProps = mergeProps || defaultMergeProps;
+  const { pure = true, withRef = false } = options;
+  const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps;
 
   // Helps track hot reloading.
-  const version = nextVersion++
+  const version = nextVersion++;
 
   return function wrapWithConnect(WrappedComponent) {
-    const connectDisplayName = `Connect(${getDisplayName(WrappedComponent)})`
+    const allyDisplayName = `Ally(${getDisplayName(WrappedComponent)})`;
 
     function checkStateShape(props, methodName) {
       if (!isPlainObject(props)) {
         warning(
-          `${methodName}() in ${connectDisplayName} must return a plain object. ` +
+          `${methodName}() in ${allyDisplayName} must return a plain object. ` +
           `Instead received ${props}.`
         )
       }
@@ -72,7 +84,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       return mergedProps
     }
 
-    class Connect extends Component {
+    class Ally extends Component {
       shouldComponentUpdate() {
         return !pure || this.haveOwnPropsChanged || this.hasStoreStateChanged
       }
@@ -84,9 +96,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         invariant(this.store,
           `Could not find "store" in either the context or ` +
-          `props of "${connectDisplayName}". ` +
+          `props of "${allyDisplayName}". ` +
           `Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "store" as a prop to "${connectDisplayName}".`
+          `or explicitly pass "store" as a prop to "${allyDisplayName}".`
         )
 
         const storeState = this.store.getState()
@@ -307,6 +319,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           haveStatePropsChanged = this.updateStatePropsIfNeeded()
         }
         if (shouldUpdateDispatchProps) {
+          
           haveDispatchPropsChanged = this.updateDispatchPropsIfNeeded()
         }
 
@@ -340,17 +353,17 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
     }
 
-    Connect.displayName = connectDisplayName
-    Connect.WrappedComponent = WrappedComponent
-    Connect.contextTypes = {
+    Ally.displayName = allyDisplayName
+    Ally.WrappedComponent = WrappedComponent
+    Ally.contextTypes = {
       store: storeShape
     }
-    Connect.propTypes = {
+    Ally.propTypes = {
       store: storeShape
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
+      Ally.prototype.componentWillUpdate = function componentWillUpdate() {
         if (this.version === version) {
           return
         }
@@ -362,6 +375,6 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
     }
 
-    return hoistStatics(Connect, WrappedComponent)
+    return hoistStatics(Ally, WrappedComponent)
   }
 }
