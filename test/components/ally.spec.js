@@ -618,7 +618,7 @@ describe('React', () => {
 
       /*eslint-disable no-unused-vars */
       @ally({
-        mapStateToProps: null, 
+        mapStateToProps: null,
         mapDispatchToProps: (arg1) => {
           invocationCount++
           return {}
@@ -669,7 +669,7 @@ describe('React', () => {
       let invocationCount = 0
 
       @ally({
-        mapStateToProps: null, 
+        mapStateToProps: null,
         mapDispatchToProps: () => {
           invocationCount++
           return {}
@@ -719,8 +719,8 @@ describe('React', () => {
       let propsPassedIn
       let invocationCount = 0
 
-      @ally({ 
-        mapStateToProps: null, 
+      @ally({
+        mapStateToProps: null,
         mapDispatchToProps: (dispatch, props) => {
           invocationCount++
           propsPassedIn = props
@@ -1037,8 +1037,8 @@ describe('React', () => {
       function makeContainer(mapStateToProps, mapDispatchToProps, mergeProps) {
         return React.createElement(
           @ally({
-            mapStateToProps: mapStateToProps, 
-            mapDispatchToProps: mapDispatchToProps, 
+            mapStateToProps: mapStateToProps,
+            mapDispatchToProps: mapDispatchToProps,
             mergeProps: mergeProps
           })
           class Container extends Component {
@@ -1123,37 +1123,43 @@ describe('React', () => {
       )
       spy.destroy()
 
+      // ALLY NOTE: computeMergedProps is called twice because of the ally function calls them to get a more
+      // up to date mergedProps
       spy = expect.spyOn(console, 'error')
       TestUtils.renderIntoDocument(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 1)}
         </ProviderMock>
       )
-      expect(spy.calls.length).toBe(1)
+      expect(spy.calls.length).toBe(2)
       expect(spy.calls[0].arguments[0]).toMatch(
         /mergeProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
+      // ALLY NOTE: computeMergedProps is called twice because of the ally function calls them to get a more
+      // up to date mergedProps
       spy = expect.spyOn(console, 'error')
       TestUtils.renderIntoDocument(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
         </ProviderMock>
       )
-      expect(spy.calls.length).toBe(1)
+      expect(spy.calls.length).toBe(2)
       expect(spy.calls[0].arguments[0]).toMatch(
         /mergeProps\(\) in Ally\(Container\) must return a plain object/
       )
       spy.destroy()
 
+      // ALLY NOTE: computeMergedProps is called twice because of the ally function calls them to get a more
+      // up to date mergedProps
       spy = expect.spyOn(console, 'error')
       TestUtils.renderIntoDocument(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
         </ProviderMock>
       )
-      expect(spy.calls.length).toBe(1)
+      expect(spy.calls.length).toBe(2)
       expect(spy.calls[0].arguments[0]).toMatch(
         /mergeProps\(\) in Ally\(Container\) must return a plain object/
       )
@@ -1376,9 +1382,9 @@ describe('React', () => {
       }
 
       const decorator = ally({
-        mapStateToProps: state => state, 
-        mapDispatchToProps: null, 
-        mergeProps: null, 
+        mapStateToProps: state => state,
+        mapDispatchToProps: null,
+        mergeProps: null,
         options: { withRef: true }
       })
       const Decorated = decorator(Container)
@@ -1410,9 +1416,9 @@ describe('React', () => {
       }
 
       const decorator = ally({
-        mapStateToProps: state => state, 
-        mapDispatchToProps: null, 
-        mergeProps: null, 
+        mapStateToProps: state => state,
+        mapDispatchToProps: null,
+        mergeProps: null,
         options: { pure: false }
       })
       const Decorated = decorator(ImpureComponent)
@@ -1520,9 +1526,9 @@ describe('React', () => {
       let childMapStateInvokes = 0
 
       @ally({
-        mapStateToProps: state => ({ state }), 
-        mapDispatchToProps: null, 
-        mergeProps: null, 
+        mapStateToProps: state => ({ state }),
+        mapDispatchToProps: null,
+        mergeProps: null,
         options: { withRef: true }
       })
       class Container extends Component {
@@ -1761,8 +1767,8 @@ describe('React', () => {
       }
 
       @ally({
-        mapStateToProps: null, 
-        mapDispatchToProps: mapDispatchFactory, 
+        mapStateToProps: null,
+        mapDispatchToProps: mapDispatchFactory,
         mergeProps: mergeParentDispatch
       })
       class Passthrough extends Component {
@@ -1841,9 +1847,9 @@ describe('React', () => {
       let renderCount = 0
 
       @ally({
-        mapStateToProps: null, 
-        mapDispatchToProps: null, 
-        mergeProps: () => ({ a: 1 }), 
+        mapStateToProps: null,
+        mapDispatchToProps: null,
+        mergeProps: () => ({ a: 1 }),
         options: { pure: false }
       })
       class Container extends React.Component {
@@ -1922,5 +1928,726 @@ describe('React', () => {
 
       ReactDOM.unmountComponentAtNode(div)
     })
+
+    //BEGIN ALLY-RELATED TESTS
+    it('should allow for ally fields to be defined', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes',
+              bar: 'no'
+            }
+          }
+        }
+      }))
+
+      @ally({fields: {
+        foo: {},
+        bar: {}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKeys(['foo', 'bar']);
+      expect(stub.props.foo).toEqual('yes');
+      expect(stub.props.bar).toEqual('no');
+    });
+
+    it('should allow ally fields to be renamed', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes',
+              bar: 'no'
+            }
+          }
+        }
+      }))
+
+      @ally({fields: {
+        foo: {name: 'Foo'},
+        bar: {name: 'Bar'}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKeys(['Foo', 'Bar']);
+      expect(stub.props).toExcludeKeys(['foo', 'bar']);
+      expect(stub.props.Foo).toEqual('yes');
+      expect(stub.props.Bar).toEqual('no');
+    });
+
+    it('should allow ally fields to have a default type of instance', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              'foo': 'bar'
+            }
+          }
+        }
+      }))
+
+      @ally({fields: {
+        foo: {}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('allyFields');
+      expect(stub.props.allyFields).toIncludeKey('foo');
+      expect(stub.props.allyFields.foo).toIncludeKey('type');
+      expect(stub.props.allyFields.foo.type).toEqual('instance');
+      expect(stub.props.foo).toEqual('bar');
+    });
+
+    it('should allow ally fields to have a type of component', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'foo': 'bar'
+        }
+      }))
+
+      @ally({fields: {
+        foo: {type: 'component'}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('allyFields');
+      expect(stub.props.allyFields).toIncludeKey('foo');
+      expect(stub.props.allyFields.foo).toIncludeKey('type');
+      expect(stub.props.allyFields.foo.type).toEqual('component');
+      expect(stub.props.foo).toEqual('bar');
+    });
+
+    it('should allow ally fields to have a type of shared', function () {
+      const store = createStore(() => ({
+        foo: 'bar'
+      }))
+
+      @ally({fields: {
+        foo: {type: 'shared'}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('allyFields');
+      expect(stub.props.allyFields).toIncludeKey('foo');
+      expect(stub.props.allyFields.foo).toIncludeKey('type');
+      expect(stub.props.allyFields.foo.type).toEqual('shared');
+      expect(stub.props.foo).toEqual('bar');
+    });
+
+    it('should default the path of an ally field to the key name', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              'foo': 'Test'
+            }
+          }
+        }
+      }))
+
+      @ally({fields: {
+        foo: {}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('foo');
+      expect(stub.props.foo).toEqual('Test');
+    });
+
+    it('should be able to configure the path to a string or array', function () {
+      const store = createStore(() => ({}))
+
+      @ally({fields: {
+        foo: {path: 'foo.bar', defaultValue: 'baz'},
+        bar: {path: ['bar', 'bar'], defaultValue: 'baz'}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('allyFields');
+      expect(stub.props.allyFields).toIncludeKeys(['foo', 'bar']);
+      expect(stub.props.allyFields.foo).toIncludeKey('path');
+      expect(stub.props.allyFields.foo.path).toEqual('foo.bar');
+      expect(stub.props.allyFields.bar).toIncludeKey('path');
+      expect(stub.props.allyFields.bar.path).toEqual(['bar', 'bar']);
+    });
+
+    it('should be able to configure the path to be a function', function () {
+      const store = createStore(() => ({}))
+
+      @ally({fields: {
+        foo: {path: function () { return ['foo', 'bar'] }},
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('allyFields');
+      expect(stub.props.allyFields).toIncludeKey('foo');
+      expect(stub.props.allyFields.foo).toIncludeKey('path');
+      expect(stub.props.allyFields.foo.path).toBeA('function');
+    })
+
+    it('should execute the custom path function in a context that includes the props, state, and dispatch', function () {
+      const store = createStore(() => ({}))
+
+      var pathSpy = expect.createSpy();
+      @ally({fields: {
+        foo: {path: pathSpy},
+      }, options: {
+        withRef: true
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(pathSpy).toHaveBeenCalled();
+      expect(pathSpy.calls[0].context.props).toBeA('object');
+      expect(pathSpy.calls[0].context.state).toBeA('object');
+      expect(pathSpy.calls[0].context.dispatch).toBeA('function');
+    });
+
+    it('should prepend the component name to the path if the type is component', function () {
+      const store = createStore(() => ({}))
+
+      @ally({fields: {
+        foo: {type: 'component', path: function () { return ['the', 'foo'] }},
+        bar: {type: 'component', path: "the.bar"},
+        baz: {type: 'component', path: ["the", "baz"]}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('allyFields');
+      expect(stub.props.allyFields).toIncludeKey('foo');
+
+      expect(stub.props.allyFields.foo).toIncludeKey('finalPath');
+      expect(stub.props.allyFields.foo.finalPath).toEqual(['Container', 'the', 'foo']);
+
+      expect(stub.props.allyFields.bar).toIncludeKey('finalPath');
+      expect(stub.props.allyFields.bar.finalPath).toEqual(['Container', 'the', 'bar']);
+
+      expect(stub.props.allyFields.baz).toIncludeKey('finalPath');
+      expect(stub.props.allyFields.baz.finalPath).toEqual(['Container', 'the', 'baz']);
+    });
+
+    it('should prepend nothing to the path if the type is shared', function () {
+      const store = createStore(() => ({}))
+
+      @ally({fields: {
+        foo: {type: 'shared', path: function () { return ['the', 'foo'] }},
+        bar: {type: 'shared', path: "the.bar"},
+        baz: {type: 'shared', path: ["the", "baz"]}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('allyFields');
+      expect(stub.props.allyFields).toIncludeKey('foo');
+
+      expect(stub.props.allyFields.foo).toIncludeKey('finalPath');
+      expect(stub.props.allyFields.foo.finalPath).toEqual(['the', 'foo']);
+
+      expect(stub.props.allyFields.bar).toIncludeKey('finalPath');
+      expect(stub.props.allyFields.bar.finalPath).toEqual(['the', 'bar']);
+
+      expect(stub.props.allyFields.baz).toIncludeKey('finalPath');
+      expect(stub.props.allyFields.baz.finalPath).toEqual(['the', 'baz']);
+    });
+
+    it('should allow default value to be set for an ally field', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              'foo': 'Test'
+            }
+          }
+        }
+      }))
+
+      @ally({fields: {
+        foo: {defaultValue: 'Not Test'},
+        bar: {defaultValue: 'Baz'}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey('foo');
+      expect(stub.props.foo).toEqual('Test');
+      expect(stub.props.bar).toEqual('Baz');
+    });
+
+    it('should combine ally field props with the other props', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              'foo': 'Test'
+            }
+          }
+        }
+      }))
+
+      const dispatchSpy = expect.createSpy();
+
+      @ally({
+        fields: {
+          foo: {defaultValue: 'Oof'},
+          bar: {defaultValue: 'Rab'}
+        },
+        mapStateToProps: function (state) {
+          return {
+            myStateProp: state.Container.instances["1"].foo
+          }
+        },
+        mapDispatchToProps: {
+          myDispatchProp: dispatchSpy
+        }
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container myParentProp="here" baz={50} />
+        </ProviderMock>
+      )
+
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKeys(['foo', 'bar', 'myParentProp', 'myStateProp', 'myDispatchProp']);
+      expect(stub.props.foo).toEqual('Test');
+      expect(stub.props.bar).toEqual('Rab');
+      expect(stub.props.myStateProp).toEqual('Test');
+      expect(stub.props.myParentProp).toEqual('here');
+      expect(stub.props.myDispatchProp).toBeA('function');
+    });
+
+    it('should include set functions in the props to set the ally properties', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes',
+              bar: 'no'
+            }
+          }
+        }
+      }))
+
+      @ally({fields: {
+        foo: {},
+        bar: {}
+      }})
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKeys(['setFoo', 'setBar']);
+      expect(stub.props.setFoo).toBeA('function');
+      expect(stub.props.setBar).toBeA('function');
+    });
+
+    it('should not include a set function in the props if the readonly flag is true', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes',
+              bar: 'no'
+            }
+          }
+        }
+      }))
+
+      @ally({
+        fields: {
+          foo: {readonly: true},
+          bar: {readonly: true}
+        }
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Container pass="through" baz={50}/>
+          </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toExcludeKeys(['setFoo', 'setBar']);
+    });
+
+    it('should allow for custom getters that can be used to return the value', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes'
+            }
+          }
+        }
+      }))
+
+      @ally({
+        fields: {
+          foo: {
+            getter: function () {
+              return "baz"
+            }
+          }
+        }
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Container pass="through" baz={50}/>
+          </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey("foo");
+      expect(stub.props.foo).toEqual("baz");
+    })
+
+    it('should allow for the default getter to be accessed from the custom getter', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes'
+            }
+          }
+        }
+      }))
+
+      @ally({
+        fields: {
+          foo: {
+            getter: function (defaultGetter) {
+              return "baz" + defaultGetter()
+            }
+          }
+        }
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Container pass="through" baz={50}/>
+          </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey("foo");
+      expect(stub.props.foo).toEqual("bazyes");
+    })
+
+    it('should execute the custom getter in a context with access to the props, store, and dispatch', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes'
+            }
+          }
+        }
+      }))
+
+      var context;
+
+      @ally({
+        fields: {
+          foo: {
+            getter: function (defaultGetter) {
+              context = this;
+              return "baz" + defaultGetter() + context.state.Container.instances['1'].foo;
+            }
+          }
+        }
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Container pass="through" baz={50}/>
+          </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey("foo");
+      expect(stub.props.foo).toEqual("bazyesyes");
+      expect(context).toIncludeKeys(["props", "state", "dispatch"]);
+      expect(context.props).toBeA("object");
+      expect(context.state).toBeA("object");
+      expect(context.dispatch).toBeA("function");
+    })
+
+    it('should allow for a custom setter to be used instead of the default', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes'
+            }
+          }
+        }
+      }))
+      
+      const setterSpy = expect.createSpy();
+
+      @ally({
+        fields: {
+          foo: {
+            setter: function (value) {
+              setterSpy(value);
+            }
+          }
+        }
+      })
+      class Container extends Component {
+        componentDidMount() {
+          this.props.setFoo('someValue');
+        }
+        
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Container pass="through" baz={50}/>
+          </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey("setFoo");
+      expect(setterSpy).toHaveBeenCalledWith('someValue');
+    })
+
+    it('should allow for the default setter to be used in the custom setter', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes'
+            }
+          }
+        }
+      }))
+      
+      var defaultSetter;
+
+      @ally({
+        fields: {
+          foo: {
+            setter: function (value, _defaultSetter) {
+              defaultSetter = _defaultSetter;
+            }
+          }
+        }
+      })
+      class Container extends Component {
+        componentDidMount() {
+          this.props.setFoo();
+        }
+        
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Container pass="through" baz={50}/>
+          </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props).toIncludeKey("setFoo");
+      expect(defaultSetter).toBeA('function');
+    })
+
+    it('should execute the custom setter in a context with access to the props, store, and dispatch', function () {
+      const store = createStore(() => ({
+        'Container': {
+          'instances': {
+            '1': {
+              foo: 'yes'
+            }
+          }
+        }
+      }))
+
+      var context;
+
+      @ally({
+        fields: {
+          foo: {
+            setter: function (value, defaultGetter) {
+              context = this
+            }
+          }
+        }
+      })
+      class Container extends Component {
+        componentDidMount() {
+          this.props.setFoo('someValue');
+        }
+        
+        render() {
+          return <Passthrough {...this.props}/>;
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Container pass="through" baz={50}/>
+          </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(context).toIncludeKeys(["props", "state", "dispatch"]);
+      expect(context.props).toBeA("object");
+      expect(context.state).toBeA("object");
+      expect(context.dispatch).toBeA("function");
+    })
+    //END ALLY-RELATED TESTS
   })
 })

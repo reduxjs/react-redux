@@ -1,12 +1,19 @@
-import { Component, createElement } from 'react'
+import { Component, PropTypes, createElement } from 'react'
 import storeShape from '../utils/storeShape'
+import fieldShape from '../utils/fieldShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
 import warning from '../utils/warning'
+import combinePath from '../utils/combinePath'
+import allySet from '../actions/set';
 import isPlainObject from 'lodash/isPlainObject'
+import lodashMerge from 'lodash/merge'
+import noop from 'lodash/noop'
+import lodashGet from 'lodash/get'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 
+const DefaultFieldType = 'instance';
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
 const defaultMergeProps = (stateProps, dispatchProps, parentProps, allyProps) => ({
@@ -18,6 +25,16 @@ const defaultMergeProps = (stateProps, dispatchProps, parentProps, allyProps) =>
 
 function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
+}
+
+function sanitizeFields(fields) {
+  for (const fieldName of Object.keys(fields)) {
+    const field = fields[fieldName];
+    field.name = field.name || fieldName;
+    field.path = field.path || fieldName;
+    field.type = field.type || DefaultFieldType;
+    field.readonly = !!field.readonly;
+  }
 }
 
 let errorObject = { value: null }
@@ -36,7 +53,7 @@ let nextVersion = 0;
 // export default function ally(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
 export default function ally(allyOptions = {}) {
   const defaultAllyOptions = {
-    fields: [],
+    fields: {},
     mapStateToProps: null,
     mapDispatchToProps: null,
     mergeProps: null,
@@ -44,7 +61,7 @@ export default function ally(allyOptions = {}) {
   };
   allyOptions = Object.assign({}, defaultAllyOptions, allyOptions);
   const {fields, mapStateToProps, mapDispatchToProps, mergeProps, options} = allyOptions;
-  
+
   const shouldSubscribe = Boolean(mapStateToProps || fields.length > 0);
   const mapState = mapStateToProps || defaultMapStateToProps;
 
@@ -61,10 +78,12 @@ export default function ally(allyOptions = {}) {
   const { pure = true, withRef = false } = options;
   const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps;
 
+  sanitizeFields(fields);
+
   // Helps track hot reloading.
   const version = nextVersion++;
 
-  return function wrapWithConnect(WrappedComponent) {
+  return function wrapWithAlly(WrappedComponent) {
     const allyDisplayName = `Ally(${getDisplayName(WrappedComponent)})`;
 
     function checkStateShape(props, methodName) {
@@ -76,13 +95,15 @@ export default function ally(allyOptions = {}) {
       }
     }
 
-    function computeMergedProps(stateProps, dispatchProps, parentProps) {
-      const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
+    function computeMergedProps(stateProps, dispatchProps, parentProps, allyProps) {
+      const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps, allyProps)
       if (process.env.NODE_ENV !== 'production') {
         checkStateShape(mergedProps, 'mergeProps')
       }
       return mergedProps
     }
+
+    let instanceNumber = 1;
 
     class Ally extends Component {
       shouldComponentUpdate() {
@@ -104,6 +125,18 @@ export default function ally(allyOptions = {}) {
         const storeState = this.store.getState()
         this.state = { storeState }
         this.clearCache()
+        this.initializeAllyPropsWithDefaults()
+        this.componentName = getDisplayName(WrappedComponent)
+        this.instanceNumber = instanceNumber++
+      }
+      
+      initializeAllyPropsWithDefaults() {
+        this.allyProps = {};
+        for (var fieldName of Object.keys(fields)) {
+          const field = fields[fieldName];
+          const {defaultValue, name} = field;
+          this.allyProps[name] = defaultValue;
+        }
       }
 
       computeStateProps(store, props) {
@@ -172,6 +205,120 @@ export default function ally(allyOptions = {}) {
         return mappedDispatch
       }
 
+      computeAllyProps() {
+        this.configureFieldsForAlly();
+        const allyProps = {
+          allyFields: this.fields,
+          allyComponentName: this.componentName,
+          allyInstanceNumber: this.instanceNumber
+        };
+        
+        var precomputedMergedProps = computeMergedProps(this.stateProps, this.dispatchProps, this.props, this.allyProps);
+        
+        //  these properties are so that the most up to date information is used
+        //  when computing properties
+        for (const fieldName of Object.keys(this.fields)) {
+          const field = this.fields[fieldName];
+          Object.defineProperty(precomputedMergedProps, field.name, {
+            configurable: true,
+            enumerable: true,
+            get: field.finalGetter,
+            set: noop
+          })
+        }
+        
+        this.allyInstanceData = {
+          props: precomputedMergedProps,
+          state: this.state.storeState,
+          dispatch: this.store.dispatch
+        };
+        for (const fieldName of Object.keys(this.fields)) {
+          const field = this.fields[fieldName];
+          const {name, setterName, finalSetter} = field;
+          tryCatch(field.updatePath, this.allyInstanceData);
+          allyProps[name] = field.finalGetter();
+          if (!field.readonly) {
+            allyProps[setterName] = finalSetter;
+          }
+        }
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(allyProps, 'mapDispatchToProps')
+        }
+        return allyProps;
+      }
+
+      configureFieldsForAlly() {
+        if (this.fields) {
+          return this.fields;
+        }
+        const instanceFields = {...fields};
+        for (const fieldName of Object.keys(instanceFields)) {
+          const field = instanceFields[fieldName];
+          const {
+              name,
+              type,
+              defaultValue,
+              getter,
+              setter,
+              readonly
+          } = field;
+          let path = field.path;
+          const pathPrefix = [];
+          switch(type) {
+            case 'component':
+                pathPrefix.push(this.componentName);
+                break;
+            case 'instance':
+                pathPrefix.push(this.componentName, 'instances', this.instanceNumber);
+                break;
+          }
+          
+          var computedPath;
+          const doesPathDependOnInstance = typeof path === 'function';
+          const doesGetterDependOnInstance = typeof getter === 'function';
+          const doesSetterDependOnInstance = typeof setter === 'function';
+
+          if (!doesPathDependOnInstance) {
+            computedPath = path;
+          }
+          const finalPath = combinePath(pathPrefix, computedPath);
+
+          const updatePath = () => {
+            if (doesPathDependOnInstance) {
+              field.computedPath = path.call(this.allyInstanceData);
+              field.finalPath = combinePath(field.pathPrefix, field.computedPath);
+            }
+          };
+          
+          field.pathPrefix = pathPrefix;
+          field.computedPath = computedPath;
+          field.finalPath = finalPath;
+          field.doesPathDependOnInstance = doesPathDependOnInstance;
+          field.doesGetterDependOnInstance = doesGetterDependOnInstance;
+          field.doesSetterDependOnInstance = doesSetterDependOnInstance;
+          field.updatePath = updatePath;
+          field.defaultGetter = () => {
+            return lodashGet(this.state.storeState, field.finalPath, defaultValue);
+          };
+          field.finalGetter = doesGetterDependOnInstance && (() => {
+                return getter.call(this.allyInstanceData, field.defaultGetter);
+              }) ||
+              field.defaultGetter;
+          if (!readonly) {
+            field.defaultSetter = value => {
+              return dispatch => dispatch(allySet(field.finalPath, value))
+            };
+            field.finalSetter = doesSetterDependOnInstance && (value => {
+                  return setter.call(this.allyInstanceData, value, field.defaultSetter);
+                }) ||
+                field.defaultGetter;
+            field.setterName = `set${name[0].toUpperCase()}${name.slice(1)}`;
+          }
+        }
+
+        this.fields = instanceFields;
+      }
+
       updateStatePropsIfNeeded() {
         const nextStateProps = this.computeStateProps(this.store, this.props)
         if (this.stateProps && shallowEqual(nextStateProps, this.stateProps)) {
@@ -192,8 +339,18 @@ export default function ally(allyOptions = {}) {
         return true
       }
 
+      updateAllyPropsIfNeeded() {
+        const nextAllyProps = this.computeAllyProps();
+        if (this.allyProps && shallowEqual(nextAllyProps, this.allyProps)) {
+          return false;
+        }
+
+        this.allyProps = nextAllyProps;
+        return true;
+      }
+
       updateMergedPropsIfNeeded() {
-        const nextMergedProps = computeMergedProps(this.stateProps, this.dispatchProps, this.props)
+        const nextMergedProps = computeMergedProps(this.stateProps, this.dispatchProps, this.props, this.allyProps)
         if (this.mergedProps && checkMergedEquals && shallowEqual(nextMergedProps, this.mergedProps)) {
           return false
         }
@@ -236,6 +393,8 @@ export default function ally(allyOptions = {}) {
       }
 
       clearCache() {
+        this.fields = null
+        this.allyProps = null
         this.dispatchProps = null
         this.stateProps = null
         this.mergedProps = null
@@ -291,6 +450,7 @@ export default function ally(allyOptions = {}) {
           statePropsPrecalculationError,
           renderedElement
         } = this
+        const fieldsNotYetDefined = !this.fields && withRef;
 
         this.haveOwnPropsChanged = false
         this.hasStoreStateChanged = false
@@ -319,15 +479,16 @@ export default function ally(allyOptions = {}) {
           haveStatePropsChanged = this.updateStatePropsIfNeeded()
         }
         if (shouldUpdateDispatchProps) {
-          
           haveDispatchPropsChanged = this.updateDispatchPropsIfNeeded()
         }
+        let haveAllyPropsChanged = this.updateAllyPropsIfNeeded()
 
         let haveMergedPropsChanged = true
         if (
           haveStatePropsChanged ||
           haveDispatchPropsChanged ||
-          haveOwnPropsChanged
+          haveOwnPropsChanged ||
+          haveAllyPropsChanged
         ) {
           haveMergedPropsChanged = this.updateMergedPropsIfNeeded()
         } else {
@@ -357,10 +518,10 @@ export default function ally(allyOptions = {}) {
     Ally.WrappedComponent = WrappedComponent
     Ally.contextTypes = {
       store: storeShape
-    }
+    };
     Ally.propTypes = {
       store: storeShape
-    }
+    };
 
     if (process.env.NODE_ENV !== 'production') {
       Ally.prototype.componentWillUpdate = function componentWillUpdate() {
