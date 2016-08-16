@@ -3,4 +3,6 @@ node_js:
   - "5"
 script:
   - npm run lint
-  - npm test
+  - npm run test:cov
+after_success:
+  - npm run coverage
