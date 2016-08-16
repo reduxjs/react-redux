@@ -1,5 +1,18 @@
 {
-  "extends": "eslint-config-rackt",
+  "parser": "babel-eslint",
+  "extends": [
+    "eslint:recommended",
+    "plugin:import/errors",
+    "plugin:react/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 6,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true,
+      "experimentalObjectRestSpread": true
+    },
+  },
   "env": {
     "browser": true,
     "mocha": true,
@@ -9,9 +22,10 @@
     "valid-jsdoc": 2,
     "react/jsx-uses-react": 1,
     "react/jsx-no-undef": 2,
-    "react/wrap-multilines": 2
+    "react/jsx-wrap-multilines": 2
   },
   "plugins": [
+    "import",
     "react"
   ]
 }

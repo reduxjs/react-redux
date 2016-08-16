@@ -1,3 +1,5 @@
+/*eslint-disable react/prop-types*/
+
 import expect from 'expect'
 import React, { PropTypes, Component } from 'react'
 import TestUtils from 'react-addons-test-utils'
