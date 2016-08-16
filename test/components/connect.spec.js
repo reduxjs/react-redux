@@ -1,3 +1,5 @@
+/*eslint-disable react/prop-types*/
+
 import expect from 'expect'
 import React, { createClass, Children, PropTypes, Component } from 'react'
 import ReactDOM from 'react-dom'
@@ -351,9 +353,10 @@ describe('React', () => {
 
         componentDidMount() {
           // Simulate deep object mutation
-          this.state.bar.baz = 'through'
+          const bar = this.state.bar
+          bar.baz = 'through'
           this.setState({
-            bar: this.state.bar
+            bar
           })
         }
 
@@ -1022,7 +1025,7 @@ describe('React', () => {
         /You must pass a component to the function/
       )
     })
- 
+
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
       const store = createStore(() => ({}))
 
