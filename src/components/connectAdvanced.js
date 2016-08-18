@@ -106,6 +106,10 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
 
+        // make sure `getState` is properly bound in order to avoid breaking
+        // custom store implementations that rely on the store's context
+        this.getState = this.store.getState.bind(this.store);
+
         this.initSelector()
         this.initSubscription()
       }
@@ -160,7 +164,7 @@ export default function connectAdvanced(
 
       initSelector() {
         const { dispatch } = this.store
-        let getState = this.store.getState.bind(this.store)
+        const { getState } = this;
         const sourceSelector = selectorFactory(dispatch, selectorFactoryOptions)
 
         // wrap the selector in an object that tracks its results between runs
