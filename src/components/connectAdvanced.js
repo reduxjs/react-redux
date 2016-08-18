@@ -159,7 +159,8 @@ export default function connectAdvanced(
       }
 
       initSelector() {
-        const { dispatch, getState } = this.store
+        const { dispatch } = this.store
+        let getState = this.store.getState.bind(this.store)
         const sourceSelector = selectorFactory(dispatch, selectorFactoryOptions)
 
         // wrap the selector in an object that tracks its results between runs

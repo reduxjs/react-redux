@@ -5,7 +5,7 @@ export default class Subscription {
   constructor(store, parentSub) {
     this.subscribe = parentSub
       ? parentSub.addNestedSub.bind(parentSub)
-      : store.subscribe
+      : store.subscribe.bind(store)
 
     this.unsubscribe = null
     this.nextListeners = this.currentListeners = []
