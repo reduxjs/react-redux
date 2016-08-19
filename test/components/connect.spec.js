@@ -25,6 +25,30 @@ describe('React', () => {
       }
     }
 
+    class ContextBoundStore {
+      constructor(reducer) {
+        this.reducer = reducer
+        this.listeners = []
+        this.state = undefined
+        this.dispatch({})
+      }
+
+      getState() {
+        return this.state
+      }
+
+      subscribe(listener) {
+        this.listeners.push(listener)
+        return (() => this.listeners.filter(l => l !== listener))
+      }
+
+      dispatch(action) {
+        this.state = this.reducer(this.getState(), action)
+        this.listeners.forEach(l => l())
+        return action
+      }
+    }
+
     ProviderMock.childContextTypes = {
       store: PropTypes.object.isRequired
     }
@@ -132,6 +156,30 @@ describe('React', () => {
       expect(stub.props.string).toBe('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
       expect(stub.props.string).toBe('ab')
+    })
+
+    it('should retain the store\'s context', () => {
+      const store = new ContextBoundStore(stringBuilder)
+
+      let Container = connect(
+        state => ({ string: state })
+      )(function Container(props) {
+        return <Passthrough {...props}/>
+      })
+
+      const spy = expect.spyOn(console, 'error')
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+      spy.destroy()
+      expect(spy.calls.length).toBe(0)
+
+      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      expect(stub.props.string).toBe('')
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(stub.props.string).toBe('a')
     })
 
     it('should handle dispatches before componentDidMount', () => {
