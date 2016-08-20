@@ -6,7 +6,6 @@ import warning from '../utils/warning'
 import isPlainObject from 'lodash/isPlainObject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { bindActionCreators } from 'redux'
 import { PropTypes } from 'react'
 
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
