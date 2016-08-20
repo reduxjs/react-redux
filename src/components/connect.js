@@ -6,6 +6,8 @@ import warning from '../utils/warning'
 import isPlainObject from 'lodash/isPlainObject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
+import { bindActionCreators } from 'redux'
+import { PropTypes } from 'react'
 
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
@@ -81,6 +83,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         super(props, context)
         this.version = version
         this.store = props.store || context.store
+        this.actions = context.actions;
 
         invariant(this.store,
           `Could not find "store" in either the context or ` +
@@ -127,9 +130,9 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         return mappedState
       }
 
-      computeDispatchProps(store, props) {
+      computeDispatchProps(store, props, actions) {
         if (!this.finalMapDispatchToProps) {
-          return this.configureFinalMapDispatch(store, props)
+          return this.configureFinalMapDispatch(store, props, actions)
         }
 
         const { dispatch } = store
@@ -143,15 +146,17 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         return dispatchProps
       }
 
-      configureFinalMapDispatch(store, props) {
-        const mappedDispatch = mapDispatch(store.dispatch, props)
+      configureFinalMapDispatch(store, props, actions) {
+
+        const mappedDispatch = mapDispatch(store.dispatch, props, actions)
+
         const isFactory = typeof mappedDispatch === 'function'
 
         this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
         this.doDispatchPropsDependOnOwnProps = this.finalMapDispatchToProps.length !== 1
 
         if (isFactory) {
-          return this.computeDispatchProps(store, props)
+          return this.computeDispatchProps(store, props, actions)
         }
 
         if (process.env.NODE_ENV !== 'production') {
@@ -171,7 +176,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       updateDispatchPropsIfNeeded() {
-        const nextDispatchProps = this.computeDispatchProps(this.store, this.props)
+        const nextDispatchProps = this.computeDispatchProps(this.store, this.props, this.actions)
         if (this.dispatchProps && shallowEqual(nextDispatchProps, this.dispatchProps)) {
           return false
         }
@@ -343,10 +348,12 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     Connect.displayName = connectDisplayName
     Connect.WrappedComponent = WrappedComponent
     Connect.contextTypes = {
-      store: storeShape
+      store: storeShape,
+      actions: PropTypes.object
     }
     Connect.propTypes = {
-      store: storeShape
+      store: storeShape,
+      actions: PropTypes.object
     }
 
     if (process.env.NODE_ENV !== 'production') {
