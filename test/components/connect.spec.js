@@ -910,6 +910,86 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    it('should not attempt to set state after unmounting nested components', () => {
+      const store = createStore(() => ({}))
+      let mapStateToPropsCalls = 0
+
+      let linkA, linkB
+
+      let App = ({ children, setLocation }) => {
+        const onClick = to => event => {
+          event.preventDefault()
+          setLocation(to)
+        }
+        /* eslint-disable react/jsx-no-bind */
+        return (
+          <div>
+            <a href="#" onClick={onClick('a')} ref={c => { linkA = c }}>A</a>
+            <a href="#" onClick={onClick('b')} ref={c => { linkB = c }}>B</a>
+            {children}
+          </div>
+        )
+        /* eslint-enable react/jsx-no-bind */
+      }
+      App = connect(() => ({}))(App)
+
+
+      let A = () => (<h1>A</h1>)
+      A = connect(() => ({ calls: ++mapStateToPropsCalls }))(A)
+
+
+      const B = () => (<h1>B</h1>)
+
+
+      class RouterMock extends React.Component {
+        constructor(...args) {
+          super(...args)
+          this.state = { location: { pathname: 'a' } }
+          this.setLocation = this.setLocation.bind(this)
+        }
+
+        setLocation(pathname) {
+          this.setState({ location: { pathname } })
+          store.dispatch({ type: 'TEST' })
+        }
+
+        getChildComponent(location) {
+          switch (location) {
+            case 'a': return <A />
+            case 'b': return <B />
+            default: throw new Error('Unknown location: ' + location)
+          }
+        }
+
+        render() {
+          return (<App setLocation={this.setLocation}>
+            {this.getChildComponent(this.state.location.pathname)}
+          </App>)
+        }
+      }
+
+
+      const div = document.createElement('div')
+      document.body.appendChild(div)
+      ReactDOM.render(
+        (<ProviderMock store={store}>
+          <RouterMock />
+        </ProviderMock>),
+        div
+      )
+
+      const spy = expect.spyOn(console, 'error')
+
+      linkA.click()
+      linkB.click()
+      linkB.click()
+
+      spy.destroy()
+      document.body.removeChild(div)
+      expect(mapStateToPropsCalls).toBe(3)
+      expect(spy.calls.length).toBe(0)
+    })
+
     it('should not attempt to set state when dispatching in componentWillUnmount', () => {
       const store = createStore(stringBuilder)
       let mapStateToPropsCalls = 0
