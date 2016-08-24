@@ -3,20 +3,18 @@
 // ancestor components re-render before descendants
 
 function initListeners() {
-  let count = 0
   let current = []
   let next = []
 
   return {
     clear() {
-      count = 0
       next = null
       current = null
     },
 
     notify() {
       current = next
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < current.length; i++) {
         current[i]()
       }
     },
@@ -25,15 +23,13 @@ function initListeners() {
       let isSubscribed = true
       if (next === current) next = current.slice()
       next.push(listener)
-      count++
 
       return function unsubscribe() {
-        if (!isSubscribed || count === 0) return
+        if (!isSubscribed || !current) return
         isSubscribed = false
 
         if (next === current) next = current.slice()
         next.splice(next.indexOf(listener), 1)
-        count--
       }
     }
   }
