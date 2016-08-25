@@ -2,14 +2,18 @@
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
 
-function initListeners() {
+const CLEARED = null
+
+function createListenerCollection() {
+  // the current/next pattern is copied from redux's createStore code.
+  // TODO: refactor+expose that code to be reusable here?
   let current = []
   let next = []
 
   return {
     clear() {
-      next = null
-      current = null
+      next = CLEARED
+      current = CLEARED
     },
 
     notify() {
@@ -25,7 +29,7 @@ function initListeners() {
       next.push(listener)
 
       return function unsubscribe() {
-        if (!isSubscribed || !current) return
+        if (!isSubscribed || current === CLEARED) return
         isSubscribed = false
 
         if (next === current) next = current.slice()
@@ -42,7 +46,7 @@ export default class Subscription {
       : store.subscribe.bind(store)
 
     this.unsubscribe = null
-    this.listeners = initListeners()
+    this.listeners = createListenerCollection()
   }
 
   addNestedSub(listener) {
