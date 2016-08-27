@@ -2001,8 +2001,7 @@ describe('React', () => {
     })
 
     it('should allow custom displayName', () => {
-      // TODO remove __ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED once approved
-      @connect(null, null, null, { getDisplayName: name => `Custom(${name})`, __ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: true })
+      @connect(null, null, null, { getDisplayName: name => `Custom(${name})` })
       class MyComponent extends React.Component {
         render() {
           return <div></div>
