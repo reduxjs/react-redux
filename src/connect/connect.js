@@ -39,18 +39,9 @@ export function buildConnectOptions(
     mergePropsFactories = defaultMergePropsFactories,
     selectorFactory = defaultSelectorFactory,
     pure = true,
-    __ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = false,
     ...options
   } = {}
 ) {
-  if (!__ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED) {
-    mapStateToPropsFactories = defaultMapStateToPropsFactories
-    mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories
-    mergePropsFactories = defaultMergePropsFactories
-    selectorFactory = defaultSelectorFactory
-    options = { withRef: options.withRef }
-  }
-
   const initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories)
   const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories)
   const initMergeProps = match(mergeProps, mergePropsFactories)
