@@ -1,6 +1,44 @@
 // encapsulates the subscription logic for connecting a component to the redux store, as
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
+
+const CLEARED = null
+
+function createListenerCollection() {
+  // the current/next pattern is copied from redux's createStore code.
+  // TODO: refactor+expose that code to be reusable here?
+  let current = []
+  let next = []
+
+  return {
+    clear() {
+      next = CLEARED
+      current = CLEARED
+    },
+
+    notify() {
+      current = next
+      for (let i = 0; i < current.length; i++) {
+        current[i]()
+      }
+    },
+
+    subscribe(listener) {
+      let isSubscribed = true
+      if (next === current) next = current.slice()
+      next.push(listener)
+
+      return function unsubscribe() {
+        if (!isSubscribed || current === CLEARED) return
+        isSubscribed = false
+
+        if (next === current) next = current.slice()
+        next.splice(next.indexOf(listener), 1)
+      }
+    }
+  }
+}
+
 export default class Subscription {
   constructor(store, parentSub) {
     this.subscribe = parentSub
@@ -8,38 +46,16 @@ export default class Subscription {
       : store.subscribe.bind(store)
 
     this.unsubscribe = null
-    this.nextListeners = this.currentListeners = []
-  }
-
-  ensureCanMutateNextListeners() {
-    if (this.nextListeners === this.currentListeners) {
-      this.nextListeners = this.currentListeners.slice()
-    }
+    this.listeners = createListenerCollection()
   }
 
   addNestedSub(listener) {
     this.trySubscribe()
-
-    let isSubscribed = true
-    this.ensureCanMutateNextListeners()
-    this.nextListeners.push(listener)
-
-    return function unsubscribe() {
-      if (!isSubscribed) return
-      isSubscribed = false
-
-      this.ensureCanMutateNextListeners()
-      const index = this.nextListeners.indexOf(listener)
-      this.nextListeners.splice(index, 1)
-    }
+    return this.listeners.subscribe(listener)
   }
 
   notifyNestedSubs() {
-    const listeners = this.currentListeners = this.nextListeners
-    const length = listeners.length
-    for (let i = 0; i < length; i++) {
-      listeners[i]()
-    }
+    this.listeners.notify()
   }
 
   isSubscribed() {
@@ -55,7 +71,10 @@ export default class Subscription {
   tryUnsubscribe() {
     if (this.unsubscribe) {
       this.unsubscribe()
+      this.listeners.clear()
     }
     this.unsubscribe = null
+    this.subscribe = null
+    this.listeners = { notify() {} }
   }
 }
