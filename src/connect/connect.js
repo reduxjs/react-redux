@@ -1,4 +1,5 @@
 import connectAdvanced from '../components/connectAdvanced'
+import shallowEqual from '../utils/shallowEqual'
 import defaultMapDispatchToPropsFactories from './mapDispatchToProps'
 import defaultMapStateToPropsFactories from './mapStateToProps'
 import defaultMergePropsFactories from './mergeProps'
@@ -29,16 +30,24 @@ function match(arg, factories) {
   return undefined
 }
 
+function strictEqual(a, b) { return a === b }
+
 export function buildConnectOptions(
   mapStateToProps,
   mapDispatchToProps,
   mergeProps,
   {
-    mapStateToPropsFactories = defaultMapStateToPropsFactories,
-    mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories,
-    mergePropsFactories = defaultMergePropsFactories,
-    selectorFactory = defaultSelectorFactory,
     pure = true,
+    areStatesEqual = strictEqual,
+    areOwnPropsEqual = shallowEqual,
+    areStatePropsEqual = shallowEqual,
+    areMergedPropsEqual = shallowEqual,
+    factories: {
+      mapStateToPropsFactories = defaultMapStateToPropsFactories,
+      mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories,
+      mergePropsFactories = defaultMergePropsFactories,
+      selectorFactory = defaultSelectorFactory,
+    } = {},
     ...options
   } = {}
 ) {
@@ -62,6 +71,10 @@ export function buildConnectOptions(
     initMapDispatchToProps,
     initMergeProps,
     pure,
+    areStatesEqual,
+    areOwnPropsEqual,
+    areStatePropsEqual,
+    areMergedPropsEqual,
 
     // any addional options args can override defaults of connect or connectAdvanced
     ...options

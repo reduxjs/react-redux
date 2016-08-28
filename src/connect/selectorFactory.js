@@ -1,5 +1,4 @@
 import verifySubselectors from './verifySubselectors'
-import shallowEqual from '../utils/shallowEqual'
   
 export function impureFinalPropsSelectorFactory(
   mapStateToProps,
@@ -16,18 +15,12 @@ export function impureFinalPropsSelectorFactory(
   }
 }
 
-function strictEqual(a, b) { return a === b }
-
 export function pureFinalPropsSelectorFactory(
   mapStateToProps,
   mapDispatchToProps,
   mergeProps,
   dispatch,
-  {
-    areStatesEqual = strictEqual,
-    areOwnPropsEqual = shallowEqual,
-    areStatePropsEqual = shallowEqual
-  }
+  { areStatesEqual, areOwnPropsEqual, areStatePropsEqual }
 ) {
   let hasRunAtLeastOnce = false
   let state

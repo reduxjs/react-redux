@@ -1,4 +1,3 @@
-import shallowEqual from '../utils/shallowEqual'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
 export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
@@ -7,7 +6,7 @@ export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
 
 export function wrapMergePropsFunc(mergeProps) {
   return function initMergePropsProxy(
-    dispatch, { displayName, pure, areMergedPropsEqual = shallowEqual }
+    dispatch, { displayName, pure, areMergedPropsEqual }
   ) {
     let hasRunOnce = false
     let mergedProps
