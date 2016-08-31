@@ -32,56 +32,56 @@ function match(arg, factories) {
 
 function strictEqual(a, b) { return a === b }
 
-export function buildConnectOptions(
-  mapStateToProps,
-  mapDispatchToProps,
-  mergeProps,
-  {
-    pure = true,
-    areStatesEqual = strictEqual,
-    areOwnPropsEqual = shallowEqual,
-    areStatePropsEqual = shallowEqual,
-    areMergedPropsEqual = shallowEqual,
-    factories: {
-      mapStateToPropsFactories = defaultMapStateToPropsFactories,
-      mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories,
-      mergePropsFactories = defaultMergePropsFactories,
-      selectorFactory = defaultSelectorFactory,
-    } = {},
-    ...options
-  } = {}
-) {
-  const initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories)
-  const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories)
-  const initMergeProps = match(mergeProps, mergePropsFactories)
+// createConnect with default args builds the 'official' connect behavior. Calling it with
+// different options opens up some testing and extensibility scenarios
+export function createConnect({
+  connectHOC = connectAdvanced,
+  mapStateToPropsFactories = defaultMapStateToPropsFactories,
+  mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories,
+  mergePropsFactories = defaultMergePropsFactories,
+  selectorFactory = defaultSelectorFactory
+} = {}) {
+  return function connect(
+    mapStateToProps,
+    mapDispatchToProps,
+    mergeProps,
+    {
+      pure = true,
+      areStatesEqual = strictEqual,
+      areOwnPropsEqual = shallowEqual,
+      areStatePropsEqual = shallowEqual,
+      areMergedPropsEqual = shallowEqual,
+      ...extraOptions
+    } = {}
+  ) {
+    const initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories)
+    const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories)
+    const initMergeProps = match(mergeProps, mergePropsFactories)
 
-  return {
-    // used in error messages
-    methodName: 'connect',
+    return connectHOC(selectorFactory, {
+      // used in error messages
+      methodName: 'connect',
 
-     // used to compute Connect's displayName from the wrapped component's displayName.
-    getDisplayName: name => `Connect(${name})`,
+       // used to compute Connect's displayName from the wrapped component's displayName.
+      getDisplayName: name => `Connect(${name})`,
 
-    // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
-    shouldHandleStateChanges: Boolean(mapStateToProps),
+      // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
+      shouldHandleStateChanges: Boolean(mapStateToProps),
 
-    // passed through to selectorFactory
-    selectorFactory,
-    initMapStateToProps,
-    initMapDispatchToProps,
-    initMergeProps,
-    pure,
-    areStatesEqual,
-    areOwnPropsEqual,
-    areStatePropsEqual,
-    areMergedPropsEqual,
+      // passed through to selectorFactory
+      initMapStateToProps,
+      initMapDispatchToProps,
+      initMergeProps,
+      pure,
+      areStatesEqual,
+      areOwnPropsEqual,
+      areStatePropsEqual,
+      areMergedPropsEqual,
 
-    // any addional options args can override defaults of connect or connectAdvanced
-    ...options
+      // any extra options args can override defaults of connect or connectAdvanced
+      ...extraOptions
+    })
   }
 }
 
-export default function connect(...args) {
-  const options = buildConnectOptions(...args)
-  return connectAdvanced(options.selectorFactory, options)
-}
+export default createConnect()
