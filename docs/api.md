@@ -355,7 +355,6 @@ function selectorFactory(dispatch) {
   let result = {}
   const actions = bindActionCreators(actionCreators, dispatch)
   const addTodo = (text) => actions.addTodo(ownProps.userId, text)
-  const memoize = initShallowMemoizer()
   return (nextState, nextOwnProps) => {
     const todos = nextState.todos[nextProps.userId]
     const nextResult = { ...nextOwnProps, todos, addTodo }
