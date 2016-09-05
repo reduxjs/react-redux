@@ -146,9 +146,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       configureFinalMapDispatch(store, props, actions) {
-
         const mappedDispatch = mapDispatch(store.dispatch, props, actions)
-
         const isFactory = typeof mappedDispatch === 'function'
 
         this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
