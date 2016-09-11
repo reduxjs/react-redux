@@ -1,5 +1,6 @@
 ## API
 
+<a id="provider"></a>
 ### `<Provider store>`
 
 Makes the Redux store available to the `connect()` calls in the component hierarchy below. Normally, you can’t use `connect()` without wrapping the root component in `<Provider>`.
@@ -40,12 +41,15 @@ ReactDOM.render(
 )
 ```
 
+
+<a id="connect"></a>
 ### `connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`
 
 Connects a React component to a Redux store. `connect` is a facade around `connectAdvanced`, providing a convenient API for the most common use cases.
 
 It does not modify the component class passed to it; instead, it *returns* a new, connected component class for you to use.
 
+<a id="connect-arguments"></a>
 #### Arguments
 
 * [`mapStateToProps(state, [ownProps]): stateProps`] \(*Function*): If specified, the component will subscribe to Redux store updates. Any time it updates, `mapStateToProps` will be called. Its result must be a plain object*, and it will be merged into the component’s props. If you omit it, the component will not be subscribed to the Redux store. If `ownProps` is specified as a second argument, its value will be the props passed to your component, and `mapStateToProps` will be additionally re-invoked whenever the component receives new props (e.g. if props received from a parent component have shallowly changed, and you use the ownProps argument, mapStateToProps is re-evaluated).
@@ -67,6 +71,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
   * [`areStatePropsEqual`] *(Function)*: When pure, compares the result of `mapStateToProps` to its previous value. Default value: `shallowEqual`
   * [`areMergedPropsEqual`] *(Function)*: When pure, compares the result of `mergeProps` to its previous value. Default value: `shallowEqual`
 
+<a id="connect-arguments-arity"></a>
 ##### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
 
 > Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if formal definition of the function contains one mandatory parameter (function has length 1). For example, function defined like below won't receive `ownProps` as the second argument.
@@ -102,6 +107,7 @@ const mapStateToProps = (...args) => {
 }
 ```
 
+<a id="connect-optimizing"></a>
 ##### Optimizing connect when options.pure is true
 
 When `options.pure` is true, `connect` performs several equality checks that are used to avoid unncessary calls to `mapStateToProps`, `mapDispatchToProps`, `mergeProps`, and ultimately to `render`. These include `areStatesEqual`, `areOwnPropsEqual`, `areStatePropsEqual`, and `areMergedPropsEqual`. While the defaults are probably appropriate 99% of the time, you may wish to override them with custom implementations for performance or other reasons. Here are several examples:
@@ -120,6 +126,7 @@ When `options.pure` is true, `connect` performs several equality checks that are
 
 A higher-order React component class that passes state and action creators into your component derived from the supplied arguments. This is created by `connectAdvanced`, and details of this higher-order component are covered there.
 
+<a id="connect-examples"></a>
 #### Examples
 
 ##### Inject just `dispatch` and don't listen to store
@@ -292,12 +299,14 @@ function mergeProps(stateProps, dispatchProps, ownProps) {
 export default connect(mapStateToProps, actionCreators, mergeProps)(TodoApp)
 ```
 
+<a id="connectAdvanced"></a>
 ### `connectAdvanced(selectorFactory, [connectOptions])`
 
 Connects a React component to a Redux store. It is the base for `connect()` but is less opinionated about how to combine `state`, `props`, and `dispatch` into your final props. It makes no assumptions about defaults or memoization of results, leaving those responsibilities to the caller.
 
 It does not modify the component class passed to it; instead, it *returns* a new, connected component class for you to use.
 
+<a id="connectAdvanced-arguments"></a>
 #### Arguments
 
 * `selectorFactory(dispatch, factoryOptions): selector(state, ownProps): props` \(*Function*): Intializes a selector function (during each instance's constructor). That selector function is called any time the connector component needs to compute new props, as a result of a store state change or receiving new props. The result of `selector` is expected to be a plain object, which is passed as the props to the wrapped component. If a consecutive call to `selector` returns the same object (`===`) as its previous call, the component will not be re-rendered. It's the responsibility of `selector` to return that previous object when appropriate.
@@ -318,6 +327,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
  
   * Addionally, any extra options passed via `connectOptions` will be passed through to your `selectorFactory` in the `factoryOptions` argument.
 
+<a id="connectAdvanced-returns"></a>
 #### Returns
 
 A higher-order React component class that builds props from the store state and passes them to the wrapped component. A higher-order component is a function which accepts a component argument and returns a new component.
@@ -342,6 +352,7 @@ Returns the wrapped component instance. Only available if you pass `{ withRef: t
 
 * It does not modify the passed React component. It returns a new, connected component, that you should use instead.
 
+<a id="connectAdvanced-examples"></a>
 #### Examples
 
 ##### Inject `todos` of a specific user depending on props, and inject `props.userId` into the action
