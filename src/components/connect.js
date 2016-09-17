@@ -339,7 +339,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         }
 
         if (pure && !haveMergedPropsChanged && renderedElement) {
-          return createElement(ShouldComponentUpdate, {stop: true})
+          return createElement(ShouldComponentUpdate, { stop: true, key: `ShouldComponentUpdateId-${this.uniqueId}` })
         }
 
         if (withRef) {
@@ -353,7 +353,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           )
         }
 
-        return createElement(ShouldComponentUpdate, {renderElement: this.renderedElement})
+        return createElement(ShouldComponentUpdate, { renderElement: this.renderedElement, key: `ShouldComponentUpdateId-${this.uniqueId}` })
       }
     }
 
