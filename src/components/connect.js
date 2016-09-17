@@ -31,6 +31,17 @@ function tryCatch(fn, ctx) {
 
 // Helps track hot reloading.
 let nextVersion = 0
+let uniqueId = 0
+
+//Stop component from re-rendering when own props and recalculated state and dispatch props shallow equal previous props
+class ShouldComponentUpdate extends Component {
+  shouldComponentUpdate(nextProps) {
+    return !nextProps.stop
+  }
+  render() {
+    return this.props.renderElement()
+  }
+}
 
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
@@ -90,6 +101,10 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         )
 
         const storeState = this.store.getState()
+        
+        //We need a unique id to assign to the key of ShouldComponentUpdate
+        this.uniqueId = uniqueId++
+        
         this.state = { storeState }
         this.clearCache()
       }
@@ -234,6 +249,8 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.renderedElement = null
         this.finalMapDispatchToProps = null
         this.finalMapStateToProps = null
+        this.uniqueId = null
+        this.wrappedInstance = null
       }
 
       handleChange() {
@@ -268,7 +285,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           `{ withRef: true } as the fourth argument of the connect() call.`
         )
 
-        return this.refs.wrappedInstance
+        return this.wrappedInstance
       }
 
       render() {
@@ -321,22 +338,22 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           haveMergedPropsChanged = false
         }
 
-        if (!haveMergedPropsChanged && renderedElement) {
-          return renderedElement
+        if (pure && !haveMergedPropsChanged && renderedElement) {
+          return createElement(ShouldComponentUpdate, {stop: true})
         }
 
         if (withRef) {
-          this.renderedElement = createElement(WrappedComponent, {
+          this.renderedElement = ()=>createElement(WrappedComponent, {
             ...this.mergedProps,
-            ref: 'wrappedInstance'
+            ref: (ref)=>this.wrappedInstance = ref
           })
         } else {
-          this.renderedElement = createElement(WrappedComponent,
+          this.renderedElement = ()=>createElement(WrappedComponent,
             this.mergedProps
           )
         }
 
-        return this.renderedElement
+        return createElement(ShouldComponentUpdate, {renderElement: this.renderedElement})
       }
     }
 
