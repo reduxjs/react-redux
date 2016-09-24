@@ -82,6 +82,31 @@ describe('React', () => {
       ).toNotThrow()
     })
 
+    it('should warn if same key is used in state and props', () => {
+      const store = createStore(() => ({
+        abc: 'bar',
+      }))
+
+      @connect(({ abc }) => ({ abc }))
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const errorSpy = expect.spyOn(console, 'error');
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container abc="buz" />
+        </ProviderMock>
+      )
+      errorSpy.destroy();
+
+      expect(errorSpy).toHaveBeenCalled();
+    })
+
+
     it('should subscribe class components to the store changes', () => {
       const store = createStore(stringBuilder)
 
@@ -115,7 +140,7 @@ describe('React', () => {
         return <Passthrough {...props}/>
       })
 
-      const spy = expect.spyOn(console, 'error')
+      const spy = expect.spyOn(console, 'error');
       const tree = TestUtils.renderIntoDocument(
         <ProviderMock store={store}>
           <Container />
