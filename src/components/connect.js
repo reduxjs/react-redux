@@ -11,12 +11,12 @@ const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-va
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
 const defaultMergeProps = (stateProps, dispatchProps, parentProps) => {
   if (process.env.NODE_ENV !== 'production') {
-    const stateKeys = Object.keys(stateProps);
+    const stateKeys = Object.keys(stateProps)
 
     for ( let key of stateKeys ) {
-      if (!!parentProps[key]) {
-        console.error(`Duplicate key ${key} sent from both parent and state`);
-        break;
+      if (Boolean(parentProps[key])) {
+        warning(false, `Duplicate key ${key} sent from both parent and state`)
+        break
       }
     }
   }
@@ -25,7 +25,7 @@ const defaultMergeProps = (stateProps, dispatchProps, parentProps) => {
     ...parentProps,
     ...stateProps,
     ...dispatchProps
-  };
+  }
 }
 
 function getDisplayName(WrappedComponent) {
