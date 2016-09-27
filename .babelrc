@@ -18,7 +18,6 @@
     "transform-es2015-parameters",
     ["transform-es2015-destructuring", { "loose": true }],
     "transform-es2015-block-scoping",
-    ["transform-es2015-modules-commonjs", { "loose": true }],
     "transform-object-rest-spread",
     "transform-react-jsx",
     "syntax-jsx"
@@ -26,6 +25,16 @@
   "env": {
     "test": {
       "plugins": ["istanbul"]
+    },
+    "commonjs": {
+      "plugins": [
+        ["transform-es2015-modules-commonjs", { "loose": true }]
+      ]
+    },
+    "es": {
+      "plugins": [
+        "./build/use-lodash-es"
+      ]
     }
   }
 }
