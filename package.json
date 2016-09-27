@@ -3,15 +3,18 @@
   "version": "4.4.5",
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
+  "module": "es/index.js",
+  "jsnext:main": "es/index.js",
   "scripts": {
-    "build:lib": "babel src --out-dir lib",
-    "build:umd": "cross-env NODE_ENV=development webpack src/index.js dist/react-redux.js",
-    "build:umd:min": "cross-env NODE_ENV=production webpack src/index.js dist/react-redux.min.js",
-    "build": "npm run build:lib && npm run build:umd && npm run build:umd:min && node ./prepublish",
-    "clean": "rimraf lib dist coverage",
+    "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --out-dir lib",
+    "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
+    "build:umd": "cross-env BABEL_ENV=commonjs NODE_ENV=development webpack src/index.js dist/redux.js",
+    "build:umd:min": "cross-env BABEL_ENV=commonjs NODE_ENV=production webpack src/index.js dist/redux.min.js",
+    "build": "npm run build:commonjs && npm run build:es && npm run build:umd && npm run build:umd:min",
+    "clean": "rimraf lib dist es coverage",
     "lint": "eslint src test",
     "prepublish": "npm run clean && npm run build",
-    "test": "cross-env NODE_ENV=test mocha --compilers js:babel-register --recursive --require ./test/setup.js",
+    "test": "cross-env BABEL_ENV=commonjs NODE_ENV=test mocha --compilers js:babel-register --recursive --require ./test/setup.js",
     "test:watch": "npm test -- --watch",
     "test:cov": "cross-env NODE_ENV=test nyc npm test",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
@@ -23,7 +26,8 @@
   "files": [
     "dist",
     "lib",
-    "src"
+    "src",
+    "es"
   ],
   "keywords": [
     "react",
@@ -95,6 +99,7 @@
     "hoist-non-react-statics": "^1.0.3",
     "invariant": "^2.0.0",
     "lodash": "^4.2.0",
+    "lodash-es": "^4.2.0",
     "loose-envify": "^1.1.0"
   },
   "peerDependencies": {

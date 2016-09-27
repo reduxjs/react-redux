@@ -5,3 +5,4 @@ dist
 lib
 .nyc_output
 coverage
+es
