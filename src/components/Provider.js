@@ -51,3 +51,4 @@ Provider.propTypes = {
 Provider.childContextTypes = {
   store: storeShape.isRequired
 }
+Provider.displayName = 'Provider'
