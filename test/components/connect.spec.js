@@ -79,6 +79,32 @@ describe('React', () => {
       expect(container.context.store).toBe(store)
     })
 
+
+    it('should warn if same key is used in state and props', () => {
+      const store = createStore(() => ({
+        abc: 'bar'
+      }))
+
+      @connect(({ abc }) => ({ abc }))
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const errorSpy = expect.spyOn(console, 'error')
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+        <Container abc="buz" />
+        </ProviderMock>
+      )
+      errorSpy.destroy()
+      expect(errorSpy).toHaveBeenCalled()
+    })
+
+
+
     it('should pass state and props to the given component', () => {
       const store = createStore(() => ({
         foo: 'bar',
