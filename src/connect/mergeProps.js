@@ -1,8 +1,24 @@
 import shallowEqual from '../utils/shallowEqual'
 import verifyPlainObject from '../utils/verifyPlainObject'
+import warning from '../utils/warning'
 
 export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
-  return { ...ownProps, ...stateProps, ...dispatchProps }
+  if (process.env.NODE_ENV !== 'production') {
+    const stateKeys = Object.keys(stateProps)
+
+    for ( let key of stateKeys ) {
+      if (typeof ownProps[key] !== 'undefined') {
+        warning(false, `Duplicate key ${key} sent from both parent and state`)
+        break
+      }
+    }
+  }
+
+  return {
+    ...ownProps,
+    ...stateProps,
+    ...dispatchProps
+  }
 }
 
 export function wrapMergePropsFunc(mergeProps) {
