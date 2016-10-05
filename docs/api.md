@@ -1,5 +1,6 @@
 ## API
 
+<a id="provider"></a>
 ### `<Provider store>`
 
 Makes the Redux store available to the `connect()` calls in the component hierarchy below. Normally, you can’t use `connect()` without wrapping the root component in `<Provider>`.
@@ -40,18 +41,22 @@ ReactDOM.render(
 )
 ```
 
+
+<a id="connect"></a>
 ### `connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`
 
-Connects a React component to a Redux store.
+Connects a React component to a Redux store. `connect` is a facade around `connectAdvanced`, providing a convenient API for the most common use cases.
 
-It does not modify the component class passed to it.  
-Instead, it *returns* a new, connected component class, for you to use.
+It does not modify the component class passed to it; instead, it *returns* a new, connected component class for you to use.
 
+<a id="connect-arguments"></a>
 #### Arguments
 
 * [`mapStateToProps(state, [ownProps]): stateProps`] \(*Function*): If specified, the component will subscribe to Redux store updates. Any time it updates, `mapStateToProps` will be called. Its result must be a plain object*, and it will be merged into the component’s props. If you omit it, the component will not be subscribed to the Redux store. If `ownProps` is specified as a second argument, its value will be the props passed to your component, and `mapStateToProps` will be additionally re-invoked whenever the component receives new props (e.g. if props received from a parent component have shallowly changed, and you use the ownProps argument, mapStateToProps is re-evaluated).
 
   >Note: in advanced scenarios where you need more control over the rendering performance, `mapStateToProps()` can also return a function. In this case, *that* function will be used as `mapStateToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reactjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
+
+  >The `mapStateToProps` function takes a single argument of the entire Redux store’s state and returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/reactjs/reselect) to efficiently compose selectors and [compute derived data](http://redux.js.org/docs/recipes/ComputingDerivedData.html).
 
 * [`mapDispatchToProps(dispatch, [ownProps]): dispatchProps`] \(*Object* or *Function*): If an object is passed, each function inside it will be assumed to be a Redux action creator. An object with the same function names, but with every action creator wrapped into a `dispatch` call so they may be invoked directly, will be merged into the component’s props. If a function is passed, it will be given `dispatch`. It’s up to you to return an object that somehow uses `dispatch` to bind action creators in your own way. (Tip: you may use the [`bindActionCreators()`](http://reactjs.github.io/redux/docs/api/bindActionCreators.html) helper from Redux.) If you omit it, the default implementation just injects `dispatch` into your component’s props. If `ownProps` is specified as a second argument, its value will be the props passed to your component, and `mapDispatchToProps` will be re-invoked whenever the component receives new props.
 
@@ -59,9 +64,15 @@ Instead, it *returns* a new, connected component class, for you to use.
 
 * [`mergeProps(stateProps, dispatchProps, ownProps): props`] \(*Function*): If specified, it is passed the result of `mapStateToProps()`, `mapDispatchToProps()`, and the parent `props`. The plain object you return from it will be passed as props to the wrapped component. You may specify this function to select a slice of the state based on props, or to bind action creators to a particular variable from props. If you omit it, `Object.assign({}, ownProps, stateProps, dispatchProps)` is used by default.
 
-* [`options`] *(Object)* If specified, further customizes the behavior of the connector.
-  * [`pure = true`] *(Boolean)*: If true, implements `shouldComponentUpdate` and shallowly compares the result of `mergeProps`, preventing unnecessary updates, assuming that the component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state. *Defaults to `true`.*
-  * [`withRef = false`] *(Boolean)*: If true, stores a ref to the wrapped component instance and makes it available via `getWrappedInstance()` method. *Defaults to `false`.*
+* [`options`] *(Object)* If specified, further customizes the behavior of the connector. In addition to the options passable to `connectAdvanced()` (see those below), `connect()` accepts these additional options:
+  * [`pure`] *(Boolean)*: If true, `connect()` will avoid re-renders and calls to `mapStateToProps`, `mapDispatchToProps`, and `mergeProps` if the relevant state/props objects remain equal based on their respective equality checks. Assumes that the wrapped component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state. Default value: `true`
+  * [`areStatesEqual`] *(Function)*: When pure, compares incoming store state to its previous value. Default value: `strictEqual (===)`
+  * [`areOwnPropsEqual`] *(Function)*: When pure, compares incoming props to its previous value. Default value: `shallowEqual`
+  * [`areStatePropsEqual`] *(Function)*: When pure, compares the result of `mapStateToProps` to its previous value. Default value: `shallowEqual`
+  * [`areMergedPropsEqual`] *(Function)*: When pure, compares the result of `mergeProps` to its previous value. Default value: `shallowEqual`
+
+<a id="connect-arguments-arity"></a>
+##### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
 
 > Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if formal definition of the function contains one mandatory parameter (function has length 1). For example, function defined like below won't receive `ownProps` as the second argument.
 ```javascript
@@ -96,33 +107,26 @@ const mapStateToProps = (...args) => {
 }
 ```
 
+<a id="connect-optimizing"></a>
+##### Optimizing connect when options.pure is true
+
+When `options.pure` is true, `connect` performs several equality checks that are used to avoid unncessary calls to `mapStateToProps`, `mapDispatchToProps`, `mergeProps`, and ultimately to `render`. These include `areStatesEqual`, `areOwnPropsEqual`, `areStatePropsEqual`, and `areMergedPropsEqual`. While the defaults are probably appropriate 99% of the time, you may wish to override them with custom implementations for performance or other reasons. Here are several examples:
+
+* You may wish to override `areStatesEqual` if your `mapStateToProps` function is computationally expensive and is also only concerned with a small slice of your state. For example: `areStatesEqual: (prev, next) => prev.entities.todos === next.entities.todos`; this would effectively ignore state changes for everything but that slice of state.
+
+* You may wish to override `areStatesEqual` to always return false (`areStatesEqual: () => false`) if you have impure reducers that mutate your store state. (This would likely impact the other equality checks is well, depending on your `mapStateToProps` function.)
+
+* You may wish to override `areOwnPropsEqual` as a way to whitelist incoming props. You'd also have to implement `mapStateToProps`, `mapDispatchToProps` and `mergeProps` to also whitelist props. (It may be simpler to achieve this other ways, for example by using [recompose's mapProps](https://github.com/acdlite/recompose/blob/master/docs/API.md#mapprops).)
+
+* You may wish to override `areStatePropsEqual` to use `strictEqual` if your `mapStateToProps` uses a memoized selector that will only return a new object if a relevant prop has changed. This would be a very slight performance improvement, since would avoid extra equality checks on individual props each time `mapStateToProps` is called.
+
+* You may wish to override `areMergedPropsEqual` to implement a `deepEqual` if your selectors produce complex props. ex: nested objects, new arrays, etc. (The deep equal check should be faster than just re-rendering.)
 
 #### Returns
 
-A React component class that injects state and action creators into your component according to the specified options.
+A higher-order React component class that passes state and action creators into your component derived from the supplied arguments. This is created by `connectAdvanced`, and details of this higher-order component are covered there.
 
-##### Static Properties
-
-* `WrappedComponent` *(Component)*: The original component class passed to `connect()`.
-
-##### Static Methods
-
-All the original static methods of the component are hoisted.
-
-##### Instance Methods
-
-###### `getWrappedInstance(): ReactComponent`
-
-Returns the wrapped component instance. Only available if you pass `{ withRef: true }` as part of the `connect()`’s fourth `options` argument.
-
-#### Remarks
-
-* It needs to be invoked two times. The first time with its arguments described above, and a second time, with the component: `connect(mapStateToProps, mapDispatchToProps, mergeProps)(MyComponent)`.
-
-* It does not modify the passed React component. It returns a new, connected component, that you should use instead.
-
-* The `mapStateToProps` function takes a single argument of the entire Redux store’s state and returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/reactjs/reselect) to efficiently compose selectors and [compute derived data](http://redux.js.org/docs/recipes/ComputingDerivedData.html).
-
+<a id="connect-examples"></a>
 #### Examples
 
 ##### Inject just `dispatch` and don't listen to store
@@ -294,3 +298,83 @@ function mergeProps(stateProps, dispatchProps, ownProps) {
 
 export default connect(mapStateToProps, actionCreators, mergeProps)(TodoApp)
 ```
+
+<a id="connectAdvanced"></a>
+### `connectAdvanced(selectorFactory, [connectOptions])`
+
+Connects a React component to a Redux store. It is the base for `connect()` but is less opinionated about how to combine `state`, `props`, and `dispatch` into your final props. It makes no assumptions about defaults or memoization of results, leaving those responsibilities to the caller.
+
+It does not modify the component class passed to it; instead, it *returns* a new, connected component class for you to use.
+
+<a id="connectAdvanced-arguments"></a>
+#### Arguments
+
+* `selectorFactory(dispatch, factoryOptions): selector(state, ownProps): props` \(*Function*): Intializes a selector function (during each instance's constructor). That selector function is called any time the connector component needs to compute new props, as a result of a store state change or receiving new props. The result of `selector` is expected to be a plain object, which is passed as the props to the wrapped component. If a consecutive call to `selector` returns the same object (`===`) as its previous call, the component will not be re-rendered. It's the responsibility of `selector` to return that previous object when appropriate.
+
+* [`connectOptions`] *(Object)* If specified, further customizes the behavior of the connector.
+
+  * [`getDisplayName`] *(Function)*: computes the connector component's displayName property relative to that of the wrapped component. Usually overridden by wrapper functions. Default value: `name => 'ConnectAdvanced('+name+')'`
+
+  * [`methodName`] *(String)*: shown in error messages. Usually overridden by wrapper functions. Default value: `'connectAdvanced'`
+
+  * [`renderCountProp`] *(String)*: if defined, a property named this value will be added to the props passed to the wrapped component. Its value will be the number of times the component has been rendered, which can be useful for tracking down unnecessary re-renders. Default value: `undefined`
+
+  * [`shouldHandleStateChanges`] *(Boolean)*: controls whether the connector component subscribes to redux store state changes. If set to false, it will only re-render on `componentWillReceiveProps`. Default value:  `true`
+
+  * [`storeKey`] *(String)*: the key of props/context to get the store. You probably only need this if you are in the inadvisable position of having multiple stores. Default value: `'store'`
+
+  * [`withRef`] *(Boolean)*: If true, stores a ref to the wrapped component instance and makes it available via `getWrappedInstance()` method. Default value: `false`
+ 
+  * Addionally, any extra options passed via `connectOptions` will be passed through to your `selectorFactory` in the `factoryOptions` argument.
+
+<a id="connectAdvanced-returns"></a>
+#### Returns
+
+A higher-order React component class that builds props from the store state and passes them to the wrapped component. A higher-order component is a function which accepts a component argument and returns a new component.
+
+##### Static Properties
+
+* `WrappedComponent` *(Component)*: The original component class passed to `connectAdvanced(...)(Component)`.
+
+##### Static Methods
+
+All the original static methods of the component are hoisted.
+
+##### Instance Methods
+
+###### `getWrappedInstance(): ReactComponent`
+
+Returns the wrapped component instance. Only available if you pass `{ withRef: true }` as part of the `options` argument.
+
+#### Remarks
+
+* Since it returns a higher-order component, it needs to be invoked two times. The first time with its arguments as described above, and a second time, with the component: `connectAdvanced(selectorFactory)(MyComponent)`.
+
+* It does not modify the passed React component. It returns a new, connected component, that you should use instead.
+
+<a id="connectAdvanced-examples"></a>
+#### Examples
+
+##### Inject `todos` of a specific user depending on props, and inject `props.userId` into the action
+```js
+import * as actionCreators from './actionCreators'
+import { bindActionCreators } from 'redux'
+
+function selectorFactory(dispatch) {
+  let state = {}
+  let ownProps = {}
+  let result = {}
+  const actions = bindActionCreators(actionCreators, dispatch)
+  const addTodo = (text) => actions.addTodo(ownProps.userId, text)
+  return (nextState, nextOwnProps) => {
+    const todos = nextState.todos[nextProps.userId]
+    const nextResult = { ...nextOwnProps, todos, addTodo }
+    state = nextState
+    ownProps = nextOwnProps
+    if (!shallowEqual(result, nextResult)) result = nextResult
+    return result
+  }
+}
+export default connectAdvanced(selectorFactory)(TodoApp)
+```
+
