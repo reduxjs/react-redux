@@ -1369,11 +1369,15 @@ describe('React', () => {
       ).displayName).toBe('Connect(Bar)')
 
       expect(connect(state => state)(
+        // eslint: In this case, we don't want to specify a displayName because we're testing what
+        // happens when one isn't defined.
+        /* eslint-disable react/display-name */
         createClass({
           render() {
             return <div />
           }
         })
+        /* eslint-enable react/display-name */
       ).displayName).toBe('Connect(Component)')
     })
 
