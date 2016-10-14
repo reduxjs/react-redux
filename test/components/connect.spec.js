@@ -910,6 +910,52 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    it('should not attempt to notify unmounted child of state change', () => {
+      const store = createStore(stringBuilder)
+
+      @connect((state) => ({ hide: state === 'AB' }))
+      class App extends Component {
+        render() {
+          return this.props.hide ? null : <Container />
+        }
+      }
+
+      @connect(() => ({}))
+      class Container extends Component {
+        render() {
+          return (
+            <Child />
+          )
+        }
+      }
+
+      @connect((state) => ({ state }))
+      class Child extends Component {
+        componentWillReceiveProps(nextProps) {
+          if (nextProps.state === 'A') {
+            store.dispatch({ type: 'APPEND', body: 'B' });
+          }
+        }
+        render() {
+          return null;
+        }
+      }
+
+      const div = document.createElement('div')
+      ReactDOM.render(
+        <ProviderMock store={store}>
+          <App />
+        </ProviderMock>,
+        div
+      )
+
+      try {
+        store.dispatch({ type: 'APPEND', body: 'A' })
+      } finally {
+        ReactDOM.unmountComponentAtNode(div)
+      }
+    })
+
     it('should not attempt to set state after unmounting nested components', () => {
       const store = createStore(() => ({}))
       let mapStateToPropsCalls = 0

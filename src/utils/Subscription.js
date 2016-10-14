@@ -17,9 +17,9 @@ function createListenerCollection() {
     },
 
     notify() {
-      current = next
-      for (let i = 0; i < current.length; i++) {
-        current[i]()
+      const listeners = current = next
+      for (let i = 0; i < listeners.length; i++) {
+        listeners[i]()
       }
     },
 
