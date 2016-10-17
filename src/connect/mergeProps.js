@@ -12,7 +12,11 @@ export function wrapMergePropsFunc(mergeProps) {
     let mergedProps
 
     return function mergePropsProxy(stateProps, dispatchProps, ownProps) {
-      const nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+      let nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+
+      if (typeof nextMergedProps === 'function') {
+        nextMergedProps = nextMergedProps(stateProps, dispatchProps, ownProps)
+      }
 
       if (hasRunOnce) {
         if (!pure || !areMergedPropsEqual(nextMergedProps, mergedProps))
