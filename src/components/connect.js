@@ -3,7 +3,7 @@ import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
 import warning from '../utils/warning'
-import isPlainObject from 'lodash/isPlainObject'
+import isPlainObject from 'lodash.isplainobject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 
