@@ -10,11 +10,14 @@ var reactExternal = {
   amd: 'react'
 }
 
+var isProduction = (env === 'production');
+var reduxInclude = isProduction ? 'redux/dist/redux.min.js' : 'redux';
+
 var reduxExternal = {
   root: 'Redux',
-  commonjs2: 'redux',
-  commonjs: 'redux',
-  amd: 'redux'
+  commonjs2: reduxInclude,
+  commonjs: reduxInclude,
+  amd: reduxInclude
 }
 
 var config = {
@@ -47,7 +50,7 @@ var config = {
   ]
 }
 
-if (env === 'production') {
+if (isProduction) {
   config.plugins.push(
     new webpack.optimize.UglifyJsPlugin({
       compressor: {
