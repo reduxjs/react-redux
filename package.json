@@ -28,7 +28,7 @@
     "dist",
     "lib",
     "src",
-    "es"
+    "es",
     "index.d.ts"
   ],
   "keywords": [
