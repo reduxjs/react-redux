@@ -20,13 +20,13 @@ export function connect<State, TOwnProps, TStateProps>(
 ): ComponentDecorator<TStateProps & { dispatch: Dispatch<State> }, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
-  mapStateToProps: MapStateToProps<State, TStateProps, TOwnProps>,
-  mapDispatchToProps: MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps>|MapDispatchToPropsObject
+  mapStateToProps: MapStateToProps<State, TStateProps, TOwnProps>|null,
+  mapDispatchToProps: MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps>|TDispatchProps
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
-  mapStateToProps: MapStateToProps<State, TStateProps, TOwnProps>,
-  mapDispatchToProps: MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps>|MapDispatchToPropsObject,
+  mapStateToProps: MapStateToProps<State, TStateProps, TOwnProps>|null,
+  mapDispatchToProps: MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps>|TDispatchProps,
   mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps>,
   options?: Options
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
@@ -39,14 +39,14 @@ interface MapStateToProps<State, TStateProps, TOwnProps> {
  * State is not actually used here but included for consistency with Redux typings and MapStateToProps.
  */
 interface MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps> {
-  (dispatch: Dispatch<State>, ownProps?: TOwnProps): TDispatchProps;
+  (dispatch: Dispatch<State>, ownProps: TOwnProps): TDispatchProps;
 }
 
 /**
  * Any since not every ActionCreator returns the same Action
  */
-interface MapDispatchToPropsObject {
-  [name: string]: ActionCreator<any>;
+interface MapDispatchToPropsObject<TDispatchProps> {
+  [name: string]: ActionCreator<TDispatchProps>;
 }
 
 interface MergeProps<TStateProps, TDispatchProps, TOwnProps> {
