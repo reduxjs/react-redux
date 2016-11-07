@@ -13,14 +13,18 @@ interface ComponentDecorator<TOriginalProps, TOwnProps> {
  * - TDispatchProps: Result of MapDispatchToProps
  * - TOwnProps: Props passed to the wrapping component
  */
-export function connect<TOwnProps>(): ComponentDecorator<{ dispatch: Dispatch<any> }, TOwnProps>;
+export function connect<State, TOwnProps>(): ComponentDecorator<{ dispatch: Dispatch<State> }, TOwnProps>;
 
-export function connect<State, TStateProps, TDispatchProps, TOwnProps>(
+export function connect<State, TOwnProps, TStateProps>(
   mapStateToProps: MapStateToProps<State, TStateProps, TOwnProps>,
-  mapDispatchToProps?: MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps>|MapDispatchToPropsObject
+): ComponentDecorator<TStateProps & { dispatch: Dispatch<State> }, TOwnProps>;
+
+export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
+  mapStateToProps: MapStateToProps<State, TStateProps, TOwnProps>,
+  mapDispatchToProps: MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps>|MapDispatchToPropsObject
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
 
-export function connect<State, TStateProps, TDispatchProps, TOwnProps>(
+export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
   mapStateToProps: MapStateToProps<State, TStateProps, TOwnProps>,
   mapDispatchToProps: MapDispatchToPropsFunction<State, TDispatchProps, TOwnProps>|MapDispatchToPropsObject,
   mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps>,
@@ -28,7 +32,7 @@ export function connect<State, TStateProps, TDispatchProps, TOwnProps>(
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
 
 interface MapStateToProps<State, TStateProps, TOwnProps> {
-  (state: State, ownProps?: TOwnProps): TStateProps;
+  (state: State, ownProps: TOwnProps): TStateProps;
 }
 
 /**
