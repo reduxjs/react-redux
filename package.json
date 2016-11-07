@@ -5,6 +5,7 @@
   "main": "./lib/index.js",
   "module": "es/index.js",
   "jsnext:main": "es/index.js",
+  "typings": "./index.d.ts",
   "scripts": {
     "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --out-dir lib",
     "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
@@ -27,7 +28,8 @@
     "dist",
     "lib",
     "src",
-    "es"
+    "es",
+    "index.d.ts"
   ],
   "keywords": [
     "react",
