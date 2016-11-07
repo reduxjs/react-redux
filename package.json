@@ -3,6 +3,7 @@
   "version": "4.4.5",
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
+  "typings": "./index.d.ts",
   "scripts": {
     "build:lib": "babel src --out-dir lib",
     "build:umd": "cross-env NODE_ENV=development webpack src/index.js dist/react-redux.js",
@@ -22,7 +23,8 @@
   "files": [
     "dist",
     "lib",
-    "src"
+    "src",
+    "index.d.ts"
   ],
   "keywords": [
     "react",
