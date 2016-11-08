@@ -1,4 +1,4 @@
-import { ComponentClass, Component, StatelessComponent, ReactNode } from 'react';
+import { ComponentClass, Component, StatelessComponent } from 'react';
 import { Store, Dispatch, ActionCreator } from 'redux';
 
 interface ComponentDecorator<TOriginalProps, TOwnProps> {
