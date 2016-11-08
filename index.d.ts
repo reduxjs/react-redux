@@ -9,9 +9,9 @@ interface ComponentDecorator<TOriginalProps, TOwnProps> {
  * Following 3 functions cover all possible ways connect could be invoked
  *
  * - State: Redux state interface (the same one used by Store<S>)
+ * - TOwnProps: Props passed to the wrapping component
  * - TStateProps: Result of MapStateToProps
  * - TDispatchProps: Result of MapDispatchToProps
- * - TOwnProps: Props passed to the wrapping component
  */
 export function connect<State, TOwnProps>(): ComponentDecorator<{ dispatch: Dispatch<State> }, TOwnProps>;
 
