@@ -2,7 +2,7 @@ import { ComponentClass, Component, StatelessComponent, ReactNode } from 'react'
 import { Store, Dispatch, ActionCreator } from 'redux';
 
 interface ComponentDecorator<TOriginalProps, TOwnProps> {
-  (component: ComponentClass<TOriginalProps>|StatelessComponent<TOriginalProps>): ComponentClass<TOwnProps>;
+  (component: StatelessComponent<TOriginalProps>|ComponentClass<TOriginalProps>): ComponentClass<TOwnProps>;
 }
 
 /**
