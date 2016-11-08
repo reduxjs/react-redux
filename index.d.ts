@@ -63,8 +63,7 @@ interface Options {
  * generic parameter in Store here by using any as the type
  */
 export interface ProviderProps {
-  store?: Store<any>;
-  children?: ReactNode;
+  store: Store<any>;
 }
 
 export class Provider extends Component<ProviderProps, {}> { }
