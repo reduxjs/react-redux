@@ -6,7 +6,7 @@ interface ComponentDecorator<TOriginalProps, TOwnProps> {
 }
 
 /**
- * Following 3 functions cover all possible ways connect could be invoked
+ * Following 5 functions cover all possible ways connect could be invoked
  *
  * - State: Redux state interface (the same one used by Store<S>)
  * - TOwnProps: Props passed to the wrapping component
@@ -40,18 +40,8 @@ interface MapStateToProps<State, TOwnProps, TStateProps> {
   (state: State, ownProps: TOwnProps): TStateProps;
 }
 
-/**
- * State is not actually used here but included for consistency with Redux typings and MapStateToProps.
- */
 interface MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps> {
   (dispatch: Dispatch<State>, ownProps: TOwnProps): TDispatchProps;
-}
-
-/**
- * Any since not every ActionCreator returns the same Action
- */
-interface MapDispatchToPropsObject<TDispatchProps> {
-  [name: string]: ActionCreator<TDispatchProps>;
 }
 
 interface MergeProps<TOwnProps, TStateProps, TDispatchProps> {
