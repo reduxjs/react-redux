@@ -16,22 +16,22 @@ interface ComponentDecorator<TOriginalProps, TOwnProps> {
 export function connect<State, TOwnProps>(): ComponentDecorator<{ dispatch: Dispatch<State> }, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps>(
-  mapStateToProps: MapStateToProps<State, TOwnProps, TStateProps>,
+  mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>,
 ): ComponentDecorator<TStateProps & { dispatch: Dispatch<State> }, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
-  mapStateToProps: MapStateToProps<State, TOwnProps, TStateProps>,
-  mapDispatchToProps: MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps
+  mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>,
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps>
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
 
 export function connect<State, TOwnProps, TDispatchProps>(
   mapStateToProps: null,
-  mapDispatchToProps: MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps>
 ): ComponentDecorator<TDispatchProps, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps, TMergeProps>(
-  mapStateToProps: MapStateToProps<State, TOwnProps, TStateProps>,
-  mapDispatchToProps: MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps,
+  mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>,
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps>,
   mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps>,
   options?: Options
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
@@ -52,6 +52,8 @@ interface Options {
   pure?: boolean;
   withRef?: boolean;
 }
+
+type FuncOrSelf<T> = T | (() => T);
 
 /**
  * Typescript does not support generic components in tsx yet in an intuïtive way which is the reason we avoid a
