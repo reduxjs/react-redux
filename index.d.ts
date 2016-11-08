@@ -29,10 +29,10 @@ export function connect<State, TOwnProps, TDispatchProps>(
   mapDispatchToProps: MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps
 ): ComponentDecorator<TDispatchProps, TOwnProps>;
 
-export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
+export function connect<State, TOwnProps, TStateProps, TDispatchProps, TMergeProps>(
   mapStateToProps: MapStateToProps<State, TOwnProps, TStateProps>,
   mapDispatchToProps: MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps,
-  mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps>,
+  mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps>,
   options?: Options
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
 
@@ -44,8 +44,8 @@ interface MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps> {
   (dispatch: Dispatch<State>, ownProps: TOwnProps): TDispatchProps;
 }
 
-interface MergeProps<TOwnProps, TStateProps, TDispatchProps> {
-  (ownProps: TOwnProps, stateProps: TStateProps, dispatchProps: TDispatchProps): TStateProps & TDispatchProps;
+interface MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps> {
+  (ownProps: TOwnProps, stateProps: TStateProps, dispatchProps: TDispatchProps): TMergeProps;
 }
 
 interface Options {
