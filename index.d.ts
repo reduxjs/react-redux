@@ -21,20 +21,24 @@ export function connect<State, TOwnProps, TStateProps>(
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
   mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>,
-  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps>
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps> | MapDispatchToPropsObject & TDispatchProps>
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
 
 export function connect<State, TOwnProps, TDispatchProps>(
   mapStateToProps: null,
-  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps>
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps> | MapDispatchToPropsObject & TDispatchProps>
 ): ComponentDecorator<TDispatchProps, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps, TMergeProps>(
   mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>,
-  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>|TDispatchProps>,
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps> | MapDispatchToPropsObject & TDispatchProps>,
   mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps>,
   options?: Options
 ): ComponentDecorator<TStateProps & TDispatchProps, TOwnProps>;
+
+interface MapDispatchToPropsObject {
+  [name: string]: ActionCreator<any>;
+}
 
 interface MapStateToProps<State, TOwnProps, TStateProps> {
   (state: State, ownProps: TOwnProps): TStateProps;
