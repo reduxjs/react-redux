@@ -152,7 +152,7 @@ describe('React', () => {
     }
 
     const tree = TestUtils.renderIntoDocument(
-      <Provider store={store}>
+      <Provider store={store} react15CompatibilityMode={false}>
         <Container />
       </Provider>
     )

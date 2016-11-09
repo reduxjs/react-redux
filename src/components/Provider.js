@@ -20,7 +20,7 @@ function warnAboutReceivingStore() {
 
 export default class Provider extends Component {
   getChildContext() {
-    return { store: this.store }
+    return { store: this.store, react15CompatibilityMode: this.props.react15CompatibilityMode }
   }
 
   constructor(props, context) {
@@ -45,10 +45,15 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 Provider.propTypes = {
+  react15CompatibilityMode: PropTypes.bool,
   store: storeShape.isRequired,
   children: PropTypes.element.isRequired
 }
 Provider.childContextTypes = {
+  react15CompatibilityMode: PropTypes.bool.isRequired,
   store: storeShape.isRequired
+}
+Provider.defaultProps = {
+  react15CompatibilityMode: true
 }
 Provider.displayName = 'Provider'
