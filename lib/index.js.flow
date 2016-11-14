@@ -1,0 +1,77 @@
+/* @flow */
+type ConnectAll = <D, P, S, C: React$Component<D, P, S>, SP, DP, Dispatch: Function>(
+  mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: (dispatch: Dispatch) => DP,
+  mergeProps: null | void,
+  options?: {pure?: boolean, withRef?: boolean}
+) => (component: Class<C>) => Class<React$Component<D, $Diff<$Diff<P, DP>, SP>, S>>
+
+type ConnectAllStateless = <P, SP, DP, Dispatch: Function>(
+  mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: (dispatch: Dispatch) => DP,
+  mergeProps: null | void,
+  options?: {pure?: boolean, withRef?: boolean}
+) => (component: (props: P) => any) => Class<React$Component<void, $Diff<$Diff<P, DP>, SP>, void>>
+
+type ConnectMerged = <D, P, S, C: React$Component<D, P, S>, SP, DP, MP, Dispatch: Function>(
+  mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: (dispatch: Dispatch) => DP,
+  mergeProps: (stateProps: SP, dispatchProps: DP, origProps: P) => MP,
+  options?: {pure?: boolean, withRef?: boolean}
+) => (component: Class<C>) => Class<React$Component<D, $Diff<P, MP>, S>>
+
+type ConnectMergedStateless = <P, SP, DP, MP, Dispatch: Function>(
+  mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: (dispatch: Dispatch) => DP,
+  mergeProps: (stateProps: SP, dispatchProps: DP, origProps: P) => MP,
+  options?: {pure?: boolean, withRef?: boolean}
+) => (component: (props: P) => any) => Class<React$Component<void, $Diff<P, MP>, void>>
+
+type ConnectNoState = <D, P, S, C: React$Component<D, P, S>, DP, Dispatch: Function>(
+    mapStateToProps: null | void,
+    mapDispatchToProps: (dispatch: Dispatch) => DP,
+    mergeProps: null | void,
+    options?: {pure?: boolean, withRef?: boolean}
+  ) => (component: Class<C>) => Class<React$Component<D, $Diff<P, DP>, S>>
+
+type ConnectNoStateStatless = <P, DP, Dispatch: Function>(
+    mapStateToProps: null | void,
+    mapDispatchToProps: (dispatch: Dispatch) => DP,
+    mergeProps: null | void,
+    options?: {pure?: boolean, withRef?: boolean}
+  ) => (component: (props: P) => any) => Class<React$Component<void, $Diff<P, DP>, void>>
+
+type ConnectDispatch = <D, P, S, C: React$Component<D, P, S>, SP, Dispatch: Function>(
+  mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: null | void,
+  mergeProps: null | void,
+  options?: {pure?: boolean, withRef?: boolean}
+) => (component: Class<C>) => Class<React$Component<D, $Diff<$Diff<P, {dispatch: Dispatch}>, SP>, S>>
+
+type ConnectDispatchStateless = <P, SP, Dispatch: Function>(
+  mapStateToProps: (state: Object) => SP,
+  mapDispatchToProps: null | void,
+  mergeProps: null | void,
+  options?: {pure?: boolean, withRef?: boolean}
+) => (component: (props: P) => any) => Class<React$Component<void, $Diff<$Diff<P, {dispatch: Dispatch}>, SP>, void>>
+
+type ConnectDefault = <D, P, S, C: React$Component<D, P, S>, Dispatch: Function>() =>
+  (component: Class<C>) => Class<React$Component<D, $Diff<P, {dispatch: Dispatch}>, S>>
+
+type ConnectDefaultStateless = () =>
+  <P>(component: (props: P) => any) => Class<React$Component<void, $Diff<P, {dispatch: Function}>, void>>
+
+declare export var connect
+    : ConnectAll
+    & ConnectAllStateless
+    & ConnectMerged
+    & ConnectMergedStateless
+    & ConnectNoState
+    & ConnectNoStateStatless
+    & ConnectDispatch
+    & ConnectDispatchStateless
+    & ConnectDefault
+    & ConnectDefaultStateless;
+declare export var Provider: ReactClass<{store: Object, children?: any}>;
+
+export {connect, Provider}
