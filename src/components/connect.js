@@ -3,6 +3,7 @@ import storeShape from '../utils/storeShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
 import warning from '../utils/warning'
+import wrapMapStateObject from '../utils/wrapMapStateObject'
 import isPlainObject from 'lodash/isPlainObject'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
@@ -32,9 +33,18 @@ function tryCatch(fn, ctx) {
 // Helps track hot reloading.
 let nextVersion = 0
 
+function handleShorthandSyntax(mapStateToProps) {
+  if ( mapStateToProps !== null && typeof mapStateToProps === 'object' ) {
+    return wrapMapStateObject(mapStateToProps)
+  }
+  else {
+    return mapStateToProps
+  }
+}
+
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
-  const mapState = mapStateToProps || defaultMapStateToProps
+  const mapState = handleShorthandSyntax(mapStateToProps) || defaultMapStateToProps
 
   let mapDispatch
   if (typeof mapDispatchToProps === 'function') {

@@ -82,6 +82,54 @@ describe('React', () => {
       ).toNotThrow()
     })
 
+    it('should pass state to given component, with shorthand syntax', () => {
+      const store = createStore(() => ({
+        foo: 'bar',
+        baz: 42,
+        hello: 'world'
+      }))
+
+      @connect({
+        foo: state => state.foo,
+        baz: state => state.baz
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props.pass).toEqual('through')
+      expect(stub.props.foo).toEqual('bar')
+      expect(stub.props.baz).toEqual(42)
+      expect(stub.props.hello).toEqual(undefined)
+      expect(() =>
+        TestUtils.findRenderedComponentWithType(container, Container)
+      ).toNotThrow()
+    })
+
+    it('should throw error if connect is called with shorthand syntax and one object value is not a function', () => {
+      expect(() =>
+        @connect({
+          foo: state => state.foo,
+          baz: 'badValue'
+        })
+        class Container extends Component {
+          render() {
+            return <div/>
+          }
+        }
+      ).toThrow(
+        /mapStateToProps object key baz expected to be a function, instead saw string/
+      )
+    })
+
     it('should subscribe class components to the store changes', () => {
       const store = createStore(stringBuilder)
 
