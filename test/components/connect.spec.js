@@ -1017,6 +1017,12 @@ describe('React', () => {
       expect(stub.props.passVal).toBe('otherval')
     })
 
+    it('should throw an error if a component is not passed to the function returned by connect', () => {
+      expect(connect()).toThrow(
+        /You must pass a component to the function/
+      )
+    })
+ 
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
       const store = createStore(() => ({}))
 
@@ -1334,7 +1340,7 @@ describe('React', () => {
 
       const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated)
       expect(() => decorated.getWrappedInstance()).toThrow(
-        /To access the wrapped instance, you need to specify \{ withRef: true \} as the fourth argument of the connect\(\) call\./
+        /To access the wrapped instance, you need to specify \{ withRef: true \} in the options argument of the connect\(\) call\./
       )
     })
 
@@ -1368,7 +1374,7 @@ describe('React', () => {
 
       expect(() => decorated.someInstanceMethod()).toThrow()
       expect(decorated.getWrappedInstance().someInstanceMethod()).toBe(someData)
-      expect(decorated.refs.wrappedInstance.someInstanceMethod()).toBe(someData)
+      expect(decorated.wrappedInstance.someInstanceMethod()).toBe(someData)
     })
 
     it('should wrap impure components without supressing updates', () => {
@@ -1538,14 +1544,8 @@ describe('React', () => {
       TestUtils.Simulate.click(node)
       expect(childMapStateInvokes).toBe(3)
 
-      // In future all setState calls will be batched[1]. Uncomment when it
-      // happens. For now redux-batched-updates middleware can be used as
-      // workaround this.
-      //
-      // [1]: https://twitter.com/sebmarkbage/status/642366976824864768
-      //
-      // store.dispatch({ type: 'APPEND', body: 'd' })
-      // expect(childMapStateInvokes).toBe(4)
+      store.dispatch({ type: 'APPEND', body: 'd' })
+      expect(childMapStateInvokes).toBe(4)
     })
 
     it('should not render the wrapped component when mapState does not produce change', () => {
@@ -1868,5 +1868,41 @@ describe('React', () => {
 
       ReactDOM.unmountComponentAtNode(div)
     })
+
+    it('should allow custom displayName', () => {
+      // TODO remove __ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED once approved
+      @connect(null, null, null, { getDisplayName: name => `Custom(${name})`, __ENABLE_SECRET_EXPERIMENTAL_FEATURES_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: true })
+      class MyComponent extends React.Component {
+        render() {
+          return <div></div>
+        }
+      }
+
+      expect(MyComponent.displayName).toEqual('Custom(MyComponent)')
+    })
+
+    it('should update impure components whenever the state of the store changes', () => {
+      const store = createStore(() => ({}))
+      let renderCount = 0
+
+      @connect(() => ({}), null, null, { pure: false })
+      class ImpureComponent extends React.Component {
+        render() {
+          ++renderCount
+          return <div />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <ImpureComponent />
+        </ProviderMock>
+      )
+
+      const rendersBeforeStateChange = renderCount
+      store.dispatch({ type: 'ACTION' })
+      expect(renderCount).toBe(rendersBeforeStateChange + 1)
+    })
   })
+
 })
