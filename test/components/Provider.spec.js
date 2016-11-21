@@ -36,14 +36,14 @@ describe('React', () => {
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
           </Provider>
-        )).toThrow(/exactly one child/)
+        )).toThrow(/a single React element child/)
 
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
             <div />
             <div />
           </Provider>
-        )).toThrow(/exactly one child/)
+        )).toThrow(/a single React element child/)
       } finally {
         Provider.propTypes = propTypes
       }
