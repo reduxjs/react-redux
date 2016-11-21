@@ -18,6 +18,7 @@
     "test": "cross-env BABEL_ENV=commonjs NODE_ENV=test mocha --compilers js:babel-register --recursive --require ./test/setup.js",
     "test:watch": "npm test -- --watch",
     "test:cov": "cross-env NODE_ENV=test nyc npm test",
+    "test:typescript": "typings-tester --dir test/typescript",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
   },
   "repository": {
@@ -49,6 +50,7 @@
   },
   "homepage": "https://github.com/gaearon/react-redux",
   "devDependencies": {
+    "@types/react": "^0.14.49",
     "babel-cli": "^6.3.17",
     "babel-core": "^6.3.26",
     "babel-eslint": "^7.1.1",
@@ -100,7 +102,9 @@
     "rollup-plugin-commonjs": "^8.0.2",
     "rollup-plugin-node-resolve": "^3.0.0",
     "rollup-plugin-replace": "^1.1.1",
-    "rollup-plugin-uglify": "^2.0.1"
+    "rollup-plugin-uglify": "^2.0.1",
+    "typescript": "^2.0.10",
+    "typings-tester": "^0.2.0",
   },
   "dependencies": {
     "hoist-non-react-statics": "^2.2.1",
