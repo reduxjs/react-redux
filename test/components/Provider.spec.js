@@ -147,7 +147,7 @@ describe('React', () => {
     })
     class ChildContainer extends Component {
       render() {
-        return <div {...this.props} />
+        return <div />
       }
     }
 
