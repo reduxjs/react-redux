@@ -100,7 +100,7 @@ function testMapDispatch() {
         foo: state.foo,
       };
     },
-    (dispatch) => {
+    (dispatch: Dispatch<MyState>) => {
       return {
         handleClick() {
           dispatch({type: 'CLICKED'});
@@ -127,7 +127,7 @@ function testMapDispatch() {
     (state: MyState) => {
       return {foo: state.foo};
     },
-    (dispatch, props: Props) => {
+    (dispatch: Dispatch<MyState>, props: Props) => {
       return {
         handleClick() {
           dispatch({type: 'CLICKED', bar: props.bar});
@@ -195,7 +195,7 @@ function testMergeProps() {
     (state: MyState) => {
       return {foo: state.foo};
     },
-    (dispatch) => {
+    (dispatch: Dispatch<MyState>) => {
       return {
         handleClick() {
           dispatch({type: 'CLICKED'});
@@ -240,7 +240,7 @@ function testMergeProps() {
         baz: props.bar,
       };
     },
-    (dispatch, props: MyProps) => {
+    (dispatch: Dispatch<MyState>, props: MyProps) => {
       // typings:expect-error
       props.foo;
 
@@ -315,7 +315,9 @@ function testProvider() {
   <Provider/>;
   // typings:expect-error
   <Provider store=""/>;
+  // typings:expect-error
+  <Provider store={null}/>;
 
-  let store: Store<{}>;
+  let store: Store<{}> = {} as Store<{}>;
   <Provider store={store}/>;
 }
