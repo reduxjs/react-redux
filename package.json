@@ -88,9 +88,9 @@
     "jsdom": "~5.4.3",
     "mocha": "^2.2.5",
     "nyc": "^8.1.0",
-    "react": "^0.14.0",
-    "react-addons-test-utils": "^0.14.0",
-    "react-dom": "^0.14.0",
+    "react": "^15.0.0",
+    "react-addons-test-utils": "^15.0.0",
+    "react-dom": "^15.0.0",
     "redux": "^3.0.0",
     "rimraf": "^2.3.4",
     "webpack": "^1.11.0"
