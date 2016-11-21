@@ -18,7 +18,7 @@ export default function connectAdvanced(
 
     Access to dispatch is provided to the factory so selectorFactories can bind actionCreators
     outside of their selector as an optimization. Options passed to connectAdvanced are passed to
-    the selectorFactory, along with displayName and WrappedComponent, as the second argument. 
+    the selectorFactory, along with displayName and WrappedComponent, as the second argument.
 
     Note that selectorFactory is responsible for all caching/memoization of inbound and outbound
     props. Do not use connectAdvanced directly without memoizing results between calls to your
@@ -35,8 +35,8 @@ export default function connectAdvanced(
     // probably overridden by wrapper functions such as connect()
     methodName = 'connectAdvanced',
 
-    // temporary setting. See Connect constructor for details
-    react15CompatibilityMode = undefined,
+    // temporary compatibility setting for React 15. See Connect constructor for details
+    react15CompatibilityMode = true,
 
     // if defined, the name of the property passed to the wrapped element indicating the number of
     // calls to render. useful for watching in react devtools for unnecessary re-renders.
@@ -59,13 +59,12 @@ export default function connectAdvanced(
   const version = hotReloadingVersion++
 
   const contextTypes = {
-    react15CompatibilityMode: PropTypes.bool,
     [storeKey]: storeShape,
     [subscriptionKey]: PropTypes.instanceOf(Subscription)
   }
   const childContextTypes = {
     [subscriptionKey]: PropTypes.instanceOf(Subscription)
-  }  
+  }
 
   return function wrapWithConnect(WrappedComponent) {
     invariant(
@@ -100,16 +99,13 @@ export default function connectAdvanced(
         this.state = {}
         this.renderCount = 0
         this.store = this.props[storeKey] || this.context[storeKey]
+        this.parentSub = props[subscriptionKey] || context[subscriptionKey]
 
         // react15CompatibilityMode controls whether the subscription system is used. This is for
         // https://github.com/reactjs/react-redux/issues/525 and should be removed completely when
         // react-redux's dependency on react is bumped to mimimum v16, which is expected to include
-        // PR https://github.com/facebook/react/pull/8204 which fixes the issue. If it's passed via
-        // an options arg, use that value, otherwise use the value from props/context.
-        const compat = react15CompatibilityMode !== undefined && react15CompatibilityMode !== null
-          ? react15CompatibilityMode
-          : (props.react15CompatibilityMode || context.react15CompatibilityMode);
-        this.parentSub = !compat ? (props[subscriptionKey] || context[subscriptionKey]) : null
+        // PR https://github.com/facebook/react/pull/8204 which fixes the issue.
+        if (react15CompatibilityMode) this.parentSub = null
 
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
