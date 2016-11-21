@@ -11,7 +11,7 @@ describe('React', () => {
   describe('connect', () => {
     class Passthrough extends Component {
       render() {
-        return <div {...this.props} />
+        return <div />
       }
     }
 
@@ -1908,7 +1908,7 @@ describe('React', () => {
           updatedCount++
         }
         render() {
-          return <div {...this.props} />
+          return <div />
         }
       }
 
