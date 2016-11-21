@@ -5,6 +5,8 @@ import { Component, PropTypes, createElement } from 'react'
 import Subscription from '../utils/Subscription'
 import storeShape from '../utils/storeShape'
 
+
+let defaultReact15CompatibilityMode = true
 let hotReloadingVersion = 0
 export default function connectAdvanced(
   /*
@@ -36,7 +38,7 @@ export default function connectAdvanced(
     methodName = 'connectAdvanced',
 
     // temporary compatibility setting for React 15. See Connect constructor for details
-    react15CompatibilityMode = true,
+    react15CompatibilityMode = undefined,
 
     // if defined, the name of the property passed to the wrapped element indicating the number of
     // calls to render. useful for watching in react devtools for unnecessary re-renders.
@@ -60,7 +62,8 @@ export default function connectAdvanced(
 
   const contextTypes = {
     [storeKey]: storeShape,
-    [subscriptionKey]: PropTypes.instanceOf(Subscription)
+    [subscriptionKey]: PropTypes.instanceOf(Subscription),
+    react15CompatibilityMode: PropTypes.bool,
   }
   const childContextTypes = {
     [subscriptionKey]: PropTypes.instanceOf(Subscription)
@@ -99,13 +102,18 @@ export default function connectAdvanced(
         this.state = {}
         this.renderCount = 0
         this.store = this.props[storeKey] || this.context[storeKey]
-        this.parentSub = props[subscriptionKey] || context[subscriptionKey]
-
+        
         // react15CompatibilityMode controls whether the subscription system is used. This is for
         // https://github.com/reactjs/react-redux/issues/525 and should be removed completely when
         // react-redux's dependency on react is bumped to mimimum v16, which is expected to include
         // PR https://github.com/facebook/react/pull/8204 which fixes the issue.
-        if (react15CompatibilityMode) this.parentSub = null
+        const compatMode = [
+          react15CompatibilityMode,
+          props.react15CompatibilityMode,
+          context.react15CompatibilityMode,
+          defaultReact15CompatibilityMode
+        ].find(cm => cm !== undefined && cm !== null)
+        this.parentSub = compatMode ? null : props[subscriptionKey] || context[subscriptionKey]
 
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
@@ -266,3 +274,9 @@ export default function connectAdvanced(
     return hoistStatics(Connect, WrappedComponent)
   }
 }
+
+connectAdvanced.setDefaultReact15CompatibilityMode =
+  function setDefaultReact15CompatibilityMode(compat) {
+    defaultReact15CompatibilityMode = compat
+  }
+
