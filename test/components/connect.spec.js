@@ -1,3 +1,5 @@
+/*eslint-disable react/prop-types*/
+
 import expect from 'expect'
 import React, { createClass, Children, PropTypes, Component } from 'react'
 import ReactDOM from 'react-dom'
@@ -20,6 +22,30 @@ describe('React', () => {
 
       render() {
         return Children.only(this.props.children)
+      }
+    }
+
+    class ContextBoundStore {
+      constructor(reducer) {
+        this.reducer = reducer
+        this.listeners = []
+        this.state = undefined
+        this.dispatch({})
+      }
+
+      getState() {
+        return this.state
+      }
+
+      subscribe(listener) {
+        this.listeners.push(listener)
+        return (() => this.listeners.filter(l => l !== listener))
+      }
+
+      dispatch(action) {
+        this.state = this.reducer(this.getState(), action)
+        this.listeners.forEach(l => l())
+        return action
       }
     }
 
@@ -130,6 +156,30 @@ describe('React', () => {
       expect(stub.props.string).toBe('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
       expect(stub.props.string).toBe('ab')
+    })
+
+    it('should retain the store\'s context', () => {
+      const store = new ContextBoundStore(stringBuilder)
+
+      let Container = connect(
+        state => ({ string: state })
+      )(function Container(props) {
+        return <Passthrough {...props}/>
+      })
+
+      const spy = expect.spyOn(console, 'error')
+      const tree = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+      spy.destroy()
+      expect(spy.calls.length).toBe(0)
+
+      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      expect(stub.props.string).toBe('')
+      store.dispatch({ type: 'APPEND', body: 'a' })
+      expect(stub.props.string).toBe('a')
     })
 
     it('should handle dispatches before componentDidMount', () => {
@@ -351,9 +401,10 @@ describe('React', () => {
 
         componentDidMount() {
           // Simulate deep object mutation
-          this.state.bar.baz = 'through'
+          const bar = this.state.bar
+          bar.baz = 'through'
           this.setState({
-            bar: this.state.bar
+            bar
           })
         }
 
@@ -859,6 +910,86 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    it('should not attempt to set state after unmounting nested components', () => {
+      const store = createStore(() => ({}))
+      let mapStateToPropsCalls = 0
+
+      let linkA, linkB
+
+      let App = ({ children, setLocation }) => {
+        const onClick = to => event => {
+          event.preventDefault()
+          setLocation(to)
+        }
+        /* eslint-disable react/jsx-no-bind */
+        return (
+          <div>
+            <a href="#" onClick={onClick('a')} ref={c => { linkA = c }}>A</a>
+            <a href="#" onClick={onClick('b')} ref={c => { linkB = c }}>B</a>
+            {children}
+          </div>
+        )
+        /* eslint-enable react/jsx-no-bind */
+      }
+      App = connect(() => ({}))(App)
+
+
+      let A = () => (<h1>A</h1>)
+      A = connect(() => ({ calls: ++mapStateToPropsCalls }))(A)
+
+
+      const B = () => (<h1>B</h1>)
+
+
+      class RouterMock extends React.Component {
+        constructor(...args) {
+          super(...args)
+          this.state = { location: { pathname: 'a' } }
+          this.setLocation = this.setLocation.bind(this)
+        }
+
+        setLocation(pathname) {
+          this.setState({ location: { pathname } })
+          store.dispatch({ type: 'TEST' })
+        }
+
+        getChildComponent(location) {
+          switch (location) {
+            case 'a': return <A />
+            case 'b': return <B />
+            default: throw new Error('Unknown location: ' + location)
+          }
+        }
+
+        render() {
+          return (<App setLocation={this.setLocation}>
+            {this.getChildComponent(this.state.location.pathname)}
+          </App>)
+        }
+      }
+
+
+      const div = document.createElement('div')
+      document.body.appendChild(div)
+      ReactDOM.render(
+        (<ProviderMock store={store}>
+          <RouterMock />
+        </ProviderMock>),
+        div
+      )
+
+      const spy = expect.spyOn(console, 'error')
+
+      linkA.click()
+      linkB.click()
+      linkB.click()
+
+      spy.destroy()
+      document.body.removeChild(div)
+      expect(mapStateToPropsCalls).toBe(3)
+      expect(spy.calls.length).toBe(0)
+    })
+
     it('should not attempt to set state when dispatching in componentWillUnmount', () => {
       const store = createStore(stringBuilder)
       let mapStateToPropsCalls = 0
@@ -1015,6 +1146,12 @@ describe('React', () => {
       expect(spy.calls.length).toBe(5)
       expect(stub.props.string).toBe('a')
       expect(stub.props.passVal).toBe('otherval')
+    })
+
+    it('should throw an error if a component is not passed to the function returned by connect', () => {
+      expect(connect()).toThrow(
+        /You must pass a component to the function/
+      )
     })
 
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
@@ -1334,7 +1471,7 @@ describe('React', () => {
 
       const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated)
       expect(() => decorated.getWrappedInstance()).toThrow(
-        /To access the wrapped instance, you need to specify \{ withRef: true \} as the fourth argument of the connect\(\) call\./
+        /To access the wrapped instance, you need to specify \{ withRef: true \} in the options argument of the connect\(\) call\./
       )
     })
 
@@ -1368,7 +1505,7 @@ describe('React', () => {
 
       expect(() => decorated.someInstanceMethod()).toThrow()
       expect(decorated.getWrappedInstance().someInstanceMethod()).toBe(someData)
-      expect(decorated.refs.wrappedInstance.someInstanceMethod()).toBe(someData)
+      expect(decorated.wrappedInstance.someInstanceMethod()).toBe(someData)
     })
 
     it('should wrap impure components without supressing updates', () => {
@@ -1538,14 +1675,8 @@ describe('React', () => {
       TestUtils.Simulate.click(node)
       expect(childMapStateInvokes).toBe(3)
 
-      // In future all setState calls will be batched[1]. Uncomment when it
-      // happens. For now redux-batched-updates middleware can be used as
-      // workaround this.
-      //
-      // [1]: https://twitter.com/sebmarkbage/status/642366976824864768
-      //
-      // store.dispatch({ type: 'APPEND', body: 'd' })
-      // expect(childMapStateInvokes).toBe(4)
+      store.dispatch({ type: 'APPEND', body: 'd' })
+      expect(childMapStateInvokes).toBe(4)
     })
 
     it('should not render the wrapped component when mapState does not produce change', () => {
@@ -1868,5 +1999,40 @@ describe('React', () => {
 
       ReactDOM.unmountComponentAtNode(div)
     })
+
+    it('should allow custom displayName', () => {
+      @connect(null, null, null, { getDisplayName: name => `Custom(${name})` })
+      class MyComponent extends React.Component {
+        render() {
+          return <div></div>
+        }
+      }
+
+      expect(MyComponent.displayName).toEqual('Custom(MyComponent)')
+    })
+
+    it('should update impure components whenever the state of the store changes', () => {
+      const store = createStore(() => ({}))
+      let renderCount = 0
+
+      @connect(() => ({}), null, null, { pure: false })
+      class ImpureComponent extends React.Component {
+        render() {
+          ++renderCount
+          return <div />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <ImpureComponent />
+        </ProviderMock>
+      )
+
+      const rendersBeforeStateChange = renderCount
+      store.dispatch({ type: 'ACTION' })
+      expect(renderCount).toBe(rendersBeforeStateChange + 1)
+    })
   })
+
 })

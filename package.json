@@ -11,9 +11,10 @@
     "clean": "rimraf lib dist coverage",
     "lint": "eslint src test",
     "prepublish": "npm run clean && npm run build",
-    "test": "mocha --compilers js:babel-register --recursive --require ./test/setup.js",
+    "test": "cross-env NODE_ENV=test mocha --compilers js:babel-register --recursive --require ./test/setup.js",
     "test:watch": "npm test -- --watch",
-    "test:cov": "babel-node ./node_modules/isparta/bin/isparta cover ./node_modules/mocha/bin/_mocha -- --recursive"
+    "test:cov": "cross-env NODE_ENV=test nyc npm test",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
   },
   "repository": {
     "type": "git",
@@ -44,9 +45,10 @@
   "devDependencies": {
     "babel-cli": "^6.3.17",
     "babel-core": "^6.3.26",
-    "babel-eslint": "^5.0.0-beta9",
+    "babel-eslint": "^6.1.2",
     "babel-loader": "^6.2.0",
     "babel-plugin-check-es2015-constants": "^6.3.13",
+    "babel-plugin-istanbul": "^2.0.0",
     "babel-plugin-syntax-jsx": "^6.3.13",
     "babel-plugin-transform-decorators-legacy": "^1.2.0",
     "babel-plugin-transform-es2015-arrow-functions": "^6.3.13",
@@ -70,17 +72,18 @@
     "babel-plugin-transform-react-display-name": "^6.4.0",
     "babel-plugin-transform-react-jsx": "^6.4.0",
     "babel-register": "^6.3.13",
+    "codecov": "^1.0.1",
     "cross-env": "^1.0.7",
     "es3ify": "^0.2.0",
-    "eslint": "^1.7.1",
-    "eslint-config-rackt": "1.1.0",
-    "eslint-plugin-react": "^3.6.3",
+    "eslint": "^3.3.1",
+    "eslint-plugin-import": "^1.13.0",
+    "eslint-plugin-react": "^6.1.1",
     "expect": "^1.8.0",
     "glob": "^6.0.4",
-    "isparta": "4.0.0",
-    "istanbul": "^0.3.17",
+    "istanbul": "^0.4.4",
     "jsdom": "~5.4.3",
     "mocha": "^2.2.5",
+    "nyc": "^8.1.0",
     "react": "^0.14.0",
     "react-addons-test-utils": "^0.14.0",
     "react-dom": "^0.14.0",
@@ -102,5 +105,9 @@
     "transform": [
       "loose-envify"
     ]
+  },
+  "nyc": {
+    "sourceMap": false,
+    "instrument": false
   }
 }
