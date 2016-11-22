@@ -9,11 +9,24 @@ import invariant from 'invariant'
 
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
-const defaultMergeProps = (stateProps, dispatchProps, parentProps) => ({
-  ...parentProps,
-  ...stateProps,
-  ...dispatchProps
-})
+const defaultMergeProps = (stateProps, dispatchProps, parentProps) => {
+  if (process.env.NODE_ENV !== 'production') {
+    const stateKeys = Object.keys(stateProps)
+
+    for ( let key of stateKeys ) {
+      if (Boolean(parentProps[key])) {
+        warning(false, `Duplicate key ${key} sent from both parent and state`)
+        break
+      }
+    }
+  }
+  
+  return {
+    ...parentProps,
+    ...stateProps,
+    ...dispatchProps
+  }
+}
 
 function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
