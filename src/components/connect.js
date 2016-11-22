@@ -132,7 +132,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           return this.configureFinalMapDispatch(store, props)
         }
 
-        const { dispatch } = store
+        const dispatch = store.dispatch.bind(store)
         const dispatchProps = this.doDispatchPropsDependOnOwnProps ?
           this.finalMapDispatchToProps(dispatch, props) :
           this.finalMapDispatchToProps(dispatch)
@@ -144,7 +144,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       configureFinalMapDispatch(store, props) {
-        const mappedDispatch = mapDispatch(store.dispatch, props)
+        const mappedDispatch = mapDispatch(store.dispatch.bind(store), props)
         const isFactory = typeof mappedDispatch === 'function'
 
         this.finalMapDispatchToProps = isFactory ? mappedDispatch : mapDispatch
