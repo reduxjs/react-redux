@@ -1868,5 +1868,16 @@ describe('React', () => {
 
       ReactDOM.unmountComponentAtNode(div)
     })
+
+    it('should allow custom displayName', () => {
+      @connect(null, null, null, { displayName: 'Custom' })
+      class MyComponent extends React.Component {
+        render() {
+          return <div></div>
+        }
+      }
+
+      expect(MyComponent.displayName).toEqual('Custom(MyComponent)')
+    })
   })
 })
