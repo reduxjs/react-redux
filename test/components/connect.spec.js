@@ -1368,7 +1368,7 @@ describe('React', () => {
 
       expect(() => decorated.someInstanceMethod()).toThrow()
       expect(decorated.getWrappedInstance().someInstanceMethod()).toBe(someData)
-      expect(decorated.refs.wrappedInstance.someInstanceMethod()).toBe(someData)
+      expect(decorated.wrappedInstanceRef.someInstanceMethod()).toBe(someData)
     })
 
     it('should wrap impure components without supressing updates', () => {
