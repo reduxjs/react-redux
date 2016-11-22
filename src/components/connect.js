@@ -65,7 +65,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     }
 
     function computeMergedProps(stateProps, dispatchProps, parentProps) {
-      const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
+      let mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
+      
+      const isFactory = typeof mergedProps === 'function'
+      
+      if (isFactory) {
+        mergedProps = mergedProps(stateProps, dispatchProps, parentProps)
+      }
+
       if (process.env.NODE_ENV !== 'production') {
         checkStateShape(mergedProps, 'mergeProps')
       }

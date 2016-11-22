@@ -429,6 +429,37 @@ describe('React', () => {
       expect(stub.props.stateThing).toBe('HELLO azbzcZ')
     })
 
+    it('should allow providing a factory function to mergeProps', () => {
+      const store = createStore(() => ({
+        a: 123
+      }))
+      
+      function sum(a, b) {
+        return a + b
+      }
+
+      @connect(
+        state => state,
+        () => ({ sum }),
+        () => (stateProps, dispatchProps, parentProps) => ({
+          sum: () => dispatchProps.sum(stateProps.a, parentProps.b)
+        })
+      )
+      class Container extends Component {
+        render() {
+          return <Passthrough result={this.props.sum()} />
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container b={ 456 } />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props.result).toEqual(579)
+    })
+
     it('should merge actionProps into WrappedComponent', () => {
       const store = createStore(() => ({
         foo: 'bar'
