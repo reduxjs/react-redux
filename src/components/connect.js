@@ -53,6 +53,11 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
   const version = nextVersion++
 
   return function wrapWithConnect(WrappedComponent) {
+    invariant(
+      typeof WrappedComponent == 'function',
+      `You must pass a component to the function returned by ` +
+      `connect. Instead received ${WrappedComponent}`
+    )
     const connectDisplayName = `Connect(${getDisplayName(WrappedComponent)})`
 
     function checkStateShape(props, methodName) {
