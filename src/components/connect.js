@@ -195,7 +195,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       trySubscribe() {
-        if (shouldSubscribe && !this.unsubscribe) {
+        if (shouldSubscribe && !this.isSubscribed()) {
           this.unsubscribe = this.store.subscribe(this.handleChange.bind(this))
           this.handleChange()
         }
