@@ -22,12 +22,15 @@ import defaultSelectorFactory from './selectorFactory'
   it receives new props or store state.
  */
 
-function match(arg, factories) {
+function match(arg, factories, name) {
   for (let i = factories.length - 1; i >= 0; i--) {
     const result = factories[i](arg)
     if (result) return result
   }
-  return undefined
+
+  return (dispatch, options) => {
+    throw new Error(`Invalid value of type ${typeof arg} for ${name} argument when connecting component ${options.wrappedComponentName}.`)
+  }
 }
 
 function strictEqual(a, b) { return a === b }
@@ -54,9 +57,9 @@ export function createConnect({
       ...extraOptions
     } = {}
   ) {
-    const initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories)
-    const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories)
-    const initMergeProps = match(mergeProps, mergePropsFactories)
+    const initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories, 'mapStateToProps')
+    const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories, 'mapDispatchToProps')
+    const initMergeProps = match(mergeProps, mergePropsFactories, 'mergeProps')
 
     return connectHOC(selectorFactory, {
       // used in error messages
