@@ -24,6 +24,9 @@ describe('React', () => {
         return Children.only(this.props.children)
       }
     }
+    ProviderMock.childContextTypes = {
+      store: PropTypes.object.isRequired
+    }
 
     class ContextBoundStore {
       constructor(reducer) {
@@ -47,10 +50,6 @@ describe('React', () => {
         this.listeners.forEach(l => l())
         return action
       }
-    }
-
-    ProviderMock.childContextTypes = {
-      store: PropTypes.object.isRequired
     }
 
     function stringBuilder(prev = '', action) {
@@ -2083,6 +2082,48 @@ describe('React', () => {
       store.dispatch({ type: 'ACTION' })
       expect(renderCount).toBe(rendersBeforeStateChange + 1)
     })
-  })
 
+    function renderWithBadConnect(Component) {
+      const store = createStore(() => ({}))
+
+      try {
+        TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Component pass="through" />
+          </ProviderMock>
+        )
+        return null
+      } catch (error) {
+        return error.message
+      }
+    }
+    it('should throw a helpful error for invalid mapStateToProps arguments', () => {
+      @connect('invalid')
+      class InvalidMapState extends React.Component { render() { return <div></div> } }
+
+      const error = renderWithBadConnect(InvalidMapState)
+      expect(error).toInclude('string')
+      expect(error).toInclude('mapStateToProps')
+      expect(error).toInclude('InvalidMapState')
+    })
+    it('should throw a helpful error for invalid mapDispatchToProps arguments', () => {
+      @connect(null, 'invalid')
+      class InvalidMapDispatch extends React.Component { render() { return <div></div> } }
+
+      const error = renderWithBadConnect(InvalidMapDispatch)
+      expect(error).toInclude('string')
+      expect(error).toInclude('mapDispatchToProps')
+      expect(error).toInclude('InvalidMapDispatch')
+    })
+    it('should throw a helpful error for invalid mergeProps arguments', () => {
+      @connect(null, null, 'invalid')
+      class InvalidMerge extends React.Component { render() { return <div></div> } }
+
+      const error = renderWithBadConnect(InvalidMerge)
+      expect(error).toInclude('string')
+      expect(error).toInclude('mergeProps')
+      expect(error).toInclude('InvalidMerge')
+    })
+
+  })
 })

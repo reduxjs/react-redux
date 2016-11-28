@@ -85,6 +85,7 @@ export default function connectAdvanced(
       storeKey,
       withRef,
       displayName,
+      wrappedComponentName,
       WrappedComponent
     }
 
