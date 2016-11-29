@@ -19,6 +19,14 @@ function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
 }
 
+function getMapDispatch(value) {
+  switch (true) {
+    case (typeof value === 'function'): return value
+    case isPlainObject(value): return wrapActionCreators(value)
+    default: return defaultMapDispatchToProps
+  }
+}
+
 let errorObject = { value: null }
 function tryCatch(fn, ctx) {
   try {
@@ -35,15 +43,7 @@ let nextVersion = 0
 export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
   const shouldSubscribe = Boolean(mapStateToProps)
   const mapState = mapStateToProps || defaultMapStateToProps
-
-  let mapDispatch
-  if (typeof mapDispatchToProps === 'function') {
-    mapDispatch = mapDispatchToProps
-  } else if (!mapDispatchToProps) {
-    mapDispatch = defaultMapDispatchToProps
-  } else {
-    mapDispatch = wrapActionCreators(mapDispatchToProps)
-  }
+  const mapDispatch = getMapDispatch(mapDispatchToProps)
 
   const finalMergeProps = mergeProps || defaultMergeProps
   const { pure = true, withRef = false } = options
