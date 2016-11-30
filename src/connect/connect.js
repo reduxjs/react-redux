@@ -87,6 +87,4 @@ export function createConnect({
   }
 }
 
-const connect = createConnect()
-connect.setDefaultReact15CompatibilityMode = connectAdvanced.setDefaultReact15CompatibilityMode
-export default connect
+export default createConnect()
