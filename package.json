@@ -80,6 +80,7 @@
     "isparta": "4.0.0",
     "istanbul": "^0.3.17",
     "jsdom": "~5.4.3",
+    "loose-envify": "^1.1.0",
     "mocha": "^2.2.5",
     "react": "^0.14.0",
     "react-addons-test-utils": "^0.14.0",
@@ -91,8 +92,7 @@
   "dependencies": {
     "hoist-non-react-statics": "^1.0.3",
     "invariant": "^2.0.0",
-    "lodash": "^4.2.0",
-    "loose-envify": "^1.1.0"
+    "lodash": "^4.2.0"
   },
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0-0 || ^15.4.0-0",
