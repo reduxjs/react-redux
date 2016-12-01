@@ -1430,13 +1430,7 @@ describe('React', () => {
       const mapStateSpy = expect.createSpy()
       const mapDispatchSpy = expect.createSpy().andReturn({})
 
-      class ImpureComponent extends Component {
-        render() {
-          return <Passthrough statefulValue={this.props.value} />
-        }
-      }
-
-      const decorator = connect(
+      @connect(
         (state, { storeGetter }) => {
           mapStateSpy()
           return { value: state[storeGetter.storeKey] }
@@ -1445,7 +1439,11 @@ describe('React', () => {
         null,
         { pure: false }
       )
-      const Decorated = decorator(ImpureComponent)
+      class ImpureComponent extends Component {
+        render() {
+          return <Passthrough statefulValue={this.props.value} />
+        }
+      }
 
       class StatefulWrapper extends Component {
         constructor() {
@@ -1455,10 +1453,9 @@ describe('React', () => {
           }
         }
         render() {
-          return <Decorated storeGetter={this.state.storeGetter} />
+          return <ImpureComponent storeGetter={this.state.storeGetter} />
         }
       }
-
 
       const tree = TestUtils.renderIntoDocument(
         <ProviderMock store={store}>
@@ -1469,8 +1466,8 @@ describe('React', () => {
       const target = TestUtils.findRenderedComponentWithType(tree, Passthrough)
       const wrapper = TestUtils.findRenderedComponentWithType(tree, StatefulWrapper)
 
-      expect(mapStateSpy.calls.length).toBe(2)
-      expect(mapDispatchSpy.calls.length).toBe(2)
+      expect(mapStateSpy.calls.length).toBe(1)
+      expect(mapDispatchSpy.calls.length).toBe(1)
       expect(target.props.statefulValue).toEqual('foo')
 
       // Impure update
@@ -1478,8 +1475,8 @@ describe('React', () => {
       storeGetter.storeKey = 'bar'
       wrapper.setState({ storeGetter })
 
-      expect(mapStateSpy.calls.length).toBe(3)
-      expect(mapDispatchSpy.calls.length).toBe(3)
+      expect(mapStateSpy.calls.length).toBe(2)
+      expect(mapDispatchSpy.calls.length).toBe(2)
       expect(target.props.statefulValue).toEqual('bar')
     })
 
