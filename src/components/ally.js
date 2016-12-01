@@ -1,22 +1,40 @@
-import { Component, createElement } from 'react'
+import { Component, PropTypes, createElement } from 'react'
 import storeShape from '../utils/storeShape'
+import fieldShape from '../utils/fieldShape'
 import shallowEqual from '../utils/shallowEqual'
 import wrapActionCreators from '../utils/wrapActionCreators'
 import warning from '../utils/warning'
+import combinePath from '../utils/combinePath'
+import allySet from '../actions/set';
 import isPlainObject from 'lodash/isPlainObject'
+import lodashMerge from 'lodash/merge'
+import noop from 'lodash/noop'
+import lodashGet from 'lodash/get'
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 
+const DefaultFieldType = 'instance';
 const defaultMapStateToProps = state => ({}) // eslint-disable-line no-unused-vars
 const defaultMapDispatchToProps = dispatch => ({ dispatch })
-const defaultMergeProps = (stateProps, dispatchProps, parentProps) => ({
+const defaultMergeProps = (stateProps, dispatchProps, parentProps, allyProps) => ({
   ...parentProps,
   ...stateProps,
+  ...allyProps,
   ...dispatchProps
-})
+});
 
 function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component'
+}
+
+function sanitizeFields(fields) {
+  for (const fieldName of Object.keys(fields)) {
+    const field = fields[fieldName];
+    field.name = field.name || fieldName;
+    field.path = field.path || fieldName;
+    field.type = field.type || DefaultFieldType;
+    field.readonly = !!field.readonly;
+  }
 }
 
 let errorObject = { value: null }
@@ -30,13 +48,24 @@ function tryCatch(fn, ctx) {
 }
 
 // Helps track hot reloading.
-let nextVersion = 0
+let nextVersion = 0;
 
-export default function connect(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
-  const shouldSubscribe = Boolean(mapStateToProps)
-  const mapState = mapStateToProps || defaultMapStateToProps
+// export default function ally(mapStateToProps, mapDispatchToProps, mergeProps, options = {}) {
+export default function ally(allyOptions = {}) {
+  const defaultAllyOptions = {
+    fields: {},
+    mapStateToProps: null,
+    mapDispatchToProps: null,
+    mergeProps: null,
+    options: {}
+  };
+  allyOptions = Object.assign({}, defaultAllyOptions, allyOptions);
+  const {fields, mapStateToProps, mapDispatchToProps, mergeProps, options} = allyOptions;
 
-  let mapDispatch
+  const shouldSubscribe = Boolean(mapStateToProps || fields.length > 0);
+  const mapState = mapStateToProps || defaultMapStateToProps;
+
+  let mapDispatch;
   if (typeof mapDispatchToProps === 'function') {
     mapDispatch = mapDispatchToProps
   } else if (!mapDispatchToProps) {
@@ -45,34 +74,38 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     mapDispatch = wrapActionCreators(mapDispatchToProps)
   }
 
-  const finalMergeProps = mergeProps || defaultMergeProps
-  const { pure = true, withRef = false } = options
-  const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps
+  const finalMergeProps = mergeProps || defaultMergeProps;
+  const { pure = true, withRef = false } = options;
+  const checkMergedEquals = pure && finalMergeProps !== defaultMergeProps;
+
+  sanitizeFields(fields);
 
   // Helps track hot reloading.
-  const version = nextVersion++
+  const version = nextVersion++;
 
-  return function wrapWithConnect(WrappedComponent) {
-    const connectDisplayName = `Connect(${getDisplayName(WrappedComponent)})`
+  return function wrapWithAlly(WrappedComponent) {
+    const allyDisplayName = `Ally(${getDisplayName(WrappedComponent)})`;
 
     function checkStateShape(props, methodName) {
       if (!isPlainObject(props)) {
         warning(
-          `${methodName}() in ${connectDisplayName} must return a plain object. ` +
+          `${methodName}() in ${allyDisplayName} must return a plain object. ` +
           `Instead received ${props}.`
         )
       }
     }
 
-    function computeMergedProps(stateProps, dispatchProps, parentProps) {
-      const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps)
+    function computeMergedProps(stateProps, dispatchProps, parentProps, allyProps) {
+      const mergedProps = finalMergeProps(stateProps, dispatchProps, parentProps, allyProps)
       if (process.env.NODE_ENV !== 'production') {
         checkStateShape(mergedProps, 'mergeProps')
       }
       return mergedProps
     }
 
-    class Connect extends Component {
+    let instanceNumber = 1;
+
+    class Ally extends Component {
       shouldComponentUpdate() {
         return !pure || this.haveOwnPropsChanged || this.hasStoreStateChanged
       }
@@ -84,14 +117,26 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
         invariant(this.store,
           `Could not find "store" in either the context or ` +
-          `props of "${connectDisplayName}". ` +
+          `props of "${allyDisplayName}". ` +
           `Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "store" as a prop to "${connectDisplayName}".`
+          `or explicitly pass "store" as a prop to "${allyDisplayName}".`
         )
 
         const storeState = this.store.getState()
         this.state = { storeState }
         this.clearCache()
+        this.initializeAllyPropsWithDefaults()
+        this.componentName = getDisplayName(WrappedComponent)
+        this.instanceNumber = instanceNumber++
+      }
+      
+      initializeAllyPropsWithDefaults() {
+        this.allyProps = {};
+        for (var fieldName of Object.keys(fields)) {
+          const field = fields[fieldName];
+          const {defaultValue, name} = field;
+          this.allyProps[name] = defaultValue;
+        }
       }
 
       computeStateProps(store, props) {
@@ -160,6 +205,120 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         return mappedDispatch
       }
 
+      computeAllyProps() {
+        this.configureFieldsForAlly();
+        const allyProps = {
+          allyFields: this.fields,
+          allyComponentName: this.componentName,
+          allyInstanceNumber: this.instanceNumber
+        };
+        
+        var precomputedMergedProps = computeMergedProps(this.stateProps, this.dispatchProps, this.props, this.allyProps);
+        
+        //  these properties are so that the most up to date information is used
+        //  when computing properties
+        for (const fieldName of Object.keys(this.fields)) {
+          const field = this.fields[fieldName];
+          Object.defineProperty(precomputedMergedProps, field.name, {
+            configurable: true,
+            enumerable: true,
+            get: field.finalGetter,
+            set: noop
+          })
+        }
+        
+        this.allyInstanceData = {
+          props: precomputedMergedProps,
+          state: this.state.storeState,
+          dispatch: this.store.dispatch
+        };
+        for (const fieldName of Object.keys(this.fields)) {
+          const field = this.fields[fieldName];
+          const {name, setterName, finalSetter} = field;
+          tryCatch(field.updatePath, this.allyInstanceData);
+          allyProps[name] = field.finalGetter();
+          if (!field.readonly) {
+            allyProps[setterName] = finalSetter;
+          }
+        }
+        if (process.env.NODE_ENV !== 'production') {
+          checkStateShape(allyProps, 'mapDispatchToProps')
+        }
+        return allyProps;
+      }
+
+      configureFieldsForAlly() {
+        if (this.fields) {
+          return this.fields;
+        }
+        const instanceFields = {...fields};
+        for (const fieldName of Object.keys(instanceFields)) {
+          const field = instanceFields[fieldName];
+          const {
+              name,
+              type,
+              defaultValue,
+              getter,
+              setter,
+              readonly
+          } = field;
+          let path = field.path;
+          const pathPrefix = [];
+          switch(type) {
+            case 'component':
+                pathPrefix.push(this.componentName);
+                break;
+            case 'instance':
+                pathPrefix.push(this.componentName, 'instances', this.instanceNumber);
+                break;
+          }
+          
+          var computedPath;
+          const doesPathDependOnInstance = typeof path === 'function';
+          const doesGetterDependOnInstance = typeof getter === 'function';
+          const doesSetterDependOnInstance = typeof setter === 'function';
+
+          if (!doesPathDependOnInstance) {
+            computedPath = path;
+          }
+          const finalPath = combinePath(pathPrefix, computedPath);
+
+          const updatePath = () => {
+            if (doesPathDependOnInstance) {
+              field.computedPath = path.call(this.allyInstanceData);
+              field.finalPath = combinePath(field.pathPrefix, field.computedPath);
+            }
+          };
+          
+          field.pathPrefix = pathPrefix;
+          field.computedPath = computedPath;
+          field.finalPath = finalPath;
+          field.doesPathDependOnInstance = doesPathDependOnInstance;
+          field.doesGetterDependOnInstance = doesGetterDependOnInstance;
+          field.doesSetterDependOnInstance = doesSetterDependOnInstance;
+          field.updatePath = updatePath;
+          field.defaultGetter = () => {
+            return lodashGet(this.state.storeState, field.finalPath, defaultValue);
+          };
+          field.finalGetter = doesGetterDependOnInstance && (() => {
+                return getter.call(this.allyInstanceData, field.defaultGetter);
+              }) ||
+              field.defaultGetter;
+          if (!readonly) {
+            field.defaultSetter = value => {
+              return dispatch => dispatch(allySet(field.finalPath, value))
+            };
+            field.finalSetter = doesSetterDependOnInstance && (value => {
+                  return setter.call(this.allyInstanceData, value, field.defaultSetter);
+                }) ||
+                field.defaultGetter;
+            field.setterName = `set${name[0].toUpperCase()}${name.slice(1)}`;
+          }
+        }
+
+        this.fields = instanceFields;
+      }
+
       updateStatePropsIfNeeded() {
         const nextStateProps = this.computeStateProps(this.store, this.props)
         if (this.stateProps && shallowEqual(nextStateProps, this.stateProps)) {
@@ -180,8 +339,18 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         return true
       }
 
+      updateAllyPropsIfNeeded() {
+        const nextAllyProps = this.computeAllyProps();
+        if (this.allyProps && shallowEqual(nextAllyProps, this.allyProps)) {
+          return false;
+        }
+
+        this.allyProps = nextAllyProps;
+        return true;
+      }
+
       updateMergedPropsIfNeeded() {
-        const nextMergedProps = computeMergedProps(this.stateProps, this.dispatchProps, this.props)
+        const nextMergedProps = computeMergedProps(this.stateProps, this.dispatchProps, this.props, this.allyProps)
         if (this.mergedProps && checkMergedEquals && shallowEqual(nextMergedProps, this.mergedProps)) {
           return false
         }
@@ -224,6 +393,8 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
 
       clearCache() {
+        this.fields = null
+        this.allyProps = null
         this.dispatchProps = null
         this.stateProps = null
         this.mergedProps = null
@@ -279,6 +450,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
           statePropsPrecalculationError,
           renderedElement
         } = this
+        const fieldsNotYetDefined = !this.fields && withRef;
 
         this.haveOwnPropsChanged = false
         this.hasStoreStateChanged = false
@@ -309,12 +481,14 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         if (shouldUpdateDispatchProps) {
           haveDispatchPropsChanged = this.updateDispatchPropsIfNeeded()
         }
+        let haveAllyPropsChanged = this.updateAllyPropsIfNeeded()
 
         let haveMergedPropsChanged = true
         if (
           haveStatePropsChanged ||
           haveDispatchPropsChanged ||
-          haveOwnPropsChanged
+          haveOwnPropsChanged ||
+          haveAllyPropsChanged
         ) {
           haveMergedPropsChanged = this.updateMergedPropsIfNeeded()
         } else {
@@ -340,17 +514,17 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
     }
 
-    Connect.displayName = connectDisplayName
-    Connect.WrappedComponent = WrappedComponent
-    Connect.contextTypes = {
+    Ally.displayName = allyDisplayName
+    Ally.WrappedComponent = WrappedComponent
+    Ally.contextTypes = {
       store: storeShape
-    }
-    Connect.propTypes = {
+    };
+    Ally.propTypes = {
       store: storeShape
-    }
+    };
 
     if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
+      Ally.prototype.componentWillUpdate = function componentWillUpdate() {
         if (this.version === version) {
           return
         }
@@ -362,6 +536,6 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
       }
     }
 
-    return hoistStatics(Connect, WrappedComponent)
+    return hoistStatics(Ally, WrappedComponent)
   }
 }

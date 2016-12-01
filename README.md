@@ -1,44 +1,102 @@
-React Redux
+React Redux Ally
 =========================
 
-Official React bindings for [Redux](https://github.com/reactjs/redux).  
-Performant and flexible.
+This project spawned off of the React Redux project. The difference with this project is
+a change in signature of the ally (previously connect) function, and the introduction of
+some common actions and reducers that are needed to work with some of the ally Functionality.
 
-[![build status](https://img.shields.io/travis/reactjs/react-redux/master.svg?style=flat-square)](https://travis-ci.org/reactjs/react-redux) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
-[![npm downloads](https://img.shields.io/npm/dm/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
-[![redux channel on slack](https://img.shields.io/badge/slack-redux@reactiflux-61DAFB.svg?style=flat-square)](http://www.reactiflux.com)
+## Differences between ally and connect
+
+The ally function takes a single argument, which is an object. The function allows the following
+parameters
+
+* mapStateToProps: this is the same as the first argument of the connect function, and will allow
+you to manually map values from the state to props of the component being wrapped.
+* mapDispatchToProps: this is the same as the second argument of the connect function, and will
+allow you to manually add properties to dispatch actions.
+* mergeProps: this is the same as the third argument of the connect function, however the
+signature is changed so that the fourth argument will be the ally props.
+* options: this is the fourth argument of connect, and allows you to set the pure and withRef
+property
+* fields: this is the major addition to ally. Fields allow you to set properties that are
+automatically mapped to the path that is provided. See below for the documentation on the
+fields option.
 
 
-## Installation
+## Philosophy difference with reducers
 
-React Redux requires **React 0.14 or later.**
+One of the main ideas that ally tries to implement is the idea of having full access to your
+store from any component in a declarative way.
+
+The first main idea is that any piece of data can be accessed from the root state via
+a _path_, which is the chaining of properties on each object to get the desired value. A path
+can either be a string in the dot format ('foo.bar') or an array of strings (['foo', 'bar']).
+
+The second idea is that there
+are certain needs for storing data for instances of components, rather than just components
+or values that are intended to be shared between components. This second idea is accomplished
+by specific usages of paths that are to be boxed into their own areas.
+
+In ally, there are three types of fields: instance, component, and shared.
+
+Instance fields have paths that are automatically prefixed by the component name, and then an
+integer number that is unique to that instance. By setting the type to instance, you don't have
+to worry about managing this detail.
+
+Component fields have paths that are automatically prefixed by the component name. These values
+are intended to be shared across instances of the same component.
+
+Shared components have paths that remain unaltered. These paths are intended to be shared across
+different components at different locations.
+
+
+## Fields
+Fields is accepted as an option to the ally function, as indicated above. Fields is an object
+of objects that are used to define the fields that are available to the rendered component.
+Here's a list of properties that are available to a field, and what that property does.
+
+* name - this determines the name of the property that will be used for the field. If this
+is not provided, then the key of the object will be used instead. Remember that this name ends
+up as a key in the component's props, so choose wisely.
+* type - the type must be either instance, component, or shared. This determines the path prefix
+that will be automatically added to the path of the field. The default type is instance.
+* path - this is the path of the field relative to the root of the store. This property can be a
+string, array, or function that returns a string or array. If it is a function, a context with
+the current props of the function, the store's state, and the store's dispatcher are made
+available. (You don't want to dispatch anything here though, it's not supported.) This defaults
+to the key of the object if necessary.
+* defaultValue - this will be chosen if the field's value in the store is undefined. Please note
+that this value will never be added to the store, but only used if the store's value is undefined.
+* readonly - if this value is true, then the auto-generated setter is not added to the props. If it
+is false, then the auto-generated setter with a name that is setPascalCase (e.g fooBar -> setFooBar)
+is added to the props, which will dispatch a set command using the ally set action.
+* getter - if this value is provided and is a function, then it will be used instead of the normal
+retrieval method. If you need access to the original value, the defaultGetter function is passed in
+as the first and only argument of the function.
+* setter - if this value is provided and is a function, then it will be used instead of the normal
+dispatch to ally set. The arguments of this function are the value and the defaultSetter function.
+
+Example Field Definition:
 
 ```
-npm install --save react-redux
+fields {
+    foo: {
+        name: 'theFoo',
+        type: 'component',
+        path: ['data', 'foo'],
+        defaultVale: 'defaultFoo',
+    },
+    bar: {
+        type: 'component',
+        getter: function () {
+            return lodash.get(this.state, ['bar'])
+        },
+        setter: function (value) {
+            this.dispatch(allyMerge('bar', value))
+        }
+    }
+}
 ```
-
-This assumes that you’re using [npm](http://npmjs.com/) package manager with a module bundler like [Webpack](http://webpack.github.io) or [Browserify](http://browserify.org/) to consume [CommonJS modules](http://webpack.github.io/docs/commonjs.html).
-
-If you don’t yet use [npm](http://npmjs.com/) or a modern module bundler, and would rather prefer a single-file [UMD](https://github.com/umdjs/umd) build that makes `ReactRedux` available as a global object, you can grab a pre-built version from [cdnjs](https://cdnjs.com/libraries/react-redux). We *don’t* recommend this approach for any serious application, as most of the libraries complementary to Redux are only available on [npm](http://npmjs.com/).
-
-## React Native
-
-As of React Native 0.18, React Redux 4.x should work with React Native. If you have any issues with React Redux 4.x on React Native, run `npm ls react` and make sure you don’t have a duplicate React installation in your `node_modules`. We recommend that you use `npm@3.x` which is better at avoiding these kinds of issues.
-
-If you are on an older version of React Native, you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/reactjs/react-redux/tree/v3.1.0) because of [this problem](https://github.com/facebook/react-native/issues/2985).
-
-## Documentation
-
-- [Redux: Usage with React](http://redux.js.org/docs/basics/UsageWithReact.html)
-- [API](docs/api.md#api)
-  - [`<Provider store>`](docs/api.md#provider-store)
-  - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](docs/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
-- [Troubleshooting](docs/troubleshooting.md#troubleshooting)
-
-## How Does It Work?
-
-We do a deep dive on how React Redux works in [this readthesource episode](https://www.youtube.com/watch?v=VJ38wSFbM3A).  
-Enjoy!
 
 ## License
 
