@@ -26,8 +26,8 @@ export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps, TMergeProps>(
   mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>|null,
-  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>| MapDispatchToPropsObject & TDispatchProps>,
-  mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps>,
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>| MapDispatchToPropsObject & TDispatchProps>|null,
+  mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps>|null,
   options?: Options
 ): ComponentDecorator<TMergeProps, TOwnProps>;
 
