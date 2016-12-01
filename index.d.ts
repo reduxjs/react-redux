@@ -1,5 +1,5 @@
 import { ComponentClass, Component, StatelessComponent } from 'react';
-import { Store, Dispatch, ActionCreator } from 'redux';
+import { Store, Dispatch, ActionCreator, Action } from 'redux';
 
 interface ComponentDecorator<TOriginalProps, TOwnProps> {
   (component: StatelessComponent<TOriginalProps>|ComponentClass<TOriginalProps>): ComponentClass<TOwnProps>;
@@ -20,20 +20,22 @@ export function connect<State, TOwnProps, TStateProps>(
 ): ComponentDecorator<TStateProps & { dispatch: Dispatch<State> } & TOwnProps, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps>(
-  mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>|null,
+  mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>> | null,
   mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps> | MapDispatchToPropsObject & TDispatchProps>
 ): ComponentDecorator<TStateProps & TDispatchProps & TOwnProps, TOwnProps>;
 
 export function connect<State, TOwnProps, TStateProps, TDispatchProps, TMergeProps>(
-  mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>>|null,
-  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps>| MapDispatchToPropsObject & TDispatchProps>|null,
-  mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps>|null,
+  mapStateToProps: FuncOrSelf<MapStateToProps<State, TOwnProps, TStateProps>> | null,
+  mapDispatchToProps: FuncOrSelf<MapDispatchToPropsFunction<State, TOwnProps, TDispatchProps> | MapDispatchToPropsObject & TDispatchProps>|null,
+  mergeProps: MergeProps<TOwnProps, TStateProps, TDispatchProps, TMergeProps> | null,
   options?: Options
 ): ComponentDecorator<TMergeProps, TOwnProps>;
 
 interface MapDispatchToPropsObject {
-  [name: string]: ActionCreator<any>;
+  [name: string]: ActionCreator<Action> | ThunkedActionCreator;
 }
+
+type ThunkedActionCreator = (...args: any[]) => (dispatch: Dispatch<any>) => void
 
 interface MapStateToProps<State, TOwnProps, TStateProps> {
   (state: State, ownProps: TOwnProps): TStateProps;

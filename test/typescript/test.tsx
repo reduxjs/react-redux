@@ -181,13 +181,47 @@ function testMapDispatch() {
   connect(
     null,
     {
-      handleClick: () => (dispatch: Dispatch<MyState>) => {
-        dispatch({type: 'SOME_ACTION'});
+      handleClick: () => dispatch => {
+        // typings:expect-error
+        dispatch({notType: 'SOME_ACTION'});
       },
     },
   );
-}
 
+  connect(
+    null,
+    {
+      handleClick: (a: string) => dispatch => {
+        dispatch({type: 'SOME_ACTION', a});
+      },
+    },
+  )(props => {
+    // works but return type is wrong. Cannot do much better until mapped types land in TS stable.
+    // Not a big deal since user expects void.
+    props.handleClick('works')
+
+    // typings:expect-error
+    props.handleClick(1)
+    return <hr/>
+  });
+
+  connect<{}, {}, {}, {handleClick(a: string): void}>(
+    null,
+    {
+      handleClick: (a: string) => (dispatch: Dispatch<MyState>) => {
+        dispatch({type: 'SOME_ACTION', a});
+      },
+    },
+  )(props => {
+    // works and return type is correct (from template variable). 
+    props.handleClick('works')
+
+    // typings:expect-error
+    props.handleClick(1)
+    return <hr/>
+  });
+
+}
 
 function testMergeProps() {
   type MyState = {foo: string};
