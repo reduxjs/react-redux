@@ -170,9 +170,9 @@ function testMapDispatch() {
     return <button onClick={props.handleClick}/>;
   });
 
-  // typings:expect-error
   connect(
     null,
+    // typings:expect-error
     {
       handleClick: () => 'not-an-action',
     },
@@ -184,6 +184,16 @@ function testMapDispatch() {
       handleClick: () => dispatch => {
         // typings:expect-error
         dispatch({notType: 'SOME_ACTION'});
+      },
+    },
+  );
+
+  connect<{}, {}, {}, {handleClick: (a: number) => void}>(
+    null,
+    // typings:expect-error
+    {
+      handleClick: (a: string) => dispatch => {
+        dispatch({type: 'SOME_ACTION', a});
       },
     },
   );
