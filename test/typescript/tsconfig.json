@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "jsx": "react",
+    "noImplicitAny": true,
+    "strictNullChecks": true
+  }
+}
