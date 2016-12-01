@@ -142,14 +142,6 @@ export default function connectAdvanced(
         return this.selector.shouldComponentUpdate
       }
 
-      componentDidUpdate() {
-        const { notifyNestedSubs } = this
-        if (notifyNestedSubs) {
-          this.notifyNestedSubs = null
-          notifyNestedSubs()
-        }
-      }
-
       componentWillUnmount() {
         if (this.subscription) this.subscription.tryUnsubscribe()
         // these are just to guard against extra memory leakage if a parent element doesn't
@@ -200,7 +192,6 @@ export default function connectAdvanced(
       initSubscription() {
         if (shouldHandleStateChanges) {
           const subscription = this.subscription = new Subscription(this.store, this.parentSub)
-          const notifyNestedSubs = subscription.notifyNestedSubs.bind(subscription)
           const dummyState = {}
 
           subscription.onStateChange = function onStateChange() {
@@ -209,7 +200,11 @@ export default function connectAdvanced(
             if (!this.selector.shouldComponentUpdate) {
               subscription.notifyNestedSubs()
             } else {
-              this.notifyNestedSubs = notifyNestedSubs
+              this.componentDidUpdate = function componentDidUpdate() {
+                this.componentDidUpdate = undefined
+                subscription.notifyNestedSubs()
+              }
+
               this.setState(dummyState)
             }
           }.bind(this)
