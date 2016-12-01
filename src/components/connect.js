@@ -162,7 +162,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
 
       updateStatePropsIfNeeded() {
         const nextStateProps = this.computeStateProps(this.store, this.props)
-        if (this.stateProps && shallowEqual(nextStateProps, this.stateProps)) {
+        if (pure && this.stateProps && shallowEqual(nextStateProps, this.stateProps)) {
           return false
         }
 
