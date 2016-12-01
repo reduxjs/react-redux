@@ -1,3 +1,4 @@
+import * as React from 'react'
 import {Dispatch, Store} from "redux";
 import {connect, Provider} from "../../index";
 
