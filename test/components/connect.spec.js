@@ -1697,7 +1697,7 @@ describe('React', () => {
         // The state from parent props should always be consistent with the current state
         expect(state).toEqual(parentProps.parentState)
         return {}
-      }, null, null, { react15CompatibilityMode: false })
+      })
       class ChildContainer extends Component {
         render() {
           return <Passthrough {...this.props}/>
