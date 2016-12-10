@@ -200,11 +200,6 @@ export default function connectAdvanced(
             if (!this.selector.shouldComponentUpdate) {
               subscription.notifyNestedSubs()
             } else {
-              this.componentDidUpdate = function componentDidUpdate() {
-                this.componentDidUpdate = undefined
-                subscription.notifyNestedSubs()
-              }
-
               this.setState(dummyState)
             }
           }.bind(this)
