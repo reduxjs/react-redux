@@ -136,6 +136,9 @@ export default function connectAdvanced(
 
       componentWillReceiveProps(nextProps) {
         this.selector.run(nextProps)
+        if (!this.selector.shouldComponentUpdate && this.subscription) {
+          this.subscription.notifyNestedSubs()
+        }
       }
 
       shouldComponentUpdate() {

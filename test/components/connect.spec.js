@@ -909,6 +909,46 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    it('should notify mounted child of state change', () => {
+      const store = createStore(stringBuilder)
+
+      @connect((state) => ({ string: state.slice(0, 1) }))
+      class App extends Component {
+        render() {
+          return <Container />
+        }
+      }
+
+      @connect(() => ({}))
+      class Container extends Component {
+        render() {
+          return (
+            <Child />
+          )
+        }
+      }
+
+      let mapStateToPropsCalls = 0
+      @connect(() => ({ calls: ++mapStateToPropsCalls }))
+      class Child extends Component {
+        render() {
+          return null;
+        }
+      }
+
+      const div = document.createElement('div')
+      ReactDOM.render(
+        <ProviderMock store={store}>
+          <App />
+        </ProviderMock>,
+        div
+      )
+      store.dispatch({ type: 'APPEND', body: 'A' })
+      expect(mapStateToPropsCalls).toBe(2)
+      store.dispatch({ type: 'APPEND', body: 'B' })
+      expect(mapStateToPropsCalls).toBe(3)
+    })
+
     it('should not attempt to notify unmounted child of state change', () => {
       const store = createStore(stringBuilder)
 
