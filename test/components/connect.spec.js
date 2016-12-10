@@ -2125,5 +2125,29 @@ describe('React', () => {
       expect(error).toInclude('InvalidMerge')
     })
 
+    it('should notify nested components through a blocking component', () => {
+      @connect(state => ({ count: state }))
+      class Parent extends Component {
+        render() { return <BlockUpdates><Child /></BlockUpdates> }
+      }
+
+      class BlockUpdates extends Component {
+        shouldComponentUpdate() { return false; }
+        render() { return this.props.children; }
+      }    
+
+      const mapStateToProps = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToProps)
+      class Child extends Component {
+        render() { return <div>{this.props.count}</div> }
+      }
+
+      const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+      TestUtils.renderIntoDocument(<ProviderMock store={store}><Parent /></ProviderMock>)
+
+      expect(mapStateToProps.calls.length).toBe(1)
+      store.dispatch({ type: 'INC' })
+      expect(mapStateToProps.calls.length).toBe(2)
+    })
   })
 })
