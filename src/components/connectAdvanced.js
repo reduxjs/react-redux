@@ -136,6 +136,9 @@ export default function connectAdvanced(
 
       componentWillReceiveProps(nextProps) {
         this.selector.run(nextProps)
+        if (!this.selector.shouldComponentUpdate && this.subscription) {
+          this.subscription.notifyNestedSubs()
+        }
       }
 
       shouldComponentUpdate() {
@@ -200,11 +203,6 @@ export default function connectAdvanced(
             if (!this.selector.shouldComponentUpdate) {
               subscription.notifyNestedSubs()
             } else {
-              this.componentDidUpdate = function componentDidUpdate() {
-                this.componentDidUpdate = undefined
-                subscription.notifyNestedSubs()
-              }
-
               this.setState(dummyState)
             }
           }.bind(this)
