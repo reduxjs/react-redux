@@ -117,7 +117,7 @@ export default function connectAdvanced(
       }
 
       getChildContext() {
-        return { [subscriptionKey]: this.subscription }
+        return { [subscriptionKey]: this.subscription || this.parentSub }
       }
 
       componentDidMount() {
