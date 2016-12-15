@@ -2149,5 +2149,26 @@ describe('React', () => {
       store.dispatch({ type: 'INC' })
       expect(mapStateToProps.calls.length).toBe(2)
     })
+
+    it('should subscribe properly when a middle connected component does not subscribe', () => {
+
+      @connect(state => ({ count: state }))
+      class A extends React.Component { render() { return <B {...this.props} /> }}
+
+      @connect() // no mapStateToProps. therefore it should be transparent for subscriptions
+      class B extends React.Component { render() { return <C {...this.props} /> }}
+
+      @connect((state, props) => {
+        expect(props.count).toBe(state)
+        return { count: state * 10 + props.count }
+      })
+      class C extends React.Component { render() { return <div>{this.props.count}</div> }}
+
+      const store = createStore((state = 0, action) => (action.type === 'INC' ? state += 1 : state))
+      TestUtils.renderIntoDocument(<ProviderMock store={store}><A /></ProviderMock>)
+
+      store.dispatch({ type: 'INC' })
+    })
+   
   })
 })
