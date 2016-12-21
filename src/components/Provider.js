@@ -1,4 +1,5 @@
 import { Component, PropTypes, Children } from 'react'
+import Subscription from '../utils/Subscription'
 import storeShape from '../utils/storeShape'
 import warning from '../utils/warning'
 
@@ -20,7 +21,7 @@ function warnAboutReceivingStore() {
 
 export default class Provider extends Component {
   getChildContext() {
-    return { store: this.store }
+    return { store: this.store, storeSubscription: null }
   }
 
   constructor(props, context) {
@@ -49,6 +50,7 @@ Provider.propTypes = {
   children: PropTypes.element.isRequired
 }
 Provider.childContextTypes = {
-  store: storeShape.isRequired
+  store: storeShape.isRequired,
+  storeSubscription: PropTypes.instanceOf(Subscription)
 }
 Provider.displayName = 'Provider'
