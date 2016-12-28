@@ -96,9 +96,8 @@ export default function connectAdvanced(
         this.version = version
         this.state = {}
         this.renderCount = 0
-        this.store = this.props[storeKey] || this.context[storeKey]
-        this.parentSub = props[subscriptionKey] || context[subscriptionKey]
-
+        this.store = props[storeKey] || context[storeKey]
+        this.propsMode = Boolean(props[storeKey])
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
         invariant(this.store,
@@ -117,7 +116,8 @@ export default function connectAdvanced(
       }
 
       getChildContext() {
-        return { [subscriptionKey]: this.subscription || this.parentSub }
+        const sub = (this.propsMode ? null : this.subscription) || this.context[subscriptionKey]
+        return { [subscriptionKey]: sub }
       }
 
       componentDidMount() {
@@ -148,7 +148,6 @@ export default function connectAdvanced(
         // dereference this instance properly, such as an async callback that never finishes
         this.subscription = null
         this.store = null
-        this.parentSub = null
         this.selector.run = () => {}
       }
 
@@ -191,7 +190,8 @@ export default function connectAdvanced(
 
       initSubscription() {
         if (shouldHandleStateChanges) {
-          const subscription = this.subscription = new Subscription(this.store, this.parentSub)
+          const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
+          const subscription = this.subscription = new Subscription(this.store, parentSub)
           const dummyState = {}
 
           subscription.onStateChange = function onStateChange() {
@@ -216,7 +216,7 @@ export default function connectAdvanced(
       }
 
       addExtraProps(props) {
-        if (!withRef && !renderCountProp) return props
+        if (!withRef && !renderCountProp && !(this.propsMode && this.subscription)) return props
         // make a shallow copy so that fields added don't leak to the original selector.
         // this is especially important for 'ref' since that's a reference back to the component
         // instance. a singleton memoized selector would then be holding a reference to the
@@ -224,6 +224,7 @@ export default function connectAdvanced(
         const withExtras = { ...props }
         if (withRef) withExtras.ref = this.setWrappedInstance
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
+        if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription
         return withExtras
       }
 

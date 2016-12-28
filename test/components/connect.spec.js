@@ -2169,6 +2169,49 @@ describe('React', () => {
 
       store.dispatch({ type: 'INC' })
     })
+
+    it('should subscribe properly when a new store is provided via props', () => {
+      const store1 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+      const store2 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+
+      @connect(state => ({ count: state }))
+      class A extends Component {
+        render() { return <B store={store2} /> }
+      }
+
+      const mapStateToPropsB = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToPropsB)
+      class B extends Component {
+        render() { return <C {...this.props} /> }
+      }
+
+      const mapStateToPropsC = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToPropsC)
+      class C extends Component {
+        render() { return <D /> }
+      }
+
+      const mapStateToPropsD = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToPropsD)
+      class D extends Component {
+        render() { return <div>{this.props.count}</div> }
+      }
+
+      TestUtils.renderIntoDocument(<ProviderMock store={store1}><A /></ProviderMock>)
+      expect(mapStateToPropsB.calls.length).toBe(1)
+      expect(mapStateToPropsC.calls.length).toBe(1)
+      expect(mapStateToPropsD.calls.length).toBe(1)
+
+      store1.dispatch({ type: 'INC' })
+      expect(mapStateToPropsB.calls.length).toBe(1)
+      expect(mapStateToPropsC.calls.length).toBe(1)
+      expect(mapStateToPropsD.calls.length).toBe(2)
+
+      store2.dispatch({ type: 'INC' })
+      expect(mapStateToPropsB.calls.length).toBe(2)
+      expect(mapStateToPropsC.calls.length).toBe(2)
+      expect(mapStateToPropsD.calls.length).toBe(2)
+    })
    
   })
 })
