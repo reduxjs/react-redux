@@ -6,6 +6,30 @@ import Subscription from '../utils/Subscription'
 import storeShape from '../utils/storeShape'
 
 let hotReloadingVersion = 0
+const dummyState = {}
+function noop() {}
+
+function makeSelectorStateful(sourceSelector, store) {
+  // wrap the selector in an object that tracks its results between runs.
+  const selector = {
+    run: function runComponentSelector(props) {
+      try {
+        const nextProps = sourceSelector(store.getState(), props)
+        if (nextProps !== selector.props || selector.error) {
+          selector.shouldComponentUpdate = true
+          selector.props = nextProps
+          selector.error = null
+        }
+      } catch (error) {
+        selector.shouldComponentUpdate = true
+        selector.error = error
+      }
+    }
+  }
+
+  return selector
+}
+
 export default function connectAdvanced(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -101,23 +125,22 @@ export default function connectAdvanced(
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
         invariant(this.store,
-          `Could not find "${storeKey}" in either the context or ` +
-          `props of "${displayName}". ` +
-          `Either wrap the root component in a <Provider>, ` +
+          `Could not find "${storeKey}" in either the context or props of ` +
+          `"${displayName}". Either wrap the root component in a <Provider>, ` +
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
-
-        // make sure `getState` is properly bound in order to avoid breaking
-        // custom store implementations that rely on the store's context
-        this.getState = this.store.getState.bind(this.store);
 
         this.initSelector()
         this.initSubscription()
       }
 
       getChildContext() {
-        const sub = (this.propsMode ? null : this.subscription) || this.context[subscriptionKey]
-        return { [subscriptionKey]: sub }
+        // If this component received store from props, its subscription should be transparent
+        // to any descendants receiving store+subscription from context; it passes along
+        // subscription passed to it. Otherwise, it shadows the parent subscription, which allows
+        // Connect to control ordering of notifications to flow top-down.
+        const subscription = this.propsMode ? null : this.subscription
+        return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
       }
 
       componentDidMount() {
@@ -144,11 +167,11 @@ export default function connectAdvanced(
 
       componentWillUnmount() {
         if (this.subscription) this.subscription.tryUnsubscribe()
-        // these are just to guard against extra memory leakage if a parent element doesn't
-        // dereference this instance properly, such as an async callback that never finishes
         this.subscription = null
+        this.notifyNestedSubs = noop
         this.store = null
-        this.selector.run = () => {}
+        this.selector.run = noop
+        this.selector.shouldComponentUpdate = false
       }
 
       getWrappedInstance() {
@@ -164,51 +187,47 @@ export default function connectAdvanced(
       }
 
       initSelector() {
-        const { dispatch } = this.store
-        const { getState } = this;
-        const sourceSelector = selectorFactory(dispatch, selectorFactoryOptions)
-
-        // wrap the selector in an object that tracks its results between runs
-        const selector = this.selector = {
-          shouldComponentUpdate: true,
-          props: sourceSelector(getState(), this.props),
-          run: function runComponentSelector(props) {
-            try {
-              const nextProps = sourceSelector(getState(), props)
-              if (selector.error || nextProps !== selector.props) {
-                selector.shouldComponentUpdate = true
-                selector.props = nextProps
-                selector.error = null
-              }
-            } catch (error) {
-              selector.shouldComponentUpdate = true
-              selector.error = error
-            }
-          }
-        }
+        const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
+        this.selector = makeSelectorStateful(sourceSelector, this.store)
+        this.selector.run(this.props)
       }
 
       initSubscription() {
-        if (shouldHandleStateChanges) {
-          const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-          const subscription = this.subscription = new Subscription(this.store, parentSub)
-          const dummyState = {}
+        if (!shouldHandleStateChanges) return
+        
+        // parentSub's source should match where store came from: props vs. context. A component
+        // connected to the store via props shouldn't use subscription from context, or vice versa.
+        const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
+        this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
+        
+        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
+        // the middle of the notification loop, where `this.subscription` will then be null. An
+        // extra null check every change can be avoided by copying the method onto `this` and then
+        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's 
+        // listeners logic is changed to not call listeners that have been unsubscribed in the
+        // middle of the notification loop.
+        this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
+      }
 
-          subscription.onStateChange = function onStateChange() {
-            this.selector.run(this.props)
+      onStateChange() {
+        this.selector.run(this.props)
 
-            if (!this.selector.shouldComponentUpdate) {
-              subscription.notifyNestedSubs()
-            } else {
-              this.componentDidUpdate = function componentDidUpdate() {
-                this.componentDidUpdate = undefined
-                subscription.notifyNestedSubs()
-              }
-
-              this.setState(dummyState)
-            }
-          }.bind(this)
+        if (!this.selector.shouldComponentUpdate) {
+          this.notifyNestedSubs()
+        } else {
+          this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
+          this.setState(dummyState)
         }
+      }      
+
+      notifyNestedSubsOnComponentDidUpdate() {
+        // `componentDidUpdate` is conditionally implemented when `onStateChange` determines it
+        // needs to notify nested subs. Once called, it unimplements itself until further state
+        // changes occur. Doing it this way vs having a permanent `componentDidMount` that does
+        // a boolean check every time avoids an extra method call most of the time, resulting
+        // in some perf boost.
+        this.componentDidUpdate = undefined
+        this.notifyNestedSubs()
       }
 
       isSubscribed() {
