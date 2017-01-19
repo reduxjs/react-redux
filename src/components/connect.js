@@ -90,6 +90,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         )
 
         const storeState = this.store.getState()
+        this.prevStoreState = storeState
         this.state = { storeState }
         this.clearCache()
       }
@@ -242,10 +243,11 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         }
 
         const storeState = this.store.getState()
-        const prevStoreState = this.state.storeState
-        if (pure && prevStoreState === storeState) {
+        if (pure && this.prevStoreState === storeState) {
           return
         }
+
+        this.prevStoreState = storeState
 
         if (pure && !this.doStatePropsDependOnOwnProps) {
           const haveStatePropsChanged = tryCatch(this.updateStatePropsIfNeeded, this)

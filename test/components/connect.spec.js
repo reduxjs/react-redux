@@ -1789,6 +1789,50 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
     })
 
+    it('should not call update if props has not changed', () => {
+      const store = createStore((prev = {}, action) => {
+        return action.type === 'NOT_CHANGED'
+          ? { ...prev, ...action.payload }
+          : prev
+      })
+      let renderCalls = 0
+      let mapStateCalls = 0
+
+      @connect(state => {
+        mapStateCalls++
+        return state
+      })
+      class Container extends Component {
+        render() {
+          renderCalls++
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container />
+        </ProviderMock>
+      )
+
+      expect(renderCalls).toBe(1)
+      expect(mapStateCalls).toBe(1)
+
+      const spy = expect.spyOn(Container.prototype, 'setState').andCallThrough()
+
+      store.dispatch({ type: 'NOT_CHANGED', payload: {} })
+      expect(mapStateCalls).toBe(2)
+      expect(renderCalls).toBe(1)
+      expect(spy.calls.length).toBe(0)
+
+      store.dispatch({ type: 'NOT_MATCH' })
+      expect(mapStateCalls).toBe(2)
+      expect(renderCalls).toBe(1)
+      expect(spy.calls.length).toBe(0)
+
+      spy.destroy()
+    })
+
     it('should update impure components with custom mergeProps', () => {
       let store = createStore(() => ({}))
       let renderCount = 0
