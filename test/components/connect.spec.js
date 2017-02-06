@@ -1881,6 +1881,43 @@ describe('React', () => {
       expect(memoizedReturnCount).toBe(2)
     })
 
+    it('should allow a mapStateToProps factory consuming just state to return a function that gets ownProps', () => {
+      const store = createStore(() => ({ value: 1 }))
+
+      let initialState
+      let initialOwnProps
+      let secondaryOwnProps
+      const mapStateFactory = function (factoryInitialState) {
+        initialState = factoryInitialState
+        initialOwnProps = arguments[1];
+        return (state, props) => {
+          secondaryOwnProps = props
+          return { }
+        }
+      }
+
+      @connect(mapStateFactory)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Container name="a" />
+          </div>
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(initialOwnProps).toBe(undefined)
+      expect(initialState).toNotBe(undefined)
+      expect(secondaryOwnProps).toNotBe(undefined)
+      expect(secondaryOwnProps.name).toBe("a")
+    })
+
     it('should allow providing a factory function to mapDispatchToProps', () => {
       let updatedCount = 0
       let memoizedReturnCount = 0
@@ -2134,7 +2171,7 @@ describe('React', () => {
       class BlockUpdates extends Component {
         shouldComponentUpdate() { return false; }
         render() { return this.props.children; }
-      }    
+      }
 
       const mapStateToProps = expect.createSpy().andCall(state => ({ count: state }))
       @connect(mapStateToProps)
@@ -2212,6 +2249,5 @@ describe('React', () => {
       expect(mapStateToPropsC.calls.length).toBe(2)
       expect(mapStateToPropsD.calls.length).toBe(2)
     })
-   
   })
 })
