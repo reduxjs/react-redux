@@ -12,8 +12,8 @@ export default function shallowEqual(a, b) {
   }
 
   for (let key in b) {
-    if (hasOwn.call(b, key)) countB++
+    if (hasOwn.call(b, key) && countA < ++countB) return false
   }
 
-  return countA === countB
+  return true
 }
