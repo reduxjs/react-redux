@@ -5,6 +5,7 @@ export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
 }
 
 export function wrapMergePropsFunc(mergeProps) {
+  let mergePropsFn = mergeProps
   return function initMergePropsProxy(
     dispatch, { displayName, pure, areMergedPropsEqual }
   ) {
@@ -12,10 +13,11 @@ export function wrapMergePropsFunc(mergeProps) {
     let mergedProps
 
     return function mergePropsProxy(stateProps, dispatchProps, ownProps) {
-      let nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+      let nextMergedProps = mergePropsFn(stateProps, dispatchProps, ownProps)
 
       if (typeof nextMergedProps === 'function') {
-        nextMergedProps = nextMergedProps(stateProps, dispatchProps, ownProps)
+        mergePropsFn = nextMergedProps;
+        nextMergedProps = mergePropsFn(stateProps, dispatchProps, ownProps)
       }
 
       if (hasRunOnce) {
