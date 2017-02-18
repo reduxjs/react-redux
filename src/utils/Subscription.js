@@ -3,6 +3,7 @@
 // ancestor components re-render before descendants
 
 const CLEARED = null
+const nullListeners = { notify() {} }
 
 function createListenerCollection() {
   // the current/next pattern is copied from redux's createStore code.
@@ -40,13 +41,12 @@ function createListenerCollection() {
 }
 
 export default class Subscription {
-  constructor(store, parentSub) {
-    this.subscribe = parentSub
-      ? parentSub.addNestedSub.bind(parentSub)
-      : store.subscribe.bind(store)
-
+  constructor(store, parentSub, onStateChange) {
+    this.store = store
+    this.parentSub = parentSub
+    this.onStateChange = onStateChange
     this.unsubscribe = null
-    this.listeners = createListenerCollection()
+    this.listeners = nullListeners
   }
 
   addNestedSub(listener) {
@@ -64,17 +64,20 @@ export default class Subscription {
 
   trySubscribe() {
     if (!this.unsubscribe) {
-      this.unsubscribe = this.subscribe(this.onStateChange)
+      this.unsubscribe = this.parentSub
+        ? this.parentSub.addNestedSub(this.onStateChange)
+        : this.store.subscribe(this.onStateChange)
+ 
+      this.listeners = createListenerCollection()
     }
   }
 
   tryUnsubscribe() {
     if (this.unsubscribe) {
       this.unsubscribe()
+      this.unsubscribe = null
       this.listeners.clear()
+      this.listeners = nullListeners
     }
-    this.unsubscribe = null
-    this.subscribe = null
-    this.listeners = { notify() {} }
   }
 }

@@ -43,10 +43,12 @@ export function wrapMapToPropsFunc(mapToProps, methodName) {
         : proxy.mapToProps(stateOrDispatch)
     }
 
-    proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps)
+    // allow detectFactoryAndVerify to get ownProps
+    proxy.dependsOnOwnProps = true
 
     proxy.mapToProps = function detectFactoryAndVerify(stateOrDispatch, ownProps) {
       proxy.mapToProps = mapToProps
+      proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps)
       let props = proxy(stateOrDispatch, ownProps)
 
       if (typeof props === 'function') {

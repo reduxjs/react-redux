@@ -11,7 +11,7 @@ describe('React', () => {
   describe('connect', () => {
     class Passthrough extends Component {
       render() {
-        return <div {...this.props} />
+        return <div />
       }
     }
 
@@ -23,6 +23,9 @@ describe('React', () => {
       render() {
         return Children.only(this.props.children)
       }
+    }
+    ProviderMock.childContextTypes = {
+      store: PropTypes.object.isRequired
     }
 
     class ContextBoundStore {
@@ -47,10 +50,6 @@ describe('React', () => {
         this.listeners.forEach(l => l())
         return action
       }
-    }
-
-    ProviderMock.childContextTypes = {
-      store: PropTypes.object.isRequired
     }
 
     function stringBuilder(prev = '', action) {
@@ -478,53 +477,6 @@ describe('React', () => {
       tree.setState({ extra: 'Z' })
       stub.props.mergedDoSomething('c')
       expect(stub.props.stateThing).toBe('HELLO azbzcZ')
-    })
-
-    it('should allow providing a factory function to mergeProps', () => {
-      function reducer(state = { a : 123 }, action) {
-        switch (action.type) {
-          case 'increment':
-            return { a : state.a + 1}
-          default:
-            return state
-        }
-      }
-      const store = createStore(reducer)
-      let mergePropFactoryCalls = 0
-
-      function sum(a, b) {
-        return a + b
-      }
-
-      @connect(
-        state => state,
-        () => ({ sum }),
-        () => {
-          mergePropFactoryCalls += 1;
-          return (stateProps, dispatchProps, parentProps) => {
-            return ({
-              sum : () => dispatchProps.sum(stateProps.a, parentProps.b)
-            });
-          };
-				}
-      )
-      class Container extends Component {
-        render() {
-          return <Passthrough result={this.props.sum()} />
-        }
-      }
-
-      const container = TestUtils.renderIntoDocument(
-        <ProviderMock store={store}>
-          <Container b={ 456 } />
-        </ProviderMock>
-      )
-
-      store.dispatch({type : 'increment'});
-      store.dispatch({type : 'increment'});
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
-      expect(mergePropFactoryCalls).toEqual(1);
-      expect(stub.props.result).toEqual(581)
     })
 
     it('should merge actionProps into WrappedComponent', () => {
@@ -1929,6 +1881,43 @@ describe('React', () => {
       expect(memoizedReturnCount).toBe(2)
     })
 
+    it('should allow a mapStateToProps factory consuming just state to return a function that gets ownProps', () => {
+      const store = createStore(() => ({ value: 1 }))
+
+      let initialState
+      let initialOwnProps
+      let secondaryOwnProps
+      const mapStateFactory = function (factoryInitialState) {
+        initialState = factoryInitialState
+        initialOwnProps = arguments[1];
+        return (state, props) => {
+          secondaryOwnProps = props
+          return { }
+        }
+      }
+
+      @connect(mapStateFactory)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Container name="a" />
+          </div>
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(initialOwnProps).toBe(undefined)
+      expect(initialState).toNotBe(undefined)
+      expect(secondaryOwnProps).toNotBe(undefined)
+      expect(secondaryOwnProps.name).toBe("a")
+    })
+
     it('should allow providing a factory function to mapDispatchToProps', () => {
       let updatedCount = 0
       let memoizedReturnCount = 0
@@ -1955,7 +1944,7 @@ describe('React', () => {
           updatedCount++
         }
         render() {
-          return <div {...this.props} />
+          return <div />
         }
       }
 
@@ -1987,6 +1976,53 @@ describe('React', () => {
       store.dispatch({ type: 'test' })
       expect(updatedCount).toBe(0)
       expect(memoizedReturnCount).toBe(2)
+    })
+
+    it('should allow providing a factory function to mergeProps', () => {
+      function reducer(state = { a : 123 }, action) {
+        switch (action.type) {
+          case 'increment':
+            return { a : state.a + 1}
+          default:
+            return state
+        }
+      }
+      const store = createStore(reducer)
+      let mergePropFactoryCalls = 0
+
+      function sum(a, b) {
+        return a + b
+      }
+
+      @connect(
+        state => state,
+        () => ({ sum }),
+        () => {
+          mergePropFactoryCalls += 1;
+          return (stateProps, dispatchProps, parentProps) => {
+            return ({
+              sum : () => dispatchProps.sum(stateProps.a, parentProps.b)
+            });
+          };
+        }
+      )
+      class Container extends Component {
+        render() {
+          return <Passthrough result={this.props.sum()} />
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container b={ 456 } />
+        </ProviderMock>
+      )
+
+      store.dispatch({type : 'increment'});
+      store.dispatch({type : 'increment'});
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(mergePropFactoryCalls).toEqual(1);
+      expect(stub.props.result).toEqual(581)
     })
 
     it('should not call update if mergeProps return value has not changed', () => {
@@ -2130,6 +2166,135 @@ describe('React', () => {
       store.dispatch({ type: 'ACTION' })
       expect(renderCount).toBe(rendersBeforeStateChange + 1)
     })
-  })
 
+    function renderWithBadConnect(Component) {
+      const store = createStore(() => ({}))
+
+      try {
+        TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <Component pass="through" />
+          </ProviderMock>
+        )
+        return null
+      } catch (error) {
+        return error.message
+      }
+    }
+    it('should throw a helpful error for invalid mapStateToProps arguments', () => {
+      @connect('invalid')
+      class InvalidMapState extends React.Component { render() { return <div></div> } }
+
+      const error = renderWithBadConnect(InvalidMapState)
+      expect(error).toInclude('string')
+      expect(error).toInclude('mapStateToProps')
+      expect(error).toInclude('InvalidMapState')
+    })
+    it('should throw a helpful error for invalid mapDispatchToProps arguments', () => {
+      @connect(null, 'invalid')
+      class InvalidMapDispatch extends React.Component { render() { return <div></div> } }
+
+      const error = renderWithBadConnect(InvalidMapDispatch)
+      expect(error).toInclude('string')
+      expect(error).toInclude('mapDispatchToProps')
+      expect(error).toInclude('InvalidMapDispatch')
+    })
+    it('should throw a helpful error for invalid mergeProps arguments', () => {
+      @connect(null, null, 'invalid')
+      class InvalidMerge extends React.Component { render() { return <div></div> } }
+
+      const error = renderWithBadConnect(InvalidMerge)
+      expect(error).toInclude('string')
+      expect(error).toInclude('mergeProps')
+      expect(error).toInclude('InvalidMerge')
+    })
+
+    it('should notify nested components through a blocking component', () => {
+      @connect(state => ({ count: state }))
+      class Parent extends Component {
+        render() { return <BlockUpdates><Child /></BlockUpdates> }
+      }
+
+      class BlockUpdates extends Component {
+        shouldComponentUpdate() { return false; }
+        render() { return this.props.children; }
+      }
+
+      const mapStateToProps = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToProps)
+      class Child extends Component {
+        render() { return <div>{this.props.count}</div> }
+      }
+
+      const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+      TestUtils.renderIntoDocument(<ProviderMock store={store}><Parent /></ProviderMock>)
+
+      expect(mapStateToProps.calls.length).toBe(1)
+      store.dispatch({ type: 'INC' })
+      expect(mapStateToProps.calls.length).toBe(2)
+    })
+
+    it('should subscribe properly when a middle connected component does not subscribe', () => {
+
+      @connect(state => ({ count: state }))
+      class A extends React.Component { render() { return <B {...this.props} /> }}
+
+      @connect() // no mapStateToProps. therefore it should be transparent for subscriptions
+      class B extends React.Component { render() { return <C {...this.props} /> }}
+
+      @connect((state, props) => {
+        expect(props.count).toBe(state)
+        return { count: state * 10 + props.count }
+      })
+      class C extends React.Component { render() { return <div>{this.props.count}</div> }}
+
+      const store = createStore((state = 0, action) => (action.type === 'INC' ? state += 1 : state))
+      TestUtils.renderIntoDocument(<ProviderMock store={store}><A /></ProviderMock>)
+
+      store.dispatch({ type: 'INC' })
+    })
+
+    it('should subscribe properly when a new store is provided via props', () => {
+      const store1 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+      const store2 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+
+      @connect(state => ({ count: state }))
+      class A extends Component {
+        render() { return <B store={store2} /> }
+      }
+
+      const mapStateToPropsB = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToPropsB)
+      class B extends Component {
+        render() { return <C {...this.props} /> }
+      }
+
+      const mapStateToPropsC = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToPropsC)
+      class C extends Component {
+        render() { return <D /> }
+      }
+
+      const mapStateToPropsD = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(mapStateToPropsD)
+      class D extends Component {
+        render() { return <div>{this.props.count}</div> }
+      }
+
+      TestUtils.renderIntoDocument(<ProviderMock store={store1}><A /></ProviderMock>)
+      expect(mapStateToPropsB.calls.length).toBe(1)
+      expect(mapStateToPropsC.calls.length).toBe(1)
+      expect(mapStateToPropsD.calls.length).toBe(1)
+
+      store1.dispatch({ type: 'INC' })
+      expect(mapStateToPropsB.calls.length).toBe(1)
+      expect(mapStateToPropsC.calls.length).toBe(1)
+      expect(mapStateToPropsD.calls.length).toBe(2)
+
+      store2.dispatch({ type: 'INC' })
+      expect(mapStateToPropsB.calls.length).toBe(2)
+      expect(mapStateToPropsC.calls.length).toBe(2)
+      expect(mapStateToPropsD.calls.length).toBe(2)
+    })
+  })
 })

@@ -36,14 +36,14 @@ describe('React', () => {
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
           </Provider>
-        )).toThrow(/exactly one child/)
+        )).toThrow(/a single React element child/)
 
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
             <div />
             <div />
           </Provider>
-        )).toThrow(/exactly one child/)
+        )).toThrow(/a single React element child/)
       } finally {
         Provider.propTypes = propTypes
       }
@@ -109,6 +109,29 @@ describe('React', () => {
       expect(child.context.store.getState()).toEqual(11)
       expect(spy.calls.length).toBe(0)
     })
+
+    it('should handle subscriptions correctly when there is nested Providers', () => {
+      const reducer = (state = 0, action) => (action.type === 'INC' ? state + 1 : state)
+      
+      const innerStore = createStore(reducer)
+      const innerMapStateToProps = expect.createSpy().andCall(state => ({ count: state }))
+      @connect(innerMapStateToProps)
+      class Inner extends Component {
+        render() { return <div>{this.props.count}</div> }
+      }
+
+      const outerStore = createStore(reducer)
+      @connect(state => ({ count: state }))
+      class Outer extends Component {
+        render() { return <Provider store={innerStore}><Inner /></Provider> }
+      }
+      
+      TestUtils.renderIntoDocument(<Provider store={outerStore}><Outer /></Provider>)
+      expect(innerMapStateToProps.calls.length).toBe(1)
+
+      innerStore.dispatch({ type: 'INC'})
+      expect(innerMapStateToProps.calls.length).toBe(2)
+    })
   })
 
   it('should pass state consistently to mapState', () => {
@@ -147,7 +170,7 @@ describe('React', () => {
     })
     class ChildContainer extends Component {
       render() {
-        return <div {...this.props} />
+        return <div />
       }
     }
 
