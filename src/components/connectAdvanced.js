@@ -9,6 +9,13 @@ let hotReloadingVersion = 0
 const dummyState = {}
 function noop() {}
 
+const subscriptionShape = PropTypes.shape({
+  trySubscribe: PropTypes.func.isRequired,
+  tryUnsubscribe: PropTypes.func.isRequired,
+  notifyNestedSubs: PropTypes.func.isRequired,
+  isSubscribed: PropTypes.func.isRequired,
+})
+
 function makeSelectorStateful(sourceSelector, store) {
   // wrap the selector in an object that tracks its results between runs.
   const selector = {
@@ -81,10 +88,10 @@ export default function connectAdvanced(
 
   const contextTypes = {
     [storeKey]: storeShape,
-    [subscriptionKey]: PropTypes.instanceOf(Subscription),
+    [subscriptionKey]: subscriptionShape,
   }
   const childContextTypes = {
-    [subscriptionKey]: PropTypes.instanceOf(Subscription)
+    [subscriptionKey]: subscriptionShape,
   }
 
   return function wrapWithConnect(WrappedComponent) {
