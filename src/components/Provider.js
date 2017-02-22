@@ -1,6 +1,5 @@
 import { Component, PropTypes, Children } from 'react'
-import Subscription from '../utils/Subscription'
-import storeShape from '../utils/storeShape'
+import { storeShape, subscriptionShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
 
 let didWarnAboutReceivingStore = false
@@ -51,6 +50,6 @@ Provider.propTypes = {
 }
 Provider.childContextTypes = {
   store: storeShape.isRequired,
-  storeSubscription: PropTypes.instanceOf(Subscription)
+  storeSubscription: subscriptionShape
 }
 Provider.displayName = 'Provider'
