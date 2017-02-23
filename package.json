@@ -52,7 +52,7 @@
     "babel-eslint": "^7.1.1",
     "babel-loader": "^6.2.0",
     "babel-plugin-check-es2015-constants": "^6.3.13",
-    "babel-plugin-istanbul": "^3.0.0",
+    "babel-plugin-istanbul": "^4.0.0",
     "babel-plugin-syntax-jsx": "^6.3.13",
     "babel-plugin-transform-decorators-legacy": "^1.2.0",
     "babel-plugin-transform-es2015-arrow-functions": "^6.3.13",
