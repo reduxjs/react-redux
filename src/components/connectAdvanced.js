@@ -1,14 +1,13 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, PropTypes, createElement } from 'react'
+import { Component, createElement } from 'react'
 
 import Subscription from '../utils/Subscription'
-import storeShape from '../utils/storeShape'
+import { storeShape, subscriptionShape } from '../utils/PropTypes'
 
 let hotReloadingVersion = 0
 const dummyState = {}
 function noop() {}
-
 function makeSelectorStateful(sourceSelector, store) {
   // wrap the selector in an object that tracks its results between runs.
   const selector = {
@@ -81,10 +80,10 @@ export default function connectAdvanced(
 
   const contextTypes = {
     [storeKey]: storeShape,
-    [subscriptionKey]: PropTypes.instanceOf(Subscription),
+    [subscriptionKey]: subscriptionShape,
   }
   const childContextTypes = {
-    [subscriptionKey]: PropTypes.instanceOf(Subscription)
+    [subscriptionKey]: subscriptionShape,
   }
 
   return function wrapWithConnect(WrappedComponent) {
@@ -194,16 +193,16 @@ export default function connectAdvanced(
 
       initSubscription() {
         if (!shouldHandleStateChanges) return
-        
+
         // parentSub's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
         const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
         this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
-        
+
         // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
         // the middle of the notification loop, where `this.subscription` will then be null. An
         // extra null check every change can be avoided by copying the method onto `this` and then
-        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's 
+        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
         // listeners logic is changed to not call listeners that have been unsubscribed in the
         // middle of the notification loop.
         this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
@@ -218,7 +217,7 @@ export default function connectAdvanced(
           this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
           this.setState(dummyState)
         }
-      }      
+      }
 
       notifyNestedSubsOnComponentDidUpdate() {
         // `componentDidUpdate` is conditionally implemented when `onStateChange` determines it
