@@ -6,3 +6,4 @@ script:
   - npm run test:cov
 after_success:
   - npm run coverage
+cache: yarn
