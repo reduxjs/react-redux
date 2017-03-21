@@ -50,7 +50,7 @@ To perform linting with `eslint`, run the following:
 npm run lint
 ```
 
-###New Features
+### New Features
 
 Please open an issue with a proposal for a new feature or refactoring before starting on the work. We don't want you to waste your efforts on a pull request that we won't want to accept.
 
