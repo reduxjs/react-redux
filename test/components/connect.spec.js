@@ -1,11 +1,12 @@
 /*eslint-disable react/prop-types*/
 
 import expect from 'expect'
-import React, { createClass, Children, PropTypes, Component } from 'react'
+import React, { createClass, Children, Component } from 'react'
 import ReactDOM from 'react-dom'
 import TestUtils from 'react-addons-test-utils'
 import { createStore } from 'redux'
 import { connect } from '../../src/index'
+import {PropTypes} from 'prop-types'
 
 describe('React', () => {
   describe('connect', () => {
@@ -1567,7 +1568,7 @@ describe('React', () => {
       }
 
       ImpureComponent.contextTypes = {
-        statefulValue: React.PropTypes.number
+        statefulValue: PropTypes.number
       }
 
       const decorator = connect(state => state, null, null, { pure: false })
@@ -1591,7 +1592,7 @@ describe('React', () => {
       }
 
       StatefulWrapper.childContextTypes = {
-        statefulValue: React.PropTypes.number
+        statefulValue: PropTypes.number
       }
 
       const tree = TestUtils.renderIntoDocument(
