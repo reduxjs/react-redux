@@ -1,6 +1,7 @@
-import { Component, PropTypes, Children } from 'react'
+import { Component, Children } from 'react'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
+import {PropTypes} from 'prop-types'
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {

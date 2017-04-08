@@ -1,10 +1,11 @@
 /*eslint-disable react/prop-types*/
 
 import expect from 'expect'
-import React, { PropTypes, Component } from 'react'
+import React, { Component } from 'react'
 import TestUtils from 'react-addons-test-utils'
 import { createStore } from 'redux'
 import { Provider, connect } from '../../src/index'
+import {PropTypes} from 'prop-types'
 
 describe('React', () => {
   describe('Provider', () => {
