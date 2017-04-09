@@ -3,7 +3,7 @@ import React, { Children, Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import TestUtils from 'react-addons-test-utils'
+import TestUtils from 'react-dom/test-utils'
 import { createStore } from 'redux'
 import { connect } from '../../src/index'
 
@@ -11,7 +11,7 @@ describe('React', () => {
   describe('connect', () => {
     class Passthrough extends Component {
       render() {
-        return <div {...this.props} />
+        return <div />
       }
     }
 
@@ -1729,7 +1729,7 @@ describe('React', () => {
           updatedCount++
         }
         render() {
-          return <div {...this.props} />
+          return <div />
         }
       }
 
