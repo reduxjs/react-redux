@@ -1,8 +1,9 @@
 /*eslint-disable react/prop-types*/
 
 import expect from 'expect'
-import React, { PropTypes, Component } from 'react'
-import TestUtils from 'react-addons-test-utils'
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
+import TestUtils from 'react-dom/test-utils'
 import { createStore } from 'redux'
 import { Provider, connect } from '../../src/index'
 
@@ -112,7 +113,7 @@ describe('React', () => {
 
     it('should handle subscriptions correctly when there is nested Providers', () => {
       const reducer = (state = 0, action) => (action.type === 'INC' ? state + 1 : state)
-      
+
       const innerStore = createStore(reducer)
       const innerMapStateToProps = expect.createSpy().andCall(state => ({ count: state }))
       @connect(innerMapStateToProps)
@@ -125,7 +126,7 @@ describe('React', () => {
       class Outer extends Component {
         render() { return <Provider store={innerStore}><Inner /></Provider> }
       }
-      
+
       TestUtils.renderIntoDocument(<Provider store={outerStore}><Outer /></Provider>)
       expect(innerMapStateToProps.calls.length).toBe(1)
 
