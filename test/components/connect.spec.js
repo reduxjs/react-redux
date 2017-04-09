@@ -1,7 +1,8 @@
 /*eslint-disable react/prop-types*/
 
 import expect from 'expect'
-import React, { createClass, Children, Component } from 'react'
+import React, { Children, Component } from 'react'
+import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import TestUtils from 'react-dom/test-utils'
