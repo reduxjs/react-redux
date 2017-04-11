@@ -1,6 +1,7 @@
 import expect from 'expect'
-import React, { PropTypes, Component } from 'react'
-import TestUtils from 'react-addons-test-utils'
+import React, { Component } from 'react'
+import PropTypes from 'prop-types'
+import TestUtils from 'react-dom/test-utils'
 import { createStore } from 'redux'
 import { Provider } from '../../src/index'
 
@@ -34,14 +35,14 @@ describe('React', () => {
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
           </Provider>
-        )).toThrow(/exactly one child/)
+        )).toThrow(/a single React element/)
 
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
             <div />
             <div />
           </Provider>
-        )).toThrow(/exactly one child/)
+        )).toThrow(/a single React element/)
       } finally {
         Provider.propTypes = propTypes
       }

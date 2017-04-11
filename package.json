@@ -81,18 +81,19 @@
     "istanbul": "^0.3.17",
     "jsdom": "~5.4.3",
     "mocha": "^2.2.5",
-    "react": "^0.14.0",
-    "react-addons-test-utils": "^0.14.0",
-    "react-dom": "^0.14.0",
+    "react": "^15.5.0",
+    "react-dom": "^15.5.0",
     "redux": "^3.0.0",
     "rimraf": "^2.3.4",
     "webpack": "^1.11.0"
   },
   "dependencies": {
+    "create-react-class": "^15.5.1",
     "hoist-non-react-statics": "^1.0.3",
     "invariant": "^2.0.0",
     "lodash": "^4.2.0",
-    "loose-envify": "^1.1.0"
+    "loose-envify": "^1.1.0",
+    "prop-types": "^15.5.4"
   },
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0-0 || ^15.4.0-0 || ^16.0.0-0",
