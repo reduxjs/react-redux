@@ -3,7 +3,7 @@
 <a id="provider"></a>
 ### `<Provider store>`
 
-Makes the Redux store available to the `connect()` calls in the component hierarchy below. Normally, you can’t use `connect()` without wrapping the root component in `<Provider>`.
+Makes the Redux store available to the `connect()` calls in the component hierarchy below. Normally, you can’t use `connect()` without wrapping a parent or ancestor component in `<Provider>`.
 
 If you *really* need to, you can manually pass `store` as a prop to every `connect()`ed component, but we only recommend to do this for stubbing `store` in unit tests, or in non-fully-React codebases. Normally, you should just use `<Provider>`.
 
@@ -348,9 +348,9 @@ Returns the wrapped component instance. Only available if you pass `{ withRef: t
 
 #### Remarks
 
-* Since it returns a higher-order component, it needs to be invoked two times. The first time with its arguments as described above, and a second time, with the component: `connectAdvanced(selectorFactory)(MyComponent)`.
+* Since `connectAdvanced` returns a higher-order component, it needs to be invoked two times. The first time with its arguments as described above, and a second time, with the component: `connectAdvanced(selectorFactory)(MyComponent)`.
 
-* It does not modify the passed React component. It returns a new, connected component, that you should use instead.
+* `connectAdvanced` does not modify the passed React component. It returns a new, connected component, that you should use instead.
 
 <a id="connectAdvanced-examples"></a>
 #### Examples
