@@ -67,7 +67,7 @@ This will remove the assumption that `TodoApp` is pure and cause it to update wh
 If you have context issues,
 
 1. [Make sure you don’t have a duplicate instance of React](https://medium.com/@dan_abramov/two-weird-tricks-that-fix-react-7cf9bbdef375) on the page.
-2. Make sure you didn’t forget to wrap your root component in [`<Provider>`](#provider-store).
+2. Make sure you didn’t forget to wrap your root or some other ancestor component in [`<Provider>`](#provider-store).
 3. Make sure you’re running the latest versions of React and React Redux.
 
 ### Invariant Violation: addComponentAsRefTo(...): Only a ReactOwner can have refs. This usually means that you’re trying to add a ref to a component that doesn’t have an owner
