@@ -17,13 +17,26 @@ var reduxExternal = {
   amd: 'redux'
 }
 
+function applyGlobalVar(compiler) {
+  compiler.plugin('compilation', function(compilation, params) {
+    params.normalModuleFactory.plugin('parser', function(parser) {
+      parser.plugin('expression global', function expressionGlobalPlugin() {
+        this.state.module.addVariable(
+          'global', 
+          "(function() { return this; }()) || Function('return this')()")
+        return false
+      })
+    })
+  })
+}
+
 var config = {
   externals: {
     'react': reactExternal,
     'redux': reduxExternal
   },
   module: {
-    loaders: [
+    rules: [
       { test: /\.js$/, loaders: ['babel-loader'], exclude: /node_modules/ }
     ]
   },
@@ -32,15 +45,7 @@ var config = {
     libraryTarget: 'umd'
   },
   plugins: [
-    {
-      apply: function apply(compiler) {
-        compiler.parser.plugin('expression global', function expressionGlobalPlugin() {
-          this.state.module.addVariable('global', "(function() { return this; }()) || Function('return this')()")
-          return false
-        })
-      }
-    },
-    new webpack.optimize.OccurenceOrderPlugin(),
+    { apply: applyGlobalVar }, 
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(env)
     })
