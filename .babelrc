@@ -35,6 +35,12 @@
       "plugins": [
         "./build/use-lodash-es"
       ]
+    },
+    "rollup": {
+      "plugins": [
+        "./build/use-lodash-es",
+        "external-helpers"
+      ]
     }
   }
 }
