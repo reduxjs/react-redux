@@ -62,6 +62,15 @@ export default connect(mapStateToProps, null, null, {
 
 This will remove the assumption that `TodoApp` is pure and cause it to update whenever its parent component renders. Note that this will make your application less performant, so only do this if you have no other option.
 
+### My views aren’t updating on route change or null prop errors
+Ensure that you import the default connected module, not your component directly. For example, this:
+
+```import MyComponent from './src/MyComponent.js'```
+
+not this:
+
+```import { MyComponent } from './src/MyComponent.js'```
+
 ### Could not find "store" in either the context or props
 
 If you have context issues,
