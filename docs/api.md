@@ -361,7 +361,6 @@ import * as actionCreators from './actionCreators'
 import { bindActionCreators } from 'redux'
 
 function selectorFactory(dispatch) {
-  let state = {}
   let ownProps = {}
   let result = {}
   const actions = bindActionCreators(actionCreators, dispatch)
@@ -369,7 +368,6 @@ function selectorFactory(dispatch) {
   return (nextState, nextOwnProps) => {
     const todos = nextState.todos[nextProps.userId]
     const nextResult = { ...nextOwnProps, todos, addTodo }
-    state = nextState
     ownProps = nextOwnProps
     if (!shallowEqual(result, nextResult)) result = nextResult
     return result
