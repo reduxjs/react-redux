@@ -41,6 +41,33 @@ ReactDOM.render(
 )
 ```
 
+<a id="subprovider"></a>
+### `<SubProvider subState>`
+
+Makes a proxy Redux store available to the `connect()` calls in the component hierarchy below. `subscribe()` and `dispatch()` calls on the proxy are passed to the application's single Redux store, but calls to `getState()` only return the value of `state[subState]`. Allows `connect()'ed components to be unaware of their data's location in the parent state.
+
+#### Props
+
+* `subState` (*string*): The property of the parent state object to return from `getState()`.
+* `children` (*ReactElement*) The root of your component hierarchy.
+
+#### Example
+
+```js
+ReactDOM.render(
+  <Provider store={store}>
+    <div>
+      <SubProvider subState="todos">
+        <MyTodosComponent />
+      </SubProvider>
+      <SubProvider subState="calender">
+        <MyCalendarComponent />
+      </SubProvider>
+    </div>
+  </Provider>,
+  rootEl
+)
+```
 
 <a id="connect"></a>
 ### `connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`
@@ -376,3 +403,72 @@ function selectorFactory(dispatch) {
 export default connectAdvanced(selectorFactory)(TodoApp)
 ```
 
+<a id="combineConnected"></a>
+### `combineConnected(components)`
+
+Takes an object whose values are `connect()`ed components and wraps them in `SubProviders` so that each component only receives one property of the state object.
+
+Similarly to `combineReducers()`, the property each component receives is controlled by the keys of the argument.
+
+It does not modify the component classes passed to it; instead, it *returns* new component classes for you to use.
+
+<a id="combineConnected-arguments"></a>
+#### Arguments
+
+* `components` \(*Object*): An object whose values are `connect()`ed components and whose keys are properties of the state object which they should receive in place of the parent state.
+
+The values of the object can also be objects with a single key, which names their single value (the component itself).
+
+#### Returns
+
+An object whose values are higher-order React component classes, which pass one property of the parent state object to your components, derived from the supplied argument's keys.
+
+The keys are either the same as the keys of the provided argument, *or* if the component was named as above, the key will be the name. This can be more convenient for destructuring the result object (see examples).
+
+#### Examples
+
+##### 
+```js
+/* 
+ * mapStateToProps only cares about local state, not its
+ * location in the global state object
+ */
+const mapStateToTodosProps = (state) => ({ todos: state });
+let myTodos = (props) => <Todos {...props}>;
+myTodos = connect(mapStateToTodosProps)(myTodos);
+
+const mapStateToCalendarProps = (state) => ({ calendar: state });
+let myCalendar = (props) => <Calendar {...props}>;
+myCalendar = connect(mapStateToTodosProps)(myCalendar);
+
+/*
+ * Combine the components so they only receive their local state
+ */
+// With manual result destructuring
+({ todos: myTodos, calendar: myCalendar } = combineConnected({
+  todos: myTodos,
+  calendar: myCalendar
+});
+
+// With named result destructuring
+({ myTodos, myCalendar } = combineConnected({
+  todos: { myTodos: myTodos },
+  calendar: { myCalendar: myCalendar }
+});
+
+// Or with shorthand notation
+({ myTodos, myCalendar } = combineConnected({
+  todos: { myTodos },
+  calendar: { myCalendar }
+}));
+
+ReactDOM.render(
+  <Provider store={store}>
+    <div>
+      <myTodos />
+      <myCalendar />
+    </div>
+  </Provider>,
+  rootEl
+)
+```
