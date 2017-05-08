@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom'
 import TestUtils from 'react-addons-test-utils'
 import { createStore } from 'redux'
 import { connect } from '../../src/index'
+import isEqual from 'lodash/isEqual'
 
 describe('React', () => {
   describe('connect', () => {
@@ -396,6 +397,10 @@ describe('React', () => {
               baz: ''
             }
           }
+        }
+
+        shouldComponentUpdate(nextProps) {
+          return !isEqual(this.props, nextProps)
         }
 
         componentDidMount() {
@@ -1103,94 +1108,6 @@ describe('React', () => {
       expect(spy.calls.length).toBe(3)
       store.dispatch({ type: 'APPEND', body: '' })
       expect(spy.calls.length).toBe(3)
-    })
-
-    it('should shallowly compare the merged state to prevent unnecessary updates', () => {
-      const store = createStore(stringBuilder)
-      const spy = expect.createSpy(() => ({}))
-      function render({ string, pass }) {
-        spy()
-        return <Passthrough string={string} pass={pass} passVal={pass.val} />
-      }
-
-      @connect(
-        state => ({ string: state }),
-        dispatch => ({ dispatch }),
-        (stateProps, dispatchProps, parentProps) => ({
-          ...dispatchProps,
-          ...stateProps,
-          ...parentProps
-        })
-      )
-      class Container extends Component {
-        render() {
-          return render(this.props)
-        }
-      }
-
-      class Root extends Component {
-        constructor(props) {
-          super(props)
-          this.state = { pass: '' }
-        }
-
-        render() {
-          return (
-            <ProviderMock store={store}>
-              <Container pass={this.state.pass} />
-            </ProviderMock>
-          )
-        }
-      }
-
-      const tree = TestUtils.renderIntoDocument(<Root />)
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
-      expect(spy.calls.length).toBe(1)
-      expect(stub.props.string).toBe('')
-      expect(stub.props.pass).toBe('')
-
-      store.dispatch({ type: 'APPEND', body: 'a' })
-      expect(spy.calls.length).toBe(2)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('')
-
-      tree.setState({ pass: '' })
-      expect(spy.calls.length).toBe(2)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('')
-
-      tree.setState({ pass: 'through' })
-      expect(spy.calls.length).toBe(3)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('through')
-
-      tree.setState({ pass: 'through' })
-      expect(spy.calls.length).toBe(3)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('through')
-
-      const obj = { prop: 'val' }
-      tree.setState({ pass: obj })
-      expect(spy.calls.length).toBe(4)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe(obj)
-
-      tree.setState({ pass: obj })
-      expect(spy.calls.length).toBe(4)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe(obj)
-
-      const obj2 = Object.assign({}, obj, { val: 'otherval' })
-      tree.setState({ pass: obj2 })
-      expect(spy.calls.length).toBe(5)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe(obj2)
-
-      obj2.val = 'mutation'
-      tree.setState({ pass: obj2 })
-      expect(spy.calls.length).toBe(5)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.passVal).toBe('otherval')
     })
 
     it('should throw an error if a component is not passed to the function returned by connect', () => {
@@ -1940,6 +1857,9 @@ describe('React', () => {
 
       @connect(null, mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
+        shouldComponentUpdate(nextProps) {
+          return !isEqual(this.props, nextProps)
+        }
         componentWillUpdate() {
           updatedCount++
         }
