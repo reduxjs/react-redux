@@ -5,20 +5,24 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import TestUtils from 'react-dom/test-utils'
 import { createStore } from 'redux'
-import { Provider, connect } from '../../src/index'
+import { Provider, createProvider, connect } from '../../src/index'
 
 describe('React', () => {
   describe('Provider', () => {
-    class Child extends Component {
+      const createChild = (storeKey = 'store') => {
+        class Child extends Component {
+          render() {
+            return <div />
+          }
+        }
 
-      render() {
-        return <div />
-      }
-    }
+        Child.contextTypes = {
+          [storeKey]: PropTypes.object.isRequired
+        }
 
-    Child.contextTypes = {
-      store: PropTypes.object.isRequired
+        return Child
     }
+    const Child = createChild();
 
     it('should enforce a single child', () => {
       const store = createStore(() => ({}))
@@ -64,6 +68,24 @@ describe('React', () => {
 
       const child = TestUtils.findRenderedComponentWithType(tree, Child)
       expect(child.context.store).toBe(store)
+    })
+
+    it('should add the store to the child context using a custom store key', () => {
+        const store = createStore(() => ({}))
+        const CustomProvider = createProvider('customStoreKey');
+        const CustomChild = createChild('customStoreKey');
+
+        const spy = expect.spyOn(console, 'error');
+        const tree = TestUtils.renderIntoDocument(
+          <CustomProvider store={store}>
+            <CustomChild />
+          </CustomProvider>
+        )
+        spy.destroy()
+        expect(spy.calls.length).toBe(0)
+
+        const child = TestUtils.findRenderedComponentWithType(tree, CustomChild)
+        expect(child.context.customStoreKey).toBe(store)
     })
 
     it('should warn once when receiving a new store in props', () => {
