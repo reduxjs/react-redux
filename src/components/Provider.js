@@ -48,14 +48,14 @@ export function createProvider(storeKey = 'store', subKey) {
     Provider.propTypes = {
         store: storeShape.isRequired,
         children: PropTypes.element.isRequired,
-    };
+    }
     Provider.childContextTypes = {
         [storeKey]: storeShape.isRequired,
         [subscriptionKey]: subscriptionShape,
-    };
-    Provider.displayName = 'Provider';
+    }
+    Provider.displayName = 'Provider'
 
-    return Provider;
+    return Provider
 }
 
-export default createProvider();
+export default createProvider()
