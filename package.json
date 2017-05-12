@@ -92,7 +92,7 @@
     "react-dom": "^15.0.0",
     "redux": "^3.0.0",
     "rimraf": "^2.3.4",
-    "webpack": "^1.11.0"
+    "webpack": "^2.3.3"
   },
   "dependencies": {
     "create-react-class": "^15.5.1",
