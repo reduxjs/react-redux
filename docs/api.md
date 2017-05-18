@@ -309,7 +309,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
 <a id="connectAdvanced-arguments"></a>
 #### Arguments
 
-* `selectorFactory(dispatch, factoryOptions): selector(state, ownProps): props` \(*Function*): Intializes a selector function (during each instance's constructor). That selector function is called any time the connector component needs to compute new props, as a result of a store state change or receiving new props. The result of `selector` is expected to be a plain object, which is passed as the props to the wrapped component. If a consecutive call to `selector` returns the same object (`===`) as its previous call, the component will not be re-rendered. It's the responsibility of `selector` to return that previous object when appropriate.
+* `selectorFactory(dispatch, factoryOptions): selector(state, ownProps): props` \(*Function*): Initializes a selector function (during each instance's constructor). That selector function is called any time the connector component needs to compute new props, as a result of a store state change or receiving new props. The result of `selector` is expected to be a plain object, which is passed as the props to the wrapped component. If a consecutive call to `selector` returns the same object (`===`) as its previous call, the component will not be re-rendered. It's the responsibility of `selector` to return that previous object when appropriate.
 
 * [`connectOptions`] *(Object)* If specified, further customizes the behavior of the connector.
 
