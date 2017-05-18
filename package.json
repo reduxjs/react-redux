@@ -88,8 +88,8 @@
     "jsdom": "^9.8.3",
     "mocha": "^3.2.0",
     "nyc": "^10.0.0",
-    "react": "^15.0.0",
-    "react-dom": "^15.0.0",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4",
     "redux": "^3.0.0",
     "rimraf": "^2.3.4",
     "rollup": "^0.41.6",
@@ -100,13 +100,13 @@
     "rollup-plugin-uglify": "^1.0.1"
   },
   "dependencies": {
-    "create-react-class": "^15.5.1",
+    "create-react-class": "^15.5.3",
     "hoist-non-react-statics": "^1.0.3",
     "invariant": "^2.0.0",
     "lodash": "^4.2.0",
     "lodash-es": "^4.2.0",
     "loose-envify": "^1.1.0",
-    "prop-types": "^15.0.0"
+    "prop-types": "^15.5.10"
   },
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0-0 || ^16.0.0-0",
