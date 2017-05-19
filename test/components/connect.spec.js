@@ -9,6 +9,9 @@ import TestUtils from 'react-dom/test-utils'
 import { createStore } from 'redux'
 import { connect } from '../../src/index'
 
+const withMapStateToProps = (...args) => test =>
+  args.forEach((mapStateToProps) => { test(mapStateToProps) });
+
 describe('React', () => {
   describe('connect', () => {
     class Passthrough extends Component {
@@ -80,6 +83,10 @@ describe('React', () => {
       expect(container.context.store).toBe(store)
     })
 
+    withMapStateToProps(
+      ({ foo, baz }) => ({ foo, baz }),
+      ({ foo: state => state.foo, baz: state => state.baz })
+    )(mapStateToProps =>
     it('should pass state and props to the given component', () => {
       const store = createStore(() => ({
         foo: 'bar',
@@ -87,7 +94,7 @@ describe('React', () => {
         hello: 'world'
       }))
 
-      @connect(({ foo, baz }) => ({ foo, baz }))
+      @connect(mapStateToProps)
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
@@ -107,12 +114,16 @@ describe('React', () => {
       expect(() =>
         TestUtils.findRenderedComponentWithType(container, Container)
       ).toNotThrow()
-    })
+    }))
 
+    withMapStateToProps(
+      state => ({ string: state }),
+      { string: state => state }
+    )(mapStateToProps =>
     it('should subscribe class components to the store changes', () => {
       const store = createStore(stringBuilder)
 
-      @connect(state => ({ string: state }) )
+      @connect(mapStateToProps)
       class Container extends Component {
         render() {
           return <Passthrough {...this.props}/>
@@ -131,13 +142,17 @@ describe('React', () => {
       expect(stub.props.string).toBe('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
       expect(stub.props.string).toBe('ab')
-    })
+    }))
 
+    withMapStateToProps(
+      state => ({ string: state }),
+      { string: state => state }
+    )(mapStateToProps =>
     it('should subscribe pure function components to the store changes', () => {
       const store = createStore(stringBuilder)
 
       let Container = connect(
-        state => ({ string: state })
+        mapStateToProps
       )(function Container(props) {
         return <Passthrough {...props}/>
       })
@@ -157,13 +172,17 @@ describe('React', () => {
       expect(stub.props.string).toBe('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
       expect(stub.props.string).toBe('ab')
-    })
+    }))
 
+    withMapStateToProps(
+      state => ({ string: state }),
+      { string: state => state }
+    )(mapStateToProps =>
     it('should retain the store\'s context', () => {
       const store = new ContextBoundStore(stringBuilder)
 
       let Container = connect(
-        state => ({ string: state })
+        mapStateToProps
       )(function Container(props) {
         return <Passthrough {...props}/>
       })
@@ -181,12 +200,16 @@ describe('React', () => {
       expect(stub.props.string).toBe('')
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(stub.props.string).toBe('a')
-    })
+    }))
 
+    withMapStateToProps(
+      state => ({ string: state }),
+      { string: state => state }
+    )(mapStateToProps =>
     it('should handle dispatches before componentDidMount', () => {
       const store = createStore(stringBuilder)
 
-      @connect(state => ({ string: state }) )
+      @connect(mapStateToProps)
       class Container extends Component {
         componentWillMount() {
           store.dispatch({ type: 'APPEND', body: 'a' })
@@ -205,14 +228,18 @@ describe('React', () => {
 
       const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
       expect(stub.props.string).toBe('a')
-    })
+    }))
 
+    withMapStateToProps(
+      state => state,
+      { foo: state => state.foo }
+    )(mapStateToProps =>
     it('should handle additional prop changes in addition to slice', () => {
       const store = createStore(() => ({
         foo: 'bar'
       }))
 
-      @connect(state => state)
+      @connect(mapStateToProps)
       class ConnectContainer extends Component {
         render() {
           return (
@@ -250,12 +277,16 @@ describe('React', () => {
       const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
       expect(stub.props.foo).toEqual('bar')
       expect(stub.props.pass).toEqual('through')
-    })
+    }))
 
+    withMapStateToProps(
+      state => state,
+      {}
+    )(mapStateToProps =>
     it('should handle unexpected prop changes with forceUpdate()', () => {
       const store = createStore(() => ({}))
 
-      @connect(state => state)
+      @connect(mapStateToProps)
       class ConnectContainer extends Component {
         render() {
           return (
@@ -288,14 +319,18 @@ describe('React', () => {
       const container = TestUtils.renderIntoDocument(<Container />)
       const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
       expect(stub.props.bar).toEqual('foo')
-    })
+    }))
 
+    withMapStateToProps(
+      () => ({}),
+      {}
+    )(mapStateToProps =>
     it('should remove undefined props', () => {
       const store = createStore(() => ({}))
       let props = { x: true }
       let container
 
-      @connect(() => ({}), () => ({}))
+      @connect(mapStateToProps, () => ({}))
       class ConnectContainer extends Component {
         render() {
           return (
@@ -331,14 +366,18 @@ describe('React', () => {
 
       expect(propsBefore.x).toEqual(true)
       expect('x' in propsAfter).toEqual(false, 'x prop must be removed')
-    })
+    }))
 
+    withMapStateToProps(
+      () => ({}),
+      {}
+    )(mapStateToProps =>
     it('should remove undefined props without mapDispatch', () => {
       const store = createStore(() => ({}))
       let props = { x: true }
       let container
 
-      @connect(() => ({}))
+      @connect(mapStateToProps)
       class ConnectContainer extends Component {
         render() {
           return (
@@ -374,14 +413,18 @@ describe('React', () => {
 
       expect(propsBefore.x).toEqual(true)
       expect('x' in propsAfter).toEqual(false, 'x prop must be removed')
-    })
+    }))
 
+    withMapStateToProps(
+      state => state,
+      { foo: state => state.foo }
+    )(mapStateToProps =>
     it('should ignore deep mutations in props', () => {
       const store = createStore(() => ({
         foo: 'bar'
       }))
 
-      @connect(state => state)
+      @connect(mapStateToProps)
       class ConnectContainer extends Component {
         render() {
           return (
@@ -422,8 +465,12 @@ describe('React', () => {
       const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
       expect(stub.props.foo).toEqual('bar')
       expect(stub.props.pass).toEqual('')
-    })
+    }))
 
+    withMapStateToProps(
+      state => ({ stateThing: state }),
+      { stateThing: state => state }
+    )(mapStateToProps =>
     it('should allow for merge to incorporate state and prop changes', () => {
       const store = createStore(stringBuilder)
 
@@ -435,7 +482,7 @@ describe('React', () => {
       }
 
       @connect(
-        state => ({ stateThing: state }),
+        mapStateToProps,
         dispatch => ({
           doSomething: (whatever) => dispatch(doSomething(whatever))
         }),
@@ -479,15 +526,19 @@ describe('React', () => {
       tree.setState({ extra: 'Z' })
       stub.props.mergedDoSomething('c')
       expect(stub.props.stateThing).toBe('HELLO azbzcZ')
-    })
+    }))
 
+    withMapStateToProps(
+      state => state,
+      { foo: state => state.foo }
+    )(mapStateToProps =>
     it('should merge actionProps into WrappedComponent', () => {
       const store = createStore(() => ({
         foo: 'bar'
       }))
 
       @connect(
-        state => state,
+        mapStateToProps,
         dispatch => ({ dispatch })
       )
       class Container extends Component {
@@ -509,7 +560,7 @@ describe('React', () => {
       ).toNotThrow()
       const decorated = TestUtils.findRenderedComponentWithType(container, Container)
       expect(decorated.isSubscribed()).toBe(true)
-    })
+    }))
 
     it('should not invoke mapState when props change if it only has one argument', () => {
       const store = createStore(stringBuilder)
@@ -841,6 +892,10 @@ describe('React', () => {
       runCheck(false, false, false)
     })
 
+    withMapStateToProps(
+      state => ({ string: state }),
+      { string: state => state }
+    )(mapStateToProps =>
     it('should unsubscribe before unmounting', () => {
       const store = createStore(stringBuilder)
       const subscribe = store.subscribe
@@ -856,7 +911,7 @@ describe('React', () => {
       }
 
       @connect(
-        state => ({ string: state }),
+        mapStateToProps,
         dispatch => ({ dispatch })
       )
       class Container extends Component {
@@ -876,7 +931,7 @@ describe('React', () => {
       expect(spy.calls.length).toBe(0)
       ReactDOM.unmountComponentAtNode(div)
       expect(spy.calls.length).toBe(1)
-    })
+    }))
 
     it('should not attempt to set state after unmounting', () => {
       const store = createStore(stringBuilder)
@@ -911,10 +966,14 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    withMapStateToProps(
+      (state) => ({ hide: state === 'AB' }),
+      { hide: state => state === 'AB' }
+    )(mapStateToProps =>
     it('should not attempt to notify unmounted child of state change', () => {
       const store = createStore(stringBuilder)
 
-      @connect((state) => ({ hide: state === 'AB' }))
+      @connect(mapStateToProps)
       class App extends Component {
         render() {
           return this.props.hide ? null : <Container />
@@ -955,7 +1014,7 @@ describe('React', () => {
       } finally {
         ReactDOM.unmountComponentAtNode(div)
       }
-    })
+    }))
 
     it('should not attempt to set state after unmounting nested components', () => {
       const store = createStore(() => ({}))
@@ -1072,6 +1131,10 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
     })
 
+    withMapStateToProps(
+      state => ({ string: state }),
+      { string: state => state }
+    )(mapStateToProps =>
     it('should shallowly compare the selected state to prevent unnecessary updates', () => {
       const store = createStore(stringBuilder)
       const spy = expect.createSpy(() => ({}))
@@ -1081,7 +1144,7 @@ describe('React', () => {
       }
 
       @connect(
-        state => ({ string: state }),
+        mapStateToProps,
         dispatch => ({ dispatch })
       )
       class Container extends Component {
@@ -1105,8 +1168,12 @@ describe('React', () => {
       expect(spy.calls.length).toBe(3)
       store.dispatch({ type: 'APPEND', body: '' })
       expect(spy.calls.length).toBe(3)
-    })
+    }))
 
+    withMapStateToProps(
+      state => ({ string: state }),
+      { string: state => state }
+    )(mapStateToProps =>
     it('should shallowly compare the merged state to prevent unnecessary updates', () => {
       const store = createStore(stringBuilder)
       const spy = expect.createSpy(() => ({}))
@@ -1116,7 +1183,7 @@ describe('React', () => {
       }
 
       @connect(
-        state => ({ string: state }),
+        mapStateToProps,
         dispatch => ({ dispatch }),
         (stateProps, dispatchProps, parentProps) => ({
           ...dispatchProps,
@@ -1193,7 +1260,7 @@ describe('React', () => {
       expect(spy.calls.length).toBe(5)
       expect(stub.props.string).toBe('a')
       expect(stub.props.passVal).toBe('otherval')
-    })
+    }))
 
     it('should throw an error if a component is not passed to the function returned by connect', () => {
       expect(connect()).toThrow(
