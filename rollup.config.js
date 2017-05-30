@@ -38,7 +38,9 @@ if (env === 'production') {
         unsafe: true,
         unsafe_comps: true,
         screw_ie8: true,
-        warnings: false
+        warnings: false,
+        dead_code: true,
+        unused: true,
       }
     })
   )
