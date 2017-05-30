@@ -5,18 +5,20 @@ import warning from '../utils/warning'
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
-  if (didWarnAboutReceivingStore) {
-    return
-  }
-  didWarnAboutReceivingStore = true
+  if (process.env.NODE_ENV !== 'production') {
+    if (didWarnAboutReceivingStore) {
+      return
+    }
+    didWarnAboutReceivingStore = true
 
-  warning(
-    '<Provider> does not support changing `store` on the fly. ' +
-    'It is most likely that you see this error because you updated to ' +
-    'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
-    'automatically. See https://github.com/reactjs/react-redux/releases/' +
-    'tag/v2.0.0 for the migration instructions.'
-  )
+    warning(
+      '<Provider> does not support changing `store` on the fly. ' +
+      'It is most likely that you see this error because you updated to ' +
+      'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
+      'automatically. See https://github.com/reactjs/react-redux/releases/' +
+      'tag/v2.0.0 for the migration instructions.'
+    )
+  }
 }
 
 export function createProvider(storeKey = 'store', subKey) {
@@ -45,13 +47,15 @@ export function createProvider(storeKey = 'store', subKey) {
       }
     }
 
-    Provider.propTypes = {
+    if (process.env.NODE_ENV !== 'production') {
+      Provider.propTypes = {
         store: storeShape.isRequired,
         children: PropTypes.element.isRequired,
-    }
-    Provider.childContextTypes = {
+      }
+      Provider.childContextTypes = {
         [storeKey]: storeShape.isRequired,
         [subscriptionKey]: subscriptionShape,
+      }
     }
     Provider.displayName = 'Provider'
 

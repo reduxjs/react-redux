@@ -78,20 +78,24 @@ export default function connectAdvanced(
   const subscriptionKey = storeKey + 'Subscription'
   const version = hotReloadingVersion++
 
-  const contextTypes = {
-    [storeKey]: storeShape,
-    [subscriptionKey]: subscriptionShape,
-  }
-  const childContextTypes = {
-    [subscriptionKey]: subscriptionShape,
+  if (process.env.NODE_ENV !== 'production') {
+    const contextTypes = {
+      [storeKey]: storeShape,
+      [subscriptionKey]: subscriptionShape,
+    }
+    const childContextTypes = {
+      [subscriptionKey]: subscriptionShape,
+    }
   }
 
   return function wrapWithConnect(WrappedComponent) {
-    invariant(
-      typeof WrappedComponent == 'function',
-      `You must pass a component to the function returned by ` +
-      `connect. Instead received ${JSON.stringify(WrappedComponent)}`
-    )
+    if (process.env.NODE_ENV !== 'production') {
+      invariant(
+        typeof WrappedComponent == 'function',
+        `You must pass a component to the function returned by ` +
+        `connect. Instead received ${JSON.stringify(WrappedComponent)}`
+      )
+    }
 
     const wrappedComponentName = WrappedComponent.displayName
       || WrappedComponent.name
@@ -123,11 +127,13 @@ export default function connectAdvanced(
         this.propsMode = Boolean(props[storeKey])
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
-        invariant(this.store,
-          `Could not find "${storeKey}" in either the context or props of ` +
-          `"${displayName}". Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
-        )
+        if (process.env.NODE_ENV !== 'production') {
+          invariant(this.store,
+            `Could not find "${storeKey}" in either the context or props of ` +
+            `"${displayName}". Either wrap the root component in a <Provider>, ` +
+            `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
+          )
+        }
 
         this.initSelector()
         this.initSubscription()
@@ -174,10 +180,12 @@ export default function connectAdvanced(
       }
 
       getWrappedInstance() {
-        invariant(withRef,
-          `To access the wrapped instance, you need to specify ` +
-          `{ withRef: true } in the options argument of the ${methodName}() call.`
-        )
+        if (process.env.NODE_ENV !== 'production') {
+          invariant(withRef,
+            `To access the wrapped instance, you need to specify ` +
+            `{ withRef: true } in the options argument of the ${methodName}() call.`
+          )
+        }
         return this.wrappedInstance
       }
 
@@ -260,11 +268,10 @@ export default function connectAdvanced(
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
-    Connect.childContextTypes = childContextTypes
-    Connect.contextTypes = contextTypes
-    Connect.propTypes = contextTypes
-
     if (process.env.NODE_ENV !== 'production') {
+      Connect.childContextTypes = childContextTypes
+      Connect.contextTypes = contextTypes
+      Connect.propTypes = contextTypes
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
         // We are hot reloading!
         if (this.version !== version) {

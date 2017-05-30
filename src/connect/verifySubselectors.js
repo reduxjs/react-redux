@@ -1,14 +1,16 @@
 import warning from '../utils/warning'
 
 function verify(selector, methodName, displayName) {
-  if (!selector) {
-    throw new Error(`Unexpected value for ${methodName} in ${displayName}.`)
+  if (process.env.NODE_ENV !== 'production') {
+    if (!selector) {
+      throw new Error(`Unexpected value for ${methodName} in ${displayName}.`)
 
-  } else if (methodName === 'mapStateToProps' || methodName === 'mapDispatchToProps') {
-    if (!selector.hasOwnProperty('dependsOnOwnProps')) {
-      warning(
-        `The selector for ${methodName} of ${displayName} did not specify a value for dependsOnOwnProps.`
-      )
+    } else if (methodName === 'mapStateToProps' || methodName === 'mapDispatchToProps') {
+      if (!selector.hasOwnProperty('dependsOnOwnProps')) {
+        warning(
+          `The selector for ${methodName} of ${displayName} did not specify a value for dependsOnOwnProps.`
+        )
+      }
     }
   }
 }

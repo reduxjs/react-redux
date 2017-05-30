@@ -28,8 +28,10 @@ function match(arg, factories, name) {
     if (result) return result
   }
 
-  return (dispatch, options) => {
-    throw new Error(`Invalid value of type ${typeof arg} for ${name} argument when connecting component ${options.wrappedComponentName}.`)
+  if (process.env.NODE_ENV !== 'production') {
+    return (dispatch, options) => {
+      throw new Error(`Invalid value of type ${typeof arg} for ${name} argument when connecting component ${options.wrappedComponentName}.`)
+    }
   }
 }
 
