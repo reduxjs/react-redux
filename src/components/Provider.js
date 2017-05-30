@@ -1,4 +1,4 @@
-import { Component, Children } from 'react'
+import { Component } from 'react'
 import PropTypes from 'prop-types'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
@@ -35,7 +35,12 @@ export function createProvider(storeKey = 'store', subKey) {
         }
 
         render() {
-          return Children.only(this.props.children)
+          if (process.env.NODE_ENV !== 'production') {
+            if (this.props.children.length!=1){
+              throw new Error('Provider should have exactly one child!');
+            }
+          }
+          return this.props.children[0]
         }
     }
 
