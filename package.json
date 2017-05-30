@@ -13,7 +13,7 @@
     "build": "npm run build:commonjs && npm run build:es && npm run build:umd && npm run build:umd:min",
     "clean": "rimraf lib dist es coverage",
     "lint": "eslint src test",
-    "prepublish": "npm run clean && npm run build",
+    "prepublish": "npm run clean && npm run build && node prepublish",
     "test": "cross-env BABEL_ENV=commonjs NODE_ENV=test mocha --compilers js:babel-register --recursive --require ./test/setup.js",
     "test:watch": "npm test -- --watch",
     "test:cov": "cross-env NODE_ENV=test nyc npm test",
