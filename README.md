@@ -40,6 +40,44 @@ If you are on an older version of React Native, you’ll need to keep using [Rea
 We do a deep dive on how React Redux works in [this readthesource episode](https://www.youtube.com/watch?v=VJ38wSFbM3A).  
 Enjoy!
 
+### My static and instance methods don't work!
+
+When you use `connect()`, it wraps your component and returns a new component. Upon doing this, the new component will be unable to access the original component's static properties or methods.
+
+You may avoid this by not using decorators and using separate variables for the component and the connected component.
+
+**Good**
+
+```jsx
+class Foo {
+  static bar () {
+    return 'baz';
+  }
+
+  quux () {
+    return Foo.bar(); // works
+  }
+}
+
+const ConnectedFoo = connect()(Foo);
+export default ConnectedFoo;
+```
+
+**Bad**
+
+```
+@connect()
+export default class Foo {
+  static bar () {
+    return 'baz';
+  }
+
+  quux () {
+    return Foo.bar(); // doesn't work
+  }
+}
+```
+
 ## License
 
 MIT
