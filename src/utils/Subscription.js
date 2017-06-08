@@ -24,6 +24,10 @@ function createListenerCollection() {
       }
     },
 
+    get() {
+      return next
+    },
+
     subscribe(listener) {
       let isSubscribed = true
       if (next === current) next = current.slice()
