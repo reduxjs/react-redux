@@ -22,7 +22,8 @@
     "valid-jsdoc": 2,
     "react/jsx-uses-react": 1,
     "react/jsx-no-undef": 2,
-    "react/jsx-wrap-multilines": 2
+    "react/jsx-wrap-multilines": 2,
+    "react/no-string-refs": 0
   },
   "plugins": [
     "import",
