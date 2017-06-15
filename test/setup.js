@@ -1,5 +1,7 @@
-import { jsdom } from 'jsdom'
+import { JSDOM } from 'jsdom'
 
-global.document = jsdom('<!doctype html><html><body></body></html>')
-global.window = document.defaultView
-global.navigator = global.window.navigator
+const { window } = new JSDOM('<!doctype html><html><body></body></html>')
+
+global.window = window
+global.document = window.document
+global.navigator = window.navigator
