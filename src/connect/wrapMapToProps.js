@@ -1,4 +1,5 @@
 import verifyPlainObject from '../utils/verifyPlainObject'
+import invariant from 'invariant'
 
 export function wrapMapToPropsConstant(getConstant) {
   return function initConstantSelector(dispatch, options) {
@@ -65,4 +66,33 @@ export function wrapMapToPropsFunc(mapToProps, methodName) {
 
     return proxy
   }
+}
+
+
+function mapValues(obj, fn) {
+  return Object.keys(obj).reduce((result, key) => {
+    result[key] = fn(obj[key], key)
+    return result
+  }, {})
+}
+
+export function wrapMapStateObject(mapStateToProps, methodName) {
+  
+  const needsProps = Object.keys(mapStateToProps)
+    .reduce((useProps, key) => {
+      const type = typeof mapStateToProps[key]
+      invariant(
+        type === 'function',
+        'mapStateToProps object key %s expected to be a function, instead saw %s',
+        key,
+        type
+      )
+      return useProps || mapStateToProps[key].length !== 1
+    }, false)
+  
+  const mapToPropsFn = needsProps
+    ? (state, props) => mapValues(mapStateToProps, fn => fn(state, props))
+    : state => mapValues(mapStateToProps, fn => fn(state))
+  
+  return wrapMapToPropsFunc(mapToPropsFn, methodName)
 }
