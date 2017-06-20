@@ -35,7 +35,7 @@ export function getDependsOnOwnProps(mapToProps) {
 //  * On first call, verifies the first result is a plain object, in order to warn
 //    the developer that their mapToProps function is not returning a valid result.
 //    
-export function wrapMapToPropsFunc(mapToProps, methodName) {
+export function wrapMapToPropsFunc(mapToProps, methodName, isObjMapToProps = false) {
   return function initProxySelector(dispatch, { displayName }) {
     const proxy = function mapToPropsProxy(stateOrDispatch, ownProps) {
       return proxy.dependsOnOwnProps
@@ -57,7 +57,7 @@ export function wrapMapToPropsFunc(mapToProps, methodName) {
         props = proxy(stateOrDispatch, ownProps)
       }
 
-      if (process.env.NODE_ENV !== 'production') 
+      if (process.env.NODE_ENV !== 'production' && !isObjMapToProps)
         verifyPlainObject(props, displayName, methodName)
 
       return props
@@ -65,4 +65,40 @@ export function wrapMapToPropsFunc(mapToProps, methodName) {
 
     return proxy
   }
+}
+
+function mapObject (obj, mapFn) {
+  const result = {}
+  Object
+    .keys(obj)
+    .forEach(function(key) { result[key] = mapFn(obj[key], key, obj) })
+  return result
+}
+
+export function wrapMapToPropsObject (mapStateToProps) {
+  const wrappedMapToProps = mapObject(mapStateToProps, function (fn) {
+    return wrapMapToPropsFunc(fn, 'mapStateToProps', true)
+  })
+
+  const dependsOnOwnProps = Object
+    .keys(wrappedMapToProps)
+    .map(key => wrappedMapToProps[key])
+    .some(getDependsOnOwnProps)
+
+  function initObjectSelector(...initArgs) {
+    const initializedWraps = mapObject(wrappedMapToProps, function (fn) {
+      return fn(...initArgs)
+    })
+
+    function objectSelector (...selectorArgs) {
+      return mapObject(initializedWraps, function (fn) {
+        return fn(...selectorArgs)
+      })
+    }
+
+    objectSelector.dependsOnOwnProps = dependsOnOwnProps
+    return objectSelector
+  }
+
+  return initObjectSelector
 }
