@@ -36,7 +36,7 @@ export function getDependsOnOwnProps(mapToProps) {
 //  * On first call, verifies the first result is a plain object, in order to warn
 //    the developer that their mapToProps function is not returning a valid result.
 //    
-export function wrapMapToPropsFunc(mapToProps, methodName) {
+export function wrapMapToPropsFunc(mapToProps, methodName, bypassVerifyPlainObject) {
   return function initProxySelector(dispatch, { displayName }) {
     const proxy = function mapToPropsProxy(stateOrDispatch, ownProps) {
       return proxy.dependsOnOwnProps
@@ -58,7 +58,7 @@ export function wrapMapToPropsFunc(mapToProps, methodName) {
         props = proxy(stateOrDispatch, ownProps)
       }
 
-      if (process.env.NODE_ENV !== 'production') 
+      if (process.env.NODE_ENV !== 'production' && !bypassVerifyPlainObject)
         verifyPlainObject(props, displayName, methodName)
 
       return props
@@ -90,15 +90,19 @@ export function wrapMapStateObject(mapStateToProps, methodName) {
       return useProps || mapStateToProps[key].length !== 1
     }, false)
   
-  const selectorsMapWrapped = mapValues(mapStateToProps, fn => wrapMapToPropsFunc(fn,methodName))
+  const selectorsMapWrapped = mapValues(mapStateToProps, fn => wrapMapToPropsFunc(fn,methodName,true))
   
   return (...args) => {
     
     const selectorsMap = mapValues(selectorsMapWrapped,fn => fn(...args))
   
-    return needsProps
+    const mapStateToProps = needsProps
       ? (state, props) => mapValues(selectorsMap, fn => fn(state, props))
       : state => mapValues(selectorsMap, fn => fn(state))
+    
+    mapStateToProps.dependsOnOwnProps = needsProps
+    
+    return mapStateToProps;
   }
   
 }
