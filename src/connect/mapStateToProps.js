@@ -1,8 +1,14 @@
-import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
+import { wrapMapToPropsConstant, wrapMapToPropsFunc, wrapMapStateObject } from './wrapMapToProps'
 
 export function whenMapStateToPropsIsFunction(mapStateToProps) {
   return (typeof mapStateToProps === 'function')
     ? wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps')
+    : undefined
+}
+
+export function whenMapStateToPropsIsObject(mapStateToProps) {
+  return (typeof mapStateToProps === 'object')
+    ? wrapMapStateObject(mapStateToProps, 'mapStateToProps')
     : undefined
 }
 
@@ -14,5 +20,6 @@ export function whenMapStateToPropsIsMissing(mapStateToProps) {
 
 export default [
   whenMapStateToPropsIsFunction,
+  whenMapStateToPropsIsObject,
   whenMapStateToPropsIsMissing
 ]

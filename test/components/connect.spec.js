@@ -108,6 +108,85 @@ describe('React', () => {
         TestUtils.findRenderedComponentWithType(container, Container)
       ).toNotThrow()
     })
+  
+    it('should pass state to given component, with shorthand syntax', () => {
+      const store = createStore(() => ({
+        foo: 'bar',
+        baz: 42,
+        hello: 'world'
+      }))
+    
+      @connect({
+        foo: state => state.foo,
+        baz: state => state.baz
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+    
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through" baz={50} />
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props.pass).toEqual('through')
+      expect(stub.props.foo).toEqual('bar')
+      expect(stub.props.baz).toEqual(42)
+      expect(stub.props.hello).toEqual(undefined)
+      expect(() =>
+        TestUtils.findRenderedComponentWithType(container, Container)
+      ).toNotThrow()
+    })
+    
+    it('should pass state to given component, with shorthand factory syntax', () => {
+      const store = createStore(() => ({
+        baz: 'baz',
+      }))
+    
+      @connect({
+        bazNormal: state => state.baz,
+        bazFactory: (intialState) => (state) => intialState.baz + state.baz,
+        bazFactoryWithProps: (intialState, initialProps) => (state, props) => intialState.baz + initialProps.pass + state.baz + props.pass
+      })
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+    
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container pass="through"/>
+        </ProviderMock>
+      )
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(stub.props.pass).toEqual('through')
+      expect(stub.props.bazNormal).toEqual('baz')
+      expect(stub.props.bazFactory).toEqual("bazbaz")
+      expect(stub.props.bazFactoryWithProps).toEqual('bazthroughbazthrough')
+      expect(() =>
+        TestUtils.findRenderedComponentWithType(container, Container)
+      ).toNotThrow()
+    })
+  
+    it('should throw error if connect is called with shorthand syntax and one object value is not a function', () => {
+      expect(() =>
+        @connect({
+          foo: state => state.foo,
+          baz: 'badValue'
+        })
+      class Container extends Component {
+        render() {
+          return <div/>
+        }
+      }
+      ).toThrow(
+        /mapStateToProps object key baz expected to be a function, instead saw string/
+      )
+    })
 
     it('should subscribe class components to the store changes', () => {
       const store = createStore(stringBuilder)

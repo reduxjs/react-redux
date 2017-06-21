@@ -55,6 +55,15 @@ It does not modify the component class passed to it; instead, it *returns* a new
 * [`mapStateToProps(state, [ownProps]): stateProps`] \(*Function*): If this argument is specified, the new component will subscribe to Redux store updates. This means that any time the store is updated, `mapStateToProps` will be called. The results of `mapStateToProps` must be a plain object, which will be merged into the component’s props. If you don't want to subscribe to store updates, pass `null` or `undefined` in place of `mapStateToProps`. 
 
   If your `mapStateToProps` function is declared as taking two parameters, it will be called with the store state as the first parameter and the props passed to the connected component as the second parameter, and will also be re-invoked whenever the connected component receives new props as determined by shallow equality comparisons.  (The second parameter is normally referred to as `ownProps` by convention.)
+  
+  >Note: mapStateToProps can also be passed as an user-friendly object syntax. Keys are prop names and values are selectors (or factories). This is quite similar to [createStructuredSelector](https://github.com/reactjs/reselect#createstructuredselectorinputselectors-selectorcreator--createselector) of [reselect](https://github.com/reactjs/reselect)
+
+```javascript
+Component = connect({
+  deviceOrientation: state => state.deviceOrientation,
+  user: (intialState,initialProps) => (state) => state.users[initialProps.userId],
+})(Component)
+```
 
   >Note: in advanced scenarios where you need more control over the rendering performance, `mapStateToProps()` can also return a function. In this case, *that* function will be used as `mapStateToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reactjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
 
@@ -272,6 +281,23 @@ function mapDispatchToProps(dispatch) {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
+```
+
+##### Inject `todos` with shorthand syntax, and all todoActionCreators and counterActionCreators directly as props
+
+```js
+import * as todoActionCreators from './todoActionCreators'
+import * as counterActionCreators from './counterActionCreators'
+import { bindActionCreators } from 'redux'
+
+
+const todosSelector = state => state.todos
+
+function mapDispatchToProps(dispatch) {
+  return bindActionCreators(Object.assign({}, todoActionCreators, counterActionCreators), dispatch)
+}
+
+export default connect({todos: todosSelector}, mapDispatchToProps)(TodoApp)
 ```
 
 ##### Inject `todos` of a specific user depending on props
