@@ -56,7 +56,14 @@ It does not modify the component class passed to it; instead, it *returns* a new
 
   If your `mapStateToProps` function is declared as taking two parameters, it will be called with the store state as the first parameter and the props passed to the connected component as the second parameter, and will also be re-invoked whenever the connected component receives new props as determined by shallow equality comparisons.  (The second parameter is normally referred to as `ownProps` by convention.)
   
-  >Note: if your mapStateToProps do not need to access component properties, you can use a shorthand syntax by passing an object whose values are "selectors" (See [reselect](https://github.com/reactjs/reselect))
+  >Note: mapStateToProps can also be passed as an user-friendly object syntax. Keys are prop names and values are selectors (or factories). This is quite similar to [createStructuredSelector](https://github.com/reactjs/reselect#createstructuredselectorinputselectors-selectorcreator--createselector) of [reselect](https://github.com/reactjs/reselect)
+
+```javascript
+Component = connect({
+  deviceOrientation: state => state.deviceOrientation,
+  user: (intialState,initialProps) => (state) => state.users[initialProps.userId],
+})(Component)
+```
 
   >Note: in advanced scenarios where you need more control over the rendering performance, `mapStateToProps()` can also return a function. In this case, *that* function will be used as `mapStateToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reactjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
 

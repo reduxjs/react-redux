@@ -90,9 +90,15 @@ export function wrapMapStateObject(mapStateToProps, methodName) {
       return useProps || mapStateToProps[key].length !== 1
     }, false)
   
-  const mapToPropsFn = needsProps
-    ? (state, props) => mapValues(mapStateToProps, fn => fn(state, props))
-    : state => mapValues(mapStateToProps, fn => fn(state))
+  const selectorsMapWrapped = mapValues(mapStateToProps, fn => wrapMapToPropsFunc(fn,methodName))
   
-  return wrapMapToPropsFunc(mapToPropsFn, methodName)
+  return (...args) => {
+    
+    const selectorsMap = mapValues(selectorsMapWrapped,fn => fn(...args))
+  
+    return needsProps
+      ? (state, props) => mapValues(selectorsMap, fn => fn(state, props))
+      : state => mapValues(selectorsMap, fn => fn(state))
+  }
+  
 }
