@@ -40,6 +40,12 @@ If you are on an older version of React Native, you’ll need to keep using [Rea
 We do a deep dive on how React Redux works in [this readthesource episode](https://www.youtube.com/watch?v=VJ38wSFbM3A).  
 Enjoy!
 
+## Caveat
+
+While peforming server-side rendering, if you dispatch actions during `componentWillMount` the resulting state will not render in the wrapped component, nor in parents or sibblings. The idiomatic approach to cover all environments is to only dispatch actions before your first render or in response to user-triggered events. During SSR use a routing mechanism based on the URL to dispatch actions on the store (and `await` on them if necessary) ***before*** calling `ReactDOMServer.renderTostring`. This is called "server-side pre-hydration."
+
+You may want to checkout [Redux First Router](https://github.com/faceyspacey/redux-first-router) for a Redux-specific routing package that helps you resolve URL-driven *pre-hydration* on the server. Check the `thunk` option in their [server-rendering docs](https://github.com/faceyspacey/redux-first-router/blob/master/docs/server-rendering.md).
+
 ## License
 
 MIT
