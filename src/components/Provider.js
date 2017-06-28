@@ -53,7 +53,6 @@ export function createProvider(storeKey = 'store', subKey) {
         [storeKey]: storeShape.isRequired,
         [subscriptionKey]: subscriptionShape,
     }
-    Provider.displayName = 'Provider'
 
     return Provider
 }
