@@ -121,7 +121,6 @@ export default function connectAdvanced(
         this.renderCount = 0
         this.store = props[storeKey] || context[storeKey]
         this.propsMode = Boolean(props[storeKey])
-        this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or props of ` +
@@ -240,7 +239,7 @@ export default function connectAdvanced(
         // instance. a singleton memoized selector would then be holding a reference to the
         // instance, preventing the instance from being garbage collected, and that would be bad
         const withExtras = { ...props }
-        if (withRef) withExtras.ref = this.setWrappedInstance
+        if (withRef) withExtras.ref = this.setWrappedInstance.bind(this)
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
         if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription
         return withExtras
