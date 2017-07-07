@@ -73,7 +73,10 @@ export default function connectAdvanced(
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
-  } = {}
+  } = {},
+
+  // additional option that allow adding store without using provider
+  storeProvider,
 ) {
   const subscriptionKey = storeKey + 'Subscription'
   const version = hotReloadingVersion++
@@ -119,7 +122,9 @@ export default function connectAdvanced(
         this.version = version
         this.state = {}
         this.renderCount = 0
-        this.store = props[storeKey] || context[storeKey]
+        let store
+        if (typeof storeProvider == 'function') store = storeProvider.getStore()
+        this.store = props[storeKey] || context[storeKey] || store
         this.propsMode = Boolean(props[storeKey])
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
