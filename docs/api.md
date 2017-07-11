@@ -122,7 +122,7 @@ When `options.pure` is true, `connect` performs several equality checks that are
 
 * You may wish to override `areStatesEqual` if your `mapStateToProps` function is computationally expensive and is also only concerned with a small slice of your state. For example: `areStatesEqual: (next, prev) => prev.entities.todos === next.entities.todos`; this would effectively ignore state changes for everything but that slice of state.
 
-* You may wish to override `areStatesEqual` to always return false (`areStatesEqual: () => false`) if you have impure reducers that mutate your store state. (This would likely impact the other equality checks is well, depending on your `mapStateToProps` function.)
+* You may wish to override `areStatesEqual` to always return false (`areStatesEqual: () => false`) if you have impure reducers that mutate your store state. (This would likely impact the other equality checks as well, depending on your `mapStateToProps` function.)
 
 * You may wish to override `areOwnPropsEqual` as a way to whitelist incoming props. You'd also have to implement `mapStateToProps`, `mapDispatchToProps` and `mergeProps` to also whitelist props. (It may be simpler to achieve this other ways, for example by using [recompose's mapProps](https://github.com/acdlite/recompose/blob/master/docs/API.md#mapprops).)
 
