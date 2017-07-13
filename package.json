@@ -26,7 +26,6 @@
   "files": [
     "dist",
     "lib",
-    "src",
     "es"
   ],
   "keywords": [
