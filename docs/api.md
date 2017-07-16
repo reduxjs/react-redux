@@ -374,7 +374,7 @@ function selectorFactory(dispatch) {
   const actions = bindActionCreators(actionCreators, dispatch)
   const addTodo = (text) => actions.addTodo(ownProps.userId, text)
   return (nextState, nextOwnProps) => {
-    const todos = nextState.todos[nextProps.userId]
+    const todos = nextState.todos[nextOwnProps.userId]
     const nextResult = { ...nextOwnProps, todos, addTodo }
     ownProps = nextOwnProps
     if (!shallowEqual(result, nextResult)) result = nextResult
