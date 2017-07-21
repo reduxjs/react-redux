@@ -3,6 +3,8 @@ import PropTypes from 'prop-types'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
 
+import {Browser} from 'react-dom-router'
+
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
   if (didWarnAboutReceivingStore) {
