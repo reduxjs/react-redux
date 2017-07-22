@@ -393,7 +393,7 @@ Creates a new `<Provider>` which will set the Redux Store on the passed key of t
 <a id="createProvider-arguments"></a>
 #### Arguments
 
-* [`storeKey`] (String): The key of the context on which to set the store. Default value: 'store'
+* [`storeKey`] (*String*): The key of the context on which to set the store. Default value: 'store'
 
 #### Examples
 Before creating multiple stores, please go through this FAQ: [Can or should I create multiple stores?](http://redux.js.org/docs/faq/StoreSetup.html#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself)
