@@ -78,7 +78,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
   * [`areOwnPropsEqual`] *(Function)*: When pure, compares incoming props to its previous value. Default value: `shallowEqual`
   * [`areStatePropsEqual`] *(Function)*: When pure, compares the result of `mapStateToProps` to its previous value. Default value: `shallowEqual`
   * [`areMergedPropsEqual`] *(Function)*: When pure, compares the result of `mergeProps` to its previous value. Default value: `shallowEqual`
-  * [`storeKey`] *(String)*: The key of the context from where to read the store. Default value: `'store'`
+  * [`storeKey`] *(String)*: The key of the context from where to read the store. You probably only need this if you are in the inadvisable position of having multiple stores. Default value: `'store'`
 
 <a id="connect-arguments-arity"></a>
 ##### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
