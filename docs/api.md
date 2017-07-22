@@ -78,6 +78,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
   * [`areOwnPropsEqual`] *(Function)*: When pure, compares incoming props to its previous value. Default value: `shallowEqual`
   * [`areStatePropsEqual`] *(Function)*: When pure, compares the result of `mapStateToProps` to its previous value. Default value: `shallowEqual`
   * [`areMergedPropsEqual`] *(Function)*: When pure, compares the result of `mergeProps` to its previous value. Default value: `shallowEqual`
+  * [`storeKey`] *(String)*: The key of the context from where to read the store. You probably only need this if you are in the inadvisable position of having multiple stores. Default value: `'store'`
 
 <a id="connect-arguments-arity"></a>
 ##### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
@@ -384,3 +385,41 @@ function selectorFactory(dispatch) {
 export default connectAdvanced(selectorFactory)(TodoApp)
 ```
 
+<a id="createProvider"></a>
+### `createProvider([storeKey])`
+
+Creates a new `<Provider>` which will set the Redux Store on the passed key of the context. You probably only need this if you are in the inadvisable position of having multiple stores. You will also need to pass the same `storeKey` to the `options` argument of [`connect`](#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
+
+<a id="createProvider-arguments"></a>
+#### Arguments
+
+* [`storeKey`] (*String*): The key of the context on which to set the store. Default value: `'store'`
+
+#### Examples
+Before creating multiple stores, please go through this FAQ: [Can or should I create multiple stores?](http://redux.js.org/docs/faq/StoreSetup.html#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself)
+
+```js
+import {connect, createProvider} from 'react-redux'
+
+const STORE_KEY = 'componentStore'
+
+export const Provider = createProvider(STORE_KEY)
+
+function connectExtended(
+  mapStateToProps,
+  mapDispatchToProps,
+  mergeProps,
+  options = {}
+) {
+  options.storeKey = STORE_KEY
+  return connect(
+    mapStateToProps,
+    mapDispatchToProps,
+    mergeProps,
+    options
+  )
+}
+
+export {connectExtended as connect}
+```
+Now you can import the above `Provider` and `connect` and use them.
