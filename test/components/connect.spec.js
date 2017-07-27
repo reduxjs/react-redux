@@ -60,6 +60,19 @@ describe('React', () => {
         : prev
     }
 
+    function imitateHotReloading(TargetClass, SourceClass, container) {
+      // Crude imitation of hot reloading that does the job
+      Object.getOwnPropertyNames(SourceClass.prototype).filter(key =>
+        typeof SourceClass.prototype[key] === 'function'
+      ).forEach(key => {
+        if (key !== 'render' && key !== 'constructor') {
+          TargetClass.prototype[key] = SourceClass.prototype[key]
+        }
+      })
+
+      container.forceUpdate()
+    }
+
     it('should receive the store in the context', () => {
       const store = createStore(() => ({}))
 
@@ -1375,26 +1388,74 @@ describe('React', () => {
       expect(stub.props.foo).toEqual(undefined)
       expect(stub.props.scooby).toEqual('doo')
 
-      function imitateHotReloading(TargetClass, SourceClass) {
-        // Crude imitation of hot reloading that does the job
-        Object.getOwnPropertyNames(SourceClass.prototype).filter(key =>
-          typeof SourceClass.prototype[key] === 'function'
-        ).forEach(key => {
-          if (key !== 'render' && key !== 'constructor') {
-            TargetClass.prototype[key] = SourceClass.prototype[key]
-          }
-        })
-
-        container.forceUpdate()
-      }
-
-      imitateHotReloading(ContainerBefore, ContainerAfter)
+      imitateHotReloading(ContainerBefore, ContainerAfter, container)
       expect(stub.props.foo).toEqual('baz')
       expect(stub.props.scooby).toEqual('foo')
 
-      imitateHotReloading(ContainerBefore, ContainerNext)
+      imitateHotReloading(ContainerBefore, ContainerNext, container)
       expect(stub.props.foo).toEqual('bar')
       expect(stub.props.scooby).toEqual('boo')
+    })
+
+    it('should persist listeners through hot update', () => {
+      const ACTION_TYPE = "ACTION"
+      const store = createStore((state = {actions: 0}, action) => {
+        switch (action.type) {
+          case ACTION_TYPE: {
+            return {
+              actions: state.actions + 1
+            }
+          }
+          default:
+            return state
+        }
+      })
+
+      @connect(
+        (state) => ({ actions: state.actions })
+      )
+      class Child extends Component {
+        render() {
+          return <Passthrough {...this.props}/>
+        }
+      }
+
+      @connect(
+        () => ({ scooby: 'doo' })
+      )
+      class ParentBefore extends Component {
+        render() {
+          return (
+            <Child />
+          )
+        }
+      }
+
+      @connect(
+        () => ({ scooby: 'boo' })
+      )
+      class ParentAfter extends Component {
+        render() {
+          return (
+            <Child />
+          )
+        }
+      }
+
+      let container
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <ParentBefore ref={instance => container = instance}/>
+        </ProviderMock>
+      )
+
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+
+      imitateHotReloading(ParentBefore, ParentAfter, container)
+
+      store.dispatch({type: ACTION_TYPE})
+
+      expect(stub.props.actions).toEqual(1)
     })
 
     it('should set the displayName correctly', () => {

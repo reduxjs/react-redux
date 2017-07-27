@@ -271,9 +271,22 @@ export default function connectAdvanced(
           this.version = version
           this.initSelector()
 
-          if (this.subscription) this.subscription.tryUnsubscribe()
+          // If any connected descendants don't hot reload (and resubscribe in the process), their
+          // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
+          // listeners, this does mean that the old versions of connected descendants will still be
+          // notified of state changes; however, their onStateChange function is a no-op so this
+          // isn't a huge deal.
+          let oldListeners = [];
+
+          if (this.subscription) {
+            oldListeners = this.subscription.listeners.get()
+            this.subscription.tryUnsubscribe()
+          }
           this.initSubscription()
-          if (shouldHandleStateChanges) this.subscription.trySubscribe()
+          if (shouldHandleStateChanges) {
+            this.subscription.trySubscribe()
+            oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
+          }
         }
       }
     }
