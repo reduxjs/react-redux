@@ -101,7 +101,7 @@
     "rollup-plugin-uglify": "^2.0.1"
   },
   "dependencies": {
-    "hoist-non-react-statics": "^1.0.3",
+    "hoist-non-react-statics": "^2.2.1",
     "invariant": "^2.0.0",
     "lodash": "^4.2.0",
     "lodash-es": "^4.2.0",
