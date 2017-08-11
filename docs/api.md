@@ -119,7 +119,7 @@ const mapStateToProps = (...args) => {
 <a id="connect-optimizing"></a>
 ##### Optimizing connect when options.pure is true
 
-When `options.pure` is true, `connect` performs several equality checks that are used to avoid unncessary calls to `mapStateToProps`, `mapDispatchToProps`, `mergeProps`, and ultimately to `render`. These include `areStatesEqual`, `areOwnPropsEqual`, `areStatePropsEqual`, and `areMergedPropsEqual`. While the defaults are probably appropriate 99% of the time, you may wish to override them with custom implementations for performance or other reasons. Here are several examples:
+When `options.pure` is true, `connect` performs several equality checks that are used to avoid unnecessary calls to `mapStateToProps`, `mapDispatchToProps`, `mergeProps`, and ultimately to `render`. These include `areStatesEqual`, `areOwnPropsEqual`, `areStatePropsEqual`, and `areMergedPropsEqual`. While the defaults are probably appropriate 99% of the time, you may wish to override them with custom implementations for performance or other reasons. Here are several examples:
 
 * You may wish to override `areStatesEqual` if your `mapStateToProps` function is computationally expensive and is also only concerned with a small slice of your state. For example: `areStatesEqual: (next, prev) => prev.entities.todos === next.entities.todos`; this would effectively ignore state changes for everything but that slice of state.
 
