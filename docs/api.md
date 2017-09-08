@@ -83,7 +83,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
 <a id="connect-arguments-arity"></a>
 ##### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
 
-> Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if formal definition of the function contains one mandatory parameter (function has length 1). For example, function defined like below won't receive `ownProps` as the second argument.
+> Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if the formal definition of the function contains one mandatory parameter (function has length 1). For example, functions defined like below won't receive `ownProps` as the second argument.
 ```javascript
 function mapStateToProps(state) {
   console.log(state); // state
