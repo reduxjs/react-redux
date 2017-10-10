@@ -226,12 +226,9 @@ function mapStateToProps(state) {
   return { todos: state.todos }
 }
 
-// shorthand object, a map between the names of the callback props
-// that we want to inject and the action creator functions that create the corresponding actions
-// in this case the action creator `addTodo` will be mapped and dispatched through property `addTodo2`
-// it is a good practice to keep names 1:1 to make mapping even easier - `deleteTodo`
+// shorthand object, a map between the names of the callback props and action creators
 const mapDispatchToProps = {
-  addTodo2: addTodo,
+  addTodo,
   deleteTodo
 }
 
