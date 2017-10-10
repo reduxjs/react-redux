@@ -308,6 +308,50 @@ function mergeProps(stateProps, dispatchProps, ownProps) {
 export default connect(mapStateToProps, actionCreators, mergeProps)(TodoApp)
 ```
 
+##### Factory functions
+Factory functions can be used for performance optimizations
+
+```js
+import { addTodo } from './actionCreators'
+
+function mapStateToPropsFactory(initialState, initialProps) {
+  // we can create a selector that will be recreated for every component instance
+  const getSomeProperty= createSelector(...);
+  // or get some state/perform an expensive computation based on the initial properties
+  // note that `anotherProperty` is created once - during component initialization,
+  // so even if later prop `another` changes, the value of `anotherProperty` will not change
+  const anotherProperty = initialState[initialProps.another];
+  // then we can return a regular `mapStateToProps` function without a second `ownProps` argument
+  // which in turn will not be re-invoked whenever the connected component receives new props.
+  return function(state){
+    return {
+      anotherProperty,
+      someProperty: getSomeProperty(state),
+      todos: state.todos
+    }
+  }
+}
+
+// we can do the same for dispatch
+function mapDispatchToPropsFactory(initialState, initialProps) {
+  // react router history push doesn't change, so we can use a factory,
+  function goToSomeLink(){
+    initialProps.history.push('some/link');
+  }
+  return function(dispatch){
+    return {
+      addTodo: function(todo){
+        // connect to API here
+        goToSomeLink();
+      }
+    }
+  }
+}
+
+
+export default connect(mapStateToProps, actionCreators)(TodoApp)
+```
+
 <a id="connectAdvanced"></a>
 ### `connectAdvanced(selectorFactory, [connectOptions])`
 
