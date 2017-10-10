@@ -218,6 +218,22 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
+#####  Inject `todos` and specific action creators (`addTodo` and `deleteTodo`) with shorthand syntax
+```js
+import { addTodo, deleteTodo } from './actionCreators'
+
+function mapStateToProps(state) {
+  return { todos: state.todos }
+}
+
+const mapDispatchToProps = {
+  addTodo,
+  deleteTodo
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
+```
+
 ##### Inject `todos`, todoActionCreators as `todoActions`, and counterActionCreators as `counterActions`
 
 ```js
