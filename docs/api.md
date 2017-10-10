@@ -218,6 +218,26 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
+#####  Inject `todos` and a specific action creator (`addTodo` and `deleteTodo`) - shorthand
+```js
+import { addTodo, deleteTodo } from './actionCreators'
+
+function mapStateToProps(state) {
+  return { todos: state.todos }
+}
+
+// shorthand object, a map between the names of the callback props
+// that we want to inject and the action creator functions that create the corresponding actions
+// in this case the action creator `addTodo` will be mapped and dispatched through property `addTodo2`
+// it is a good practice to keep names 1:1 to make mapping even easier - `deleteTodo`
+const mapDispatchToProps = {
+  addTodo2: addTodo,
+  deleteTodo
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
+```
+
 ##### Inject `todos`, todoActionCreators as `todoActions`, and counterActionCreators as `counterActions`
 
 ```js
