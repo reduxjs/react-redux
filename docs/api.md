@@ -324,6 +324,39 @@ function mergeProps(stateProps, dispatchProps, ownProps) {
 export default connect(mapStateToProps, actionCreators, mergeProps)(TodoApp)
 ```
 
+##### Factory functions
+Factory functions can be used for performance optimizations
+
+```js
+import { addTodo } from './actionCreators'
+
+function mapStateToPropsFactory(initialState, initialProps) {
+  const getSomeProperty= createSelector(...);
+  const anotherProperty = 200 + initialState[initialProps.another];
+  return function(state){
+    return {
+      anotherProperty,
+      someProperty: getSomeProperty(state),
+      todos: state.todos
+    }
+  }
+}
+
+function mapDispatchToPropsFactory(initialState, initialProps) {
+  function goToSomeLink(){
+    initialProps.history.push('some/link');
+  }
+  return function(dispatch){
+    return {
+      addTodo
+    }
+  }
+}
+
+
+export default connect(mapStateToPropsFactory, mapDispatchToPropsFactory)(TodoApp)
+```
+
 <a id="connectAdvanced"></a>
 ### `connectAdvanced(selectorFactory, [connectOptions])`
 
