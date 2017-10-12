@@ -315,14 +315,8 @@ Factory functions can be used for performance optimizations
 import { addTodo } from './actionCreators'
 
 function mapStateToPropsFactory(initialState, initialProps) {
-  // we can create a selector that will be recreated for every component instance
   const getSomeProperty= createSelector(...);
-  // or get some state/perform an expensive computation based on the initial properties
-  // note that `anotherProperty` is created once - during component initialization,
-  // so even if later prop `another` changes, the value of `anotherProperty` will not change
-  const anotherProperty = initialState[initialProps.another];
-  // then we can return a regular `mapStateToProps` function without a second `ownProps` argument
-  // which in turn will not be re-invoked whenever the connected component receives new props.
+  const anotherProperty = 200 + initialState[initialProps.another];
   return function(state){
     return {
       anotherProperty,
@@ -332,18 +326,13 @@ function mapStateToPropsFactory(initialState, initialProps) {
   }
 }
 
-// we can do the same for dispatch
 function mapDispatchToPropsFactory(initialState, initialProps) {
-  // react router history is a mutable object, so we can inject it within a dispatch factory
   function goToSomeLink(){
     initialProps.history.push('some/link');
   }
   return function(dispatch){
     return {
-      addTodo: function(todo){
-        // with thunk or similar middleware
-        // dispatch(addTodo(todo)) and then if success -> goToSomeLink()
-      }
+      addTodo
     }
   }
 }
