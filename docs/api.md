@@ -334,22 +334,22 @@ function mapStateToPropsFactory(initialState, initialProps) {
 
 // we can do the same for dispatch
 function mapDispatchToPropsFactory(initialState, initialProps) {
-  // react router history push doesn't change, so we can use a factory,
+  // react router history is a mutable object, so we can inject it within a dispatch factory
   function goToSomeLink(){
     initialProps.history.push('some/link');
   }
   return function(dispatch){
     return {
       addTodo: function(todo){
-        // connect to API here
-        goToSomeLink();
+        // with thunk or similar middleware
+        // dispatch(addTodo(todo)) and then if success -> goToSomeLink()
       }
     }
   }
 }
 
 
-export default connect(mapStateToProps, actionCreators)(TodoApp)
+export default connect(mapStateToPropsFactory, mapDispatchToPropsFactory)(TodoApp)
 ```
 
 <a id="connectAdvanced"></a>
