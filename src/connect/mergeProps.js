@@ -23,7 +23,7 @@ export function wrapMergePropsFunc(mergeProps) {
         mergedProps = nextMergedProps
 
         if (process.env.NODE_ENV !== 'production')
-          verifyPlainObject(mergedProps, displayName, 'mergeProps')
+          mergedProps === false || verifyPlainObject(mergedProps, displayName, 'mergeProps')
       }
 
       return mergedProps

@@ -1,5 +1,5 @@
 import verifySubselectors from './verifySubselectors'
-  
+
 export function impureFinalPropsSelectorFactory(
   mapStateToProps,
   mapDispatchToProps,
@@ -33,40 +33,77 @@ export function pureFinalPropsSelectorFactory(
     state = firstState
     ownProps = firstOwnProps
     stateProps = mapStateToProps(state, ownProps)
+    if (stateProps === false)
+      throw new Error('Cannot short-circuit initial call to mapStateToProps.')
     dispatchProps = mapDispatchToProps(dispatch, ownProps)
+    if (dispatchProps === false)
+      throw new Error('Cannot short-circuit initial call to mapDispatchToProps.')
     mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+    if (mergedProps === false)
+      throw new Error('Cannot short-circuit initial call to mergeProps.')
     hasRunAtLeastOnce = true
     return mergedProps
   }
 
   function handleNewPropsAndNewState() {
-    stateProps = mapStateToProps(state, ownProps)
+    const newStateProps = mapStateToProps(state, ownProps)
 
-    if (mapDispatchToProps.dependsOnOwnProps)
-      dispatchProps = mapDispatchToProps(dispatch, ownProps)
+    if (newStateProps !== false)
+      stateProps = newStateProps
 
-    mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+    if (mapDispatchToProps.dependsOnOwnProps) {
+      const newDispatchProps = mapDispatchToProps(dispatch, ownProps)
+
+      if (newDispatchProps !== false)
+        dispatchProps = newDispatchProps
+    }
+
+    const newMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+
+    if (newMergedProps !== false)
+      mergedProps = newMergedProps
+
     return mergedProps
   }
 
   function handleNewProps() {
-    if (mapStateToProps.dependsOnOwnProps)
-      stateProps = mapStateToProps(state, ownProps)
+    if (mapStateToProps.dependsOnOwnProps) {
+      const newStateProps = mapStateToProps(state, ownProps)
 
-    if (mapDispatchToProps.dependsOnOwnProps)
-      dispatchProps = mapDispatchToProps(dispatch, ownProps)
+      if (newStateProps !== false)
+        stateProps = newStateProps
+    }
 
-    mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+    if (mapDispatchToProps.dependsOnOwnProps) {
+      const newDispatchProps = mapDispatchToProps(dispatch, ownProps)
+
+      if (newDispatchProps !== false)
+        dispatchProps = newDispatchProps
+    }
+
+    const newMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+
+    if (newMergedProps !== false)
+      mergedProps = newMergedProps
+
     return mergedProps
   }
 
   function handleNewState() {
     const nextStateProps = mapStateToProps(state, ownProps)
+
+    if (nextStateProps === false)
+      return mergedProps
+
     const statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps)
     stateProps = nextStateProps
-    
-    if (statePropsChanged)
-      mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+
+    if (statePropsChanged) {
+      const newMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
+
+      if (newMergedProps !== false)
+        mergedProps = newMergedProps
+    }
 
     return mergedProps
   }
