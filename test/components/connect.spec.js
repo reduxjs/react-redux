@@ -2041,6 +2041,324 @@ describe('React', () => {
       expect(memoizedReturnCount).toBe(2)
     })
 
+    it('should not update when mapStateToProps without ownProps returns false', () => {
+      let updatedCount = 0
+      const store = createStore(({ value = 0 } = { value: 0 }, action) => ({
+        value: action.type === 'test' ? value + 1 : value
+      }))
+
+      const mapStateFactory = state => {
+        if (state.value > 2) return false
+        return { value: state.value }
+      }
+
+      @connect(mapStateFactory)
+      class Container extends Component {
+        componentWillUpdate() {
+          updatedCount++
+        }
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Container name="a" />
+          </div>
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(1)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(2)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(2)
+    })
+
+    it('should not update when mapStateToProps with ownProps returns false', () => {
+      let updatedCount = 0
+      const store = createStore(({ value = 0 } = { value: 0 }, action) => ({
+        value: action.type === 'test' ? value + 1 : value
+      }))
+
+      /*eslint-disable no-unused-vars */
+      const mapStateFactory = (state, ownProps) => {
+        if (state.value > 2) return false
+        return { value: state.value }
+      }
+
+      @connect(mapStateFactory)
+      class Container extends Component {
+        componentWillUpdate() {
+          updatedCount++
+        }
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Container name="a" />
+          </div>
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(1)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(2)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(2)
+    })
+
+    it('should throw if initial mapStateToProps without ownProps returns false', () => {
+      const store = createStore(() => ({ value: 1}))
+
+      /*eslint-disable no-unused-vars */
+      const mapStateFactory = state => false
+
+      @connect(mapStateFactory)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      expect(() =>
+        TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <div>
+              <Container name="a" />
+            </div>
+          </ProviderMock>
+        )
+      ).toThrow(
+        /Cannot short-circuit initial call to mapStateToProps/
+      )
+    })
+
+    it('should throw if initial mapStateToProps with ownProps returns false', () => {
+      const store = createStore(() => ({ value: 1}))
+
+      /*eslint-disable no-unused-vars */
+      const mapStateFactory = (state, ownProps) => false
+
+      @connect(mapStateFactory)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      expect(() =>
+        TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <div>
+              <Container name="a" />
+            </div>
+          </ProviderMock>
+        )
+      ).toThrow(
+        /Cannot short-circuit initial call to mapStateToProps/
+      )
+    })
+
+    it('should not update when mapDispatchToProps with ownProps returns false', () => {
+      let updatedCount = 0
+      let mappedDispatchCount = 0
+      const store = createStore(({ value = 0 } = { value: 0 }, action) => ({
+        value: action.type === 'test' ? value + 1 : value
+      }))
+
+      const mapDispatchFactory = (dispatch, ownProps) => {
+        if (ownProps.value > 2) return false
+        mappedDispatchCount++
+        return { myAction: () => {} }
+      }
+
+      @connect(null, mapDispatchFactory)
+      class Container extends Component {
+        componentWillUpdate() {
+          updatedCount++
+        }
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const mapStateFactory = state => {
+        if (state.value > 3) return false
+        return { value: state.value }
+      }
+
+      @connect(mapStateFactory, mapDispatchFactory)
+      class Wrapper extends Component {
+        render() {
+          return <Container {...this.props} own={Math.random()} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Wrapper name="a" />
+          </div>
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(1)
+      expect(mappedDispatchCount).toBe(3)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(2)
+      expect(mappedDispatchCount).toBe(4)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(3)
+      expect(mappedDispatchCount).toBe(4)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(3)
+      expect(mappedDispatchCount).toBe(4)
+    })
+
+    it('should throw if initial mapDispatchToProps without ownProps returns false', () => {
+      const store = createStore(() => ({ value: 1}))
+
+      /*eslint-disable no-unused-vars */
+      const mapDispatchFactory = state => false
+
+      @connect(null, mapDispatchFactory)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      expect(() =>
+        TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <div>
+              <Container name="a" />
+            </div>
+          </ProviderMock>
+        )
+      ).toThrow(
+        /Cannot short-circuit initial call to mapDispatchToProps/
+      )
+    })
+
+    it('should throw if initial mapDispatchToProps with ownProps returns false', () => {
+      const store = createStore(() => ({ value: 1}))
+
+      /*eslint-disable no-unused-vars */
+      const mapDispatchFactory = (state, ownProps) => false
+
+      @connect(null, mapDispatchFactory)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      expect(() =>
+        TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <div>
+              <Container name="a" />
+            </div>
+          </ProviderMock>
+        )
+      ).toThrow(
+        /Cannot short-circuit initial call to mapDispatchToProps/
+      )
+    })
+
+    it('should not update when mergeProps returns false', () => {
+      let updatedCount = 0
+      let mergedPropsCount = 0
+      const store = createStore(({ value = 0 } = { value: 0 }, action) => ({
+        value: action.type === 'test' ? value + 1 : value
+      }))
+
+      const mapStateFactory = state => ({ value: state.value })
+
+      /*eslint-disable no-unused-vars */
+      const mapDispatchFactory = dispatch => ({ myAction: () => {} })
+
+      const mergeProps = (stateProps, dispatchProps, ownProps) => {
+        if (stateProps.value > 2) return false
+        mergedPropsCount++
+        return {
+          ...stateProps,
+          ...dispatchProps,
+          ...ownProps
+        }
+      }
+
+      @connect(mapStateFactory, mapDispatchFactory, mergeProps)
+      class Container extends Component {
+        componentWillUpdate() {
+          updatedCount++
+        }
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <div>
+            <Container name="a" />
+          </div>
+        </ProviderMock>
+      )
+
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(1)
+      expect(mergedPropsCount).toBe(2)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(2)
+      expect(mergedPropsCount).toBe(3)
+      store.dispatch({ type: 'test' })
+      expect(updatedCount).toBe(2)
+      expect(mergedPropsCount).toBe(3)
+    })
+
+    it('should throw if initial mergeProps returns false', () => {
+      const store = createStore(() => ({ value: 1}))
+
+      const mapStateFactory = state => ({ value: state.value })
+
+      /*eslint-disable no-unused-vars */
+      const mapDispatchFactory = dispatch => ({ myAction: () => {} })
+
+      /*eslint-disable no-unused-vars */
+      const mergeProps = (stateProps, dispatchProps, ownProps) => false
+
+      @connect(mapStateFactory, mapDispatchFactory, mergeProps)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      expect(() =>
+        TestUtils.renderIntoDocument(
+          <ProviderMock store={store}>
+            <div>
+              <Container name="a" />
+            </div>
+          </ProviderMock>
+        )
+      ).toThrow(
+        /Cannot short-circuit initial call to mergeProps/
+      )
+    })
+
     it('should not call update if mergeProps return value has not changed', () => {
       let mapStateCalls = 0
       let renderCalls = 0
