@@ -17,8 +17,8 @@ import {
 type Diff<T extends string, U extends string> = ({ [P in T]: P } & { [P in U]: never } & { [x: string]: never })[T];
 type Omit<T, K extends keyof T> = Pick<T, Diff<keyof T, K>>;
 
-export interface DispatchProp<S> {
-  dispatch?: Dispatch<S>;
+export interface DispatchProp {
+  dispatch?: Dispatch<{}>;
 }
 
 interface AdvancedComponentDecorator<TProps, TOwnProps> {
@@ -60,11 +60,11 @@ export type InferableComponentEnhancer<TInjectedProps> =
  * @param options
  */
 export interface Connect {
-    (): InferableComponentEnhancer<DispatchProp<any>>;
+    (): InferableComponentEnhancer<DispatchProp>;
 
     <TStateProps = {}, no_dispatch = {}, TOwnProps = {}>(
         mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps>
-    ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp<any>, TOwnProps>;
+    ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>;
 
     <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
         mapStateToProps: null | undefined,
@@ -105,7 +105,7 @@ export interface Connect {
         mapDispatchToProps: null | undefined,
         mergeProps: null | undefined,
         options: Options<TStateProps, TOwnProps>
-    ): InferableComponentEnhancerWithProps<DispatchProp<any> & TStateProps, TOwnProps>;
+    ): InferableComponentEnhancerWithProps<DispatchProp & TStateProps, TOwnProps>;
 
     <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
         mapStateToProps: null | undefined,
