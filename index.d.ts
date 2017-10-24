@@ -276,7 +276,7 @@ export interface ProviderProps {
     /**
      * The single Redux store in your application.
      */
-    store?: Store<any, any>;
+    store?: Store<any>;
     children?: ReactNode;
 }
 
