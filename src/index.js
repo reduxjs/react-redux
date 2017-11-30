@@ -3,3 +3,4 @@ import connectAdvanced from './components/connectAdvanced'
 import connect from './connect/connect'
 
 export { Provider, createProvider, connectAdvanced, connect }
+export { compose } from 'redux'
