@@ -197,7 +197,11 @@ export default function connectAdvanced(
         // parentSub's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
         const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
+        let onStateChange = this.onStateChange.bind(this);
+        if (connectOptions.onStateChangeDecorator) {
+          onStateChange = connectOptions.onStateChangeDecorator(onStateChange)
+        }
+        this.subscription = new Subscription(this.store, parentSub, onStateChange)
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
         // the middle of the notification loop, where `this.subscription` will then be null. An
