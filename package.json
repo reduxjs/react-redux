@@ -104,7 +104,7 @@
     "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-uglify": "^2.0.1",
     "typescript": "^2.0.10",
-    "typings-tester": "^0.2.0",
+    "typings-tester": "^0.2.0"
   },
   "dependencies": {
     "hoist-non-react-statics": "^2.2.1",
