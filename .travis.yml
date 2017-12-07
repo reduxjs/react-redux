@@ -4,5 +4,6 @@ node_js:
 script:
   - npm run lint
   - npm run test:cov
+  - npm run test:typescript
 after_success:
   - npm run coverage
