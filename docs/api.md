@@ -383,7 +383,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
 
   * [`withRef`] *(Boolean)*: If true, stores a ref to the wrapped component instance and makes it available via `getWrappedInstance()` method. Default value: `false`
  
-  * Addionally, any extra options passed via `connectOptions` will be passed through to your `selectorFactory` in the `factoryOptions` argument.
+  * Additionally, any extra options passed via `connectOptions` will be passed through to your `selectorFactory` in the `factoryOptions` argument.
 
 <a id="connectAdvanced-returns"></a>
 #### Returns
