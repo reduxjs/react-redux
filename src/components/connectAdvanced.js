@@ -6,7 +6,6 @@ import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 
 let hotReloadingVersion = 0
-const dummyState = {}
 function noop() {}
 function makeSelectorStateful(sourceSelector, store) {
   // wrap the selector in an object that tracks its results between runs.
@@ -215,7 +214,7 @@ export default function connectAdvanced(
           this.notifyNestedSubs()
         } else {
           this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
-          this.setState(dummyState)
+          this.forceUpdate()
         }
       }
 
