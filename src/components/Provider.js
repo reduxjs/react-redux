@@ -1,6 +1,6 @@
 import { Component, Children } from 'react'
 import PropTypes from 'prop-types'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
+import { storeShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
 
 let didWarnAboutReceivingStore = false
@@ -19,12 +19,10 @@ function warnAboutReceivingStore() {
   )
 }
 
-export function createProvider(storeKey = 'store', subKey) {
-    const subscriptionKey = subKey || `${storeKey}Subscription`
-
+export function createProvider(storeKey = 'store') {
     class Provider extends Component {
         getChildContext() {
-          return { [storeKey]: this[storeKey], [subscriptionKey]: null }
+          return { [storeKey]: this[storeKey] }
         }
 
         constructor(props, context) {
@@ -51,7 +49,6 @@ export function createProvider(storeKey = 'store', subKey) {
     }
     Provider.childContextTypes = {
         [storeKey]: storeShape.isRequired,
-        [subscriptionKey]: subscriptionShape,
     }
 
     return Provider
