@@ -21,7 +21,7 @@ ReactDOM.render(
   <Provider store={store}>
     <MyRootComponent />
   </Provider>,
-  rootEl
+  document.getElementById('root')
 )
 ```
 
