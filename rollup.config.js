@@ -7,17 +7,16 @@ import uglify from 'rollup-plugin-uglify'
 const env = process.env.NODE_ENV
 
 const config = {
-  entry: 'src/index.js',
-  external: [
-    'react',
-    'redux'
-  ],
-  globals: {
-    'react': 'React',
-    'redux': 'Redux'
+  input: 'src/index.js',
+  external: ['react', 'redux'],
+  output: {
+    format: 'umd',
+    name: 'ReactRedux',
+    globals: {
+      react: 'React',
+      redux: 'Redux'
+    }
   },
-  format: 'umd',
-  moduleName: 'ReactRedux',
   plugins: [
     nodeResolve(),
     babel({
