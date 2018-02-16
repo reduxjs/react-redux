@@ -24,7 +24,10 @@
   ],
   "env": {
     "test": {
-      "plugins": ["istanbul"]
+      "plugins": [
+        "istanbul",
+        ["transform-es2015-modules-commonjs", { "loose": true }]
+      ]
     },
     "commonjs": {
       "plugins": [
