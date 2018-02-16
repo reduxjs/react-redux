@@ -4,7 +4,6 @@
   "description": "Official React bindings for Redux",
   "main": "./lib/index.js",
   "module": "es/index.js",
-  "jsnext:main": "es/index.js",
   "scripts": {
     "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --out-dir lib",
     "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
