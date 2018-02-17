@@ -42,9 +42,9 @@
   "author": "Dan Abramov <dan.abramov@me.com> (http://github.com/gaearon)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gaearon/react-redux/issues"
+    "url": "https://github.com/reactjs/react-redux/issues"
   },
-  "homepage": "https://github.com/gaearon/react-redux",
+  "homepage": "https://github.com/reactjs/react-redux",
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0-0 || ^16.0.0-0",
     "redux": "^2.0.0 || ^3.0.0 || ^4.0.0-0"
