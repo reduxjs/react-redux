@@ -20,7 +20,7 @@ export function wrapMapToPropsConstant(getConstant) {
 export function getDependsOnOwnProps(mapToProps) {
   return (mapToProps.dependsOnOwnProps !== null && mapToProps.dependsOnOwnProps !== undefined)
     ? Boolean(mapToProps.dependsOnOwnProps)
-    : mapToProps.length !== 1
+    : mapToProps.length >= 2
 }
 
 // Used by whenMapStateToPropsIsFunction and whenMapDispatchToPropsIsFunction,
