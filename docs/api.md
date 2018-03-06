@@ -58,7 +58,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
 
   >Note: in advanced scenarios where you need more control over the rendering performance, `mapStateToProps()` can also return a function. In this case, *that* function will be used as `mapStateToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reactjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
 
-  >The `mapStateToProps` function's first argument is the entire Redux store’s state and it returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/reactjs/reselect) to efficiently compose selectors and [compute derived data](http://redux.js.org/docs/recipes/ComputingDerivedData.html).
+  >The `mapStateToProps` function's first argument is the entire Redux store’s state and it returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/reactjs/reselect) to efficiently compose selectors and [compute derived data](https://redux.js.org/recipes/computing-derived-data).
 
 * [`mapDispatchToProps(dispatch, [ownProps]): dispatchProps`] \(*Object* or *Function*): If an object is passed, each function inside it is assumed to be a Redux action creator. An object with the same function names, but with every action creator wrapped into a `dispatch` call so they may be invoked directly, will be merged into the component’s props.  
 
