@@ -7,7 +7,7 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import TestUtils from 'react-dom/test-utils'
 import { createStore } from 'redux'
-import { connect } from '../../src/index'
+import { connect, Provider } from '../../src/index'
 
 describe('React', () => {
   describe('connect', () => {
@@ -17,6 +17,7 @@ describe('React', () => {
       }
     }
 
+    /*
     class ProviderMock extends Component {
       getChildContext() {
         return { store: this.props.store }
@@ -29,6 +30,8 @@ describe('React', () => {
     ProviderMock.childContextTypes = {
       store: PropTypes.object.isRequired
     }
+    */
+    const ProviderMock = Provider;
 
     class ContextBoundStore {
       constructor(reducer) {
@@ -73,6 +76,7 @@ describe('React', () => {
       container.forceUpdate()
     }
 
+    /*
     it('should receive the store in the context', () => {
       const store = createStore(() => ({}))
 
@@ -92,6 +96,7 @@ describe('React', () => {
       const container = TestUtils.findRenderedComponentWithType(tree, Container)
       expect(container.context.store).toBe(store)
     })
+    */
 
     it('should pass state and props to the given component', () => {
       const store = createStore(() => ({
