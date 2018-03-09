@@ -1,6 +1,6 @@
 import React, { Component, Children } from 'react'
 import PropTypes from 'prop-types'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
+import { storeShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
 
 import {ReactReduxContext} from "./context";
@@ -22,24 +22,13 @@ function warnAboutReceivingStore() {
 }
 
 export function createProvider(storeKey = 'store', subKey) {
-    //const subscriptionKey = subKey || `${storeKey}Subscription`
 
     class Provider extends Component {
-        /*
-        getChildContext() {
-          return { [storeKey]: this[storeKey], [subscriptionKey]: null }
-        }
-        */
 
         constructor(props, context) {
           super(props, context)
-          //this[storeKey] = props.store;
 
             const {store} = props;
-
-          if(!store || !store.getState || !store.dispatch) {
-              throw new Error("Must pass a valid Redux store as a prop to Provider");
-          }
 
             this.state = {
                 storeState : store.getState(),
@@ -50,15 +39,13 @@ export function createProvider(storeKey = 'store', subKey) {
         componentDidMount() {
             const {store} = this.props;
 
+            // TODO What about any actions that might have been dispatched between ctor and cDM?
             this.unsubscribe = store.subscribe( () => {
-                console.log("Provider subscription running");
                 this.setState({storeState : store.getState()});
             });
         }
 
         render() {
-            console.log("Provider re-rendering");
-
             return (
                 <ReactReduxContext.Provider value={this.state}>
                     {Children.only(this.props.children)}
@@ -80,12 +67,6 @@ export function createProvider(storeKey = 'store', subKey) {
         store: storeShape.isRequired,
         children: PropTypes.element.isRequired,
     }
-    /*
-    Provider.childContextTypes = {
-        [storeKey]: storeShape.isRequired,
-        [subscriptionKey]: subscriptionShape,
-    }
-    */
 
     return Provider
 }
