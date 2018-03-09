@@ -2,7 +2,6 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, { Component, createElement } from 'react'
 
-import Subscription from '../utils/Subscription'
 import {ReactReduxContext} from "./context";
 import { storeShape } from '../utils/PropTypes'
 
@@ -76,7 +75,6 @@ export default function connectAdvanced(
     ...connectOptions
   } = {}
 ) {
-  const subscriptionKey = storeKey + 'Subscription'
   const version = hotReloadingVersion++
 
 
@@ -137,7 +135,6 @@ export default function connectAdvanced(
         // To handle the case where a child component may have triggered a state change by
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
-        //this.subscription.trySubscribe()
         this.selector.run(this.props, this.storeState);
         if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
