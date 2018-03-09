@@ -1,7 +1,9 @@
-import { Component, Children } from 'react'
+import React, { Component, Children } from 'react'
 import PropTypes from 'prop-types'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
+
+import {ReactReduxContext} from "./context";
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
@@ -20,20 +22,48 @@ function warnAboutReceivingStore() {
 }
 
 export function createProvider(storeKey = 'store', subKey) {
-    const subscriptionKey = subKey || `${storeKey}Subscription`
+    //const subscriptionKey = subKey || `${storeKey}Subscription`
 
     class Provider extends Component {
+        /*
         getChildContext() {
           return { [storeKey]: this[storeKey], [subscriptionKey]: null }
         }
+        */
 
         constructor(props, context) {
           super(props, context)
-          this[storeKey] = props.store;
+          //this[storeKey] = props.store;
+
+            const {store} = props;
+
+          if(!store || !store.getState || !store.dispatch) {
+              throw new Error("Must pass a valid Redux store as a prop to Provider");
+          }
+
+            this.state = {
+                storeState : store.getState(),
+                dispatch : store.dispatch,
+            };
+        }
+
+        componentDidMount() {
+            const {store} = this.props;
+
+            this.unsubscribe = store.subscribe( () => {
+                console.log("Provider subscription running");
+                this.setState({storeState : store.getState()});
+            });
         }
 
         render() {
-          return Children.only(this.props.children)
+            console.log("Provider re-rendering");
+
+            return (
+                <ReactReduxContext.Provider value={this.state}>
+                    {Children.only(this.props.children)}
+                </ReactReduxContext.Provider>
+            );
         }
     }
 
@@ -45,14 +75,17 @@ export function createProvider(storeKey = 'store', subKey) {
       }
     }
 
+
     Provider.propTypes = {
         store: storeShape.isRequired,
         children: PropTypes.element.isRequired,
     }
+    /*
     Provider.childContextTypes = {
         [storeKey]: storeShape.isRequired,
         [subscriptionKey]: subscriptionShape,
     }
+    */
 
     return Provider
 }
