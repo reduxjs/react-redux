@@ -70,5 +70,51 @@ describe('Utils', () => {
         )
       ).toBe(false)
     })
+
+
+    it('should compare two NaN values', () => {
+      expect(
+        shallowEqual(
+          NaN,
+          NaN
+        )
+      ).toBe(true)
+    })
+
+    it('should compare empty objects, with false', () => {
+      expect(
+        shallowEqual(
+          {},
+          false
+        )
+      ).toBe(false)
+      expect(
+        shallowEqual(
+          false,
+          {}
+        )
+      ).toBe(false)
+      expect(
+        shallowEqual(
+          [],
+          false
+        )
+      ).toBe(false)
+      expect(
+        shallowEqual(
+          false,
+          []
+        )
+      ).toBe(false)
+    })
+
+    it('should compare two zero values', () => {
+      expect(
+        shallowEqual(
+          0,
+          0
+        )
+      ).toBe(true)
+    })
   })
 })
