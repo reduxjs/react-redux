@@ -45,28 +45,6 @@ render() {
 Conveniently, this gives your components access to the router state!
 You can also upgrade to React Router 1.0 which shouldn’t have this problem. (Let us know if it does!)
 
-### My views aren’t updating when something changes outside of Redux
-
-If your views depend on global state or [React “context”](http://facebook.github.io/react/docs/context.html), you might find that views decorated with `connect()` will fail to update.
-
->This is because `connect()` implements [shouldComponentUpdate](https://facebook.github.io/react/docs/component-specs.html#updating-shouldcomponentupdate) by default, assuming that your component will produce the same results given the same props and state. This is a similar concept to React’s [PureRenderMixin](https://facebook.github.io/react/docs/pure-render-mixin.html).
-
-The _best_ solution to this is to make sure that your components are pure and pass any external state to them via props. This will ensure that your views do not re-render unless they actually need to re-render and will greatly speed up your application.
-
-If that’s not practical for whatever reason (for example, if you’re using a library that depends heavily on React context), you may pass the `pure: false` option to `connect()`:
-
-```
-function mapStateToProps(state) {
-  return { todos: state.todos }
-}
-
-export default connect(mapStateToProps, null, null, {
-  pure: false
-})(TodoApp)
-```
-
-This will remove the assumption that `TodoApp` is pure and cause it to update whenever its parent component renders. Note that this will make your application less performant, so only do this if you have no other option.
-
 ### Could not find "store" in either the context or props
 
 If you have context issues,

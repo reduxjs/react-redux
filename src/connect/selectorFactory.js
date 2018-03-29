@@ -1,5 +1,5 @@
 import verifySubselectors from './verifySubselectors'
-  
+
 export function impureFinalPropsSelectorFactory(
   mapStateToProps,
   mapDispatchToProps,
@@ -64,7 +64,7 @@ export function pureFinalPropsSelectorFactory(
     const nextStateProps = mapStateToProps(state, ownProps)
     const statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps)
     stateProps = nextStateProps
-    
+
     if (statePropsChanged)
       mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
 
@@ -91,11 +91,6 @@ export function pureFinalPropsSelectorFactory(
 }
 
 // TODO: Add more comments
-
-// If pure is true, the selector returned by selectorFactory will memoize its results,
-// allowing connectAdvanced's shouldComponentUpdate to return false if final
-// props have not changed. If false, the selector will always return a new
-// object and shouldComponentUpdate will always return true.
 
 export default function finalPropsSelectorFactory(dispatch, {
   initMapStateToProps,

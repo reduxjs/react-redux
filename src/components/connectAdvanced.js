@@ -160,10 +160,6 @@ export default function connectAdvanced(
         this.selector.run(nextProps)
       }
 
-      shouldComponentUpdate() {
-        return this.selector.shouldComponentUpdate
-      }
-
       componentWillUnmount() {
         if (this.subscription) this.subscription.tryUnsubscribe()
         this.subscription = null
