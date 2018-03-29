@@ -52,9 +52,11 @@ It does not modify the component class passed to it; instead, it *returns* a new
 <a id="connect-arguments"></a>
 #### Arguments
 
-* [`mapStateToProps(state, [ownProps]): stateProps`] \(*Function*): If this argument is specified, the new component will subscribe to Redux store updates. This means that any time the store is updated, `mapStateToProps` will be called. The results of `mapStateToProps` must be a plain object, which will be merged into the component’s props. If you don't want to subscribe to store updates, pass `null` or `undefined` in place of `mapStateToProps`. 
+* [`mapStateToProps(state, [ownProps]): stateProps`] \(*Function* or *Object*): If this argument is specified, the new component will subscribe to Redux store updates. This means that any time the store is updated, `mapStateToProps` will be called. The results of `mapStateToProps` must be a plain object, which will be merged into the component’s props. If you don't want to subscribe to store updates, pass `null` or `undefined` in place of `mapStateToProps`. 
 
   If your `mapStateToProps` function is declared as taking two parameters, it will be called with the store state as the first parameter and the props passed to the connected component as the second parameter, and will also be re-invoked whenever the connected component receives new props as determined by shallow equality comparisons.  (The second parameter is normally referred to as `ownProps` by convention.)
+
+  If an object is passed, each function inside it is assumed to be a Redux selector (or -for advanced scenarios- a Factory function, see below). An object with the same keys, but with the result of invoking each one of its values like the normal `mapStateToProps` function, will be merged into the component’s props.
 
   >Note: in advanced scenarios where you need more control over the rendering performance, `mapStateToProps()` can also return a function. In this case, *that* function will be used as `mapStateToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reactjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
 
@@ -222,8 +224,8 @@ export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```js
 import { addTodo, deleteTodo } from './actionCreators'
 
-function mapStateToProps(state) {
-  return { todos: state.todos }
+const mapStateToProps = {
+  todos: state => state.todos
 }
 
 const mapDispatchToProps = {
@@ -355,6 +357,35 @@ function mapDispatchToPropsFactory(initialState, initialProps) {
 
 
 export default connect(mapStateToPropsFactory, mapDispatchToPropsFactory)(TodoApp)
+```
+
+The object shorthand of `stateToProps` also accepts Factory functions
+
+```js
+import { addTodo } from './actionCreators'
+
+const always = x => () => x;
+
+const mapStateToProps = {
+  anotherProperty: (initialState, initialProps) =>
+    always(200 + initialState[initialProps.another]),
+  someProperty: (initialState, initilProps) => createSelector(...),
+  todos: state => state.todos,
+}
+
+function mapDispatchToPropsFactory(initialState, initialProps) {
+  function goToSomeLink(){
+    initialProps.history.push('some/link');
+  }
+  return function(dispatch){
+    return {
+      addTodo
+    }
+  }
+}
+
+
+export default connect(mapStateToProps, mapDispatchToPropsFactory)(TodoApp)
 ```
 
 <a id="connectAdvanced"></a>
