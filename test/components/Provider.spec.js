@@ -30,6 +30,8 @@ describe('React', () => {
       const propTypes = Provider.propTypes
       Provider.propTypes = {}
 
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
       try {
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
@@ -50,6 +52,7 @@ describe('React', () => {
         )).toThrow(/a single React element child/)
       } finally {
         Provider.propTypes = propTypes
+        spy.mockRestore()
       }
     })
 

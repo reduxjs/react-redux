@@ -1546,6 +1546,8 @@ describe('React', () => {
     })
 
     it('should throw an error if the store is not in the props or context', () => {
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      
       class Container extends Component {
         render() {
           return <Passthrough />
@@ -1560,6 +1562,8 @@ describe('React', () => {
       ).toThrow(
         /Could not find "store"/
       )
+
+      spy.mockRestore()
     })
 
     it('should throw when trying to access the wrapped instance if withRef is not specified', () => {
