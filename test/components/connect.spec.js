@@ -1218,14 +1218,13 @@ describe('React', () => {
       const store = createStore(() => ({}))
 
       function makeContainer(mapState, mapDispatch, mergeProps) {
-        return React.createElement(
-          @connect(mapState, mapDispatch, mergeProps)
-          class Container extends Component {
-            render() {
-              return <Passthrough />
-            }
+        @connect(mapState, mapDispatch, mergeProps)
+        class Container extends Component {
+          render() {
+            return <Passthrough />
           }
-        )
+        }
+        return React.createElement(Container)
       }
 
       function AwesomeMap() { }
