@@ -2323,5 +2323,27 @@ describe('React', () => {
       expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
     })
+
+    it('works in <StrictMode> without warnings', () => {
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const store = createStore(stringBuilder)
+
+      @connect(state => ({ string: state }) )
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>
+        }
+      }
+
+      TestRenderer.create(
+        <React.StrictMode>
+          <ProviderMock store={store}>
+            <Container />
+          </ProviderMock>
+        </React.StrictMode>
+      )
+
+      expect(spy).not.toHaveBeenCalled()
+    })
   })
 })
