@@ -1,6 +1,5 @@
 /*eslint-disable react/prop-types*/
 
-import expect from 'expect'
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import TestUtils from 'react-dom/test-utils'
@@ -36,7 +35,7 @@ describe('React', () => {
           <Provider store={store}>
             <div />
           </Provider>
-        )).toNotThrow()
+        )).not.toThrow()
 
         expect(() => TestUtils.renderIntoDocument(
           <Provider store={store}>
@@ -57,14 +56,14 @@ describe('React', () => {
     it('should add the store to the child context', () => {
       const store = createStore(() => ({}))
 
-      const spy = expect.spyOn(console, 'error')
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const tree = TestUtils.renderIntoDocument(
         <Provider store={store}>
           <Child />
         </Provider>
       )
-      spy.destroy()
-      expect(spy.calls.length).toBe(0)
+      spy.mockRestore()
+      expect(spy).toHaveBeenCalledTimes(0)
 
       const child = TestUtils.findRenderedComponentWithType(tree, Child)
       expect(child.context.store).toBe(store)
@@ -75,14 +74,14 @@ describe('React', () => {
         const CustomProvider = createProvider('customStoreKey');
         const CustomChild = createChild('customStoreKey');
 
-        const spy = expect.spyOn(console, 'error');
+        const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
         const tree = TestUtils.renderIntoDocument(
           <CustomProvider store={store}>
             <CustomChild />
           </CustomProvider>
         )
-        spy.destroy()
-        expect(spy.calls.length).toBe(0)
+        spy.mockRestore()
+        expect(spy).toHaveBeenCalledTimes(0)
 
         const child = TestUtils.findRenderedComponentWithType(tree, CustomChild)
         expect(child.context.customStoreKey).toBe(store)
@@ -111,13 +110,13 @@ describe('React', () => {
       const child = TestUtils.findRenderedComponentWithType(container, Child)
       expect(child.context.store.getState()).toEqual(11)
 
-      let spy = expect.spyOn(console, 'error')
+      let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       container.setState({ store: store2 })
-      spy.destroy()
+      spy.mockRestore()
 
       expect(child.context.store.getState()).toEqual(11)
-      expect(spy.calls.length).toBe(1)
-      expect(spy.calls[0].arguments[0]).toBe(
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy.mock.calls[0][0]).toBe(
         '<Provider> does not support changing `store` on the fly. ' +
         'It is most likely that you see this error because you updated to ' +
         'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
@@ -125,19 +124,19 @@ describe('React', () => {
         'tag/v2.0.0 for the migration instructions.'
       )
 
-      spy = expect.spyOn(console, 'error')
+      spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       container.setState({ store: store3 })
-      spy.destroy()
+      spy.mockRestore()
 
       expect(child.context.store.getState()).toEqual(11)
-      expect(spy.calls.length).toBe(0)
+      expect(spy).toHaveBeenCalledTimes(0)
     })
 
     it('should handle subscriptions correctly when there is nested Providers', () => {
       const reducer = (state = 0, action) => (action.type === 'INC' ? state + 1 : state)
 
       const innerStore = createStore(reducer)
-      const innerMapStateToProps = expect.createSpy().andCall(state => ({ count: state }))
+      const innerMapStateToProps = jest.fn(state => ({ count: state }))
       @connect(innerMapStateToProps)
       class Inner extends Component {
         render() { return <div>{this.props.count}</div> }
@@ -150,10 +149,10 @@ describe('React', () => {
       }
 
       TestUtils.renderIntoDocument(<Provider store={outerStore}><Outer /></Provider>)
-      expect(innerMapStateToProps.calls.length).toBe(1)
+      expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
 
       innerStore.dispatch({ type: 'INC'})
-      expect(innerMapStateToProps.calls.length).toBe(2)
+      expect(innerMapStateToProps).toHaveBeenCalledTimes(2)
     })
   })
 
