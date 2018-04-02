@@ -560,7 +560,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -607,7 +607,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -655,7 +655,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -707,7 +707,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -755,7 +755,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -804,7 +804,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -1216,7 +1216,6 @@ describe('React', () => {
 
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
       const store = createStore(() => ({}))
-      let testRenderer
 
       function makeContainer(mapState, mapDispatch, mergeProps) {
         return React.createElement(
@@ -1232,7 +1231,7 @@ describe('React', () => {
       function AwesomeMap() { }
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => 1, () => ({}), () => ({}))}
         </ProviderMock>
@@ -1244,7 +1243,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => 'hey', () => ({}), () => ({}))}
         </ProviderMock>
@@ -1256,7 +1255,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
         </ProviderMock>
@@ -1268,7 +1267,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 1, () => ({}))}
         </ProviderMock>
@@ -1280,7 +1279,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 'hey', () => ({}))}
         </ProviderMock>
@@ -1292,7 +1291,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
         </ProviderMock>
@@ -1304,7 +1303,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 1)}
         </ProviderMock>
@@ -1316,7 +1315,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
         </ProviderMock>
@@ -1328,7 +1327,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
         </ProviderMock>
@@ -1542,7 +1541,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      const testRenderer = TestRenderer.create(<Decorated store={mockStore} />)
+      TestRenderer.create(<Decorated store={mockStore} />)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1844,7 +1843,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1894,7 +1893,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1937,7 +1936,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -1973,7 +1972,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -2037,7 +2036,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2061,7 +2060,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2097,7 +2096,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <Parent>
             <Container />
@@ -2179,7 +2178,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <ImpureComponent />
         </ProviderMock>
@@ -2195,7 +2194,7 @@ describe('React', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       try {
-        const testRenderer = TestRenderer.create(
+        TestRenderer.create(
           <ProviderMock store={store}>
             <Component pass="through" />
           </ProviderMock>
@@ -2203,9 +2202,9 @@ describe('React', () => {
         return null
       } catch (error) {
         return error.message
+      } finally {
+        spy.mockRestore()
       }
-
-      spy.mockRestore()
     }
 
     it('should throw a helpful error for invalid mapStateToProps arguments', () => {
@@ -2256,7 +2255,7 @@ describe('React', () => {
       }
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
-      const testRenderer = TestRenderer.create(<ProviderMock store={store}><Parent /></ProviderMock>)
+      TestRenderer.create(<ProviderMock store={store}><Parent /></ProviderMock>)
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
       store.dispatch({ type: 'INC' })
@@ -2278,7 +2277,7 @@ describe('React', () => {
       class C extends React.Component { render() { return <div>{this.props.count}</div> }}
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state += 1 : state))
-      const testRenderer = TestRenderer.create(<ProviderMock store={store}><A /></ProviderMock>)
+      TestRenderer.create(<ProviderMock store={store}><A /></ProviderMock>)
 
       store.dispatch({ type: 'INC' })
     })
@@ -2310,7 +2309,7 @@ describe('React', () => {
         render() { return <div>{this.props.count}</div> }
       }
 
-      const testRenderer = TestRenderer.create(<ProviderMock store={store1}><A /></ProviderMock>)
+      TestRenderer.create(<ProviderMock store={store1}><A /></ProviderMock>)
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
