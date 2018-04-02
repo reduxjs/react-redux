@@ -2,7 +2,7 @@
 
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import TestUtils from 'react-dom/test-utils'
+import TestRenderer from 'react-test-renderer'
 import { createStore } from 'redux'
 import { Provider, createProvider, connect } from '../../src/index'
 
@@ -33,18 +33,18 @@ describe('React', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       try {
-        expect(() => TestUtils.renderIntoDocument(
+        expect(() => TestRenderer.create(
           <Provider store={store}>
             <div />
           </Provider>
         )).not.toThrow()
 
-        expect(() => TestUtils.renderIntoDocument(
+        expect(() => TestRenderer.create(
           <Provider store={store}>
           </Provider>
         )).toThrow(/a single React element child/)
 
-        expect(() => TestUtils.renderIntoDocument(
+        expect(() => TestRenderer.create(
           <Provider store={store}>
             <div />
             <div />
@@ -60,7 +60,7 @@ describe('React', () => {
       const store = createStore(() => ({}))
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <Provider store={store}>
           <Child />
         </Provider>
@@ -68,7 +68,7 @@ describe('React', () => {
       spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
 
-      const child = TestUtils.findRenderedComponentWithType(tree, Child)
+      const child = testRenderer.root.findByType(Child).instance
       expect(child.context.store).toBe(store)
     })
 
@@ -78,7 +78,7 @@ describe('React', () => {
         const CustomChild = createChild('customStoreKey');
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        const tree = TestUtils.renderIntoDocument(
+        const testRenderer = TestRenderer.create(
           <CustomProvider store={store}>
             <CustomChild />
           </CustomProvider>
@@ -86,7 +86,7 @@ describe('React', () => {
         spy.mockRestore()
         expect(spy).toHaveBeenCalledTimes(0)
 
-        const child = TestUtils.findRenderedComponentWithType(tree, CustomChild)
+        const child = testRenderer.root.findByType(CustomChild).instance
         expect(child.context.customStoreKey).toBe(store)
     })
 
@@ -109,12 +109,12 @@ describe('React', () => {
         }
       }
 
-      const container = TestUtils.renderIntoDocument(<ProviderContainer />)
-      const child = TestUtils.findRenderedComponentWithType(container, Child)
+      const testRenderer = TestRenderer.create(<ProviderContainer />)
+      const child = testRenderer.root.findByType(Child).instance
       expect(child.context.store.getState()).toEqual(11)
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      container.setState({ store: store2 })
+      testRenderer.root.instance.setState({ store: store2 })
       spy.mockRestore()
 
       expect(child.context.store.getState()).toEqual(11)
@@ -128,7 +128,7 @@ describe('React', () => {
       )
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      container.setState({ store: store3 })
+      testRenderer.root.instance.setState({ store: store3 })
       spy.mockRestore()
 
       expect(child.context.store.getState()).toEqual(11)
@@ -151,7 +151,7 @@ describe('React', () => {
         render() { return <Provider store={innerStore}><Inner /></Provider> }
       }
 
-      TestUtils.renderIntoDocument(<Provider store={outerStore}><Outer /></Provider>)
+      TestRenderer.create(<Provider store={outerStore}><Outer /></Provider>)
       expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
 
       innerStore.dispatch({ type: 'INC'})
@@ -199,7 +199,7 @@ describe('React', () => {
       }
     }
 
-    const tree = TestUtils.renderIntoDocument(
+    const testRenderer = TestRenderer.create(
       <Provider store={store}>
         <Container />
       </Provider>
@@ -212,9 +212,8 @@ describe('React', () => {
     expect(childMapStateInvokes).toBe(2)
 
     // setState calls DOM handlers are batched
-    const container = TestUtils.findRenderedComponentWithType(tree, Container)
-    const node = container.getWrappedInstance().refs.button
-    TestUtils.Simulate.click(node)
+    const button = testRenderer.root.findByType('button')
+    button.props.onClick()
     expect(childMapStateInvokes).toBe(3)
 
     // Provider uses unstable_batchedUpdates() under the hood

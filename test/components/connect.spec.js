@@ -4,7 +4,7 @@ import React, { Children, Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import TestUtils from 'react-dom/test-utils'
+import TestRenderer from 'react-test-renderer'
 import { createStore } from 'redux'
 import { connect } from '../../src/index'
 
@@ -82,14 +82,14 @@ describe('React', () => {
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container pass="through" />
         </ProviderMock>
       )
 
-      const container = TestUtils.findRenderedComponentWithType(tree, Container)
-      expect(container.context.store).toBe(store)
+      const container = testRenderer.root.findByType(Container)
+      expect(container.instance.context.store).toBe(store)
     })
 
     it('should pass state and props to the given component', () => {
@@ -106,18 +106,18 @@ describe('React', () => {
         }
       }
 
-      const container = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container pass="through" baz={50} />
         </ProviderMock>
       )
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.pass).toEqual('through')
       expect(stub.props.foo).toEqual('bar')
       expect(stub.props.baz).toEqual(42)
       expect(stub.props.hello).toEqual(undefined)
       expect(() =>
-        TestUtils.findRenderedComponentWithType(container, Container)
+        testRenderer.root.findByType(Container)
       ).not.toThrow()
     })
 
@@ -131,13 +131,13 @@ describe('React', () => {
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
       )
 
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.string).toBe('')
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(stub.props.string).toBe('a')
@@ -155,7 +155,7 @@ describe('React', () => {
       })
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -163,7 +163,7 @@ describe('React', () => {
       spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
 
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.string).toBe('')
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(stub.props.string).toBe('a')
@@ -181,7 +181,7 @@ describe('React', () => {
       })
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -189,7 +189,7 @@ describe('React', () => {
       spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
 
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.string).toBe('')
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(stub.props.string).toBe('a')
@@ -209,13 +209,13 @@ describe('React', () => {
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
       )
 
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.string).toBe('a')
     })
 
@@ -258,8 +258,8 @@ describe('React', () => {
         }
       }
 
-      const container = TestUtils.renderIntoDocument(<Container />)
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      const testRenderer = TestRenderer.create(<Container />)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.foo).toEqual('bar')
       expect(stub.props.pass).toEqual('through')
     })
@@ -297,8 +297,8 @@ describe('React', () => {
         }
       }
 
-      const container = TestUtils.renderIntoDocument(<Container />)
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      const testRenderer = TestRenderer.create(<Container />)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.bar).toEqual('foo')
     })
 
@@ -324,21 +324,21 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <HolderContainer ref={instance => container = instance} />
         </ProviderMock>
       )
 
       const propsBefore = {
-        ...TestUtils.findRenderedComponentWithType(container, Passthrough).props
+        ...testRenderer.root.findByType(Passthrough).props
       }
 
       props = {}
       container.forceUpdate()
 
       const propsAfter = {
-        ...TestUtils.findRenderedComponentWithType(container, Passthrough).props
+        ...testRenderer.root.findByType(Passthrough).props
       }
 
       expect(propsBefore.x).toEqual(true)
@@ -367,21 +367,21 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <HolderContainer ref={instance => container = instance} />
         </ProviderMock>
       )
 
       const propsBefore = {
-        ...TestUtils.findRenderedComponentWithType(container, Passthrough).props
+        ...testRenderer.root.findByType(Passthrough).props
       }
 
       props = {}
       container.forceUpdate()
 
       const propsAfter = {
-        ...TestUtils.findRenderedComponentWithType(container, Passthrough).props
+        ...testRenderer.root.findByType(Passthrough).props
       }
 
       expect(propsBefore.x).toEqual(true)
@@ -430,8 +430,8 @@ describe('React', () => {
         }
       }
 
-      const container = TestUtils.renderIntoDocument(<Container />)
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      const testRenderer = TestRenderer.create(<Container />)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.foo).toEqual('bar')
       expect(stub.props.pass).toEqual('')
     })
@@ -481,14 +481,14 @@ describe('React', () => {
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(<OuterContainer />)
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      const testRenderer = TestRenderer.create(<OuterContainer />)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.stateThing).toBe('')
       stub.props.mergedDoSomething('a')
       expect(stub.props.stateThing).toBe('HELLO az')
       stub.props.mergedDoSomething('b')
       expect(stub.props.stateThing).toBe('HELLO azbz')
-      tree.setState({ extra: 'Z' })
+      testRenderer.root.instance.setState({ extra: 'Z' })
       stub.props.mergedDoSomething('c')
       expect(stub.props.stateThing).toBe('HELLO azbzcZ')
     })
@@ -508,19 +508,19 @@ describe('React', () => {
         }
       }
 
-      const container = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container pass="through" />
         </ProviderMock>
       )
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.dispatch).toEqual(store.dispatch)
       expect(stub.props.foo).toEqual('bar')
       expect(() =>
-        TestUtils.findRenderedComponentWithType(container, Container)
+        testRenderer.root.findByType(Container)
       ).not.toThrow()
-      const decorated = TestUtils.findRenderedComponentWithType(container, Container)
-      expect(decorated.isSubscribed()).toBe(true)
+      const decorated = testRenderer.root.findByType(Container)
+      expect(decorated.instance.isSubscribed()).toBe(true)
     })
 
     it('should not invoke mapState when props change if it only has one argument', () => {
@@ -560,7 +560,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -607,7 +607,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -655,7 +655,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -707,7 +707,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -755,7 +755,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -804,7 +804,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -832,20 +832,20 @@ describe('React', () => {
           }
         }
 
-        const container = TestUtils.renderIntoDocument(
+        const testRenderer = TestRenderer.create(
           <ProviderMock store={store}>
             <Container pass="through" />
           </ProviderMock>
         )
-        const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+        const stub = testRenderer.root.findByType(Passthrough)
         expect(stub.props.dispatch).toEqual(store.dispatch)
         expect(stub.props.foo).toBe(undefined)
         expect(stub.props.pass).toEqual('through')
         expect(() =>
-          TestUtils.findRenderedComponentWithType(container, Container)
+          testRenderer.root.findByType(Container)
         ).not.toThrow()
-        const decorated = TestUtils.findRenderedComponentWithType(container, Container)
-        expect(decorated.isSubscribed()).toBe(false)
+        const decorated = testRenderer.root.findByType(Container)
+        expect(decorated.instance.isSubscribed()).toBe(false)
       }
 
       runCheck()
@@ -1102,13 +1102,13 @@ describe('React', () => {
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
       )
 
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(spy).toHaveBeenCalledTimes(1)
       expect(stub.props.string).toBe('')
       store.dispatch({ type: 'APPEND', body: 'a' })
@@ -1157,8 +1157,9 @@ describe('React', () => {
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(<Root />)
-      const stub = TestUtils.findRenderedComponentWithType(tree, Passthrough)
+      const testRenderer = TestRenderer.create(<Root />)
+      const tree = testRenderer.root.instance
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(spy).toHaveBeenCalledTimes(1)
       expect(stub.props.string).toBe('')
       expect(stub.props.pass).toBe('')
@@ -1215,6 +1216,7 @@ describe('React', () => {
 
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
       const store = createStore(() => ({}))
+      let testRenderer
 
       function makeContainer(mapState, mapDispatch, mergeProps) {
         return React.createElement(
@@ -1230,7 +1232,7 @@ describe('React', () => {
       function AwesomeMap() { }
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => 1, () => ({}), () => ({}))}
         </ProviderMock>
@@ -1242,7 +1244,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => 'hey', () => ({}), () => ({}))}
         </ProviderMock>
@@ -1254,7 +1256,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
         </ProviderMock>
@@ -1266,7 +1268,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 1, () => ({}))}
         </ProviderMock>
@@ -1278,7 +1280,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 'hey', () => ({}))}
         </ProviderMock>
@@ -1290,7 +1292,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
         </ProviderMock>
@@ -1302,7 +1304,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 1)}
         </ProviderMock>
@@ -1314,7 +1316,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
         </ProviderMock>
@@ -1326,7 +1328,7 @@ describe('React', () => {
       spy.mockRestore()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestUtils.renderIntoDocument(
+      testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
         </ProviderMock>
@@ -1378,12 +1380,12 @@ describe('React', () => {
       }
 
       let container
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <ContainerBefore ref={instance => container = instance} />
         </ProviderMock>
       )
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.foo).toEqual(undefined)
       expect(stub.props.scooby).toEqual('doo')
 
@@ -1442,13 +1444,13 @@ describe('React', () => {
       }
 
       let container
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <ParentBefore ref={instance => container = instance}/>
         </ProviderMock>
       )
 
-      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      const stub = testRenderer.root.findByType(Passthrough)
 
       imitateHotReloading(ParentBefore, ParentAfter, container)
 
@@ -1540,7 +1542,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      TestUtils.renderIntoDocument(<Decorated store={mockStore} />)
+      const testRenderer = TestRenderer.create(<Decorated store={mockStore} />)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1558,7 +1560,7 @@ describe('React', () => {
       const Decorated = decorator(Container)
 
       expect(() =>
-        TestUtils.renderIntoDocument(<Decorated />)
+        TestRenderer.create(<Decorated />)
       ).toThrow(
         /Could not find "store"/
       )
@@ -1578,14 +1580,14 @@ describe('React', () => {
       const decorator = connect(state => state)
       const Decorated = decorator(Container)
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Decorated />
         </ProviderMock>
       )
 
-      const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated)
-      expect(() => decorated.getWrappedInstance()).toThrow(
+      const decorated = testRenderer.root.findByType(Decorated)
+      expect(() => decorated.instance.getWrappedInstance()).toThrow(
         /To access the wrapped instance, you need to specify \{ withRef: true \} in the options argument of the connect\(\) call\./
       )
     })
@@ -1610,17 +1612,17 @@ describe('React', () => {
       const decorator = connect(state => state, null, null, { withRef: true })
       const Decorated = decorator(Container)
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Decorated />
         </ProviderMock>
       )
 
-      const decorated = TestUtils.findRenderedComponentWithType(tree, Decorated)
+      const decorated = testRenderer.root.findByType(Decorated)
 
       expect(() => decorated.someInstanceMethod()).toThrow()
-      expect(decorated.getWrappedInstance().someInstanceMethod()).toBe(someData)
-      expect(decorated.wrappedInstance.someInstanceMethod()).toBe(someData)
+      expect(decorated.instance.getWrappedInstance().someInstanceMethod()).toBe(someData)
+      expect(decorated.instance.wrappedInstance.someInstanceMethod()).toBe(someData)
     })
 
     it('should wrap impure components without supressing updates', () => {
@@ -1660,14 +1662,14 @@ describe('React', () => {
         statefulValue: PropTypes.number
       }
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
       )
 
-      const target = TestUtils.findRenderedComponentWithType(tree, Passthrough)
-      const wrapper = TestUtils.findRenderedComponentWithType(tree, StatefulWrapper)
+      const target = testRenderer.root.findByType(Passthrough)
+      const wrapper = testRenderer.root.findByType(StatefulWrapper).instance
       expect(target.props.statefulValue).toEqual(0)
       wrapper.setState({ value: 1 })
       expect(target.props.statefulValue).toEqual(1)
@@ -1712,14 +1714,14 @@ describe('React', () => {
       }
 
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
       )
 
-      const target = TestUtils.findRenderedComponentWithType(tree, Passthrough)
-      const wrapper = TestUtils.findRenderedComponentWithType(tree, StatefulWrapper)
+      const target = testRenderer.root.findByType(Passthrough)
+      const wrapper = testRenderer.root.findByType(StatefulWrapper).instance
 
       expect(mapStateSpy).toHaveBeenCalledTimes(2)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
@@ -1770,7 +1772,7 @@ describe('React', () => {
         }
       }
 
-      const tree = TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1785,9 +1787,8 @@ describe('React', () => {
       expect(childMapStateInvokes).toBe(2)
 
       // setState calls DOM handlers are batched
-      const container = TestUtils.findRenderedComponentWithType(tree, Container)
-      const node = container.getWrappedInstance().refs.button
-      TestUtils.Simulate.click(node)
+      const button = testRenderer.root.findByType('button')
+      button.props.onClick()
       expect(childMapStateInvokes).toBe(3)
 
       store.dispatch({ type: 'APPEND', body: 'd' })
@@ -1810,7 +1811,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1843,7 +1844,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1873,6 +1874,7 @@ describe('React', () => {
     })
 
     it('should not swallow errors when bailing out early', () => {
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const store = createStore(stringBuilder)
       let renderCalls = 0
       let mapStateCalls = 0
@@ -1892,7 +1894,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1902,7 +1904,9 @@ describe('React', () => {
       expect(mapStateCalls).toBe(1)
       expect(
         () => store.dispatch({ type: 'APPEND', body: 'a' })
-      ).toThrow('Oops')
+      ).toThrow()
+
+      spy.mockRestore()
     })
 
     it('should allow providing a factory function to mapStateToProps', () => {
@@ -1933,7 +1937,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -1969,7 +1973,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -2033,7 +2037,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2057,7 +2061,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2093,7 +2097,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <Parent>
             <Container />
@@ -2175,7 +2179,7 @@ describe('React', () => {
         }
       }
 
-      TestUtils.renderIntoDocument(
+      const testRenderer = TestRenderer.create(
         <ProviderMock store={store}>
           <ImpureComponent />
         </ProviderMock>
@@ -2188,9 +2192,10 @@ describe('React', () => {
 
     function renderWithBadConnect(Component) {
       const store = createStore(() => ({}))
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       try {
-        TestUtils.renderIntoDocument(
+        const testRenderer = TestRenderer.create(
           <ProviderMock store={store}>
             <Component pass="through" />
           </ProviderMock>
@@ -2199,7 +2204,10 @@ describe('React', () => {
       } catch (error) {
         return error.message
       }
+
+      spy.mockRestore()
     }
+
     it('should throw a helpful error for invalid mapStateToProps arguments', () => {
       @connect('invalid')
       class InvalidMapState extends React.Component { render() { return <div></div> } }
@@ -2209,6 +2217,7 @@ describe('React', () => {
       expect(error).toContain('mapStateToProps')
       expect(error).toContain('InvalidMapState')
     })
+
     it('should throw a helpful error for invalid mapDispatchToProps arguments', () => {
       @connect(null, 'invalid')
       class InvalidMapDispatch extends React.Component { render() { return <div></div> } }
@@ -2218,6 +2227,7 @@ describe('React', () => {
       expect(error).toContain('mapDispatchToProps')
       expect(error).toContain('InvalidMapDispatch')
     })
+
     it('should throw a helpful error for invalid mergeProps arguments', () => {
       @connect(null, null, 'invalid')
       class InvalidMerge extends React.Component { render() { return <div></div> } }
@@ -2246,7 +2256,7 @@ describe('React', () => {
       }
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
-      TestUtils.renderIntoDocument(<ProviderMock store={store}><Parent /></ProviderMock>)
+      const testRenderer = TestRenderer.create(<ProviderMock store={store}><Parent /></ProviderMock>)
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
       store.dispatch({ type: 'INC' })
@@ -2268,7 +2278,7 @@ describe('React', () => {
       class C extends React.Component { render() { return <div>{this.props.count}</div> }}
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state += 1 : state))
-      TestUtils.renderIntoDocument(<ProviderMock store={store}><A /></ProviderMock>)
+      const testRenderer = TestRenderer.create(<ProviderMock store={store}><A /></ProviderMock>)
 
       store.dispatch({ type: 'INC' })
     })
@@ -2300,7 +2310,7 @@ describe('React', () => {
         render() { return <div>{this.props.count}</div> }
       }
 
-      TestUtils.renderIntoDocument(<ProviderMock store={store1}><A /></ProviderMock>)
+      const testRenderer = TestRenderer.create(<ProviderMock store={store1}><A /></ProviderMock>)
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
