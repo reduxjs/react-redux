@@ -2120,10 +2120,6 @@ describe('React', () => {
 
       @connect(null)
       class Parent extends React.Component {
-        UNSAFE_componentWillMount() {
-          this.props.dispatch({ type: 'fetch' })
-        }
-
         componentWillUnmount() {
           this.props.dispatch({ type: 'clean' })
         }
@@ -2143,6 +2139,7 @@ describe('React', () => {
       }
 
       const store = createStore(reducer)
+      store.dispatch({ type: 'fetch' })
       const div = document.createElement('div')
       ReactDOM.render(
         <ProviderMock store={store}>
