@@ -156,11 +156,10 @@ export default function connectAdvanced(
         if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
 
-      componentWillReceiveProps(nextProps) {
-        this.selector.run(nextProps)
-      }
-
-      shouldComponentUpdate() {
+      shouldComponentUpdate(nextProps) {
+        if (nextProps !== this.props) {
+          this.selector.run(nextProps)
+        }
         return this.selector.shouldComponentUpdate
       }
 
@@ -248,6 +247,10 @@ export default function connectAdvanced(
 
       render() {
         const selector = this.selector
+
+        // Handle forceUpdate
+        if (!selector.shouldComponentUpdate) selector.run(this.props)
+
         selector.shouldComponentUpdate = false
 
         if (selector.error) {
@@ -265,7 +268,7 @@ export default function connectAdvanced(
     Connect.propTypes = contextTypes
 
     if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
+      Connect.prototype.componentDidUpdate = function componentDidUpdate() {
         // We are hot reloading!
         if (this.version !== version) {
           this.version = version
@@ -287,6 +290,8 @@ export default function connectAdvanced(
             this.subscription.trySubscribe()
             oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
           }
+
+          if (this.selector.shouldComponentUpdate) this.setState(dummyState)
         }
       }
     }

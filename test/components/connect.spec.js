@@ -200,7 +200,7 @@ describe('React', () => {
 
       @connect(state => ({ string: state }) )
       class Container extends Component {
-        componentWillMount() {
+        componentDidMount() {
           store.dispatch({ type: 'APPEND', body: 'a' })
         }
 
@@ -944,8 +944,8 @@ describe('React', () => {
 
       @connect((state) => ({ state }))
       class Child extends Component {
-        componentWillReceiveProps(nextProps) {
-          if (nextProps.state === 'A') {
+        componentDidMount() {
+          if (this.props.state === 'A') {
             store.dispatch({ type: 'APPEND', body: 'B' });
           }
         }
@@ -1927,7 +1927,7 @@ describe('React', () => {
 
       @connect(mapStateFactory)
       class Container extends Component {
-        componentWillUpdate() {
+        componentDidUpdate() {
           updatedCount++
         }
         render() {
@@ -2008,7 +2008,7 @@ describe('React', () => {
 
       @connect(null, mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
-        componentWillUpdate() {
+        componentDIdUpdate() {
           updatedCount++
         }
         render() {
@@ -2120,7 +2120,7 @@ describe('React', () => {
 
       @connect(null)
       class Parent extends React.Component {
-        componentWillMount() {
+        UNSAFE_componentWillMount() {
           this.props.dispatch({ type: 'fetch' })
         }
 
