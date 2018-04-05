@@ -2008,7 +2008,7 @@ describe('React', () => {
 
       @connect(null, mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
-        componentDIdUpdate() {
+        componentDidUpdate() {
           updatedCount++
         }
         render() {
