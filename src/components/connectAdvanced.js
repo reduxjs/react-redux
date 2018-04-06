@@ -7,31 +7,28 @@ import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 
 let hotReloadingVersion = 0
-const dummyState = {}
 function noop() {}
-function makeSelectorStateful(sourceSelector, store) {
-  // wrap the selector in an object that tracks its results between runs.
-  const selector = {
-    run: function runComponentSelector(props) {
-      try {
-        const nextProps = sourceSelector(store.getState(), props)
-        if (nextProps !== selector.props || selector.error) {
-          selector.shouldComponentUpdate = true
-          selector.props = nextProps
-          selector.error = null
+function makeUpdater(sourceSelector, store) {
+  return function updater(props, prevState) {
+    try {
+      const nextProps = sourceSelector(store.getState(), props)
+      if (nextProps !== prevState.props || prevState.error) {
+        return {
+          shouldComponentUpdate: true,
+          props: nextProps,
+          error: null,
         }
-      } catch (error) {
-        selector.shouldComponentUpdate = true
-        selector.error = error
       }
-    },
-    clean: function cleanComponentSelector() {
-      selector.run = noop
-      selector.shouldComponentUpdate = false
+      return {
+        shouldComponentUpdate: false,
+      }
+    } catch (error) {
+      return {
+        shouldComponentUpdate: true,
+        error,
+      }
     }
   }
-
-  return selector
 }
 
 export default function connectAdvanced(
@@ -92,8 +89,7 @@ export default function connectAdvanced(
   }
 
   function getDerivedStateFromProps(nextProps, prevState) {
-    prevState.selector.run(nextProps)
-    return null
+    return prevState.updater(nextProps, prevState)
   }
 
   return function wrapWithConnect(WrappedComponent) {
@@ -139,7 +135,7 @@ export default function connectAdvanced(
         )
 
         this.state = {
-          selector: this.createSelector()
+          updater: this.createUpdater()
         }
         this.initSubscription()
       }
@@ -163,12 +159,11 @@ export default function connectAdvanced(
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
         this.subscription.trySubscribe()
-        this.state.selector.run(this.props)
-        if (this.state.selector.shouldComponentUpdate) this.forceUpdate()
+        this.runUpdater()
       }
 
-      shouldComponentUpdate(nextProps, nextState) {
-        return nextState.selector.shouldComponentUpdate
+      shouldComponentUpdate(_, nextState) {
+        return nextState.shouldComponentUpdate
       }
 
       componentWillUnmount() {
@@ -176,7 +171,7 @@ export default function connectAdvanced(
         this.subscription = null
         this.notifyNestedSubs = noop
         this.store = null
-        this.state.selector.clean()
+        this.isUnmounted = true
       }
 
       getWrappedInstance() {
@@ -191,9 +186,17 @@ export default function connectAdvanced(
         this.wrappedInstance = ref
       }
 
-      createSelector() {
+      createUpdater() {
         const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
-        return makeSelectorStateful(sourceSelector, this.store)
+        return makeUpdater(sourceSelector, this.store)
+      }
+
+      runUpdater(callback = noop) {
+        if (this.isUnmounted) {
+          return
+        }
+
+        this.setState(prevState => prevState.updater(this.props, prevState), callback)
       }
 
       initSubscription() {
@@ -214,24 +217,7 @@ export default function connectAdvanced(
       }
 
       onStateChange() {
-        this.state.selector.run(this.props)
-
-        if (!this.state.selector.shouldComponentUpdate) {
-          this.notifyNestedSubs()
-        } else {
-          this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
-          this.setState(dummyState)
-        }
-      }
-
-      notifyNestedSubsOnComponentDidUpdate() {
-        // `componentDidUpdate` is conditionally implemented when `onStateChange` determines it
-        // needs to notify nested subs. Once called, it unimplements itself until further state
-        // changes occur. Doing it this way vs having a permanent `componentDidUpdate` that does
-        // a boolean check every time avoids an extra method call most of the time, resulting
-        // in some perf boost.
-        this.componentDidUpdate = undefined
-        this.notifyNestedSubs()
+        this.runUpdater(this.notifyNestedSubs)
       }
 
       isSubscribed() {
@@ -252,14 +238,10 @@ export default function connectAdvanced(
       }
 
       render() {
-        const selector = this.state.selector
-
-        selector.shouldComponentUpdate = false
-
-        if (selector.error) {
-          throw selector.error
+        if (this.state.error) {
+          throw this.state.error
         } else {
-          return createElement(WrappedComponent, this.addExtraProps(selector.props))
+          return createElement(WrappedComponent, this.addExtraProps(this.state.props))
         }
       }
     }
@@ -294,9 +276,9 @@ export default function connectAdvanced(
             oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
           }
 
-          const selector = this.createSelector()
-          selector.run(this.props)
-          this.setState({selector})
+          const updater = this.createUpdater()
+          this.setState({updater})
+          this.runUpdater()
         }
       }
     }
