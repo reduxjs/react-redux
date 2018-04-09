@@ -493,6 +493,53 @@ describe('React', () => {
       expect(stub.props.stateThing).toBe('HELLO azbzcZ')
     })
 
+    it('should allow providing a factory function to mergeProps', () => {
+      function reducer(state = { a : 123 }, action) {
+        switch (action.type) {
+          case 'increment':
+            return { a : state.a + 1}
+          default:
+            return state
+        }
+      }
+      const store = createStore(reducer)
+      let mergePropFactoryCalls = 0
+
+      function sum(a, b) {
+        return a + b
+      }
+
+      @connect(
+        state => state,
+        () => ({ sum }),
+        () => {
+          mergePropFactoryCalls += 1;
+          return (stateProps, dispatchProps, parentProps) => {
+            return ({
+              sum : () => dispatchProps.sum(stateProps.a, parentProps.b)
+            });
+          };
+				}
+      )
+      class Container extends Component {
+        render() {
+          return <Passthrough result={this.props.sum()} />
+        }
+      }
+
+      const container = TestUtils.renderIntoDocument(
+        <ProviderMock store={store}>
+          <Container b={ 456 } />
+        </ProviderMock>
+      )
+
+      store.dispatch({type : 'increment'});
+      store.dispatch({type : 'increment'});
+      const stub = TestUtils.findRenderedComponentWithType(container, Passthrough)
+      expect(mergePropFactoryCalls).toEqual(1);
+      expect(stub.props.result).toEqual(581)
+    })
+
     it('should merge actionProps into WrappedComponent', () => {
       const store = createStore(() => ({
         foo: 'bar'
