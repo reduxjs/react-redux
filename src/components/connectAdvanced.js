@@ -1,7 +1,7 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
-import polyfill from 'react-lifecycles-compat'
+import { polyfill } from 'react-lifecycles-compat'
 
 import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
