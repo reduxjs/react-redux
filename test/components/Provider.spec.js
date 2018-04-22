@@ -1,9 +1,8 @@
 /*eslint-disable react/prop-types*/
 
-import expect from 'expect'
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import TestUtils from 'react-dom/test-utils'
+import TestRenderer from 'react-test-renderer'
 import { createStore } from 'redux'
 import { Provider, createProvider, connect } from '../../src/index'
 
@@ -31,19 +30,21 @@ describe('React', () => {
       const propTypes = Provider.propTypes
       Provider.propTypes = {}
 
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
       try {
-        expect(() => TestUtils.renderIntoDocument(
+        expect(() => TestRenderer.create(
           <Provider store={store}>
             <div />
           </Provider>
-        )).toNotThrow()
+        )).not.toThrow()
 
-        expect(() => TestUtils.renderIntoDocument(
+        expect(() => TestRenderer.create(
           <Provider store={store}>
           </Provider>
         )).toThrow(/a single React element child/)
 
-        expect(() => TestUtils.renderIntoDocument(
+        expect(() => TestRenderer.create(
           <Provider store={store}>
             <div />
             <div />
@@ -51,6 +52,7 @@ describe('React', () => {
         )).toThrow(/a single React element child/)
       } finally {
         Provider.propTypes = propTypes
+        spy.mockRestore()
       }
     })
 
@@ -58,16 +60,16 @@ describe('React', () => {
     it('should add the store to the child context', () => {
       const store = createStore(() => ({}))
 
-      const spy = expect.spyOn(console, 'error')
-      const tree = TestUtils.renderIntoDocument(
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const testRenderer = TestRenderer.create(
         <Provider store={store}>
           <Child />
         </Provider>
       )
-      spy.destroy()
-      expect(spy.calls.length).toBe(0)
+      spy.mockRestore()
+      expect(spy).toHaveBeenCalledTimes(0)
 
-      const child = TestUtils.findRenderedComponentWithType(tree, Child)
+      const child = testRenderer.root.findByType(Child).instance
       expect(child.context.store).toBe(store)
     })
 
@@ -76,16 +78,16 @@ describe('React', () => {
         const CustomProvider = createProvider('customStoreKey');
         const CustomChild = createChild('customStoreKey');
 
-        const spy = expect.spyOn(console, 'error');
-        const tree = TestUtils.renderIntoDocument(
+        const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const testRenderer = TestRenderer.create(
           <CustomProvider store={store}>
             <CustomChild />
           </CustomProvider>
         )
-        spy.destroy()
-        expect(spy.calls.length).toBe(0)
+        spy.mockRestore()
+        expect(spy).toHaveBeenCalledTimes(0)
 
-        const child = TestUtils.findRenderedComponentWithType(tree, CustomChild)
+        const child = testRenderer.root.findByType(CustomChild).instance
         expect(child.context.customStoreKey).toBe(store)
     })
     */
@@ -109,17 +111,17 @@ describe('React', () => {
         }
       }
 
-      const container = TestUtils.renderIntoDocument(<ProviderContainer />)
-      const child = TestUtils.findRenderedComponentWithType(container, Child)
+      const testRenderer = TestRenderer.create(<ProviderContainer />)
+      const child = testRenderer.root.findByType(Child).instance
       //expect(child.context.store.getState()).toEqual(11)
 
-      let spy = expect.spyOn(console, 'error')
-      container.setState({ store: store2 })
-      spy.destroy()
+      let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      testRenderer.root.instance.setState({ store: store2 })
+      spy.mockRestore()
 
       //expect(child.context.store.getState()).toEqual(11)
-      expect(spy.calls.length).toBe(1)
-      expect(spy.calls[0].arguments[0]).toBe(
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy.mock.calls[0][0]).toBe(
         '<Provider> does not support changing `store` on the fly. ' +
         'It is most likely that you see this error because you updated to ' +
         'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
@@ -127,19 +129,19 @@ describe('React', () => {
         'tag/v2.0.0 for the migration instructions.'
       )
 
-      spy = expect.spyOn(console, 'error')
-      container.setState({ store: store3 })
-      spy.destroy()
+      spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      testRenderer.root.instance.setState({ store: store3 })
+      spy.mockRestore()
 
       //expect(child.context.store.getState()).toEqual(11)
-      expect(spy.calls.length).toBe(0)
+      expect(spy).toHaveBeenCalledTimes(0)
     })
 
     it('should handle subscriptions correctly when there is nested Providers', () => {
       const reducer = (state = 0, action) => (action.type === 'INC' ? state + 1 : state)
 
       const innerStore = createStore(reducer)
-      const innerMapStateToProps = expect.createSpy().andCall(state => ({ count: state }))
+      const innerMapStateToProps = jest.fn(state => ({ count: state }))
       @connect(innerMapStateToProps)
       class Inner extends Component {
         render() { return <div>{this.props.count}</div> }
@@ -151,11 +153,11 @@ describe('React', () => {
         render() { return <Provider store={innerStore}><Inner /></Provider> }
       }
 
-      TestUtils.renderIntoDocument(<Provider store={outerStore}><Outer /></Provider>)
-      expect(innerMapStateToProps.calls.length).toBe(1)
+      TestRenderer.create(<Provider store={outerStore}><Outer /></Provider>)
+      expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
 
       innerStore.dispatch({ type: 'INC'})
-      expect(innerMapStateToProps.calls.length).toBe(2)
+      expect(innerMapStateToProps).toHaveBeenCalledTimes(2)
     })
   })
 
@@ -199,7 +201,7 @@ describe('React', () => {
       }
     }
 
-    const tree = TestUtils.renderIntoDocument(
+    const testRenderer = TestRenderer.create(
       <Provider store={store}>
         <Container />
       </Provider>
@@ -212,9 +214,8 @@ describe('React', () => {
     expect(childMapStateInvokes).toBe(2)
 
     // setState calls DOM handlers are batched
-    const container = TestUtils.findRenderedComponentWithType(tree, Container)
-    const node = container.getWrappedInstance().refs.button
-    TestUtils.Simulate.click(node)
+    const button = testRenderer.root.findByType('button')
+    button.props.onClick()
     expect(childMapStateInvokes).toBe(3)
 
     // Provider uses unstable_batchedUpdates() under the hood
