@@ -37,7 +37,7 @@
     "flux",
     "redux"
   ],
-  "author": "Dan Abramov <dan.abramov@me.com> (http://github.com/gaearon)",
+  "author": "Dan Abramov <dan.abramov@me.com> (https://github.com/gaearon)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/reactjs/react-redux/issues"
