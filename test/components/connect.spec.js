@@ -2346,5 +2346,40 @@ describe('React', () => {
       const container = testRenderer.root.findByType(Container)
       expect(container.instance.store).toBe(store)
     })
+
+    it('should receive the subscription in the context using a custom store key', () => {
+      const store = createStore(() => ({}))
+      const CustomProvider = createProvider('customStoreKey', 'customSubKey')
+      const connectOptions = { storeKey: 'customStoreKey', subKey: 'customSubKey' }
+
+      @connect(() => ({}), undefined, undefined, connectOptions)
+      class OuterContainer extends Component {
+        render() {
+          return Children.only(this.props.children)
+        }
+      }
+
+      @connect(() => ({}), undefined, undefined, connectOptions)
+      class NestedContainer extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const testRenderer = TestRenderer.create(
+        <CustomProvider store={store}>
+          <OuterContainer>
+            <NestedContainer />
+          </OuterContainer>
+        </CustomProvider>
+      )
+
+      const outerContainer = testRenderer.root.findByType(OuterContainer)
+      const nestedContainer = testRenderer.root.findByType(NestedContainer)
+      expect(outerContainer.instance.context.customSubKey).toBe(null)
+      expect(nestedContainer.instance.context.customSubKey).toBe(
+        outerContainer.instance.subscription
+      )
+    })
   })
 })

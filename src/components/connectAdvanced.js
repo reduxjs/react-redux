@@ -68,6 +68,9 @@ export default function connectAdvanced(
     // the key of props/context to get the store
     storeKey = 'store',
 
+    // the key of context to get the subscription
+    subKey,
+
     // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
     withRef = false,
 
@@ -75,7 +78,7 @@ export default function connectAdvanced(
     ...connectOptions
   } = {}
 ) {
-  const subscriptionKey = storeKey + 'Subscription'
+  const subscriptionKey = subKey || `${storeKey}Subscription`
   const version = hotReloadingVersion++
 
   const contextTypes = {
