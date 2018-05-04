@@ -8,7 +8,7 @@ import { Provider, createProvider, connect } from '../../src/index'
 
 describe('React', () => {
   describe('Provider', () => {
-      const createChild = (storeKey = 'store') => {
+      const createChild = (storeKey = 'store', subKey = 'subKey') => {
         class Child extends Component {
           render() {
             return <div />
@@ -16,7 +16,8 @@ describe('React', () => {
         }
 
         Child.contextTypes = {
-          [storeKey]: PropTypes.object.isRequired
+          [storeKey]: PropTypes.object.isRequired,
+          [subKey]: PropTypes.object,
         }
 
         return Child
@@ -73,21 +74,39 @@ describe('React', () => {
     })
 
     it('should add the store to the child context using a custom store key', () => {
-        const store = createStore(() => ({}))
-        const CustomProvider = createProvider('customStoreKey');
-        const CustomChild = createChild('customStoreKey');
+      const store = createStore(() => ({}))
+      const CustomProvider = createProvider('customStoreKey');
+      const CustomChild = createChild('customStoreKey');
 
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        const testRenderer = TestRenderer.create(
-          <CustomProvider store={store}>
-            <CustomChild />
-          </CustomProvider>
-        )
-        spy.mockRestore()
-        expect(spy).toHaveBeenCalledTimes(0)
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const testRenderer = TestRenderer.create(
+        <CustomProvider store={store}>
+          <CustomChild />
+        </CustomProvider>
+      )
+      spy.mockRestore()
+      expect(spy).toHaveBeenCalledTimes(0)
 
-        const child = testRenderer.root.findByType(CustomChild).instance
-        expect(child.context.customStoreKey).toBe(store)
+      const child = testRenderer.root.findByType(CustomChild).instance
+      expect(child.context.customStoreKey).toBe(store)
+    })
+
+    it('should add the subscription to the child context using a custom subscription key', () => {
+      const store = createStore(() => ({}))
+      const CustomProvider = createProvider('customStoreKey', 'customSubKey')
+      const CustomChild = createChild('customStoreKey', 'customSubKey')
+
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const testRenderer = TestRenderer.create(
+        <CustomProvider store={store}>
+          <CustomChild />
+        </CustomProvider>
+      )
+      spy.mockRestore()
+      expect(spy).toHaveBeenCalledTimes(0)
+
+      const child = testRenderer.root.findByType(CustomChild).instance
+      expect(child.context.customSubKey).toBe(null)
     })
 
     it('should warn once when receiving a new store in props', () => {

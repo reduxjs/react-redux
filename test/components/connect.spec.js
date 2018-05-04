@@ -6,7 +6,7 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import TestRenderer from 'react-test-renderer'
 import { createStore } from 'redux'
-import { connect } from '../../src/index'
+import { connect, createProvider } from '../../src/index'
 
 describe('React', () => {
   describe('connect', () => {
@@ -2323,6 +2323,63 @@ describe('React', () => {
       expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
+    })
+
+    it('should receive the store in the context using a custom store key', () => {
+      const store = createStore(() => ({}))
+      const CustomProvider = createProvider('customStoreKey')
+      const connectOptions = { storeKey: 'customStoreKey' }
+
+      @connect(undefined, undefined, undefined, connectOptions)
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const testRenderer = TestRenderer.create(
+        <CustomProvider store={store}>
+          <Container />
+        </CustomProvider>
+      )
+
+      const container = testRenderer.root.findByType(Container)
+      expect(container.instance.store).toBe(store)
+    })
+
+    it('should receive the subscription in the context using a custom store key', () => {
+      const store = createStore(() => ({}))
+      const CustomProvider = createProvider('customStoreKey', 'customSubKey')
+      const connectOptions = { storeKey: 'customStoreKey', subKey: 'customSubKey' }
+
+      @connect(() => ({}), undefined, undefined, connectOptions)
+      class OuterContainer extends Component {
+        render() {
+          return Children.only(this.props.children)
+        }
+      }
+
+      @connect(() => ({}), undefined, undefined, connectOptions)
+      class NestedContainer extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const testRenderer = TestRenderer.create(
+        <CustomProvider store={store}>
+          <OuterContainer>
+            <NestedContainer />
+          </OuterContainer>
+        </CustomProvider>
+      )
+
+      const outerContainer = testRenderer.root.findByType(OuterContainer)
+      const nestedContainer = testRenderer.root.findByType(NestedContainer)
+      expect(outerContainer.instance.context.customSubKey).toBe(null)
+      expect(nestedContainer.instance.context.customSubKey).toBe(
+        outerContainer.instance.subscription
+      )
     })
   })
 })
