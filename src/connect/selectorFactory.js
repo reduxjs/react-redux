@@ -1,5 +1,5 @@
 import verifySubselectors from './verifySubselectors'
-  
+
 export function impureFinalPropsSelectorFactory(
   mapStateToProps,
   mapDispatchToProps,
@@ -64,7 +64,7 @@ export function pureFinalPropsSelectorFactory(
     const nextStateProps = mapStateToProps(state, ownProps)
     const statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps)
     stateProps = nextStateProps
-    
+
     if (statePropsChanged)
       mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
 
