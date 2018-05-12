@@ -1,1 +1,1 @@
-All notable changes are described on the [Releases](https://github.com/reactjs/react-redux/releases) page.
+All notable changes are described on the [Releases](https://github.com/reduxjs/react-redux/releases) page.

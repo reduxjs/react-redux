@@ -56,9 +56,9 @@ It does not modify the component class passed to it; instead, it *returns* a new
 
   If your `mapStateToProps` function is declared as taking two parameters, it will be called with the store state as the first parameter and the props passed to the connected component as the second parameter, and will also be re-invoked whenever the connected component receives new props as determined by shallow equality comparisons.  (The second parameter is normally referred to as `ownProps` by convention.)
 
-  >Note: in advanced scenarios where you need more control over the rendering performance, `mapStateToProps()` can also return a function. In this case, *that* function will be used as `mapStateToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reactjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
+  >Note: in advanced scenarios where you need more control over the rendering performance, `mapStateToProps()` can also return a function. In this case, *that* function will be used as `mapStateToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
 
-  >The `mapStateToProps` function's first argument is the entire Redux store’s state and it returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/reactjs/reselect) to efficiently compose selectors and [compute derived data](https://redux.js.org/recipes/computing-derived-data).
+  >The `mapStateToProps` function's first argument is the entire Redux store’s state and it returns an object to be passed as props. It is often called a **selector**. Use [reselect](https://github.com/reduxjs/reselect) to efficiently compose selectors and [compute derived data](https://redux.js.org/recipes/computing-derived-data).
 
 * [`mapDispatchToProps(dispatch, [ownProps]): dispatchProps`] \(*Object* or *Function*): If an object is passed, each function inside it is assumed to be a Redux action creator. An object with the same function names, but with every action creator wrapped into a `dispatch` call so they may be invoked directly, will be merged into the component’s props.  
 
@@ -68,7 +68,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
 
   If you do not supply your own `mapDispatchToProps` function or object full of action creators, the default `mapDispatchToProps` implementation just injects `dispatch` into your component’s props.
 
-  >Note: in advanced scenarios where you need more control over the rendering performance, `mapDispatchToProps()` can also return a function. In this case, *that* function will be used as `mapDispatchToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reactjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
+  >Note: in advanced scenarios where you need more control over the rendering performance, `mapDispatchToProps()` can also return a function. In this case, *that* function will be used as `mapDispatchToProps()` for a particular component instance. This allows you to do per-instance memoization. You can refer to [#279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds for more details. Most apps never need this.
 
 * [`mergeProps(stateProps, dispatchProps, ownProps): props`] \(*Function*): If specified, it is passed the result of `mapStateToProps()`, `mapDispatchToProps()`, and the parent `props`. The plain object you return from it will be passed as props to the wrapped component. You may specify this function to select a slice of the state based on props, or to bind action creators to a particular variable from props. If you omit it, `Object.assign({}, ownProps, stateProps, dispatchProps)` is used by default.
 
