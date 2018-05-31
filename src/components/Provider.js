@@ -19,8 +19,8 @@ function warnAboutReceivingStore() {
   )
 }
 
-export function createProvider(storeKey = 'store', subKey) {
-    const subscriptionKey = subKey || `${storeKey}Subscription`
+export function createProvider(storeKey = 'store') {
+    const subscriptionKey = `${storeKey}Subscription`
 
     class Provider extends Component {
         getChildContext() {
