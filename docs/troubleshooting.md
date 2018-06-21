@@ -3,7 +3,7 @@
 Make sure to check out [Troubleshooting Redux](http://redux.js.org/docs/Troubleshooting.html) first.
 
 ### I'm getting the following alert: Accessing PropTypes via the main React package is deprecated. Use the prop-types package from npm instead.
-This warning is shown when using react 15.5.*. basically, now it's just a warning, but in react16 the application might break. the PropTypes should now be imported from 'prop-types' package, and not from the react package.
+This warning is shown when using react 15.5.*. Basically, now it's just a warning, but in react16 the application might break. the PropTypes should now be imported from 'prop-types' package, and not from the react package.
 
 Update to the latest version of react-redux.
 
