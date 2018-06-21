@@ -46,7 +46,8 @@
     "hoist-non-react-statics": "^2.5.0",
     "invariant": "^2.2.4",
     "loose-envify": "^1.1.0",
-    "prop-types": "^15.6.1"
+    "prop-types": "^15.6.1",
+    "react-lifecycles-compat": "^3.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

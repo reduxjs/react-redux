@@ -220,4 +220,19 @@ describe('React', () => {
     store.dispatch({ type: 'APPEND', body: 'd' })
     expect(childMapStateInvokes).toBe(4)
   })
+
+  it('works in <StrictMode> without warnings', () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const store = createStore(() => ({}))
+
+    TestRenderer.create(
+      <React.StrictMode>
+        <Provider store={store}>
+          <div />
+        </Provider>
+      </React.StrictMode>
+    )
+
+    expect(spy).not.toHaveBeenCalled()
+  })
 })

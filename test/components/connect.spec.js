@@ -200,7 +200,7 @@ describe('React', () => {
 
       @connect(state => ({ string: state }) )
       class Container extends Component {
-        componentWillMount() {
+        componentDidMount() {
           store.dispatch({ type: 'APPEND', body: 'a' })
         }
 
@@ -944,8 +944,8 @@ describe('React', () => {
 
       @connect((state) => ({ state }))
       class Child extends Component {
-        componentWillReceiveProps(nextProps) {
-          if (nextProps.state === 'A') {
+        componentDidMount() {
+          if (this.props.state === 'A') {
             store.dispatch({ type: 'APPEND', body: 'B' });
           }
         }
@@ -1045,7 +1045,7 @@ describe('React', () => {
 
       spy.mockRestore()
       document.body.removeChild(div)
-      expect(mapStateToPropsCalls).toBe(3)
+      expect(mapStateToPropsCalls).toBe(2)
       expect(spy).toHaveBeenCalledTimes(0)
     })
 
@@ -1218,14 +1218,13 @@ describe('React', () => {
       const store = createStore(() => ({}))
 
       function makeContainer(mapState, mapDispatch, mergeProps) {
-        return React.createElement(
-          @connect(mapState, mapDispatch, mergeProps)
-          class Container extends Component {
-            render() {
-              return <Passthrough />
-            }
+        @connect(mapState, mapDispatch, mergeProps)
+        class Container extends Component {
+          render() {
+            return <Passthrough />
           }
-        )
+        }
+        return React.createElement(Container)
       }
 
       function AwesomeMap() { }
@@ -1857,17 +1856,17 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
-      expect(spy).toHaveBeenCalledTimes(0)
+      expect(spy).toHaveBeenCalledTimes(1)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(3)
       expect(renderCalls).toBe(1)
-      expect(spy).toHaveBeenCalledTimes(0)
+      expect(spy).toHaveBeenCalledTimes(2)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(4)
       expect(renderCalls).toBe(2)
-      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy).toHaveBeenCalledTimes(3)
 
       spy.mockRestore()
     })
@@ -1928,7 +1927,7 @@ describe('React', () => {
 
       @connect(mapStateFactory)
       class Container extends Component {
-        componentWillUpdate() {
+        componentDidUpdate() {
           updatedCount++
         }
         render() {
@@ -2009,7 +2008,7 @@ describe('React', () => {
 
       @connect(null, mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
-        componentWillUpdate() {
+        componentDidUpdate() {
           updatedCount++
         }
         render() {
@@ -2121,10 +2120,6 @@ describe('React', () => {
 
       @connect(null)
       class Parent extends React.Component {
-        componentWillMount() {
-          this.props.dispatch({ type: 'fetch' })
-        }
-
         componentWillUnmount() {
           this.props.dispatch({ type: 'clean' })
         }
@@ -2144,6 +2139,7 @@ describe('React', () => {
       }
 
       const store = createStore(reducer)
+      store.dispatch({ type: 'fetch' })
       const div = document.createElement('div')
       ReactDOM.render(
         <ProviderMock store={store}>
@@ -2323,6 +2319,28 @@ describe('React', () => {
       expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
+    })
+
+    it('works in <StrictMode> without warnings', () => {
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const store = createStore(stringBuilder)
+
+      @connect(state => ({ string: state }) )
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props}/>
+        }
+      }
+
+      TestRenderer.create(
+        <React.StrictMode>
+          <ProviderMock store={store}>
+            <Container />
+          </ProviderMock>
+        </React.StrictMode>
+      )
+
+      expect(spy).not.toHaveBeenCalled()
     })
 
     it('should receive the store in the context using a custom store key', () => {

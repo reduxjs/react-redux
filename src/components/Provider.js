@@ -38,8 +38,8 @@ export function createProvider(storeKey = 'store') {
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      Provider.prototype.componentWillReceiveProps = function (nextProps) {
-        if (this[storeKey] !== nextProps.store) {
+      Provider.prototype.componentDidUpdate = function () {
+        if (this[storeKey] !== this.props.store) {
           warnAboutReceivingStore()
         }
       }
