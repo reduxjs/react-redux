@@ -65,9 +65,9 @@ describe('React', () => {
           <Child />
         </Provider>
       )
-      spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
-
+      spy.mockRestore()
+      
       const child = testRenderer.root.findByType(Child).instance
       expect(child.context.store).toBe(store)
     })
@@ -83,8 +83,8 @@ describe('React', () => {
             <CustomChild />
           </CustomProvider>
         )
-        spy.mockRestore()
         expect(spy).toHaveBeenCalledTimes(0)
+        spy.mockRestore()
 
         const child = testRenderer.root.findByType(CustomChild).instance
         expect(child.context.customStoreKey).toBe(store)
@@ -115,8 +115,7 @@ describe('React', () => {
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       testRenderer.root.instance.setState({ store: store2 })
-      spy.mockRestore()
-
+      
       expect(child.context.store.getState()).toEqual(11)
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toBe(
@@ -126,13 +125,14 @@ describe('React', () => {
         'automatically. See https://github.com/reduxjs/react-redux/releases/' +
         'tag/v2.0.0 for the migration instructions.'
       )
-
+      spy.mockRestore()
+      
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       testRenderer.root.instance.setState({ store: store3 })
-      spy.mockRestore()
-
+      
       expect(child.context.store.getState()).toEqual(11)
       expect(spy).toHaveBeenCalledTimes(0)
+      spy.mockRestore()
     })
 
     it('should handle subscriptions correctly when there is nested Providers', () => {

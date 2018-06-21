@@ -160,8 +160,8 @@ describe('React', () => {
           <Container />
         </ProviderMock>
       )
-      spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
+      spy.mockRestore()
 
       const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.string).toBe('')
@@ -186,8 +186,8 @@ describe('React', () => {
           <Container />
         </ProviderMock>
       )
-      spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
+      spy.mockRestore()
 
       const stub = testRenderer.root.findByType(Passthrough)
       expect(stub.props.string).toBe('')
@@ -918,9 +918,9 @@ describe('React', () => {
       expect(mapStateToPropsCalls).toBe(1)
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       store.dispatch({ type: 'APPEND', body: 'a' })
-      spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
       expect(mapStateToPropsCalls).toBe(1)
+      spy.mockRestore()
     })
 
     it('should not attempt to notify unmounted child of state change', () => {
@@ -1043,10 +1043,10 @@ describe('React', () => {
       linkB.click()
       linkB.click()
 
-      spy.mockRestore()
       document.body.removeChild(div)
       expect(mapStateToPropsCalls).toBe(2)
       expect(spy).toHaveBeenCalledTimes(0)
+      spy.mockRestore()
     })
 
     it('should not attempt to set state when dispatching in componentWillUnmount', () => {
@@ -1079,9 +1079,9 @@ describe('React', () => {
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       ReactDOM.unmountComponentAtNode(div)
-      spy.mockRestore()
       expect(spy).toHaveBeenCalledTimes(0)
       expect(mapStateToPropsCalls).toBe(1)
+      spy.mockRestore()
     })
 
     it('should shallowly compare the selected state to prevent unnecessary updates', () => {
