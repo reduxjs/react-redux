@@ -1206,6 +1206,16 @@ describe('React', () => {
       )
     })
 
+    it('should not throw an error if a object created with React.forwardRef is passed to the function returned by connect', () => {
+      const ForwardRefComponent = React.forwardRef((props, ref) =>
+        <div {...props} ref={ref} />
+      );
+
+      expect(() => {
+        connect()(ForwardRefComponent)
+      }).not.toThrow()
+    });
+
     it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
       const store = createStore(() => ({}))
 
@@ -1544,7 +1554,7 @@ describe('React', () => {
 
     it('should throw an error if the store is not in the props or context', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      
+
       class Container extends Component {
         render() {
           return <Passthrough />
