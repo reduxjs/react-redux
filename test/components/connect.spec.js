@@ -2277,11 +2277,9 @@ describe('React', () => {
       }
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
-      const a = TestRenderer.create(<ProviderMock store={store}><Parent /></ProviderMock>)
+      TestRenderer.create(<ProviderMock store={store}><Parent /></ProviderMock>)
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
-      console.log('dispatch')
-      console.log(a.getInstance().props.children)
       store.dispatch({ type: 'INC' })
       expect(mapStateToProps).toHaveBeenCalledTimes(2)
     })
