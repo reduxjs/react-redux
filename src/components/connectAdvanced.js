@@ -1,35 +1,12 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
-import { polyfill } from 'react-lifecycles-compat'
 
 import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 
 let hotReloadingVersion = 0
 function noop() {}
-function makeUpdater(sourceSelector, store) {
-  return function updater(props, prevState) {
-    try {
-      const nextProps = sourceSelector(store.getState(), props)
-      if (nextProps !== prevState.props || prevState.error) {
-        return {
-          shouldComponentUpdate: true,
-          props: nextProps,
-          error: null,
-        }
-      }
-      return {
-        shouldComponentUpdate: false,
-      }
-    } catch (error) {
-      return {
-        shouldComponentUpdate: true,
-        error,
-      }
-    }
-  }
-}
 
 export default function connectAdvanced(
   /*
@@ -88,10 +65,6 @@ export default function connectAdvanced(
     [subscriptionKey]: subscriptionShape,
   }
 
-  function getDerivedStateFromProps(nextProps, prevState) {
-    return prevState.updater(nextProps, prevState)
-  }
-
   return function wrapWithConnect(WrappedComponent) {
     invariant(
       typeof WrappedComponent == 'function',
@@ -134,10 +107,14 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
 
+        this.createSelector()
         this.state = {
-          updater: this.createUpdater()
+          updateCount: 0
         }
+        this.storeState = this.store.getState()
         this.initSubscription()
+        this.derivedProps = this.derivedPropsUpdater()
+        this.received = this.props
       }
 
       getChildContext() {
@@ -159,11 +136,17 @@ export default function connectAdvanced(
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
         this.subscription.trySubscribe()
-        this.runUpdater()
+        this.triggerUpdateOnStoreStateChange()
       }
 
-      shouldComponentUpdate(_, nextState) {
-        return nextState.shouldComponentUpdate
+      shouldComponentUpdate(nextProps) {
+        this.received = nextProps
+        // received a prop update, store state updates are handled in onStateChange
+        const oldProps = this.derivedProps
+        const newProps = this.updateDerivedProps(nextProps)
+        if (this.error) return true
+        const sCU = newProps !== oldProps
+        return sCU
       }
 
       componentWillUnmount() {
@@ -172,6 +155,31 @@ export default function connectAdvanced(
         this.notifyNestedSubs = noop
         this.store = null
         this.isUnmounted = true
+      }
+
+      updateDerivedProps(nextProps) {
+        this.derivedProps = this.derivedPropsUpdater(nextProps)
+        return this.derivedProps
+      }
+
+      derivedPropsUpdater(props = this.props) {
+        // runs when props change, or the store state changes
+        // and generates the derived props for connected components
+        try {
+          const nextProps = this.sourceSelector(this.storeState, props)
+          if (nextProps !== this.derivedProps || this.error) {
+            this.error = null
+            return nextProps
+          }
+          return this.derivedProps
+        } catch (error) {
+          this.error = error
+          return this.derivedProps
+        }
+      }
+
+      createSelector() {
+        this.sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
       }
 
       getWrappedInstance() {
@@ -186,17 +194,24 @@ export default function connectAdvanced(
         this.wrappedInstance = ref
       }
 
-      createUpdater() {
-        const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
-        return makeUpdater(sourceSelector, this.store)
-      }
-
-      runUpdater(callback = noop) {
+      triggerUpdateOnStoreStateChange(callback = noop) {
+        // runs when an action is dispatched by the store we are listening to
+        // if the store state has changed, we save that and update the component state
+        // to force a re-generation of derived props
         if (this.isUnmounted) {
           return
         }
 
-        this.setState(prevState => prevState.updater(this.props, prevState), callback)
+        this.setState(prevState => {
+          const newState = this.store.getState()
+          if (this.storeState === newState) {
+            return prevState
+          }
+          this.storeState = newState
+          return {
+            updateCount: prevState.updateCount++
+          }
+        }, callback)
       }
 
       initSubscription() {
@@ -217,7 +232,7 @@ export default function connectAdvanced(
       }
 
       onStateChange() {
-        this.runUpdater(this.notifyNestedSubs)
+        this.triggerUpdateOnStoreStateChange(this.notifyNestedSubs)
       }
 
       isSubscribed() {
@@ -238,10 +253,16 @@ export default function connectAdvanced(
       }
 
       render() {
-        if (this.state.error) {
-          throw this.state.error
+        if (this.received !== this.props) {
+          // forceUpdate() was called on this component, which skips sCU
+          // so manually update derived props
+          this.received = this.props
+          this.updateDerivedProps(this.props)
+        }
+        if (this.error) {
+          throw this.error
         } else {
-          return createElement(WrappedComponent, this.addExtraProps(this.state.props))
+          return createElement(WrappedComponent, this.addExtraProps(this.derivedProps))
         }
       }
     }
@@ -251,7 +272,6 @@ export default function connectAdvanced(
     Connect.childContextTypes = childContextTypes
     Connect.contextTypes = contextTypes
     Connect.propTypes = contextTypes
-    Connect.getDerivedStateFromProps = getDerivedStateFromProps
 
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentDidUpdate = function componentDidUpdate() {
@@ -276,14 +296,11 @@ export default function connectAdvanced(
             oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
           }
 
-          const updater = this.createUpdater()
-          this.setState({updater})
-          this.runUpdater()
+          this.createSelector()
+          this.triggerUpdateOnStoreStateChange()
         }
       }
     }
-
-    polyfill(Connect)
 
     return hoistStatics(Connect, WrappedComponent)
   }
