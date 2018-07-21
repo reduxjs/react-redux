@@ -141,7 +141,7 @@ export default function connectAdvanced(
       static getDerivedStateFromProps(props, state) {
         if (connectOptions.pure && shallowEqual(props, state.props) || state.error) return null
         return {
-          ...Connect.getChildPropsState(props, state, )
+          ...Connect.getChildPropsState(props, state, ),
             //(a, b) => console.log('gDSFP', WrappedComponent.name, a, b)),
           props: props
         }
