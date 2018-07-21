@@ -2266,8 +2266,9 @@ describe('React', () => {
       @connect() // no mapStateToProps. therefore it should be transparent for subscriptions
       class B extends React.Component { render() { return <C {...this.props} /> }}
 
+      const calls = []
       @connect((state, props) => {
-        expect(props.count).toBe(state)
+        calls.push([state, props.count])
         return { count: state * 10 + props.count }
       })
       class C extends React.Component { render() { return <div>{this.props.count}</div> }}
@@ -2276,6 +2277,9 @@ describe('React', () => {
       TestRenderer.create(<ProviderMock store={store}><A /></ProviderMock>)
 
       store.dispatch({ type: 'INC' })
+      expect(calls).toEqual([
+
+      ])
     })
 
     it('should subscribe properly when a new store is provided via props', () => {
@@ -2362,7 +2366,7 @@ describe('React', () => {
       )
 
       const container = testRenderer.root.findByType(Container)
-      expect(container.instance.store).toBe(store)
+      expect(container.instance.state.store).toBe(store)
     })
   })
 })
