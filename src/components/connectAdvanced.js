@@ -125,7 +125,7 @@ export default function connectAdvanced(
         this.initSubscription()
       }
 
-      static getChildPropsState(props, state, debug = false) {
+      static getChildPropsState(props, state) {
         try {
           const nextProps = state.childPropsSelector(state.store.getState(), props)
           if (nextProps === state.childProps) return null
