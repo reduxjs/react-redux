@@ -120,31 +120,25 @@ export default function connectAdvanced(
         }
         this.state = {
           ...this.state,
-          ...Connect.getChildPropsState(props, this.state, )
-            //(a, b) => console.log('constructor', WrappedComponent.name, a, b))
+          ...Connect.getChildPropsState(props, this.state)
         }
         this.initSubscription()
       }
 
       static getChildPropsState(props, state, debug = false) {
         try {
-          const nextProps = state.childPropsSelector(state.storeState, props)
+          const nextProps = state.childPropsSelector(state.store.getState(), props)
           if (nextProps === state.childProps) return null
-          if (debug) debug(nextProps, state.childProps)
           return { childProps: nextProps }
         } catch (error) {
-          if (debug) debug(error, state.childProps)
           return { error }
         }
       }
 
       static getDerivedStateFromProps(props, state) {
         if (connectOptions.pure && shallowEqual(props, state.props) || state.error) return null
-        return {
-          ...Connect.getChildPropsState(props, state, ),
-            //(a, b) => console.log('gDSFP', WrappedComponent.name, a, b)),
-          props: props
-        }
+        const nextChildProps = Connect.getChildPropsState(props, state)
+        return nextChildProps
       }
 
       getChildContext() {
@@ -208,14 +202,12 @@ export default function connectAdvanced(
         this.setState(prevState => {
           const nextState = this.state.store.getState()
           if (nextState === prevState.storeState) {
-            if (notify) this.notifyNestedSubs()
             return null
           }
-          const childPropsState = Connect.getChildPropsState(this.state.props, {
+          const childPropsState = Connect.getChildPropsState(this.props, {
               ...this.state,
               storeState: nextState
-            },)
-            //(a, b) => console.log('redux', WrappedComponent.name, a, b))
+            })
           const ret = {
             storeState: nextState,
             ...childPropsState
@@ -224,7 +216,9 @@ export default function connectAdvanced(
             this.notifyNestedSubs()
           }
           return ret
-        }, notify ? this.notifyNestedSubs : undefined)
+        }, () => {
+          if (notify) this.notifyNestedSubs()
+        })
       }
 
       initSubscription() {
@@ -304,7 +298,7 @@ export default function connectAdvanced(
           }
 
           const childPropsSelector = this.createChildSelector()
-          const childProps = childPropsSelector(this.state.props, this.state.storeState)
+          const childProps = childPropsSelector(this.props, this.state.storeState)
           this.setState({ childPropsSelector, childProps })
         }
       }
