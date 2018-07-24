@@ -1,6 +1,7 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
+import { polyfill } from 'react-lifecycles-compat'
 import shallowEqual from '../utils/shallowEqual'
 
 import Subscription from '../utils/Subscription'
@@ -138,7 +139,10 @@ export default function connectAdvanced(
       static getDerivedStateFromProps(props, state) {
         if (connectOptions.pure && shallowEqual(props, state.props) || state.error) return null
         const nextChildProps = Connect.getChildPropsState(props, state)
-        return nextChildProps
+        return {
+          ...nextChildProps,
+          props
+        }
       }
 
       getChildContext() {
@@ -273,6 +277,7 @@ export default function connectAdvanced(
     Connect.childContextTypes = childContextTypes
     Connect.contextTypes = contextTypes
     Connect.propTypes = contextTypes
+    polyfill(Connect)
 
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentDidUpdate = function componentDidUpdate() {
