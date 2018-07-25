@@ -39,7 +39,12 @@ try {
 }
 
 console.log(`Installing React@${reactVersion} and related packages...`);
-npmRun.execSync(`npm install --loglevel=error -D react@${reactVersion} react-dom@${reactVersion} react-test-renderer@${reactVersion}`, { stdio: 'inherit' });
+if (reactVersion === '0.14') {
+  npmRun.execSync(`npm install --loglevel=error -D react@0.14 react-dom@0.14 react-addons-test-utils@0.14.8 react-test-renderer@1`, { stdio: 'inherit' });
+} else {
+  npmRun.execSync(`npm install --loglevel=error -D react@${reactVersion} react-dom@${reactVersion} react-test-renderer@${reactVersion}`, { stdio: 'inherit' });
+  // we will use test renderer to test React 16.3+ features until enzyme is ready, so still install it even though tests may not use it yet
+}
 if (semver.intersects(reactVersion, '^16.0.0')) {
   try {
     npmRun.execSync('npm install --loglevel=error -D enzyme-adapter-react-16', { stdio: 'inherit' });
@@ -71,13 +76,5 @@ if (semver.intersects(reactVersion, '^16.0.0')) {
     console.error('An installation failed');
     console.log(e);
     process.exit(14);
-  }
-} else if (semver.intersects(reactVersion, '^0.13.0')) {
-  try {
-    npmRun.execSync('npm install --loglevel=error -D enzyme-adapter-react-13', { stdio: 'inherit' });
-  } catch (e) {
-    console.error('An installation failed');
-    console.log(e);
-    process.exit(13);
   }
 }
