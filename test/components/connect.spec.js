@@ -2321,7 +2321,10 @@ describe('React', () => {
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
     })
 
-    it('works in <StrictMode> without warnings', () => {
+    it('works in <StrictMode> without warnings (React 16.3+)', () => {
+      if (!React.StrictMode) {
+        return
+      }
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const store = createStore(stringBuilder)
 
