@@ -137,7 +137,7 @@ export default function connectAdvanced(
       }
 
       static getDerivedStateFromProps(props, state) {
-        if (connectOptions.pure && shallowEqual(props, state.props) || state.error) return null
+        if ((connectOptions.pure && shallowEqual(props, state.props)) || state.error) return null
         const nextChildProps = Connect.getChildPropsState(props, state)
         return {
           ...nextChildProps,
@@ -168,7 +168,7 @@ export default function connectAdvanced(
       }
 
       shouldComponentUpdate(_, nextState) {
-        if (!connectOptions['pure']) {
+        if (!connectOptions.pure) {
           return true
         }
         return nextState.childProps !== this.state.childProps || nextState.error
@@ -231,7 +231,7 @@ export default function connectAdvanced(
         // parentSub's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
         const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        this.subscription = new Subscription(this.state.store, parentSub, this.onStateChange.bind(this))
+        this.subscription = new Subscription(this.state.store, parentSub, this.updateChildPropsFromReduxStore.bind(this))
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
         // the middle of the notification loop, where `this.subscription` will then be null. An
@@ -240,10 +240,6 @@ export default function connectAdvanced(
         // listeners logic is changed to not call listeners that have been unsubscribed in the
         // middle of the notification loop.
         this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
-      }
-
-      onStateChange() {
-        this.updateChildPropsFromReduxStore()
       }
 
       isSubscribed() {
@@ -288,7 +284,7 @@ export default function connectAdvanced(
           // If any connected descendants don't hot reload (and resubscribe in the process), their
           // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
           // listeners, this does mean that the old versions of connected descendants will still be
-          // notified of state changes; however, their onStateChange function is a no-op so this
+          // notified of state changes; however, their updateChildPropsFromReduxStore function is a no-op so this
           // isn't a huge deal.
           let oldListeners = [];
 
