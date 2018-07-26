@@ -35,10 +35,24 @@ npm run build:umd:min
 
 ### Testing and Linting
 
-To run the tests:
+To run the tests in the latest React version:
 ```
 npm run test
 ```
+
+To run in explicit React versions (the number is the version, so `test:16.3` will run in React version `16.3`):
+```
+npm run test:16.4
+npm run test:16.3
+npm run test:16.2
+npm run test:15
+npm run test:14
+```
+
+To run tests in all supported React versions, `0.14`, `15`, `16.2`, `16.3`, `16.4`,
+```
+npm run test:all
+``` 
 
 To continuously watch and run tests, run the following:
 ```
