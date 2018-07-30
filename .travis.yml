@@ -6,15 +6,14 @@ before_install:
 env:
   global:
   - TEST=true
-  matrix:
-  - REACT=0.14
-  - REACT=15
-  - REACT=16.2
-  - REACT=16.3
-  - REACT=16.4
 sudo: false
 script:
   - npm run lint
-  - npm test
+  matrix:
+  - npm run test:14
+  - npm run test:15
+  - npm run test:16.2
+  - npm run test:16.3
+  - npm run test:16.4
 after_success:
   - npm run coverage

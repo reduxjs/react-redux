@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "devDependencies": {
+    "create-react-class": "^1.2.4",
+    "enzyme": "^3.3.0",
+    "enzyme-adapter-react-14": "^1.0.6",
+    "jest": "^23.4.2",
+    "react": "^0.14.9",
+    "react-addons-test-utils": "^0.14.8",
+    "react-dom": "^0.14.8",
+    "react-test-renderer": "^1"
+  },
+  "jest": {
+    "testURL": "http://localhost",
+    "collectCoverage": true,
+    "coverageDirectory": "."
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}

@@ -1,13 +1,9 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Children, Component } from 'react'
+import { React, ReactDOM, Children, Component, TestRenderer, enzyme, createProvider, connect } from '../getTestDeps.js'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
-import ReactDOM from 'react-dom'
-import TestRenderer from 'react-test-renderer'
-import enzyme from 'enzyme'
 import { createStore } from 'redux'
-import { connect, createProvider } from '../../src/index'
 
 describe('React', () => {
   describe('connect', () => {

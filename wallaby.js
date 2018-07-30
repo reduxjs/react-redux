@@ -3,11 +3,12 @@ module.exports = function(wallaby) {
     files: [
       { pattern: 'test/**/*.spec.js', ignore: true },
       'src/**/*.js*',
-      'test/setup.js'
+      'test/getTestDeps.js'
     ],
     tests: [
       { pattern: 'node_modules/*', ignore: true, instrument: false },
-      'test/**/*.spec.js*'
+      { pattern: 'test/react/**/*.spec.js', ignore: true, instrument: false },
+      'test/**/*.spec.js*',
     ],
     compilers: {
       '**/*.js': wallaby.compilers.babel({

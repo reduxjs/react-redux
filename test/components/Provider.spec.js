@@ -1,12 +1,9 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import TestRenderer from 'react-test-renderer'
+import { React, Component, TestRenderer, enzyme, Provider, createProvider, connect } from '../getTestDeps.js'
 import semver from 'semver'
-import enzyme from 'enzyme'
 import { createStore } from 'redux'
-import { Provider, createProvider, connect } from '../../src/index'
 
 describe('React', () => {
   describe('Provider', () => {

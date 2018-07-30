@@ -1,4 +1,4 @@
-import isPlainObject from '../../src/utils/isPlainObject'
+import { isPlainObject } from '../getTestDeps'
 import vm from 'vm'
 
 describe('isPlainObject', () => {

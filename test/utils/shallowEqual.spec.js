@@ -1,4 +1,4 @@
-import shallowEqual from '../../src/utils/shallowEqual'
+import { shallowEqual } from '../getTestDeps'
 
 describe('Utils', () => {
   describe('shallowEqual', () => {
