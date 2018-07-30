@@ -9,7 +9,6 @@ env:
 sudo: false
 script:
   - npm run lint
-  matrix:
   - npm run test:14
   - npm run test:15
   - npm run test:16.2

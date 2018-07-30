@@ -18,3 +18,5 @@ test/react/16.3/test/components/*.spec.js
 test/react/16.3/test/utils/*.spec.js
 test/react/16.4/test/components/*.spec.js
 test/react/16.4/test/utils/*.spec.js
+test/react/**/src
+lcov.info

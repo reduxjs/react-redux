@@ -12,7 +12,7 @@
   "jest": {
     "testURL": "http://localhost",
     "collectCoverage": true,
-    "coverageDirectory": "."
+    "coverageDirectory": "./coverage"
   },
   "scripts": {
     "test": "jest"

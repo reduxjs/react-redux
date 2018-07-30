@@ -1,4 +1,4 @@
-import { wrapActionCreators } from '../getTestDeps'
+import wrapActionCreators from '../../src/utils/wrapActionCreators.js'
 
 describe('Utils', () => {
   describe('wrapActionCreators', () => {

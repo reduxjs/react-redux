@@ -55,6 +55,7 @@
     "test:16.4": "cd test/react/16.4 && npm test",
     "posttest:16.4": "cd ../../..",
     "test:all": "npm run test:14 && npm run test:15 && npm run test:16.2 && npm run test:16.3 && npm run test:16.4",
+    "precoverage": "rm lcov.info && node ./coverage-merge/merge.js test/react/0.14/coverage/lcov.info test/react/15/coverage/lcov.info test/react/16.2/coverage/lcov.info test/react/16.3/coverage/lcov.info test/react/16.4/coverage/lcov.info",
     "coverage": "codecov"
   },
   "peerDependencies": {
