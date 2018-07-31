@@ -5,8 +5,10 @@ const {readdirSync, existsSync, copyFile, mkdirSync} = require('fs');
 const rimraf = require('rimraf');
 const {join} = require('path');
 const {spawnSync} = require('child_process');
+const reactVersion = process.env.REACT
 
 readdirSync(join(__dirname, 'test/react')).forEach(version => {
+  if (version !== reactVersion) return
   const tests = [join(__dirname, 'test', 'components'), join(__dirname, 'test', 'utils')]
   const srcs = [
     join(__dirname, 'src', 'components'),
