@@ -38,7 +38,7 @@
     "pretest": "node ./install-test-deps.js",
     "test": "jest",
     "pretest:watch": "node ./install-test-deps.js",
-    "test:watch": "cross-env REACT=16.4 jest test/**/*.spec.js --watch",
+    "test:watch": "jest --watch",
     "pretest:14": "node ./install-test-deps.js",
     "test:14": "cd test/react/0.14 && npm test",
     "posttest:14": "cd ../../..",
