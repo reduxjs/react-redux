@@ -32,9 +32,8 @@ export function wrapMergePropsFunc(mergeProps) {
 }
 
 export function whenMergePropsIsFunction(mergeProps) {
-  return (typeof mergeProps === 'function')
-    ? wrapMergePropsFunc(mergeProps)
-    : undefined
+  return (typeof mergeProps === 'function' 
+    && wrapMergePropsFunc(mergeProps))
 }
 
 export function whenMergePropsIsOmitted(mergeProps) {
