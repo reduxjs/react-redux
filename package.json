@@ -37,6 +37,7 @@
     "prepare": "npm run clean && npm run build",
     "pretest": "node ./install-test-deps.js",
     "test": "jest",
+    "test:ci": "node ./run-tests.js",
     "pretest:watch": "node ./install-test-deps.js",
     "test:watch": "jest --watch",
     "test:14": "cross-env REACT=0.14 node ./run-tests.js",

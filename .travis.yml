@@ -15,6 +15,6 @@ env:
 sudo: false
 script:
   - npm run lint
-  - npm test
+  - npm test:ci
 after_success:
   - npm run coverage
