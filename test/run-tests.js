@@ -1,7 +1,7 @@
 const { readdirSync } = require('fs')
 const { join } = require('path')
 const npmRun = require('npm-run')
-const version = process.env.REACT
+const version = process.env.REACT || '16.4'
 
 try {
   require('./install-test-deps.js')
