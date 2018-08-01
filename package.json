@@ -35,10 +35,7 @@
     "clean": "rimraf lib dist es coverage",
     "lint": "eslint src test/utils test/components test/getTestDeps.js",
     "prepare": "npm run clean && npm run build",
-    "pretest": "node ./install-test-deps.js",
-    "test": "jest",
-    "test:ci": "node ./run-tests.js",
-    "precoverage": "rm lcov.info && node ./coverage-merge/merge.js test/react/0.14/coverage/lcov.info test/react/15/coverage/lcov.info test/react/16.2/coverage/lcov.info test/react/16.3/coverage/lcov.info test/react/16.4/coverage/lcov.info",
+    "test": "node ./run-tests.js",
     "coverage": "codecov"
   },
   "peerDependencies": {

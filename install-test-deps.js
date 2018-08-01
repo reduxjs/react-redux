@@ -1,10 +1,10 @@
 /* eslint no-console: 0 */
 'use strict';
 
-const {readdirSync, existsSync, copyFile, mkdirSync} = require('fs');
+const { readdirSync, existsSync, copyFile, mkdirSync } = require('fs');
 const rimraf = require('rimraf');
-const {join} = require('path');
-const {spawnSync} = require('child_process');
+const { join } = require('path');
+const { spawnSync } = require('child_process');
 const reactVersion = process.env.REACT
 
 readdirSync(join(__dirname, 'test/react')).forEach(version => {
@@ -27,6 +27,12 @@ readdirSync(join(__dirname, 'test/react')).forEach(version => {
     join(__dirname, 'test', 'react', version, 'src', 'connect'),
     join(__dirname, 'test', 'react', version, 'src', 'utils'),
   ]
+  if (!existsSync(join(__dirname, 'test', 'react', version, 'src'))) {
+    mkdirSync(join(__dirname, 'test', 'react', version, 'src'))
+  }
+  if (!existsSync(join(__dirname, 'test', 'react', version, 'test'))) {
+    throw new Error(`getTestDeps.js is missing from react version ${version}'s "test" directory, cannot run tests`)
+  }
   console.log('Copying test files')
   tests.forEach((dir, i) => {
     if (existsSync(dest[i])) {
