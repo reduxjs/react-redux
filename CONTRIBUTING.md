@@ -140,6 +140,30 @@ and the new version will also be automatically included in
 REACT=all npm run test
 ```
 
+In addition, the new version should be added to the .travis.yml matrix list:
+
+```yaml
+language: node_js
+node_js:
+  - "8"
+before_install:
+  - 'nvm install-latest-npm'
+env:
+  matrix:
+  - REACT=0.14
+  - REACT=15
+  - REACT=15.4
+  - REACT=16.2
+  - REACT=16.3
+  - REACT=16.4
+sudo: false
+script:
+  - npm run lint
+  - npm run test
+after_success:
+  - npm run coverage
+```
+
 ### New Features
 
 Please open an issue with a proposal for a new feature or refactoring before starting on the work. We don't want you to waste your efforts on a pull request that we won't want to accept.
