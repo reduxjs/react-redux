@@ -150,7 +150,7 @@ export default function connectAdvanced(
         // to any descendants receiving store+subscription from context; it passes along
         // subscription passed to it. Otherwise, it shadows the parent subscription, which allows
         // Connect to control ordering of notifications to flow top-down.
-        const subscription = this.propsMode ? null : this.subscription
+        const subscription = this.propsMode ? null : this.state.subscription
         return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
       }
 
@@ -163,7 +163,7 @@ export default function connectAdvanced(
         // To handle the case where a child component may have triggered a state change by
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
-        this.subscription.trySubscribe()
+        this.state.subscription.trySubscribe()
         this.updateChildPropsFromReduxStore(false)
       }
 
@@ -175,11 +175,13 @@ export default function connectAdvanced(
       }
 
       componentWillUnmount() {
-        if (this.subscription) this.subscription.tryUnsubscribe()
-        this.subscription = null
-        this.notifyNestedSubs = noop
-        this.store = null
+        if (this.state.subscription) this.state.subscription.tryUnsubscribe()
         this.isUnmounted = true
+        this.setState({
+          subscription: null,
+          store: null,
+          notifyNestedSubs: noop
+        })
       }
 
       getWrappedInstance() {
@@ -217,37 +219,40 @@ export default function connectAdvanced(
             ...childPropsState
           }
           if (notify && childPropsState === null) {
-            this.notifyNestedSubs()
+            this.state.notifyNestedSubs()
           }
           return ret
         }, () => {
-          if (notify) this.notifyNestedSubs()
+          if (notify) this.state.notifyNestedSubs()
         })
       }
 
+      // Because this function is called from the constructor, we have to mutate state direc
       initSubscription() {
         if (!shouldHandleStateChanges) return
 
         // parentSub's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
         const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        this.subscription = new Subscription(this.state.store, parentSub, this.updateChildPropsFromReduxStore.bind(this))
+        // eslint-disable-next-line
+        this.state.subscription = new Subscription(this.state.store, parentSub, this.updateChildPropsFromReduxStore.bind(this))
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
-        // the middle of the notification loop, where `this.subscription` will then be null. An
+        // the middle of the notification loop, where `this.state.subscription` will then be null. An
         // extra null check every change can be avoided by copying the method onto `this` and then
         // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
         // listeners logic is changed to not call listeners that have been unsubscribed in the
         // middle of the notification loop.
-        this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
+        // eslint-disable-next-line
+        this.state.notifyNestedSubs = this.state.subscription.notifyNestedSubs.bind(this.state.subscription)
       }
 
       isSubscribed() {
-        return Boolean(this.subscription) && this.subscription.isSubscribed()
+        return Boolean(this.state.subscription) && this.state.subscription.isSubscribed()
       }
 
       addExtraProps(props) {
-        if (!withRef && !renderCountProp && !(this.propsMode && this.subscription)) return props
+        if (!withRef && !renderCountProp && !(this.propsMode && this.state.subscription)) return props
         // make a shallow copy so that fields added don't leak to the original selector.
         // this is especially important for 'ref' since that's a reference back to the component
         // instance. a singleton memoized selector would then be holding a reference to the
@@ -255,7 +260,7 @@ export default function connectAdvanced(
         const withExtras = { ...props }
         if (withRef) withExtras.ref = this.setWrappedInstance
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
-        if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription
+        if (this.propsMode && this.state.subscription) withExtras[subscriptionKey] = this.state.subscription
         return withExtras
       }
 
@@ -288,14 +293,14 @@ export default function connectAdvanced(
           // isn't a huge deal.
           let oldListeners = [];
 
-          if (this.subscription) {
-            oldListeners = this.subscription.listeners.get()
-            this.subscription.tryUnsubscribe()
+          if (this.state.subscription) {
+            oldListeners = this.state.subscription.listeners.get()
+            this.state.subscription.tryUnsubscribe()
           }
           this.initSubscription()
           if (shouldHandleStateChanges) {
-            this.subscription.trySubscribe()
-            oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
+            this.state.subscription.trySubscribe()
+            oldListeners.forEach(listener => this.state.subscription.listeners.subscribe(listener))
           }
 
           const childPropsSelector = this.createChildSelector()
