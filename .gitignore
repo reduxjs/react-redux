@@ -8,15 +8,6 @@ coverage
 es
 test/**/lcov.info
 test/**/lcov-report
-test/react/0.14/test/components/*.spec.js
-test/react/0.14/test/utils/*.spec.js
-test/react/15/test/components/*.spec.js
-test/react/15/test/utils/*.spec.js
-test/react/16.2/test/components/*.spec.js
-test/react/16.2/test/utils/*.spec.js
-test/react/16.3/test/components/*.spec.js
-test/react/16.3/test/utils/*.spec.js
-test/react/16.4/test/components/*.spec.js
-test/react/16.4/test/utils/*.spec.js
+test/react/*/test/**/*.spec.js
 test/react/**/src
 lcov.info
