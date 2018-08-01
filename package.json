@@ -35,7 +35,7 @@
     "clean": "rimraf lib dist es coverage",
     "lint": "eslint src test/utils test/components test/getTestDeps.js",
     "prepare": "npm run clean && npm run build",
-    "test": "node ./run-tests.js",
+    "test": "node ./test/run-tests.js",
     "coverage": "codecov"
   },
   "peerDependencies": {
@@ -88,7 +88,6 @@
     "eslint-plugin-react": "^7.9.1",
     "glob": "^7.1.1",
     "jest": "^23.4.1",
-    "lcov-result-merger": "^3.1.0",
     "npm-run": "^5.0.1",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",

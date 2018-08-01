@@ -7,30 +7,30 @@ const { join } = require('path');
 const { spawnSync } = require('child_process');
 const reactVersion = process.env.REACT
 
-readdirSync(join(__dirname, 'test/react')).forEach(version => {
+readdirSync(join(__dirname, 'react')).forEach(version => {
   if (reactVersion.toLowerCase() !== 'all' && version !== reactVersion) {
     console.log(`skipping ${version}, ${reactVersion} was specified`)
     return
   }
-  const tests = [join(__dirname, 'test', 'components'), join(__dirname, 'test', 'utils')]
+  const tests = [join(__dirname, 'components'), join(__dirname, 'utils')]
   const srcs = [
-    join(__dirname, 'src', 'components'),
-    join(__dirname, 'src', 'connect'),
-    join(__dirname, 'src', 'utils'),
+    join(__dirname, '..', 'src', 'components'),
+    join(__dirname, '..', 'src', 'connect'),
+    join(__dirname, '..', 'src', 'utils'),
   ]
   const dest = [
-    join(__dirname, 'test', 'react', version, 'test', 'components'),
-    join(__dirname, 'test', 'react', version, 'test', 'utils'),
+    join(__dirname, 'react', version, 'test', 'components'),
+    join(__dirname, 'react', version, 'test', 'utils'),
   ]
   const srcDest = [
-    join(__dirname, 'test', 'react', version, 'src', 'components'),
-    join(__dirname, 'test', 'react', version, 'src', 'connect'),
-    join(__dirname, 'test', 'react', version, 'src', 'utils'),
+    join(__dirname, 'react', version, 'src', 'components'),
+    join(__dirname, 'react', version, 'src', 'connect'),
+    join(__dirname, 'react', version, 'src', 'utils'),
   ]
-  if (!existsSync(join(__dirname, 'test', 'react', version, 'src'))) {
-    mkdirSync(join(__dirname, 'test', 'react', version, 'src'))
+  if (!existsSync(join(__dirname, 'react', version, 'src'))) {
+    mkdirSync(join(__dirname, 'react', version, 'src'))
   }
-  if (!existsSync(join(__dirname, 'test', 'react', version, 'test'))) {
+  if (!existsSync(join(__dirname, 'react', version))) {
     throw new Error(`getTestDeps.js is missing from react version ${version}'s "test" directory, cannot run tests`)
   }
   console.log('Copying test files')
@@ -54,8 +54,8 @@ readdirSync(join(__dirname, 'test/react')).forEach(version => {
       console.log('clearing old sources in ' + srcDest[i])
       rimraf.sync(join(srcDest[i], '*'))
     } else {
-      if (!existsSync(join(__dirname, 'test', 'react', version, 'src'))) {
-        mkdirSync(join(__dirname, 'test', 'react', version, 'src'))
+      if (!existsSync(join(__dirname, 'react', version, 'src'))) {
+        mkdirSync(join(__dirname, 'react', version, 'src'))
       }
       mkdirSync(srcDest[i])
     }
@@ -65,13 +65,13 @@ readdirSync(join(__dirname, 'test/react')).forEach(version => {
         if (e) console.log(e)
       })
     })
-    console.log(`${join(__dirname, 'src', 'index.js')} to ${join(__dirname, 'test', 'react', version, 'src', 'index.js')}...`)
-    copyFile(join(__dirname, 'src', 'index.js'), join(__dirname, 'test', 'react', version, 'src', 'index.js'), e => {
+    console.log(`${join(__dirname, '..', 'src', 'index.js')} to ${join(__dirname, 'react', version, 'src', 'index.js')}...`)
+    copyFile(join(__dirname, '..', 'src', 'index.js'), join(__dirname, 'react', version, 'src', 'index.js'), e => {
       if (e) console.log(e)
     })
   })
-  const cwd = join(__dirname, 'test', 'react', version);
-  if (existsSync(join(__dirname, 'test', 'react', version, 'node_modules'))) {
+  const cwd = join(__dirname, 'react', version);
+  if (existsSync(join(__dirname, 'react', version, 'node_modules'))) {
     console.log(`Skipping React version ${version} ... (already installed)`);
     return
   }
