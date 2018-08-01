@@ -60,6 +60,86 @@ To perform linting with `eslint`, run the following:
 npm run lint
 ```
 
+#### Adding a new React version for testing
+
+To add a new version of React to test react-redux against, create a directory structure
+in this format for React version `XX`:
+
+```
+test/
+ react/
+  XX/
+   package.json
+   test/
+    getTestDeps.js
+```
+
+So, for example, to test against React 15.4:
+
+
+```
+test/
+ react/
+  15.4/
+   package.json
+   test/
+    getTestDeps.js
+```
+
+The package.json must include the correct versions of `react`, `react-dom`,
+`react-test-renderer` and the correct enzyme adapter for the React version
+being used, as well as the needed `create-react-class`, `jest`, `enzyme` versions
+and the `jest` and `scripts` sections copied verbatim like this:
+
+```json
+{
+  "private": true,
+  "devDependencies": {
+    "create-react-class": "^15.6.3",
+    "enzyme": "^3.3.0",
+    "enzyme-adapter-react-15.4": "^1.0.6",
+    "jest": "^23.4.2",
+    "react": "15.4",
+    "react-dom": "15.4",
+    "react-test-renderer": "15.4"
+  },
+  "jest": {
+    "testURL": "http://localhost",
+    "collectCoverage": true,
+    "coverageDirectory": "./coverage"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
+```
+
+`getTestDeps.js` should load the version-specific enzyme adapter and
+test renderer (all versions newer than 0.14 use `react-test-renderer`,
+0.14 uses `react-addons-test-utils`):
+
+```js
+import enzyme from 'enzyme'
+import TestRenderer from 'react-test-renderer'
+import Adapter from 'enzyme-adapter-react-15.4'
+
+enzyme.configure({ adapter: new Adapter() })
+
+export { TestRenderer, enzyme }
+```
+
+Then you can run tests against this version with:
+
+```
+REACT=15.4 npm run test
+```
+
+and the new version will also be automatically included in
+
+```
+REACT=all npm run test
+```
+
 ### New Features
 
 Please open an issue with a proposal for a new feature or refactoring before starting on the work. We don't want you to waste your efforts on a pull request that we won't want to accept.
