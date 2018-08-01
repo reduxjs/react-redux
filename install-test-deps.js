@@ -8,7 +8,10 @@ const {spawnSync} = require('child_process');
 const reactVersion = process.env.REACT
 
 readdirSync(join(__dirname, 'test/react')).forEach(version => {
-  if (version !== reactVersion) return
+  if (reactVersion.toLowerCase() !== 'all' && version !== reactVersion) {
+    console.log(`skipping ${version}, ${reactVersion} was specified`)
+    return
+  }
   const tests = [join(__dirname, 'test', 'components'), join(__dirname, 'test', 'utils')]
   const srcs = [
     join(__dirname, 'src', 'components'),

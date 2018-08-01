@@ -42,21 +42,17 @@ npm run test
 
 To run in explicit React versions (the number is the version, so `test:16.3` will run in React version `16.3`):
 ```
-npm run test:16.4
-npm run test:16.3
-npm run test:16.2
-npm run test:15
-npm run test:14
+REACT=16.4 npm run test:ci
 ```
 
 To run tests in all supported React versions, `0.14`, `15`, `16.2`, `16.3`, `16.4`,
 ```
-npm run test:all
+REACT=all npm run test:ci
 ``` 
 
 To continuously watch and run tests, run the following:
 ```
-npm run test:watch
+npm run test -- --watch
 ```
 
 To perform linting with `eslint`, run the following:
