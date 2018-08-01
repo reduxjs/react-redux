@@ -1,4 +1,4 @@
-import wrapActionCreators from '../../src/utils/wrapActionCreators.js'
+import wrapActionCreators from '../../src/utils/wrapActionCreators'
 
 describe('Utils', () => {
   describe('wrapActionCreators', () => {
