@@ -118,12 +118,14 @@ export default function connectAdvanced(
           store,
           storeState,
           error: null,
+          subscription: null,
+          lastSub: null,
+          notifyNestedSubs: noop
         }
         this.state = {
           ...this.state,
           ...Connect.getChildPropsState(props, this.state)
         }
-        this.initSubscription()
       }
 
       static getChildPropsState(props, state) {
@@ -137,11 +139,19 @@ export default function connectAdvanced(
       }
 
       static getDerivedStateFromProps(props, state) {
-        if ((connectOptions.pure && shallowEqual(props, state.props)) || state.error) return null
+        let ret = null
+        if (state.lastSub !== state.subscription) {
+          ret = { lastSub: state.subscription }
+          if (shallowEqual(props, state.props) || state.error) {
+            return ret
+          }
+        }
+        if ((connectOptions.pure && shallowEqual(props, state.props)) || state.error) return ret
         const nextChildProps = Connect.getChildPropsState(props, state)
         return {
           ...nextChildProps,
-          props
+          props,
+          lastSub: state.subscription
         }
       }
 
@@ -155,16 +165,7 @@ export default function connectAdvanced(
       }
 
       componentDidMount() {
-        if (!shouldHandleStateChanges) return
-
-        // componentWillMount fires during server side rendering, but componentDidMount and
-        // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
-        // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
-        // To handle the case where a child component may have triggered a state change by
-        // dispatching an action in its componentWillMount, we have to re-run the select and maybe
-        // re-render.
-        this.state.subscription.trySubscribe()
-        this.updateChildPropsFromReduxStore(false)
+        return this.updateSubscription()
       }
 
       shouldComponentUpdate(_, nextState) {
@@ -181,6 +182,39 @@ export default function connectAdvanced(
           subscription: null,
           store: null,
           notifyNestedSubs: noop
+        })
+      }
+
+      updateSubscription() {
+        if (!shouldHandleStateChanges) return
+
+        this.setState(state => {
+          if (state.subscription) return null
+          // parentSub's source should match where store came from: props vs. context. A component
+          // connected to the store via props shouldn't use subscription from context, or vice versa.
+          const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
+          const subscription = new Subscription(this.state.store, parentSub, this.updateChildPropsFromReduxStore.bind(this))
+          subscription.trySubscribe()
+          return {
+            subscription,
+            lastSub: state.subscription,
+
+            // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
+            // the middle of the notification loop, where `this.state.subscription` will then be null. An
+            // extra null check every change can be avoided by copying the method onto `this` and then
+            // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
+            // listeners logic is changed to not call listeners that have been unsubscribed in the
+            // middle of the notification loop.
+            notifyNestedSubs: subscription.notifyNestedSubs.bind(subscription)
+          }
+        }, () => {
+          // componentWillMount fires during server side rendering, but componentDidMount and
+          // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
+          // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
+          // To handle the case where a child component may have triggered a state change by
+          // dispatching an action in its componentWillMount, we have to re-run the select and maybe
+          // re-render.
+          this.updateChildPropsFromReduxStore(false)
         })
       }
 
@@ -225,26 +259,6 @@ export default function connectAdvanced(
         }, () => {
           if (notify) this.state.notifyNestedSubs()
         })
-      }
-
-      // Because this function is called from the constructor, we have to mutate state direc
-      initSubscription() {
-        if (!shouldHandleStateChanges) return
-
-        // parentSub's source should match where store came from: props vs. context. A component
-        // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        // eslint-disable-next-line
-        this.state.subscription = new Subscription(this.state.store, parentSub, this.updateChildPropsFromReduxStore.bind(this))
-
-        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
-        // the middle of the notification loop, where `this.state.subscription` will then be null. An
-        // extra null check every change can be avoided by copying the method onto `this` and then
-        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
-        // listeners logic is changed to not call listeners that have been unsubscribed in the
-        // middle of the notification loop.
-        // eslint-disable-next-line
-        this.state.notifyNestedSubs = this.state.subscription.notifyNestedSubs.bind(this.state.subscription)
       }
 
       isSubscribed() {
@@ -297,17 +311,21 @@ export default function connectAdvanced(
             oldListeners = this.state.subscription.listeners.get()
             this.state.subscription.tryUnsubscribe()
           }
-          this.initSubscription()
           if (shouldHandleStateChanges) {
-            this.state.subscription.trySubscribe()
+           //this.state.subscription.trySubscribe()
+            this.updateSubscription()
             oldListeners.forEach(listener => this.state.subscription.listeners.subscribe(listener))
           }
 
           const childPropsSelector = this.createChildSelector()
           const childProps = childPropsSelector(this.props, this.state.storeState)
           this.setState({ childPropsSelector, childProps })
+        } else {
+          this.updateSubscription()
         }
       }
+    } else {
+      Connect.prototype.componentDidUpdate = Connect.prototype.updateSubscription
     }
 
     return hoistStatics(Connect, WrappedComponent)
