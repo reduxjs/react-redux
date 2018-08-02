@@ -44,6 +44,11 @@ function createListenerCollection() {
   }
 }
 
+// subscriptions are set up in componentDidMount, so we need to delay the actual subscribing until then.
+// To do this, the subscription object is created but does not subscribe until the parent is ready
+// in cDM, a parent calls "hydrate()" which triggers the resolution of the promise. If
+// a child component tries to subscribe before this point, it will wait for the parent subscription
+// to be ready and then try to subscribe.
 export default class Subscription {
   constructor(store, parentSub, onStateChange) {
     this.store = store
@@ -51,6 +56,25 @@ export default class Subscription {
     this.onStateChange = onStateChange
     this.unsubscribe = null
     this.listeners = nullListeners
+    this.loaded = false
+    const resolve = resolve => {
+      this.resolve = () => {
+        this.loaded = true
+        resolve()
+      }
+    }
+    this.ready = new Promise(resolve)
+  }
+
+  hydrate() {
+    if (!this.loaded) {
+      this.resolve()
+    }
+    this.trySubscribe()
+  }
+
+  isReady() {
+    return this.loaded
   }
 
   addNestedSub(listener) {
@@ -66,13 +90,24 @@ export default class Subscription {
     return Boolean(this.unsubscribe)
   }
 
+  subscribeToParent() {
+    this.unsubscribe = this.parentSub.addNestedSub(this.onStateChange)
+    this.listeners = createListenerCollection()
+  }
+
   trySubscribe() {
     if (!this.unsubscribe) {
-      this.unsubscribe = this.parentSub
-        ? this.parentSub.addNestedSub(this.onStateChange)
-        : this.store.subscribe(this.onStateChange)
- 
-      this.listeners = createListenerCollection()
+      if (this.parentSub) {
+        if (this.parentSub.isReady()) {
+          return this.subscribeToParent()
+        }
+        this.parentSub.ready.then(() => {
+          this.subscribeToParent()
+        })
+      } else {
+        this.unsubscribe = this.store.subscribe(this.onStateChange)
+        this.listeners = createListenerCollection()
+      }
     }
   }
 

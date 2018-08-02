@@ -109,7 +109,7 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
         const storeState = store.getState()
-
+        const subscription = (this.propsMode ? null : context[subscriptionKey])
         const childPropsSelector = this.createChildSelector(store)
         this.state = {
           props,
@@ -118,7 +118,7 @@ export default function connectAdvanced(
           store,
           storeState,
           error: null,
-          subscription: null,
+          subscription: new Subscription(store, subscription, this.updateChildPropsFromReduxStore.bind(this)),
           lastSub: null,
           notifyNestedSubs: noop
         }
@@ -185,18 +185,15 @@ export default function connectAdvanced(
         })
       }
 
-      updateSubscription() {
+      updateSubscription(hotReloadCallback) {
         if (!shouldHandleStateChanges) return
 
         this.setState(state => {
-          if (state.subscription) return null
+          if (state.subscription.isReady() && !hotReloadCallback) return null
           // parentSub's source should match where store came from: props vs. context. A component
           // connected to the store via props shouldn't use subscription from context, or vice versa.
-          const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-          const subscription = new Subscription(this.state.store, parentSub, this.updateChildPropsFromReduxStore.bind(this))
-          subscription.trySubscribe()
+          this.state.subscription.hydrate()
           return {
-            subscription,
             lastSub: state.subscription,
 
             // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
@@ -205,9 +202,12 @@ export default function connectAdvanced(
             // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
             // listeners logic is changed to not call listeners that have been unsubscribed in the
             // middle of the notification loop.
-            notifyNestedSubs: subscription.notifyNestedSubs.bind(subscription)
+            notifyNestedSubs: this.state.subscription.notifyNestedSubs.bind(this.state.subscription)
           }
         }, () => {
+          if (hotReloadCallback) {
+            hotReloadCallback()
+          }
           // componentWillMount fires during server side rendering, but componentDidMount and
           // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
           // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
@@ -308,13 +308,17 @@ export default function connectAdvanced(
           let oldListeners = [];
 
           if (this.state.subscription) {
-            oldListeners = this.state.subscription.listeners.get()
+            if (this.state.subscription.listeners.get) {
+              // only retrieve listeners if subscription has completed. If hot reload occurs immediately
+              // the subscription has not yet happened, so we don't need to retrieve old listeners
+              oldListeners = this.state.subscription.listeners.get()
+            }
             this.state.subscription.tryUnsubscribe()
           }
           if (shouldHandleStateChanges) {
-           //this.state.subscription.trySubscribe()
-            this.updateSubscription()
-            oldListeners.forEach(listener => this.state.subscription.listeners.subscribe(listener))
+            this.updateSubscription(() => {
+              oldListeners.forEach(listener => this.state.subscription.listeners.subscribe(listener))
+            })
           }
 
           const childPropsSelector = this.createChildSelector()

@@ -2310,11 +2310,13 @@ describe('React', () => {
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
 
+      console.log('DISPATCH')
       store1.dispatch({ type: 'INC' })
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
 
+      console.log('DISPATCH 2')
       store2.dispatch({ type: 'INC' })
       expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
