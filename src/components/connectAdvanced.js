@@ -119,7 +119,7 @@ export default function connectAdvanced(
           storeState,
           error: null,
           subscription: new Subscription(store, subscription, this.updateChildPropsFromReduxStore.bind(this)),
-          lastSub: null,
+          lastNotify: noop,
           notifyNestedSubs: noop
         }
         this.state = {
@@ -140,8 +140,8 @@ export default function connectAdvanced(
 
       static getDerivedStateFromProps(props, state) {
         let ret = null
-        if (state.lastSub !== state.subscription) {
-          ret = { lastSub: state.subscription }
+        if (state.lastNotify !== state.notifyNestedSubs) {
+          ret = { lastNotify: state.notifyNestedSubs }
           if (shallowEqual(props, state.props) || state.error) {
             return ret
           }
@@ -149,9 +149,9 @@ export default function connectAdvanced(
         if ((connectOptions.pure && shallowEqual(props, state.props)) || state.error) return ret
         const nextChildProps = Connect.getChildPropsState(props, state)
         return {
+          ...ret,
           ...nextChildProps,
-          props,
-          lastSub: state.subscription
+          props
         }
       }
 
@@ -179,7 +179,6 @@ export default function connectAdvanced(
         if (this.state.subscription) this.state.subscription.tryUnsubscribe()
         this.isUnmounted = true
         this.setState({
-          subscription: null,
           store: null,
           notifyNestedSubs: noop
         })
@@ -194,7 +193,6 @@ export default function connectAdvanced(
           // connected to the store via props shouldn't use subscription from context, or vice versa.
           this.state.subscription.hydrate()
           return {
-            lastSub: state.subscription,
 
             // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
             // the middle of the notification loop, where `this.state.subscription` will then be null. An
@@ -202,7 +200,8 @@ export default function connectAdvanced(
             // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
             // listeners logic is changed to not call listeners that have been unsubscribed in the
             // middle of the notification loop.
-            notifyNestedSubs: this.state.subscription.notifyNestedSubs.bind(this.state.subscription)
+            notifyNestedSubs: state.subscription.notifyNestedSubs.bind(this.state.subscription),
+            lastNotify: state.notifyNestedSubs
           }
         }, () => {
           if (hotReloadCallback) {
