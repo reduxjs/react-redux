@@ -333,12 +333,8 @@ export default function connectAdvanced(
           const childPropsSelector = this.createChildSelector()
           const childProps = childPropsSelector(this.props, this.state.storeState)
           this.setState({ childPropsSelector, childProps })
-        } else {
-          this.updateSubscription()
         }
       }
-    } else {
-      Connect.prototype.componentDidUpdate = Connect.prototype.updateSubscription
     }
 
     return hoistStatics(Connect, WrappedComponent)

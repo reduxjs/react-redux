@@ -1881,7 +1881,7 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(4)
       expect(renderCalls).toBe(2)
-      expect(spy).toHaveBeenCalledTimes(5) // 2 times are subscription setting
+      expect(spy).toHaveBeenCalledTimes(3)
 
       spy.mockRestore()
     })
