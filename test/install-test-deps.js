@@ -4,7 +4,7 @@
 const { readdirSync, existsSync, copyFile, mkdirSync } = require('fs');
 const rimraf = require('rimraf');
 const { join } = require('path');
-const { spawnSync } = require('child_process');
+const spawn = require("cross-spawn");
 const reactVersion = process.env.REACT || '16.4'
 
 readdirSync(join(__dirname, 'react')).forEach(version => {
@@ -42,7 +42,6 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
       mkdirSync(dest[i])
     }
     readdirSync(dir).forEach(file => {
-      console.log(`${join(tests[i], file)} to ${join(dest[i], file)}...`)
       copyFile(join(tests[i], file), join(dest[i], file), e => {
         if (e) console.log(e)
       })
@@ -60,30 +59,28 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
       mkdirSync(srcDest[i])
     }
     readdirSync(dir).forEach(file => {
-      console.log(`${join(srcs[i], file)} to ${join(srcDest[i], file)}...`)
       copyFile(join(srcs[i], file), join(srcDest[i], file), e => {
         if (e) console.log(e)
       })
     })
-    console.log(`${join(__dirname, '..', 'src', 'index.js')} to ${join(__dirname, 'react', version, 'src', 'index.js')}...`)
     copyFile(join(__dirname, '..', 'src', 'index.js'), join(__dirname, 'react', version, 'src', 'index.js'), e => {
       if (e) console.log(e)
     })
   })
   const cwd = join(__dirname, 'react', version);
-  if (existsSync(join(__dirname, 'react', version, 'node_modules'))) {
+  if (existsSync(join(__dirname, 'react', version, 'node_modules', 'react', 'package.json'))) {
     console.log(`Skipping React version ${version} ... (already installed)`);
     return
   }
 
-  console.log(`Installing React version ${version} ...`);
+  console.log(`Installing React version ${version}...`);
 
-  const spawn = spawnSync('npm', ['install'], {
+  const installTask = spawn.sync('npm', ['install'], {
     cwd,
     stdio: 'inherit',
   });
 
-  if (spawn.status > 0) {
-    process.exit(spawn.status);
+  if (installTask.status > 0) {
+    process.exit(installTask.status);
   }
 });
