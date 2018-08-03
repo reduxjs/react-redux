@@ -57,18 +57,18 @@ export default class Subscription {
     this.unsubscribe = null
     this.listeners = nullListeners
     this.loaded = false
-    const resolve = resolve => {
-      this.resolve = () => {
+    const cb = resolve => {
+      this.markReady = () => {
         this.loaded = true
         resolve()
       }
     }
-    this.ready = new Promise(resolve)
+    this.ready = new Promise(cb)
   }
 
   hydrate() {
     if (!this.loaded) {
-      this.resolve()
+      this.markReady()
     }
     this.trySubscribe()
   }
