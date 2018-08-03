@@ -1,6 +1,6 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, createElement } from 'react'
+import React, { Component, createElement } from 'react'
 import { polyfill } from 'react-lifecycles-compat'
 import shallowEqual from '../utils/shallowEqual'
 
@@ -10,6 +10,12 @@ import { storeShape, subscriptionShape } from '../utils/PropTypes'
 let hotReloadingVersion = 0
 function noop() {}
 
+function isOldReact() {
+  const version = React.version.split('.')
+  if (+version[0] < 16) return true
+  if (+version[0] > 16) return false
+  return +version[1] < 4
+}
 export default function connectAdvanced(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -140,7 +146,11 @@ export default function connectAdvanced(
 
       static getDerivedStateFromProps(props, state) {
         let ret = null
-        if (state.lastNotify !== state.notifyNestedSubs) {
+        // this next check only should trigger if gDSFP reacts to state changes
+        // in React 16.3, it doesn't. react-lifecycles-compat matches React 16.3 behavior
+        // if a future version of react-lifecycles-compat DOES trigger on state changes
+        // the isOldReact() call must be removed
+        if (!isOldReact() && state.lastNotify !== state.notifyNestedSubs) {
           ret = { lastNotify: state.notifyNestedSubs }
           if (shallowEqual(props, state.props) || state.error) {
             return ret
