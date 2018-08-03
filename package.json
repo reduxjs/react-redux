@@ -80,6 +80,7 @@
     "codecov": "^3.0.2",
     "create-react-class": "^15.6.3",
     "cross-env": "^5.2.0",
+    "cross-spawn": "^6.0.5",
     "enzyme": "^3.3.0",
     "enzyme-adapter-react-16": "^1.1.1",
     "es3ify": "^0.2.0",
