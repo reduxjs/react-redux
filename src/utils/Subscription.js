@@ -57,13 +57,10 @@ export default class Subscription {
     this.unsubscribe = null
     this.listeners = nullListeners
     this.loaded = false
-    const cb = resolve => {
-      this.markReady = () => {
-        this.loaded = true
-        resolve()
-      }
-    }
-    this.ready = new Promise(cb)
+  }
+
+  markReady() {
+    this.loaded = true
   }
 
   hydrate() {
@@ -101,9 +98,6 @@ export default class Subscription {
         if (this.parentSub.isReady()) {
           return this.subscribeToParent()
         }
-        this.parentSub.ready.then(() => {
-          this.subscribeToParent()
-        })
       } else {
         this.unsubscribe = this.store.subscribe(this.onStateChange)
         this.listeners = createListenerCollection()
