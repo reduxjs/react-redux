@@ -16,6 +16,8 @@ function isOldReact() {
   if (+version[0] > 16) return false
   return +version[1] < 4
 }
+const oldReact = isOldReact()
+
 export default function connectAdvanced(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -149,8 +151,8 @@ export default function connectAdvanced(
         // this next check only should trigger if gDSFP reacts to state changes
         // in React 16.3, it doesn't. react-lifecycles-compat matches React 16.3 behavior
         // if a future version of react-lifecycles-compat DOES trigger on state changes
-        // the isOldReact() call must be removed
-        if (!isOldReact() && state.lastNotify !== state.notifyNestedSubs) {
+        // the oldReact check must be removed
+        if (!oldReact && state.lastNotify !== state.notifyNestedSubs) {
           ret = { lastNotify: state.notifyNestedSubs }
           if (shallowEqual(props, state.props) || state.error) {
             return ret
@@ -199,11 +201,8 @@ export default function connectAdvanced(
 
         this.setState(state => {
           if (state.subscription.isReady() && !hotReloadCallback) return null
-          // parentSub's source should match where store came from: props vs. context. A component
-          // connected to the store via props shouldn't use subscription from context, or vice versa.
           this.state.subscription.hydrate()
           return {
-
             // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
             // the middle of the notification loop, where `this.state.subscription` will then be null. An
             // extra null check every change can be avoided by copying the method onto `this` and then
@@ -217,12 +216,6 @@ export default function connectAdvanced(
           if (hotReloadCallback) {
             hotReloadCallback()
           }
-          // componentWillMount fires during server side rendering, but componentDidMount and
-          // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
-          // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
-          // To handle the case where a child component may have triggered a state change by
-          // dispatching an action in its componentWillMount, we have to re-run the select and maybe
-          // re-render.
           this.updateChildPropsFromReduxStore(false)
         })
       }
