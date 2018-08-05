@@ -1,35 +1,22 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, createElement } from 'react'
+import React, { Component, createElement } from 'react'
 import { polyfill } from 'react-lifecycles-compat'
+import shallowEqual from '../utils/shallowEqual'
 
 import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 
 let hotReloadingVersion = 0
 function noop() {}
-function makeUpdater(sourceSelector, store) {
-  return function updater(props, prevState) {
-    try {
-      const nextProps = sourceSelector(store.getState(), props)
-      if (nextProps !== prevState.props || prevState.error) {
-        return {
-          shouldComponentUpdate: true,
-          props: nextProps,
-          error: null,
-        }
-      }
-      return {
-        shouldComponentUpdate: false,
-      }
-    } catch (error) {
-      return {
-        shouldComponentUpdate: true,
-        error,
-      }
-    }
-  }
+
+function isOldReact() {
+  const version = React.version.split('.')
+  if (+version[0] < 16) return true
+  if (+version[0] > 16) return false
+  return +version[1] < 4
 }
+const oldReact = isOldReact()
 
 export default function connectAdvanced(
   /*
@@ -88,10 +75,6 @@ export default function connectAdvanced(
     [subscriptionKey]: subscriptionShape,
   }
 
-  function getDerivedStateFromProps(nextProps, prevState) {
-    return prevState.updater(nextProps, prevState)
-  }
-
   return function wrapWithConnect(WrappedComponent) {
     invariant(
       typeof WrappedComponent == 'function',
@@ -124,20 +107,64 @@ export default function connectAdvanced(
 
         this.version = version
         this.renderCount = 0
-        this.store = props[storeKey] || context[storeKey]
+        const store = props[storeKey] || context[storeKey]
         this.propsMode = Boolean(props[storeKey])
         this.setWrappedInstance = this.setWrappedInstance.bind(this)
 
-        invariant(this.store,
+        invariant(store,
           `Could not find "${storeKey}" in either the context or props of ` +
           `"${displayName}". Either wrap the root component in a <Provider>, ` +
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
-
+        const storeState = store.getState()
+        const subscription = (this.propsMode ? null : context[subscriptionKey])
+        const childPropsSelector = this.createChildSelector(store)
         this.state = {
-          updater: this.createUpdater()
+          props,
+          childPropsSelector,
+          childProps: {},
+          store,
+          storeState,
+          error: null,
+          subscription: new Subscription(store, subscription, this.updateChildPropsFromReduxStore.bind(this)),
+          lastNotify: noop,
+          notifyNestedSubs: noop
         }
-        this.initSubscription()
+        this.state = {
+          ...this.state,
+          ...Connect.getChildPropsState(props, this.state)
+        }
+      }
+
+      static getChildPropsState(props, state) {
+        try {
+          const nextProps = state.childPropsSelector(state.store.getState(), props)
+          if (nextProps === state.childProps) return null
+          return { childProps: nextProps }
+        } catch (error) {
+          return { error }
+        }
+      }
+
+      static getDerivedStateFromProps(props, state) {
+        let ret = null
+        // this next check only should trigger if gDSFP reacts to state changes
+        // in React 16.3, it doesn't. react-lifecycles-compat matches React 16.3 behavior
+        // if a future version of react-lifecycles-compat DOES trigger on state changes
+        // the oldReact check must be removed
+        if (!oldReact && state.lastNotify !== state.notifyNestedSubs) {
+          ret = { lastNotify: state.notifyNestedSubs }
+          if (shallowEqual(props, state.props) || state.error) {
+            return ret
+          }
+        }
+        if ((connectOptions.pure && shallowEqual(props, state.props)) || state.error) return ret
+        const nextChildProps = Connect.getChildPropsState(props, state)
+        return {
+          ...ret,
+          ...nextChildProps,
+          props
+        }
       }
 
       getChildContext() {
@@ -145,33 +172,52 @@ export default function connectAdvanced(
         // to any descendants receiving store+subscription from context; it passes along
         // subscription passed to it. Otherwise, it shadows the parent subscription, which allows
         // Connect to control ordering of notifications to flow top-down.
-        const subscription = this.propsMode ? null : this.subscription
+        const subscription = this.propsMode ? null : this.state.subscription
         return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
       }
 
       componentDidMount() {
-        if (!shouldHandleStateChanges) return
-
-        // componentWillMount fires during server side rendering, but componentDidMount and
-        // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
-        // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
-        // To handle the case where a child component may have triggered a state change by
-        // dispatching an action in its componentWillMount, we have to re-run the select and maybe
-        // re-render.
-        this.subscription.trySubscribe()
-        this.runUpdater()
+        return this.updateSubscription()
       }
 
       shouldComponentUpdate(_, nextState) {
-        return nextState.shouldComponentUpdate
+        if (!connectOptions.pure) {
+          return true
+        }
+        return nextState.childProps !== this.state.childProps || nextState.error
       }
 
       componentWillUnmount() {
-        if (this.subscription) this.subscription.tryUnsubscribe()
-        this.subscription = null
-        this.notifyNestedSubs = noop
-        this.store = null
+        if (this.state.subscription) this.state.subscription.tryUnsubscribe()
         this.isUnmounted = true
+        this.setState({
+          store: null,
+          notifyNestedSubs: noop
+        })
+      }
+
+      updateSubscription(hotReloadCallback) {
+        if (!shouldHandleStateChanges) return
+
+        this.setState(state => {
+          if (state.subscription.isReady() && !hotReloadCallback) return null
+          this.state.subscription.hydrate()
+          return {
+            // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
+            // the middle of the notification loop, where `this.state.subscription` will then be null. An
+            // extra null check every change can be avoided by copying the method onto `this` and then
+            // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
+            // listeners logic is changed to not call listeners that have been unsubscribed in the
+            // middle of the notification loop.
+            notifyNestedSubs: state.subscription.notifyNestedSubs.bind(this.state.subscription),
+            lastNotify: state.notifyNestedSubs
+          }
+        }, () => {
+          if (hotReloadCallback) {
+            hotReloadCallback()
+          }
+          this.updateChildPropsFromReduxStore(false)
+        })
       }
 
       getWrappedInstance() {
@@ -186,46 +232,43 @@ export default function connectAdvanced(
         this.wrappedInstance = ref
       }
 
-      createUpdater() {
-        const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
-        return makeUpdater(sourceSelector, this.store)
+      createChildSelector(store = this.state.store) {
+        return selectorFactory(store.dispatch, selectorFactoryOptions)
       }
 
-      runUpdater(callback = noop) {
+      updateChildPropsFromReduxStore(notify = true) {
         if (this.isUnmounted) {
           return
         }
 
-        this.setState(prevState => prevState.updater(this.props, prevState), callback)
-      }
-
-      initSubscription() {
-        if (!shouldHandleStateChanges) return
-
-        // parentSub's source should match where store came from: props vs. context. A component
-        // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
-
-        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
-        // the middle of the notification loop, where `this.subscription` will then be null. An
-        // extra null check every change can be avoided by copying the method onto `this` and then
-        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
-        // listeners logic is changed to not call listeners that have been unsubscribed in the
-        // middle of the notification loop.
-        this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
-      }
-
-      onStateChange() {
-        this.runUpdater(this.notifyNestedSubs)
+        this.setState(prevState => {
+          const nextState = this.state.store.getState()
+          if (nextState === prevState.storeState) {
+            return null
+          }
+          const childPropsState = Connect.getChildPropsState(this.props, {
+              ...this.state,
+              storeState: nextState
+            })
+          const ret = {
+            storeState: nextState,
+            ...childPropsState
+          }
+          if (notify && childPropsState === null) {
+            this.state.notifyNestedSubs()
+          }
+          return ret
+        }, () => {
+          if (notify) this.state.notifyNestedSubs()
+        })
       }
 
       isSubscribed() {
-        return Boolean(this.subscription) && this.subscription.isSubscribed()
+        return Boolean(this.state.subscription) && this.state.subscription.isSubscribed()
       }
 
       addExtraProps(props) {
-        if (!withRef && !renderCountProp && !(this.propsMode && this.subscription)) return props
+        if (!withRef && !renderCountProp && !(this.propsMode && this.state.subscription)) return props
         // make a shallow copy so that fields added don't leak to the original selector.
         // this is especially important for 'ref' since that's a reference back to the component
         // instance. a singleton memoized selector would then be holding a reference to the
@@ -233,7 +276,7 @@ export default function connectAdvanced(
         const withExtras = { ...props }
         if (withRef) withExtras.ref = this.setWrappedInstance
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
-        if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription
+        if (this.propsMode && this.state.subscription) withExtras[subscriptionKey] = this.state.subscription
         return withExtras
       }
 
@@ -241,7 +284,7 @@ export default function connectAdvanced(
         if (this.state.error) {
           throw this.state.error
         } else {
-          return createElement(WrappedComponent, this.addExtraProps(this.state.props))
+          return createElement(WrappedComponent, this.addExtraProps(this.state.childProps))
         }
       }
     }
@@ -251,7 +294,7 @@ export default function connectAdvanced(
     Connect.childContextTypes = childContextTypes
     Connect.contextTypes = contextTypes
     Connect.propTypes = contextTypes
-    Connect.getDerivedStateFromProps = getDerivedStateFromProps
+    polyfill(Connect)
 
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentDidUpdate = function componentDidUpdate() {
@@ -262,28 +305,30 @@ export default function connectAdvanced(
           // If any connected descendants don't hot reload (and resubscribe in the process), their
           // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
           // listeners, this does mean that the old versions of connected descendants will still be
-          // notified of state changes; however, their onStateChange function is a no-op so this
+          // notified of state changes; however, their updateChildPropsFromReduxStore function is a no-op so this
           // isn't a huge deal.
           let oldListeners = [];
 
-          if (this.subscription) {
-            oldListeners = this.subscription.listeners.get()
-            this.subscription.tryUnsubscribe()
+          if (this.state.subscription) {
+            if (this.state.subscription.listeners.get) {
+              // only retrieve listeners if subscription has completed. If hot reload occurs immediately
+              // the subscription has not yet happened, so we don't need to retrieve old listeners
+              oldListeners = this.state.subscription.listeners.get()
+            }
+            this.state.subscription.tryUnsubscribe()
           }
-          this.initSubscription()
           if (shouldHandleStateChanges) {
-            this.subscription.trySubscribe()
-            oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
+            this.updateSubscription(() => {
+              oldListeners.forEach(listener => this.state.subscription.listeners.subscribe(listener))
+            })
           }
 
-          const updater = this.createUpdater()
-          this.setState({updater})
-          this.runUpdater()
+          const childPropsSelector = this.createChildSelector()
+          const childProps = childPropsSelector(this.props, this.state.storeState)
+          this.setState({ childPropsSelector, childProps })
         }
       }
     }
-
-    polyfill(Connect)
 
     return hoistStatics(Connect, WrappedComponent)
   }

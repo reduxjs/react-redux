@@ -2378,9 +2378,8 @@ describe('React', () => {
           <Container />
         </CustomProvider>
       )
-
       const container = testRenderer.find(Container)
-      expect(container.instance().store).toBe(store)
+      expect(container.instance().state.store).toBe(store)
     })
   })
 })
