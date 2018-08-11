@@ -3,7 +3,7 @@ import invariant from 'invariant'
 import React, { Component, createElement } from 'react'
 
 import {ReactReduxContext} from "./context";
-import { storeShape } from '../utils/PropTypes'
+import shallowEqual from '../utils/shallowEqual'
 
 let hotReloadingVersion = 0
 const dummyState = {}
@@ -104,6 +104,67 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
+
+    class ConnectInner extends Component {
+      constructor(props) {
+        super(props);
+
+        this.state = {
+          storeState : props.storeState,
+          wrapperProps : props.wrapperProps,
+          renderCount : 0,
+          store : props.store,
+          error : null,
+          childPropsSelector : this.createChildSelector(props.store),
+          childProps : {},
+        }
+
+        this.state = {
+          ...this.state,
+          ...ConnectInner.getChildPropsState(props, this.state)
+        }
+      }
+
+      createChildSelector(store = this.state.store) {
+        return selectorFactory(store.dispatch, selectorFactoryOptions)
+      }
+
+      static getChildPropsState(props, state) {
+        try {
+          const nextProps = state.childPropsSelector(state.storeState, props.wrapperProps)
+          if (nextProps === state.childProps) return null
+          return { childProps: nextProps }
+        } catch (error) {
+          return { error }
+        }
+      }
+
+      static getDerivedStateFromProps(props, state) {
+        if ((connectOptions.pure && shallowEqual(props.wrapperProps, state.wrapperProps)) || state.error){
+          return null;
+        }
+
+        const nextChildProps = ConnectInner.getChildPropsState(props, state)
+
+        return {
+          ...nextChildProps,
+          wrapperProps : props.wrapperProps,
+        }
+      }
+
+      shouldComponentUpdate(nextProps, nextState) {
+        return nextState.childProps !== this.state.childProps;
+      }
+
+      render() {
+        if(this.state.error) {
+          throw this.state.error;
+        }
+
+        return <WrappedComponent {...this.state.childProps} />
+      }
+    }
+
     class Connect extends Component {
       constructor(props) {
         super(props)
@@ -113,8 +174,8 @@ export default function connectAdvanced(
         this.storeState = null;
 
 
-        this.setWrappedInstance = this.setWrappedInstance.bind(this)
-        this.renderChild = this.renderChild.bind(this);
+        //this.setWrappedInstance = this.setWrappedInstance.bind(this)
+        this.renderInner = this.renderInner.bind(this);
 
         // TODO How do we express the invariant of needing a Provider when it's used in render()?
         /*
@@ -181,15 +242,16 @@ export default function connectAdvanced(
         // instance. a singleton memoized selector would then be holding a reference to the
         // instance, preventing the instance from being garbage collected, and that would be bad
         const withExtras = { ...props }
-        if (withRef) withExtras.ref = this.setWrappedInstance
+        //if (withRef) withExtras.ref = this.setWrappedInstance
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
 
         return withExtras
       }
 
-      renderChild(providerValue) {
-          const {storeState, dispatch} = providerValue;
+      renderInner(providerValue) {
+          const {storeState, store} = providerValue;
 
+          /*
           this.storeState = storeState;
 
           if(this.selector) {
@@ -214,12 +276,14 @@ export default function connectAdvanced(
           }
 
           return this.renderedElement;
+          */
+          return <ConnectInner storeState={storeState} store={store} wrapperProps={this.props} />
       }
 
       render() {
           return (
               <ReactReduxContext.Consumer>
-                  {this.renderChild}
+                  {this.renderInner}
               </ReactReduxContext.Consumer>
           )
       }

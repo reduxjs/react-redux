@@ -21,7 +21,7 @@ function warnAboutReceivingStore() {
   )
 }
 
-export function createProvider(storeKey = 'store', subKey) {
+export function createProvider(storeKey = 'store') {
 
     class Provider extends Component {
 
@@ -32,17 +32,35 @@ export function createProvider(storeKey = 'store', subKey) {
 
             this.state = {
                 storeState : store.getState(),
-                dispatch : store.dispatch,
+                store,
             };
         }
 
         componentDidMount() {
-            const {store} = this.props;
+            this.subscribe();
+        }
 
-            // TODO What about any actions that might have been dispatched between ctor and cDM?
-            this.unsubscribe = store.subscribe( () => {
-                this.setState({storeState : store.getState()});
-            });
+        subscribe() {
+          const {store} = this.props;
+
+          this.unsubscribe = store.subscribe( () => {
+            const newStoreState = store.getState();
+
+            this.setState(providerState => {
+              // If the value is the same, skip the unnecessary state update.
+              if(providerState.storeState === newStoreState) {
+                return null;
+              }
+
+              return {storeState : newStoreState};
+            })
+          });
+
+          // Actions might have been dispatched between render and mount - handle those
+          const postMountStoreState = store.getState();
+          if(postMountStoreState !== this.state.storeState) {
+            this.setState({storeState : postMountStoreState});
+          }
         }
 
         render() {
@@ -55,8 +73,8 @@ export function createProvider(storeKey = 'store', subKey) {
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      Provider.prototype.componentWillReceiveProps = function (nextProps) {
-        if (this[storeKey] !== nextProps.store) {
+      Provider.getDerivedStateFromProps = function (props, state) {
+        if (state.store !== props.store) {
           warnAboutReceivingStore()
         }
       }
