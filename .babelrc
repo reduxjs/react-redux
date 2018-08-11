@@ -25,7 +25,6 @@
   "env": {
     "test": {
       "plugins": [
-        "istanbul",
         ["transform-es2015-modules-commonjs", { "loose": true }]
       ]
     },
