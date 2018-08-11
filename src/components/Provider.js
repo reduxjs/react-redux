@@ -1,7 +1,9 @@
-import { Component, Children } from 'react'
+import React, { Component, Children } from 'react'
 import PropTypes from 'prop-types'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
+import { storeShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
+
+import {ReactReduxContext} from "./context";
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
@@ -19,21 +21,36 @@ function warnAboutReceivingStore() {
   )
 }
 
-export function createProvider(storeKey = 'store') {
-    const subscriptionKey = `${storeKey}Subscription`
+export function createProvider(storeKey = 'store', subKey) {
 
     class Provider extends Component {
-        getChildContext() {
-          return { [storeKey]: this[storeKey], [subscriptionKey]: null }
+
+        constructor(props) {
+          super(props)
+
+            const {store} = props;
+
+            this.state = {
+                storeState : store.getState(),
+                dispatch : store.dispatch,
+            };
         }
 
-        constructor(props, context) {
-          super(props, context)
-          this[storeKey] = props.store;
+        componentDidMount() {
+            const {store} = this.props;
+
+            // TODO What about any actions that might have been dispatched between ctor and cDM?
+            this.unsubscribe = store.subscribe( () => {
+                this.setState({storeState : store.getState()});
+            });
         }
 
         render() {
-          return Children.only(this.props.children)
+            return (
+                <ReactReduxContext.Provider value={this.state}>
+                    {Children.only(this.props.children)}
+                </ReactReduxContext.Provider>
+            );
         }
     }
 
@@ -45,13 +62,10 @@ export function createProvider(storeKey = 'store') {
       }
     }
 
+
     Provider.propTypes = {
         store: storeShape.isRequired,
         children: PropTypes.element.isRequired,
-    }
-    Provider.childContextTypes = {
-        [storeKey]: storeShape.isRequired,
-        [subscriptionKey]: subscriptionShape,
     }
 
     return Provider

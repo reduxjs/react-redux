@@ -1,19 +1,19 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, createElement } from 'react'
+import React, { Component, createElement } from 'react'
 
-import Subscription from '../utils/Subscription'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
+import {ReactReduxContext} from "./context";
+import { storeShape } from '../utils/PropTypes'
 
 let hotReloadingVersion = 0
 const dummyState = {}
 function noop() {}
-function makeSelectorStateful(sourceSelector, store) {
+function makeSelectorStateful(sourceSelector) {
   // wrap the selector in an object that tracks its results between runs.
   const selector = {
-    run: function runComponentSelector(props) {
+    run: function runComponentSelector(props, storeState) {
       try {
-        const nextProps = sourceSelector(store.getState(), props)
+        const nextProps = sourceSelector(storeState, props)
         if (nextProps !== selector.props || selector.error) {
           selector.shouldComponentUpdate = true
           selector.props = nextProps
@@ -75,20 +75,12 @@ export default function connectAdvanced(
     ...connectOptions
   } = {}
 ) {
-  const subscriptionKey = storeKey + 'Subscription'
   const version = hotReloadingVersion++
 
-  const contextTypes = {
-    [storeKey]: storeShape,
-    [subscriptionKey]: subscriptionShape,
-  }
-  const childContextTypes = {
-    [subscriptionKey]: subscriptionShape,
-  }
 
   return function wrapWithConnect(WrappedComponent) {
     invariant(
-      typeof WrappedComponent == 'function',
+      typeof WrappedComponent === 'function',
       `You must pass a component to the function returned by ` +
       `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
     )
@@ -112,37 +104,26 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
-    // TODO Actually fix our use of componentWillReceiveProps
-    /* eslint-disable react/no-deprecated */
-
     class Connect extends Component {
-      constructor(props, context) {
-        super(props, context)
+      constructor(props) {
+        super(props)
 
         this.version = version
-        this.state = {}
         this.renderCount = 0
-        this.store = props[storeKey] || context[storeKey]
-        this.propsMode = Boolean(props[storeKey])
-        this.setWrappedInstance = this.setWrappedInstance.bind(this)
+        this.storeState = null;
 
+
+        this.setWrappedInstance = this.setWrappedInstance.bind(this)
+        this.renderChild = this.renderChild.bind(this);
+
+        // TODO How do we express the invariant of needing a Provider when it's used in render()?
+        /*
         invariant(this.store,
           `Could not find "${storeKey}" in either the context or props of ` +
           `"${displayName}". Either wrap the root component in a <Provider>, ` +
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
-
-        this.initSelector()
-        this.initSubscription()
-      }
-
-      getChildContext() {
-        // If this component received store from props, its subscription should be transparent
-        // to any descendants receiving store+subscription from context; it passes along
-        // subscription passed to it. Otherwise, it shadows the parent subscription, which allows
-        // Connect to control ordering of notifications to flow top-down.
-        const subscription = this.propsMode ? null : this.subscription
-        return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
+        */
       }
 
       componentDidMount() {
@@ -154,24 +135,22 @@ export default function connectAdvanced(
         // To handle the case where a child component may have triggered a state change by
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
-        this.subscription.trySubscribe()
-        this.selector.run(this.props)
+        this.selector.run(this.props, this.storeState);
         if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
 
-      componentWillReceiveProps(nextProps) {
-        this.selector.run(nextProps)
+
+      UNSAFE_componentWillReceiveProps(nextProps) {
+        // TODO Do we still want/need to implement sCU / cWRP now?
+        this.selector.run(nextProps, this.storeState);
       }
 
       shouldComponentUpdate() {
         return this.selector.shouldComponentUpdate
       }
 
+
       componentWillUnmount() {
-        if (this.subscription) this.subscription.tryUnsubscribe()
-        this.subscription = null
-        this.notifyNestedSubs = noop
-        this.store = null
         this.selector.run = noop
         this.selector.shouldComponentUpdate = false
       }
@@ -188,56 +167,15 @@ export default function connectAdvanced(
         this.wrappedInstance = ref
       }
 
-      initSelector() {
-        const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
-        this.selector = makeSelectorStateful(sourceSelector, this.store)
-        this.selector.run(this.props)
-      }
-
-      initSubscription() {
-        if (!shouldHandleStateChanges) return
-
-        // parentSub's source should match where store came from: props vs. context. A component
-        // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
-
-        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
-        // the middle of the notification loop, where `this.subscription` will then be null. An
-        // extra null check every change can be avoided by copying the method onto `this` and then
-        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
-        // listeners logic is changed to not call listeners that have been unsubscribed in the
-        // middle of the notification loop.
-        this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
-      }
-
-      onStateChange() {
-        this.selector.run(this.props)
-
-        if (!this.selector.shouldComponentUpdate) {
-          this.notifyNestedSubs()
-        } else {
-          this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
-          this.setState(dummyState)
-        }
-      }
-
-      notifyNestedSubsOnComponentDidUpdate() {
-        // `componentDidUpdate` is conditionally implemented when `onStateChange` determines it
-        // needs to notify nested subs. Once called, it unimplements itself until further state
-        // changes occur. Doing it this way vs having a permanent `componentDidUpdate` that does
-        // a boolean check every time avoids an extra method call most of the time, resulting
-        // in some perf boost.
-        this.componentDidUpdate = undefined
-        this.notifyNestedSubs()
-      }
-
-      isSubscribed() {
-        return Boolean(this.subscription) && this.subscription.isSubscribed()
+      initSelector(dispatch, storeState) {
+          const sourceSelector = selectorFactory(dispatch, selectorFactoryOptions)
+          this.selector = makeSelectorStateful(sourceSelector)
+          this.selector.run(this.props, storeState);
       }
 
       addExtraProps(props) {
-        if (!withRef && !renderCountProp && !(this.propsMode && this.subscription)) return props
+          if (!withRef && !renderCountProp) return props;
+
         // make a shallow copy so that fields added don't leak to the original selector.
         // this is especially important for 'ref' since that's a reference back to the component
         // instance. a singleton memoized selector would then be holding a reference to the
@@ -245,30 +183,55 @@ export default function connectAdvanced(
         const withExtras = { ...props }
         if (withRef) withExtras.ref = this.setWrappedInstance
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
-        if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription
+
         return withExtras
       }
 
-      render() {
-        const selector = this.selector
-        selector.shouldComponentUpdate = false
+      renderChild(providerValue) {
+          const {storeState, dispatch} = providerValue;
 
-        if (selector.error) {
-          throw selector.error
-        } else {
-          return createElement(WrappedComponent, this.addExtraProps(selector.props))
-        }
+          this.storeState = storeState;
+
+          if(this.selector) {
+            this.selector.run(this.props, storeState);
+          }
+          else {
+              this.initSelector(dispatch, storeState);
+          }
+
+          if (this.selector.error) {
+              // TODO This will unmount the whole tree now that we're throwing in render. Good idea?
+              // TODO Related: https://github.com/reactjs/react-redux/issues/802
+              throw this.selector.error
+          }
+          else if(this.selector.shouldComponentUpdate) {
+              //console.log(`Re-rendering component (${displayName})`, this.selector.props);
+              this.selector.shouldComponentUpdate = false;
+            this.renderedElement = createElement(WrappedComponent, this.addExtraProps(this.selector.props));
+          }
+          else {
+              //console.log(`Returning existing render result (${displayName})`, this.props)
+          }
+
+          return this.renderedElement;
+      }
+
+      render() {
+          return (
+              <ReactReduxContext.Consumer>
+                  {this.renderChild}
+              </ReactReduxContext.Consumer>
+          )
       }
     }
 
-    /* eslint-enable react/no-deprecated */
-
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
-    Connect.childContextTypes = childContextTypes
-    Connect.contextTypes = contextTypes
-    Connect.propTypes = contextTypes
+    // TODO We're losing the ability to add a store as a prop. Not sure there's anything we can do about that.
+    //Connect.propTypes = contextTypes
 
+      // TODO With connect no longer managing subscriptions, I _think_ is is all unneeded
+      /*
     if (process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentWillUpdate = function componentWillUpdate() {
         // We are hot reloading!
@@ -295,6 +258,7 @@ export default function connectAdvanced(
         }
       }
     }
+    */
 
     return hoistStatics(Connect, WrappedComponent)
   }
