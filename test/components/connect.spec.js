@@ -527,7 +527,6 @@ describe('React', () => {
       const store = createStore(stringBuilder)
 
       let invocationCount = 0
-      let setFoo
 
       /*eslint-disable no-unused-vars */
       @connect((arg1) => {

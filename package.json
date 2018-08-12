@@ -33,7 +33,7 @@
     "build:umd:min": "cross-env BABEL_ENV=rollup NODE_ENV=production rollup -c -o dist/react-redux.min.js",
     "build": "npm run build:commonjs && npm run build:es && npm run build:umd && npm run build:umd:min",
     "clean": "rimraf lib dist es coverage",
-    "lint": "eslint src test/utils test/components test/getTestDeps.js",
+    "lint": "eslint src test/utils test/components",
     "prepare": "npm run clean && npm run build",
     "test": "node ./test/run-tests.js",
     "coverage": "codecov"
