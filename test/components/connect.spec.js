@@ -1580,7 +1580,7 @@ describe('React', () => {
       class Wrapper extends Component {
         render() {
           return (
-            <Decorated ref={comp => comp.getWrappedInstance()}/>
+            <Decorated ref={comp => comp && comp.getWrappedInstance()}/>
           )
         }
       }
