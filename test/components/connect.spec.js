@@ -5,7 +5,7 @@ import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
-import { createProvider, connect } from '../../src/index.js'
+import { Provider, connect } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
@@ -37,7 +37,7 @@ describe('React', () => {
       }
     }
 
-    const ProviderMock = createProvider()
+    const ProviderMock = Provider
 
     class ContextBoundStore {
       constructor(reducer) {
@@ -1518,6 +1518,8 @@ describe('React', () => {
         }
       }
 
+      const context = React.createContext(null)
+
       let actualState
 
       const expectedState = { foos: {} }
@@ -1532,7 +1534,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      rtl.render(<Decorated store={mockStore} />)
+      rtl.render(<Provider context={context.Provider} store={mockStore}><Decorated consumer={context.Consumer} /></Provider>)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -2313,10 +2315,11 @@ describe('React', () => {
     it('should subscribe properly when a new store is provided via props', () => {
       const store1 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
       const store2 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+      const customContext = React.createContext()
 
       @connect(state => ({ count: state }))
       class A extends Component {
-        render() { return <B store={store2} /> }
+        render() { return <B consumer={customContext.Consumer} /> }
       }
 
       const mapStateToPropsB = jest.fn(state => ({ count: state }))
@@ -2337,7 +2340,13 @@ describe('React', () => {
         render() { return <div>{this.props.count}</div> }
       }
 
-      rtl.render(<ProviderMock store={store1}><A /></ProviderMock>)
+      rtl.render(
+        <Provider store={store1}>
+          <Provider context={customContext.Provider} store={store2}>
+            <A />
+          </Provider>
+        </Provider>
+      )
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
@@ -2381,7 +2390,7 @@ describe('React', () => {
     it('should receive the store in the context using a custom store key', () => {
       const store = createStore(() => ({}))
       store.dispatch.mine = 'hi'
-      const CustomProvider = createProvider('customStoreKey')
+      const CustomProvider = Provider
       const connectOptions = { storeKey: 'customStoreKey' }
 
       @connect(undefined, undefined, undefined, connectOptions)

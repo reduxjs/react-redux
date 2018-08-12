@@ -81,7 +81,7 @@ describe('React', () => {
     it('should add the store to the child context using a custom store key', () => {
       const store = createStore(() => ({}))
       store.mine = 'hi'
-      const CustomProvider = createProvider('customStoreKey');
+      const CustomProvider = Provider;
       const CustomChild = createChild('customStoreKey');
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {});

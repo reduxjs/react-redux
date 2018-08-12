@@ -1,7 +1,7 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, { Component, PureComponent } from 'react'
-import { contextTypes } from '../utils/PropTypes'
+import * as propTypes from 'prop-types'
 import shallowEqual from 'shallow-equals'
 
 import { Consumer } from './Context'
@@ -44,11 +44,14 @@ export default function connectAdvanced(
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
-    // the key of props/context to get the store
-    storeKey = 'store',
+    // the key of props/context to get the store [**does nothing, use consumer**]
+    storeKey = false,
 
     // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
     withRef = false,
+
+    // the context consumer to use
+    consumer = Consumer,
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
@@ -93,6 +96,12 @@ export default function connectAdvanced(
     class ReduxConsumer extends Component {
       constructor(props) {
         super(props)
+        invariant(!props[storeKey],
+          'storeKey is deprecated and does not do anything. To use a custom redux store for a single component, ' +
+          'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
+          'and the Consumer to this component as in <Provider context={context.Provider}><' +
+          wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
+        )
         this.memoizedProps = this.makeMemoizer()
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
       }
@@ -143,9 +152,10 @@ export default function connectAdvanced(
 
       renderWrappedComponent(value) {
         invariant(value,
-          `Could not find "${storeKey}" in either the context or props of ` +
+          `Could not find "store" in either the context of ` +
           `"${displayName}". Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
+          `or pass a custom React context provider to <Provider> and the corresponding ` +
+          `React context consumer to ${displayName}.`
         )
         const { state, store } = value
         const derivedProps = this.memoizedProps(state, this.props, store)
@@ -153,10 +163,11 @@ export default function connectAdvanced(
       }
 
       render() {
+        const MyConsumer = this.props.consumer || consumer
         return (
-          <Consumer>
+          <MyConsumer>
             {this.renderWrappedComponent}
-          </Consumer>
+          </MyConsumer>
         )
       }
     }
@@ -191,7 +202,9 @@ export default function connectAdvanced(
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
-    Connect.propTypes = contextTypes
+    Connect.propTypes = {
+      context: propTypes.object
+    }
 
     if (false && process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentDidUpdate = function componentDidUpdate() {
