@@ -6,7 +6,6 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
 import { createProvider, connect } from '../../src/index.js'
-import { TestRenderer, enzyme } from '../getTestDeps.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
@@ -1578,19 +1577,24 @@ describe('React', () => {
       const decorator = connect(state => state)
       const Decorated = decorator(Container)
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
-          <Decorated />
-        </ProviderMock>
-      )
+      class Wrapper extends Component {
+        render() {
+          return (
+            <Decorated ref={comp => comp.getWrappedInstance()}/>
+          )
+        }
+      }
 
-      const decorated = testRenderer.find(Decorated)
-      expect(() => decorated.instance().getWrappedInstance()).toThrow(
+      expect(() => rtl.render(
+        <ProviderMock store={store}>
+          <Wrapper />
+        </ProviderMock>
+      )).toThrow(
         /To access the wrapped instance, you need to specify \{ withRef: true \} in the options argument of the connect\(\) call\./
       )
     })
 
-    it('should return the instance of the wrapped component for use in calling child methods', () => {
+    it('should return the instance of the wrapped component for use in calling child methods', async (done) => {
       const store = createStore(() => ({}))
 
       const someData = {
@@ -1603,24 +1607,36 @@ describe('React', () => {
         }
 
         render() {
-          return <Passthrough />
+          return <Passthrough loaded="yes" />
         }
       }
 
       const decorator = connect(state => state, null, null, { withRef: true })
       const Decorated = decorator(Container)
 
-      const testRenderer = enzyme.mount(
+      let ref
+
+      class Wrapper extends Component {
+        render() {
+          return (
+            <Decorated ref={comp => {
+              if (!comp) return
+              ref = comp.getWrappedInstance()
+            }}/>
+          )
+        }
+      }
+
+      const tester = rtl.render(
         <ProviderMock store={store}>
-          <Decorated />
+          <Wrapper />
         </ProviderMock>
       )
 
-      const decorated = testRenderer.find(Decorated)
+      await rtl.waitForElement(() => tester.getByTestId('loaded'))
 
-      expect(() => decorated.someInstanceMethod()).toThrow()
-      expect(decorated.instance().getWrappedInstance().someInstanceMethod()).toBe(someData)
-      expect(decorated.instance().wrappedInstance.someInstanceMethod()).toBe(someData)
+      expect(ref.someInstanceMethod()).toBe(someData)
+      done()
     })
 
     it('should wrap impure components without supressing updates', () => {
@@ -1639,10 +1655,12 @@ describe('React', () => {
       const decorator = connect(state => state, null, null, { pure: false })
       const Decorated = decorator(ImpureComponent)
 
+      let externalSetState
       class StatefulWrapper extends Component {
         constructor() {
           super()
           this.state = { value: 0 }
+          externalSetState = this.setState.bind(this)
         }
 
         getChildContext() {
@@ -1660,18 +1678,15 @@ describe('React', () => {
         statefulValue: PropTypes.number
       }
 
-      const testRenderer = enzyme.mount(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
       )
 
-      const target = testRenderer.find(Passthrough)
-      const wrapper = testRenderer.find(StatefulWrapper).instance()
-      expect(target.prop('statefulValue')).toEqual(0)
-      wrapper.setState({ value: 1 })
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('statefulValue')).toEqual(1)
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('0')
+      externalSetState({ value: 1 })
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('1')
     })
 
     it('calls mapState and mapDispatch for impure components', () => {
@@ -1700,12 +1715,16 @@ describe('React', () => {
       )
       const Decorated = decorator(ImpureComponent)
 
+      let externalSetState
+      let storeGetter
       class StatefulWrapper extends Component {
         constructor() {
           super()
+          storeGetter = { storeKey: 'foo' }
           this.state = {
-            storeGetter: { storeKey: 'foo' }
+            storeGetter
           }
+          externalSetState = this.setState.bind(this)
         }
         render() {
           return <Decorated storeGetter={this.state.storeGetter} />
@@ -1713,28 +1732,23 @@ describe('React', () => {
       }
 
 
-      const testRenderer = enzyme.mount(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
       )
 
-      const target = testRenderer.find(Passthrough)
-      const wrapper = testRenderer.find(StatefulWrapper).instance()
-
       expect(mapStateSpy).toHaveBeenCalledTimes(2)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
-      expect(target.prop('statefulValue')).toEqual('foo')
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
       // Impure update
-      const storeGetter = wrapper.state.storeGetter
       storeGetter.storeKey = 'bar'
-      wrapper.setState({ storeGetter })
-      testRenderer.update()
+      externalSetState({ storeGetter })
 
       expect(mapStateSpy).toHaveBeenCalledTimes(3)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
-      expect(testRenderer.find(Passthrough).prop('statefulValue')).toEqual('bar')
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
     it('should pass state consistently to mapState', () => {
@@ -1772,7 +1786,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1787,8 +1801,8 @@ describe('React', () => {
       expect(childMapStateInvokes).toBe(2)
 
       // setState calls DOM handlers are batched
-      const button = testRenderer.find('button')
-      button.prop('onClick')()
+      const button = tester.getByText('change')
+      rtl.fireEvent.click(button)
       expect(childMapStateInvokes).toBe(3)
 
       store.dispatch({ type: 'APPEND', body: 'd' })
@@ -1811,7 +1825,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1844,7 +1858,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1894,7 +1908,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1937,7 +1951,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -1973,7 +1987,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -2037,7 +2051,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2061,7 +2075,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2097,7 +2111,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <Parent>
             <Container />
@@ -2176,7 +2190,7 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           <ImpureComponent />
         </ProviderMock>
@@ -2192,7 +2206,7 @@ describe('React', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       try {
-        enzyme.mount(
+        rtl.render(
           <ProviderMock store={store}>
             <Component pass="through" />
           </ProviderMock>
@@ -2253,7 +2267,7 @@ describe('React', () => {
       }
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
-      enzyme.mount(<ProviderMock store={store}><Parent /></ProviderMock>)
+      rtl.render(<ProviderMock store={store}><Parent /></ProviderMock>)
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
       store.dispatch({ type: 'INC' })
@@ -2275,7 +2289,7 @@ describe('React', () => {
       class C extends React.Component { render() { return <div>{this.props.count}</div> }}
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state += 1 : state))
-      enzyme.mount(<ProviderMock store={store}><A /></ProviderMock>)
+      rtl.render(<ProviderMock store={store}><A /></ProviderMock>)
 
       store.dispatch({ type: 'INC' })
     })
@@ -2307,7 +2321,7 @@ describe('React', () => {
         render() { return <div>{this.props.count}</div> }
       }
 
-      enzyme.mount(<ProviderMock store={store1}><A /></ProviderMock>)
+      rtl.render(<ProviderMock store={store1}><A /></ProviderMock>)
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
@@ -2337,7 +2351,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <React.StrictMode>
           <ProviderMock store={store}>
             <Container />
@@ -2350,6 +2364,7 @@ describe('React', () => {
 
     it('should receive the store in the context using a custom store key', () => {
       const store = createStore(() => ({}))
+      store.dispatch.mine = 'hi'
       const CustomProvider = createProvider('customStoreKey')
       const connectOptions = { storeKey: 'customStoreKey' }
 
@@ -2360,14 +2375,13 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
+      const tester = rtl.render(
         <CustomProvider store={store}>
           <Container />
         </CustomProvider>
       )
 
-      const container = testRenderer.find(Container)
-      expect(container.instance().store).toBe(store)
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[my function dispatch]')
     })
   })
 })
