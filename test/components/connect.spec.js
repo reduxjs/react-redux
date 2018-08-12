@@ -4,15 +4,36 @@ import React, { Children, Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import TestRenderer from 'react-test-renderer'
 import { createStore } from 'redux'
-import { connect, createProvider } from '../../src/index'
+import { createProvider, connect } from '../../src/index.js'
+import * as rtl from 'react-testing-library'
+import 'jest-dom/extend-expect'
 
 describe('React', () => {
   describe('connect', () => {
+    const propMapper = prop => {
+      switch (typeof prop) {
+        case 'object':
+        case 'boolean':
+          return JSON.stringify(prop)
+        case 'function':
+          if (prop.mine) {
+            return '[my function ' + prop.name + ']'
+          }
+          return '[function ' + prop.name + ']'
+        default:
+          return prop
+      }
+    }
     class Passthrough extends Component {
       render() {
-        return <div />
+        return (
+          <ul>
+            {Object.keys(this.props).map(prop => (
+              <li title="prop" data-testid={prop} key={prop}>{propMapper(this.props[prop])}</li>
+            ))}
+          </ul>
+        )
       }
     }
 
@@ -72,24 +93,23 @@ describe('React', () => {
       container.forceUpdate()
     }
 
-    it('should receive the store in the context', () => {
-      const store = createStore(() => ({}))
+    afterEach(() => rtl.cleanup())
 
-      @connect()
+    it('should receive the store in the context', () => {
+      const store = createStore(() => ({ hi: 'there' }))
+
+      @connect(state => state)
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
         }
       }
 
-      const testRenderer = TestRenderer.create(
-        <ProviderMock store={store}>
-          <Container pass="through" />
-        </ProviderMock>
-      )
+      const tester = rtl.render(<ProviderMock store={store}>
+        <Container pass="through" />
+      </ProviderMock>)
 
-      const container = testRenderer.root.findByType(Container)
-      expect(container.instance.context.store).toBe(store)
+      expect(tester.getByTestId('hi')).toHaveTextContent('there')
     })
 
     it('should pass state and props to the given component', () => {
@@ -99,26 +119,22 @@ describe('React', () => {
         hello: 'world'
       }))
 
-      @connect(({ foo, baz }) => ({ foo, baz }))
+      @connect(({ foo, baz }) => ({ foo, baz }), {})
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container pass="through" baz={50} />
         </ProviderMock>
       )
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.pass).toEqual('through')
-      expect(stub.props.foo).toEqual('bar')
-      expect(stub.props.baz).toEqual(42)
-      expect(stub.props.hello).toEqual(undefined)
-      expect(() =>
-        testRenderer.root.findByType(Container)
-      ).not.toThrow()
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('baz')).toHaveTextContent('42')
+      expect(tester.queryByTestId('hello')).toBe(null)
     })
 
     it('should subscribe class components to the store changes', () => {
@@ -131,31 +147,30 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
       )
-
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.string).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
-      expect(stub.props.string).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
-      expect(stub.props.string).toBe('ab')
+      expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
     it('should subscribe pure function components to the store changes', () => {
       const store = createStore(stringBuilder)
 
-      let Container = connect(
-        state => ({ string: state })
+      const Container = connect(
+        state => ({ string: state }), {}
       )(function Container(props) {
-        return <Passthrough {...props}/>
+        return <Passthrough {...props} />
       })
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const testRenderer = TestRenderer.create(
+
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -163,25 +178,24 @@ describe('React', () => {
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
 
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.string).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
-      expect(stub.props.string).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
-      expect(stub.props.string).toBe('ab')
+      expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
     it('should retain the store\'s context', () => {
       const store = new ContextBoundStore(stringBuilder)
 
       let Container = connect(
-        state => ({ string: state })
+        state => ({ string: state }), {}
       )(function Container(props) {
         return <Passthrough {...props}/>
       })
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -189,16 +203,15 @@ describe('React', () => {
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
 
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.string).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
-      expect(stub.props.string).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
     })
 
     it('should handle dispatches before componentDidMount', () => {
       const store = createStore(stringBuilder)
 
-      @connect(state => ({ string: state }) )
+      @connect(state => ({ string: state }), {})
       class Container extends Component {
         componentDidMount() {
           store.dispatch({ type: 'APPEND', body: 'a' })
@@ -208,15 +221,12 @@ describe('React', () => {
           return <Passthrough {...this.props}/>
         }
       }
-
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
       )
-
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.string).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
     })
 
     it('should handle additional prop changes in addition to slice', () => {
@@ -224,7 +234,7 @@ describe('React', () => {
         foo: 'bar'
       }))
 
-      @connect(state => state)
+      @connect(state => state, {})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -258,16 +268,16 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(<Container />)
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.foo).toEqual('bar')
-      expect(stub.props.pass).toEqual('through')
+      const tester = rtl.render(<Container />)
+
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
     })
 
     it('should handle unexpected prop changes with forceUpdate()', () => {
       const store = createStore(() => ({}))
 
-      @connect(state => state)
+      @connect(state => state, {})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -297,9 +307,9 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(<Container />)
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.bar).toEqual('foo')
+      const tester = rtl.render(<Container />)
+
+      expect(tester.getByTestId('bar')).toHaveTextContent('foo')
     })
 
     it('should remove undefined props', () => {
@@ -324,25 +334,18 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <HolderContainer ref={instance => container = instance} />
         </ProviderMock>
       )
 
-      const propsBefore = {
-        ...testRenderer.root.findByType(Passthrough).props
-      }
+      expect(tester.getByTestId('x')).toHaveTextContent('true')
 
       props = {}
       container.forceUpdate()
 
-      const propsAfter = {
-        ...testRenderer.root.findByType(Passthrough).props
-      }
-
-      expect(propsBefore.x).toEqual(true)
-      expect('x' in propsAfter).toEqual(false, 'x prop must be removed')
+      expect(tester.queryByTestId('x')).toBe(null)
     })
 
     it('should remove undefined props without mapDispatch', () => {
@@ -367,25 +370,21 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <HolderContainer ref={instance => container = instance} />
         </ProviderMock>
       )
 
-      const propsBefore = {
-        ...testRenderer.root.findByType(Passthrough).props
-      }
+      expect(tester.getAllByTitle('prop').length).toBe(2)
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[function dispatch]')
+      expect(tester.getByTestId('x')).toHaveTextContent('true')
 
       props = {}
       container.forceUpdate()
 
-      const propsAfter = {
-        ...testRenderer.root.findByType(Passthrough).props
-      }
-
-      expect(propsBefore.x).toEqual(true)
-      expect('x' in propsAfter).toEqual(false, 'x prop must be removed')
+      expect(tester.getAllByTitle('prop').length).toBe(1)
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[function dispatch]')
     })
 
     it('should ignore deep mutations in props', () => {
@@ -430,10 +429,9 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(<Container />)
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.foo).toEqual('bar')
-      expect(stub.props.pass).toEqual('')
+      const tester = rtl.render(<Container/>)
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
     })
 
     it('should allow for merge to incorporate state and prop changes', () => {
@@ -446,6 +444,8 @@ describe('React', () => {
         }
       }
 
+      let merged
+      let externalSetState
       @connect(
         state => ({ stateThing: state }),
         dispatch => ({
@@ -454,10 +454,13 @@ describe('React', () => {
         (stateProps, actionProps, parentProps) => ({
           ...stateProps,
           ...actionProps,
-          mergedDoSomething(thing) {
-            const seed = stateProps.stateThing === '' ? 'HELLO ' : ''
-            actionProps.doSomething(seed + thing + parentProps.extra)
-          }
+          mergedDoSomething: (() => {
+            merged = function mergedDoSomething(thing) {
+              const seed = stateProps.stateThing === '' ? 'HELLO ' : ''
+              actionProps.doSomething(seed + thing + parentProps.extra)
+            }
+            return merged
+          })()
         })
       )
       class Container extends Component {
@@ -470,6 +473,7 @@ describe('React', () => {
         constructor() {
           super()
           this.state = { extra: 'z' }
+          externalSetState = this.setState.bind(this)
         }
 
         render() {
@@ -481,22 +485,23 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(<OuterContainer />)
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.stateThing).toBe('')
-      stub.props.mergedDoSomething('a')
-      expect(stub.props.stateThing).toBe('HELLO az')
-      stub.props.mergedDoSomething('b')
-      expect(stub.props.stateThing).toBe('HELLO azbz')
-      testRenderer.root.instance.setState({ extra: 'Z' })
-      stub.props.mergedDoSomething('c')
-      expect(stub.props.stateThing).toBe('HELLO azbzcZ')
+      const tester = rtl.render(<OuterContainer/>)
+
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('')
+      merged('a')
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO az')
+      merged('b')
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbz')
+      externalSetState({ extra: 'Z' })
+      merged('c')
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbzcZ')
     })
 
     it('should merge actionProps into WrappedComponent', () => {
       const store = createStore(() => ({
         foo: 'bar'
       }))
+      store.dispatch.mine = 'hi'
 
       @connect(
         state => state,
@@ -508,19 +513,14 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container pass="through" />
         </ProviderMock>
       )
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.dispatch).toEqual(store.dispatch)
-      expect(stub.props.foo).toEqual('bar')
-      expect(() =>
-        testRenderer.root.findByType(Container)
-      ).not.toThrow()
-      const decorated = testRenderer.root.findByType(Container)
-      expect(decorated.instance.isSubscribed()).toBe(true)
+
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[my function dispatch]')
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
     })
 
     it('should not invoke mapState when props change if it only has one argument', () => {
@@ -560,7 +560,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -607,7 +607,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -655,7 +655,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -707,7 +707,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -755,7 +755,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -804,7 +804,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => outerComponent = c} />
         </ProviderMock>
@@ -823,6 +823,7 @@ describe('React', () => {
       const store = createStore(() => ({
         foo: 'bar'
       }))
+      store.dispatch.mine = 'hi'
 
       function runCheck(...connectArgs) {
         @connect(...connectArgs)
@@ -832,20 +833,14 @@ describe('React', () => {
           }
         }
 
-        const testRenderer = TestRenderer.create(
+        const tester = rtl.render(
           <ProviderMock store={store}>
             <Container pass="through" />
           </ProviderMock>
         )
-        const stub = testRenderer.root.findByType(Passthrough)
-        expect(stub.props.dispatch).toEqual(store.dispatch)
-        expect(stub.props.foo).toBe(undefined)
-        expect(stub.props.pass).toEqual('through')
-        expect(() =>
-          testRenderer.root.findByType(Container)
-        ).not.toThrow()
-        const decorated = testRenderer.root.findByType(Container)
-        expect(decorated.instance.isSubscribed()).toBe(false)
+        expect(tester.getByTestId('dispatch')).toHaveTextContent('[my function dispatch]')
+        expect(tester.queryByTestId('foo')).toBe(null)
+        expect(tester.getByTestId('pass')).toHaveTextContent('through')
       }
 
       runCheck()
@@ -1102,15 +1097,13 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
       )
-
-      const stub = testRenderer.root.findByType(Passthrough)
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(stub.props.string).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(spy).toHaveBeenCalledTimes(2)
       store.dispatch({ type: 'APPEND', body: 'b' })
@@ -1122,6 +1115,7 @@ describe('React', () => {
     it('should shallowly compare the merged state to prevent unnecessary updates', () => {
       const store = createStore(stringBuilder)
       const spy = jest.fn(() => ({}))
+      const tree = {}
       function render({ string, pass }) {
         spy()
         return <Passthrough string={string} pass={pass} passVal={pass.val} />
@@ -1146,6 +1140,7 @@ describe('React', () => {
         constructor(props) {
           super(props)
           this.state = { pass: '' }
+          tree.setState = this.setState.bind(this)
         }
 
         render() {
@@ -1157,55 +1152,53 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(<Root />)
-      const tree = testRenderer.root.instance
-      const stub = testRenderer.root.findByType(Passthrough)
+      const tester = rtl.render(<Root />)
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(stub.props.string).toBe('')
-      expect(stub.props.pass).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(spy).toHaveBeenCalledTimes(2)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
 
       tree.setState({ pass: '' })
       expect(spy).toHaveBeenCalledTimes(2)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
 
       tree.setState({ pass: 'through' })
       expect(spy).toHaveBeenCalledTimes(3)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('through')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
       tree.setState({ pass: 'through' })
       expect(spy).toHaveBeenCalledTimes(3)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe('through')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
       const obj = { prop: 'val' }
       tree.setState({ pass: obj })
       expect(spy).toHaveBeenCalledTimes(4)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe(obj)
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
       tree.setState({ pass: obj })
       expect(spy).toHaveBeenCalledTimes(4)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe(obj)
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
       const obj2 = Object.assign({}, obj, { val: 'otherval' })
       tree.setState({ pass: obj2 })
       expect(spy).toHaveBeenCalledTimes(5)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.pass).toBe(obj2)
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val","val":"otherval"}')
 
       obj2.val = 'mutation'
       tree.setState({ pass: obj2 })
       expect(spy).toHaveBeenCalledTimes(5)
-      expect(stub.props.string).toBe('a')
-      expect(stub.props.passVal).toBe('otherval')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val","val":"otherval"}')
     })
 
     it('should throw an error if a component is not passed to the function returned by connect', () => {
@@ -1230,7 +1223,7 @@ describe('React', () => {
       function AwesomeMap() { }
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => 1, () => ({}), () => ({}))}
         </ProviderMock>
@@ -1240,9 +1233,10 @@ describe('React', () => {
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => 'hey', () => ({}), () => ({}))}
         </ProviderMock>
@@ -1252,9 +1246,10 @@ describe('React', () => {
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
         </ProviderMock>
@@ -1264,9 +1259,10 @@ describe('React', () => {
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 1, () => ({}))}
         </ProviderMock>
@@ -1276,9 +1272,10 @@ describe('React', () => {
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 'hey', () => ({}))}
         </ProviderMock>
@@ -1288,9 +1285,10 @@ describe('React', () => {
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
         </ProviderMock>
@@ -1300,9 +1298,10 @@ describe('React', () => {
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 1)}
         </ProviderMock>
@@ -1312,9 +1311,10 @@ describe('React', () => {
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
         </ProviderMock>
@@ -1324,9 +1324,10 @@ describe('React', () => {
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
         </ProviderMock>
@@ -1378,22 +1379,21 @@ describe('React', () => {
       }
 
       let container
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <ContainerBefore ref={instance => container = instance} />
         </ProviderMock>
       )
-      const stub = testRenderer.root.findByType(Passthrough)
-      expect(stub.props.foo).toEqual(undefined)
-      expect(stub.props.scooby).toEqual('doo')
+      expect(tester.queryByTestId('foo')).toBe(null)
+      expect(tester.getByTestId('scooby')).toHaveTextContent('doo')
 
       imitateHotReloading(ContainerBefore, ContainerAfter, container)
-      expect(stub.props.foo).toEqual('baz')
-      expect(stub.props.scooby).toEqual('foo')
+      expect(tester.getByTestId('foo')).toHaveTextContent('baz')
+      expect(tester.getByTestId('scooby')).toHaveTextContent('foo')
 
       imitateHotReloading(ContainerBefore, ContainerNext, container)
-      expect(stub.props.foo).toEqual('bar')
-      expect(stub.props.scooby).toEqual('boo')
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('scooby')).toHaveTextContent('boo')
     })
 
     it('should persist listeners through hot update', () => {
@@ -1442,19 +1442,17 @@ describe('React', () => {
       }
 
       let container
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <ParentBefore ref={instance => container = instance}/>
         </ProviderMock>
       )
 
-      const stub = testRenderer.root.findByType(Passthrough)
-
       imitateHotReloading(ParentBefore, ParentAfter, container)
 
       store.dispatch({type: ACTION_TYPE})
 
-      expect(stub.props.actions).toEqual(1)
+      expect(tester.getByTestId('actions')).toHaveTextContent('1')
     })
 
     it('should set the displayName correctly', () => {
@@ -1540,7 +1538,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      TestRenderer.create(<Decorated store={mockStore} />)
+      rtl.render(<Decorated store={mockStore} />)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1558,7 +1556,7 @@ describe('React', () => {
       const Decorated = decorator(Container)
 
       expect(() =>
-        TestRenderer.create(<Decorated />)
+        rtl.render(<Decorated />)
       ).toThrow(
         /Could not find "store"/
       )
@@ -1578,19 +1576,24 @@ describe('React', () => {
       const decorator = connect(state => state)
       const Decorated = decorator(Container)
 
-      const testRenderer = TestRenderer.create(
-        <ProviderMock store={store}>
-          <Decorated />
-        </ProviderMock>
-      )
+      class Wrapper extends Component {
+        render() {
+          return (
+            <Decorated ref={comp => comp && comp.getWrappedInstance()}/>
+          )
+        }
+      }
 
-      const decorated = testRenderer.root.findByType(Decorated)
-      expect(() => decorated.instance.getWrappedInstance()).toThrow(
+      expect(() => rtl.render(
+        <ProviderMock store={store}>
+          <Wrapper />
+        </ProviderMock>
+      )).toThrow(
         /To access the wrapped instance, you need to specify \{ withRef: true \} in the options argument of the connect\(\) call\./
       )
     })
 
-    it('should return the instance of the wrapped component for use in calling child methods', () => {
+    it('should return the instance of the wrapped component for use in calling child methods', async (done) => {
       const store = createStore(() => ({}))
 
       const someData = {
@@ -1603,24 +1606,36 @@ describe('React', () => {
         }
 
         render() {
-          return <Passthrough />
+          return <Passthrough loaded="yes" />
         }
       }
 
       const decorator = connect(state => state, null, null, { withRef: true })
       const Decorated = decorator(Container)
 
-      const testRenderer = TestRenderer.create(
+      let ref
+
+      class Wrapper extends Component {
+        render() {
+          return (
+            <Decorated ref={comp => {
+              if (!comp) return
+              ref = comp.getWrappedInstance()
+            }}/>
+          )
+        }
+      }
+
+      const tester = rtl.render(
         <ProviderMock store={store}>
-          <Decorated />
+          <Wrapper />
         </ProviderMock>
       )
 
-      const decorated = testRenderer.root.findByType(Decorated)
+      await rtl.waitForElement(() => tester.getByTestId('loaded'))
 
-      expect(() => decorated.someInstanceMethod()).toThrow()
-      expect(decorated.instance.getWrappedInstance().someInstanceMethod()).toBe(someData)
-      expect(decorated.instance.wrappedInstance.someInstanceMethod()).toBe(someData)
+      expect(ref.someInstanceMethod()).toBe(someData)
+      done()
     })
 
     it('should wrap impure components without supressing updates', () => {
@@ -1639,10 +1654,12 @@ describe('React', () => {
       const decorator = connect(state => state, null, null, { pure: false })
       const Decorated = decorator(ImpureComponent)
 
+      let externalSetState
       class StatefulWrapper extends Component {
         constructor() {
           super()
           this.state = { value: 0 }
+          externalSetState = this.setState.bind(this)
         }
 
         getChildContext() {
@@ -1660,17 +1677,15 @@ describe('React', () => {
         statefulValue: PropTypes.number
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
       )
 
-      const target = testRenderer.root.findByType(Passthrough)
-      const wrapper = testRenderer.root.findByType(StatefulWrapper).instance
-      expect(target.props.statefulValue).toEqual(0)
-      wrapper.setState({ value: 1 })
-      expect(target.props.statefulValue).toEqual(1)
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('0')
+      externalSetState({ value: 1 })
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('1')
     })
 
     it('calls mapState and mapDispatch for impure components', () => {
@@ -1699,12 +1714,16 @@ describe('React', () => {
       )
       const Decorated = decorator(ImpureComponent)
 
+      let externalSetState
+      let storeGetter
       class StatefulWrapper extends Component {
         constructor() {
           super()
+          storeGetter = { storeKey: 'foo' }
           this.state = {
-            storeGetter: { storeKey: 'foo' }
+            storeGetter
           }
+          externalSetState = this.setState.bind(this)
         }
         render() {
           return <Decorated storeGetter={this.state.storeGetter} />
@@ -1712,27 +1731,23 @@ describe('React', () => {
       }
 
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
       )
 
-      const target = testRenderer.root.findByType(Passthrough)
-      const wrapper = testRenderer.root.findByType(StatefulWrapper).instance
-
       expect(mapStateSpy).toHaveBeenCalledTimes(2)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
-      expect(target.props.statefulValue).toEqual('foo')
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
       // Impure update
-      const storeGetter = wrapper.state.storeGetter
       storeGetter.storeKey = 'bar'
-      wrapper.setState({ storeGetter })
+      externalSetState({ storeGetter })
 
       expect(mapStateSpy).toHaveBeenCalledTimes(3)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
-      expect(target.props.statefulValue).toEqual('bar')
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
     it('should pass state consistently to mapState', () => {
@@ -1772,7 +1787,7 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1795,16 +1810,9 @@ describe('React', () => {
       ])
 
       // setState calls DOM handlers are batched
-      const button = testRenderer.root.findByType('button')
-      button.props.onClick()
-      expect(childMapStateInvokes).toBe(5)
-      expect(childCalls).toEqual([
-        ['a', 'a'],
-        ['a', 'ac'],
-        ['ac', 'ac'],
-        ['ac', 'acb'],
-        ['acb', 'acb'],
-      ])
+      const button = tester.getByText('change')
+      rtl.fireEvent.click(button)
+      expect(childMapStateInvokes).toBe(3)
 
       store.dispatch({ type: 'APPEND', body: 'd' })
       expect(childMapStateInvokes).toBe(7)
@@ -1835,7 +1843,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1868,7 +1876,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1918,7 +1926,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1961,7 +1969,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -1997,7 +2005,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -2061,7 +2069,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2085,7 +2093,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2121,7 +2129,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <Parent>
             <Container />
@@ -2200,7 +2208,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <ProviderMock store={store}>
           <ImpureComponent />
         </ProviderMock>
@@ -2216,7 +2224,7 @@ describe('React', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       try {
-        TestRenderer.create(
+        rtl.render(
           <ProviderMock store={store}>
             <Component pass="through" />
           </ProviderMock>
@@ -2277,7 +2285,7 @@ describe('React', () => {
       }
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
-      TestRenderer.create(<ProviderMock store={store}><Parent /></ProviderMock>)
+      rtl.render(<ProviderMock store={store}><Parent /></ProviderMock>)
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
       store.dispatch({ type: 'INC' })
@@ -2300,7 +2308,7 @@ describe('React', () => {
       class C extends React.Component { render() { return <div>{this.props.count}</div> }}
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state += 1 : state))
-      TestRenderer.create(<ProviderMock store={store}><A /></ProviderMock>)
+      rtl.render(<ProviderMock store={store}><A /></ProviderMock>)
 
       store.dispatch({ type: 'INC' })
 
@@ -2338,7 +2346,7 @@ describe('React', () => {
         render() { return <div>{this.props.count}</div> }
       }
 
-      TestRenderer.create(<ProviderMock store={store1}><A /></ProviderMock>)
+      rtl.render(<ProviderMock store={store1}><A /></ProviderMock>)
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
@@ -2354,7 +2362,10 @@ describe('React', () => {
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
     })
 
-    it('works in <StrictMode> without warnings', () => {
+    it('works in <StrictMode> without warnings (React 16.3+)', () => {
+      if (!React.StrictMode) {
+        return
+      }
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const store = createStore(stringBuilder)
 
@@ -2365,7 +2376,7 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <React.StrictMode>
           <ProviderMock store={store}>
             <Container />
@@ -2378,6 +2389,7 @@ describe('React', () => {
 
     it('should receive the store in the context using a custom store key', () => {
       const store = createStore(() => ({}))
+      store.dispatch.mine = 'hi'
       const CustomProvider = createProvider('customStoreKey')
       const connectOptions = { storeKey: 'customStoreKey' }
 
@@ -2388,14 +2400,13 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = TestRenderer.create(
+      const tester = rtl.render(
         <CustomProvider store={store}>
           <Container />
         </CustomProvider>
       )
 
-      const container = testRenderer.root.findByType(Container)
-      expect(container.instance.store).toBe(store)
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[my function dispatch]')
     })
   })
 })
