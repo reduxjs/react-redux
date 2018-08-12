@@ -15,43 +15,35 @@ export function createProvider(storeKey = 'store') {
             store: props.store
           }
         }
-      }
-
-      shouldComponentUpdate(nextProps, nextState) {
-        if (nextProps.children !== this.props.children) return true
-        return this.state.value !== nextState.value
+        this.unsubscribe = null
       }
 
       componentDidMount() {
         this.isUnmounted = false
         const state = this.state.value.store.getState()
-        const unsubscribe = this.state.value.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
+        this.unsubscribe = this.state.value.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
 
         if (state !== this.state.value.state) {
           this.setState({
-            unsubscribe,
             value: {
               state,
               store: this.state.value.store
             }
           })
-        } else {
-          this.setState({ unsubscribe })
         }
       }
 
       componentWillUnmount() {
         this.isUnmounted = true
-        if (this.state.unsubscribe) this.state.unsubscribe()
-        this.setState({ unsubscribe: null })
+        if (this.unsubscribe) this.unsubscribe()
       }
 
       componentDidUpdate(nextProps) {
         if (nextProps.store !== this.props.store) {
           this.setState(state => {
-            if (state.unsubscribe) state.unsubscribe()
+            if (this.unsubscribe) this.unsubscribe()
+            this.unsubscribe = nextProps.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
             return {
-              unsubscribe: nextProps.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this)),
               value: {
                 state: nextProps.store.getState(),
                 store: nextProps.store
