@@ -1225,7 +1225,7 @@ describe('React', () => {
       function AwesomeMap() { }
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => 1, () => ({}), () => ({}))}
         </ProviderMock>
@@ -1235,9 +1235,10 @@ describe('React', () => {
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => 'hey', () => ({}), () => ({}))}
         </ProviderMock>
@@ -1247,9 +1248,10 @@ describe('React', () => {
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
         </ProviderMock>
@@ -1259,9 +1261,10 @@ describe('React', () => {
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 1, () => ({}))}
         </ProviderMock>
@@ -1271,9 +1274,10 @@ describe('React', () => {
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 'hey', () => ({}))}
         </ProviderMock>
@@ -1283,9 +1287,10 @@ describe('React', () => {
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
         </ProviderMock>
@@ -1295,9 +1300,10 @@ describe('React', () => {
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 1)}
         </ProviderMock>
@@ -1307,9 +1313,10 @@ describe('React', () => {
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
         </ProviderMock>
@@ -1319,9 +1326,10 @@ describe('React', () => {
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
         </ProviderMock>
@@ -1373,23 +1381,21 @@ describe('React', () => {
       }
 
       let container
-      const testRenderer = enzyme.mount(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <ContainerBefore ref={instance => container = instance} />
         </ProviderMock>
       )
-      expect(testRenderer.find(Passthrough).prop('foo')).toEqual(undefined)
-      expect(testRenderer.find(Passthrough).prop('scooby')).toEqual('doo')
+      expect(tester.queryByTestId('foo')).toBe(null)
+      expect(tester.getByTestId('scooby')).toHaveTextContent('doo')
 
       imitateHotReloading(ContainerBefore, ContainerAfter, container)
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('foo')).toEqual('baz')
-      expect(testRenderer.find(Passthrough).prop('scooby')).toEqual('foo')
+      expect(tester.getByTestId('foo')).toHaveTextContent('baz')
+      expect(tester.getByTestId('scooby')).toHaveTextContent('foo')
 
       imitateHotReloading(ContainerBefore, ContainerNext, container)
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('foo')).toEqual('bar')
-      expect(testRenderer.find(Passthrough).prop('scooby')).toEqual('boo')
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('scooby')).toHaveTextContent('boo')
     })
 
     it('should persist listeners through hot update', () => {
@@ -1438,7 +1444,7 @@ describe('React', () => {
       }
 
       let container
-      const testRenderer = enzyme.mount(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <ParentBefore ref={instance => container = instance}/>
         </ProviderMock>
@@ -1447,9 +1453,8 @@ describe('React', () => {
       imitateHotReloading(ParentBefore, ParentAfter, container)
 
       store.dispatch({type: ACTION_TYPE})
-      testRenderer.update()
 
-      expect(testRenderer.find(Passthrough).prop('actions')).toEqual(1)
+      expect(tester.getByTestId('actions')).toHaveTextContent('1')
     })
 
     it('should set the displayName correctly', () => {
@@ -1535,7 +1540,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      enzyme.mount(<Decorated store={mockStore} />)
+      rtl.render(<Decorated store={mockStore} />)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1553,7 +1558,7 @@ describe('React', () => {
       const Decorated = decorator(Container)
 
       expect(() =>
-        enzyme.mount(<Decorated />)
+        rtl.render(<Decorated />)
       ).toThrow(
         /Could not find "store"/
       )
