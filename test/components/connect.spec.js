@@ -37,18 +37,7 @@ describe('React', () => {
       }
     }
 
-    class ProviderMock extends Component {
-      getChildContext() {
-        return { store: this.props.store }
-      }
-
-      render() {
-        return Children.only(this.props.children)
-      }
-    }
-    ProviderMock.childContextTypes = {
-      store: PropTypes.object.isRequired
-    }
+    const ProviderMock = createProvider()
 
     class ContextBoundStore {
       constructor(reducer) {
@@ -1132,6 +1121,7 @@ describe('React', () => {
       )
       class Container extends Component {
         render() {
+          console.log('Container render', this.props)
           return render(this.props)
         }
       }
@@ -1141,6 +1131,10 @@ describe('React', () => {
           super(props)
           this.state = { pass: '' }
           tree.setState = this.setState.bind(this)
+        }
+
+        shouldComponentUpdate(_, last) {
+          return true
         }
 
         render() {
@@ -1737,16 +1731,16 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(2)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+      expect(mapStateSpy).toHaveBeenCalledTimes(1)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
       // Impure update
       storeGetter.storeKey = 'bar'
       externalSetState({ storeGetter })
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(3)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
+      expect(mapStateSpy).toHaveBeenCalledTimes(2)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
@@ -1802,10 +1796,9 @@ describe('React', () => {
       ReactDOM.unstable_batchedUpdates(() => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
-      expect(childMapStateInvokes).toBe(3)
+      expect(childMapStateInvokes).toBe(2)
       expect(childCalls).toEqual([
         ['a', 'a'],
-        ['a', 'ac'],
         ['ac', 'ac'],
       ])
 
@@ -1815,14 +1808,11 @@ describe('React', () => {
       expect(childMapStateInvokes).toBe(3)
 
       store.dispatch({ type: 'APPEND', body: 'd' })
-      expect(childMapStateInvokes).toBe(7)
+      expect(childMapStateInvokes).toBe(4)
       expect(childCalls).toEqual([
         ['a', 'a'],
-        ['a', 'ac'],
         ['ac', 'ac'],
-        ['ac', 'acb'],
         ['acb', 'acb'],
-        ['acb', 'acbd'],
         ['acbd', 'acbd'],
       ])
     })
@@ -1885,7 +1875,7 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      const spy = jest.spyOn(Container.prototype, 'setState')
+      const spy = jest.spyOn(ProviderMock.prototype, 'setState')
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(2)
@@ -2043,9 +2033,11 @@ describe('React', () => {
       @connect(() => ({}), mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
         componentDidUpdate() {
+          console.log('updated', this.props)
           updatedCount++
         }
         render() {
+          console.log('render', this.props)
           return <div />
         }
       }
@@ -2314,8 +2306,7 @@ describe('React', () => {
 
       expect(calls).toEqual([
         [0, 0],
-        [0, 1], // props updates first
-        [1, 1], // then state
+        [1, 1],
       ])
     })
 

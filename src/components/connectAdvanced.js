@@ -1,12 +1,12 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, createElement } from 'react'
+import React, { Component, PureComponent } from 'react'
+import { contextTypes } from '../utils/PropTypes'
+import shallowEqual from 'shallow-equals'
 
-import Subscription from '../utils/Subscription'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
+import { Consumer } from './Context'
 
 let hotReloadingVersion = 0
-function noop() {}
 
 export default function connectAdvanced(
   /*
@@ -57,14 +57,6 @@ export default function connectAdvanced(
   const subscriptionKey = storeKey + 'Subscription'
   const version = hotReloadingVersion++
 
-  const contextTypes = {
-    [storeKey]: storeShape,
-    [subscriptionKey]: subscriptionShape,
-  }
-  const childContextTypes = {
-    [subscriptionKey]: subscriptionShape,
-  }
-
   return function wrapWithConnect(WrappedComponent) {
     invariant(
       typeof WrappedComponent == 'function',
@@ -77,6 +69,13 @@ export default function connectAdvanced(
       || 'Component'
 
     const displayName = getDisplayName(wrappedComponentName)
+
+    const FinalWrapper = connectOptions.pure ?
+      class PureWrapper extends PureComponent {
+        render() {
+          return <WrappedComponent {...this.props} />
+        }
+      } : WrappedComponent
 
     const selectorFactoryOptions = {
       ...connectOptions,
@@ -91,152 +90,42 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
-    class Connect extends Component {
-      constructor(props, context) {
-        super(props, context)
-
-        this.version = version
-        this.renderCount = 0
-        this.store = props[storeKey] || context[storeKey]
-        this.propsMode = Boolean(props[storeKey])
-        this.setWrappedInstance = this.setWrappedInstance.bind(this)
-
-        invariant(this.store,
-          `Could not find "${storeKey}" in either the context or props of ` +
-          `"${displayName}". Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
-        )
-
-        this.createSelector()
-        this.state = {
-          updateCount: 0
-        }
-        this.storeState = this.store.getState()
-        this.initSubscription()
-        this.derivedProps = this.derivedPropsUpdater()
-        this.received = this.props
+    class ReduxConsumer extends Component {
+      constructor(props) {
+        super(props)
+        this.memoizedProps = this.makeMemoizer()
+        this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
       }
 
-      getChildContext() {
-        // If this component received store from props, its subscription should be transparent
-        // to any descendants receiving store+subscription from context; it passes along
-        // subscription passed to it. Otherwise, it shadows the parent subscription, which allows
-        // Connect to control ordering of notifications to flow top-down.
-        const subscription = this.propsMode ? null : this.subscription
-        return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
-      }
-
-      componentDidMount() {
-        if (!shouldHandleStateChanges) return
-
-        // componentWillMount fires during server side rendering, but componentDidMount and
-        // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
-        // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
-        // To handle the case where a child component may have triggered a state change by
-        // dispatching an action in its componentWillMount, we have to re-run the select and maybe
-        // re-render.
-        this.subscription.trySubscribe()
-        this.triggerUpdateOnStoreStateChange()
-      }
-
-      shouldComponentUpdate(nextProps) {
-        this.received = nextProps
-        // received a prop update, store state updates are handled in onStateChange
-        const oldProps = this.derivedProps
-        const newProps = this.updateDerivedProps(nextProps)
-        if (this.error) return true
-        const sCU = newProps !== oldProps
-        return sCU
-      }
-
-      componentWillUnmount() {
-        if (this.subscription) this.subscription.tryUnsubscribe()
-        this.subscription = null
-        this.notifyNestedSubs = noop
-        this.store = null
-        this.isUnmounted = true
-      }
-
-      updateDerivedProps(nextProps) {
-        this.derivedProps = this.derivedPropsUpdater(nextProps)
-        return this.derivedProps
-      }
-
-      derivedPropsUpdater(props = this.props) {
-        // runs when props change, or the store state changes
-        // and generates the derived props for connected components
-        try {
-          const nextProps = this.sourceSelector(this.storeState, props)
-          if (nextProps !== this.derivedProps || this.error) {
-            this.error = null
-            return nextProps
+      makeMemoizer() {
+        let lastProps
+        let lastState
+        let lastDerivedProps
+        let lastStore
+        let sourceSelector
+        let called = false
+        return (state, props, store) => {
+          if (called) {
+            const sameProps = connectOptions.pure && shallowEqual(lastProps, props)
+            const sameState = lastState === state
+            if (sameProps && sameState) {
+              return lastDerivedProps
+            }
           }
-          return this.derivedProps
-        } catch (error) {
-          this.error = error
-          return this.derivedProps
-        }
-      }
-
-      createSelector() {
-        this.sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
-      }
-
-      getWrappedInstance() {
-        invariant(withRef,
-          `To access the wrapped instance, you need to specify ` +
-          `{ withRef: true } in the options argument of the ${methodName}() call.`
-        )
-        return this.wrappedInstance
-      }
-
-      setWrappedInstance(ref) {
-        this.wrappedInstance = ref
-      }
-
-      triggerUpdateOnStoreStateChange(callback = noop) {
-        // runs when an action is dispatched by the store we are listening to
-        // if the store state has changed, we save that and update the component state
-        // to force a re-generation of derived props
-        if (this.isUnmounted) {
-          return
-        }
-
-        this.setState(prevState => {
-          const newState = this.store.getState()
-          if (this.storeState === newState) {
-            return prevState
+          if (store !== lastStore) {
+            sourceSelector = selectorFactory(store.dispatch, selectorFactoryOptions)
           }
-          this.storeState = newState
-          return {
-            updateCount: prevState.updateCount++
+          lastStore = store
+          called = true
+          lastProps = props
+          lastState = state
+          const nextProps = sourceSelector(state, props)
+          if (shallowEqual(lastDerivedProps, nextProps)) {
+            return lastDerivedProps
           }
-        }, callback)
-      }
-
-      initSubscription() {
-        if (!shouldHandleStateChanges) return
-
-        // parentSub's source should match where store came from: props vs. context. A component
-        // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
-
-        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
-        // the middle of the notification loop, where `this.subscription` will then be null. An
-        // extra null check every change can be avoided by copying the method onto `this` and then
-        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
-        // listeners logic is changed to not call listeners that have been unsubscribed in the
-        // middle of the notification loop.
-        this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
-      }
-
-      onStateChange() {
-        this.triggerUpdateOnStoreStateChange(this.notifyNestedSubs)
-      }
-
-      isSubscribed() {
-        return Boolean(this.subscription) && this.subscription.isSubscribed()
+          lastDerivedProps = nextProps
+          return lastDerivedProps
+        }
       }
 
       addExtraProps(props) {
@@ -252,28 +141,59 @@ export default function connectAdvanced(
         return withExtras
       }
 
+      renderWrappedComponent(value) {
+        invariant(value,
+          `Could not find "${storeKey}" in either the context or props of ` +
+          `"${displayName}". Either wrap the root component in a <Provider>, ` +
+          `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
+        )
+        const { state, store } = value
+        const derivedProps = this.memoizedProps(state, this.props, store)
+        return <FinalWrapper {...derivedProps} />
+      }
+
       render() {
-        if (this.received !== this.props) {
-          // forceUpdate() was called on this component, which skips sCU
-          // so manually update derived props
-          this.received = this.props
-          this.updateDerivedProps(this.props)
-        }
-        if (this.error) {
-          throw this.error
-        } else {
-          return createElement(WrappedComponent, this.addExtraProps(this.derivedProps))
-        }
+        return (
+          <Consumer>
+            {this.renderWrappedComponent}
+          </Consumer>
+        )
+      }
+    }
+
+    class Connect extends Component {
+      constructor(props, context) {
+        super(props, context)
+
+        this.version = version
+        this.renderCount = 0
+        this.propsMode = Boolean(props[storeKey])
+      }
+
+      getWrappedInstance() {
+        invariant(withRef,
+          `To access the wrapped instance, you need to specify ` +
+          `{ withRef: true } in the options argument of the ${methodName}() call.`
+        )
+        return this.wrappedInstance
+      }
+
+      setWrappedInstance(ref) {
+        this.wrappedInstance = ref
+      }
+
+      render() {
+        return (
+          <ReduxConsumer {...this.props} />
+        )
       }
     }
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
-    Connect.childContextTypes = childContextTypes
-    Connect.contextTypes = contextTypes
     Connect.propTypes = contextTypes
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (false && process.env.NODE_ENV !== 'production') {
       Connect.prototype.componentDidUpdate = function componentDidUpdate() {
         // We are hot reloading!
         if (this.version !== version) {
