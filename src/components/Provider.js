@@ -40,11 +40,24 @@ export function createProvider(storeKey = 'store') {
             this.subscribe();
         }
 
+        componentWillUnmount() {
+          if(this.unsubscribe) {
+            this.unsubscribe()
+            this._isMounted = false;
+          }
+        }
+
         subscribe() {
           const {store} = this.props;
 
+          this._isMounted = true;
+
           this.unsubscribe = store.subscribe( () => {
             const newStoreState = store.getState();
+
+            if(!this._isMounted) {
+              return;
+            }
 
             this.setState(providerState => {
               // If the value is the same, skip the unnecessary state update.
