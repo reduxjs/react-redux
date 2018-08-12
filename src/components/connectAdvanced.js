@@ -1,33 +1,11 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, { Component, createElement } from 'react'
+import React, { Component, PureComponent, createElement } from 'react'
 
 import {ReactReduxContext} from "./context";
-import shallowEqual from '../utils/shallowEqual'
 
 let hotReloadingVersion = 0
-const dummyState = {}
-function noop() {}
-function makeSelectorStateful(sourceSelector) {
-  // wrap the selector in an object that tracks its results between runs.
-  const selector = {
-    run: function runComponentSelector(props, storeState) {
-      try {
-        const nextProps = sourceSelector(storeState, props)
-        if (nextProps !== selector.props || selector.error) {
-          selector.shouldComponentUpdate = true
-          selector.props = nextProps
-          selector.error = null
-        }
-      } catch (error) {
-        selector.shouldComponentUpdate = true
-        selector.error = error
-      }
-    }
-  }
 
-  return selector
-}
 
 export default function connectAdvanced(
   /*
@@ -105,12 +83,13 @@ export default function connectAdvanced(
     }
 
 
+    const OuterBaseComponent = connectOptions.pure ? PureComponent : Component;
+
     class ConnectInner extends Component {
       constructor(props) {
         super(props);
 
         this.state = {
-          storeState : props.storeState,
           wrapperProps : props.wrapperProps,
           renderCount : 0,
           store : props.store,
@@ -131,7 +110,7 @@ export default function connectAdvanced(
 
       static getChildPropsState(props, state) {
         try {
-          const nextProps = state.childPropsSelector(state.storeState, props.wrapperProps)
+          const nextProps = state.childPropsSelector(props.storeState, props.wrapperProps)
           if (nextProps === state.childProps) return null
           return { childProps: nextProps }
         } catch (error) {
@@ -140,11 +119,11 @@ export default function connectAdvanced(
       }
 
       static getDerivedStateFromProps(props, state) {
-        if ((connectOptions.pure && shallowEqual(props.wrapperProps, state.wrapperProps)) || state.error){
+        const nextChildProps = ConnectInner.getChildPropsState(props, state)
+
+        if(nextChildProps === null) {
           return null;
         }
-
-        const nextChildProps = ConnectInner.getChildPropsState(props, state)
 
         return {
           ...nextChildProps,
@@ -153,7 +132,15 @@ export default function connectAdvanced(
       }
 
       shouldComponentUpdate(nextProps, nextState) {
-        return nextState.childProps !== this.state.childProps;
+        const childPropsChanged = nextState.childProps !== this.state.childProps;
+        const storeStateChanged = nextProps.storeState !== this.props.storeState;
+        const hasError = !!nextState.error;
+
+        let wrapperPropsChanged = false;
+
+        const shouldUpdate = childPropsChanged || hasError;
+        return shouldUpdate;
+
       }
 
       render() {
@@ -165,75 +152,13 @@ export default function connectAdvanced(
       }
     }
 
-    class Connect extends Component {
+    class Connect extends OuterBaseComponent {
       constructor(props) {
         super(props)
 
-        this.version = version
-        this.renderCount = 0
-        this.storeState = null;
-
-
-        //this.setWrappedInstance = this.setWrappedInstance.bind(this)
         this.renderInner = this.renderInner.bind(this);
-
-        // TODO How do we express the invariant of needing a Provider when it's used in render()?
-        /*
-        invariant(this.store,
-          `Could not find "${storeKey}" in either the context or props of ` +
-          `"${displayName}". Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
-        )
-        */
       }
-
-      componentDidMount() {
-        if (!shouldHandleStateChanges) return
-
-        // componentWillMount fires during server side rendering, but componentDidMount and
-        // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
-        // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
-        // To handle the case where a child component may have triggered a state change by
-        // dispatching an action in its componentWillMount, we have to re-run the select and maybe
-        // re-render.
-        this.selector.run(this.props, this.storeState);
-        if (this.selector.shouldComponentUpdate) this.forceUpdate()
-      }
-
-
-      UNSAFE_componentWillReceiveProps(nextProps) {
-        // TODO Do we still want/need to implement sCU / cWRP now?
-        this.selector.run(nextProps, this.storeState);
-      }
-
-      shouldComponentUpdate() {
-        return this.selector.shouldComponentUpdate
-      }
-
-
-      componentWillUnmount() {
-        this.selector.run = noop
-        this.selector.shouldComponentUpdate = false
-      }
-
-      getWrappedInstance() {
-        invariant(withRef,
-          `To access the wrapped instance, you need to specify ` +
-          `{ withRef: true } in the options argument of the ${methodName}() call.`
-        )
-        return this.wrappedInstance
-      }
-
-      setWrappedInstance(ref) {
-        this.wrappedInstance = ref
-      }
-
-      initSelector(dispatch, storeState) {
-          const sourceSelector = selectorFactory(dispatch, selectorFactoryOptions)
-          this.selector = makeSelectorStateful(sourceSelector)
-          this.selector.run(this.props, storeState);
-      }
-
+/*
       addExtraProps(props) {
           if (!withRef && !renderCountProp) return props;
 
@@ -247,37 +172,19 @@ export default function connectAdvanced(
 
         return withExtras
       }
+*/
 
       renderInner(providerValue) {
           const {storeState, store} = providerValue;
 
-          /*
-          this.storeState = storeState;
-
-          if(this.selector) {
-            this.selector.run(this.props, storeState);
-          }
-          else {
-              this.initSelector(dispatch, storeState);
-          }
-
-          if (this.selector.error) {
-              // TODO This will unmount the whole tree now that we're throwing in render. Good idea?
-              // TODO Related: https://github.com/reactjs/react-redux/issues/802
-              throw this.selector.error
-          }
-          else if(this.selector.shouldComponentUpdate) {
-              //console.log(`Re-rendering component (${displayName})`, this.selector.props);
-              this.selector.shouldComponentUpdate = false;
-            this.renderedElement = createElement(WrappedComponent, this.addExtraProps(this.selector.props));
-          }
-          else {
-              //console.log(`Returning existing render result (${displayName})`, this.props)
-          }
-
-          return this.renderedElement;
-          */
-          return <ConnectInner storeState={storeState} store={store} wrapperProps={this.props} />
+          return (
+            <ConnectInner
+              key={this.version}
+              storeState={storeState}
+              store={store}
+              wrapperProps={this.props}
+            />
+          );
       }
 
       render() {
@@ -291,8 +198,8 @@ export default function connectAdvanced(
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
+
     // TODO We're losing the ability to add a store as a prop. Not sure there's anything we can do about that.
-    //Connect.propTypes = contextTypes
 
       // TODO With connect no longer managing subscriptions, I _think_ is is all unneeded
       /*

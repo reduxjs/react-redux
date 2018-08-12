@@ -77,6 +77,7 @@ export function createProvider(storeKey = 'store') {
         if (state.store !== props.store) {
           warnAboutReceivingStore()
         }
+        return null;
       }
     }
 
