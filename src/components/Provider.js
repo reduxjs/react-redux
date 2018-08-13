@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { Provider as ContextProvider } from './Context'
-import { storeShape } from '../utils/PropTypes'
 
 class Provider extends Component {
   constructor(props) {
@@ -69,7 +68,11 @@ class Provider extends Component {
 }
 
 Provider.propTypes = {
-  store: storeShape.isRequired,
+  store: PropTypes.shape({
+    subscribe: PropTypes.func.isRequired,
+    dispatch: PropTypes.func.isRequired,
+    getState: PropTypes.func.isRequired
+  }),
   context: PropTypes.object,
   children: PropTypes.any
 }

@@ -1,7 +1,7 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, { Component, PureComponent } from 'react'
-import * as propTypes from 'prop-types'
+import propTypes from 'prop-types'
 import shallowEqual from 'shallow-equals'
 import { isValidElementType } from 'react-is'
 
