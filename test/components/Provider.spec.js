@@ -111,6 +111,7 @@ describe('React', () => {
           this.state = { store: store1 }
           externalSetState = this.setState.bind(this)
         }
+
         render() {
           return (
             <Provider store={this.state.store}>
@@ -123,19 +124,11 @@ describe('React', () => {
       const tester = rtl.render(<ProviderContainer />)
       expect(tester.getByTestId('store')).toHaveTextContent('store - 1')
 
-      let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       externalSetState({ store: store2 })
-
-      expect(tester.getByTestId('store')).toHaveTextContent('store - 1')
-      expect(spy).toHaveBeenCalledTimes(0)
-      spy.mockRestore()
-      
-      spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      externalSetState({ store: store3 })
-
       expect(tester.getByTestId('store')).toHaveTextContent('store - 2')
-      expect(spy).toHaveBeenCalledTimes(0)
-      spy.mockRestore()
+
+      externalSetState({ store: store3 })
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 3')
     })
 
     it('should handle subscriptions correctly when there is nested Providers', () => {

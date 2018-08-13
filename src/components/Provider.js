@@ -7,26 +7,19 @@ class Provider extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      value: {
-        state: props.store.getState(),
-        store: props.store
-      }
+      state: props.store.getState(),
+      store: props.store
     }
     this.unsubscribe = null
   }
 
   componentDidMount() {
     this.isUnmounted = false
-    const state = this.state.value.store.getState()
-    this.unsubscribe = this.state.value.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
+    const state = this.state.store.getState()
+    this.unsubscribe = this.state.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
 
-    if (state !== this.state.value.state) {
-      this.setState({
-        value: {
-          state,
-          store: this.state.value.store
-        }
-      })
+    if (state !== this.state.state) {
+      this.setState({ state })
     }
   }
 
@@ -35,16 +28,14 @@ class Provider extends Component {
     if (this.unsubscribe) this.unsubscribe()
   }
 
-  componentDidUpdate(nextProps) {
-    if (nextProps.store !== this.props.store) {
+  componentDidUpdate(lastProps) {
+    if (lastProps.store !== this.props.store) {
       this.setState(() => {
         if (this.unsubscribe) this.unsubscribe()
-        this.unsubscribe = nextProps.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
+        this.unsubscribe = this.props.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
         return {
-          value: {
-            state: nextProps.store.getState(),
-            store: nextProps.store
-          }
+          state: this.props.store.getState(),
+          store: this.props.store
         }
       })
     }
@@ -56,15 +47,13 @@ class Provider extends Component {
     }
 
     this.setState(prevState => {
-      const newState = prevState.value.store.getState()
-      if (prevState.value.state === newState) {
+      const newState = prevState.store.getState()
+      if (prevState.state === newState) {
         return null
       }
       return {
-        value: {
-          ...prevState.value,
-          state: newState
-        }
+        ...prevState,
+        state: newState
       }
     })
   }
@@ -72,7 +61,7 @@ class Provider extends Component {
   render() {
     const Context = this.props.context || ContextProvider
     return (
-      <Context value={this.state.value}>
+      <Context value={this.state}>
         {this.props.children}
       </Context>
     )
