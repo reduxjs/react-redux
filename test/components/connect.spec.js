@@ -1,32 +1,40 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Children, Component } from 'react'
+import React, { Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
-import { createProvider, connect } from '../../src/index.js'
-import { TestRenderer, enzyme } from '../getTestDeps.js'
+import { Provider, connect } from '../../src/index.js'
+import * as rtl from 'react-testing-library'
+import 'jest-dom/extend-expect'
 
 describe('React', () => {
   describe('connect', () => {
+    const propMapper = prop => {
+      switch (typeof prop) {
+        case 'object':
+        case 'boolean':
+          return JSON.stringify(prop)
+        case 'function':
+          if (prop.mine) {
+            return '[my function ' + prop.name + ']'
+          }
+          return '[function ' + prop.name + ']'
+        default:
+          return prop
+      }
+    }
     class Passthrough extends Component {
       render() {
-        return <div />
+        return (
+          <ul>
+            {Object.keys(this.props).map(prop => (
+              <li title="prop" data-testid={prop} key={prop}>{propMapper(this.props[prop])}</li>
+            ))}
+          </ul>
+        )
       }
-    }
-
-    class ProviderMock extends Component {
-      getChildContext() {
-        return { store: this.props.store }
-      }
-
-      render() {
-        return Children.only(this.props.children)
-      }
-    }
-    ProviderMock.childContextTypes = {
-      store: PropTypes.object.isRequired
     }
 
     class ContextBoundStore {
@@ -59,37 +67,23 @@ describe('React', () => {
         : prev
     }
 
-    function imitateHotReloading(TargetClass, SourceClass, container) {
-      // Crude imitation of hot reloading that does the job
-      Object.getOwnPropertyNames(SourceClass.prototype).filter(key =>
-        typeof SourceClass.prototype[key] === 'function'
-      ).forEach(key => {
-        if (key !== 'render' && key !== 'constructor') {
-          TargetClass.prototype[key] = SourceClass.prototype[key]
-        }
-      })
-
-      container.forceUpdate()
-    }
+    afterEach(() => rtl.cleanup())
 
     it('should receive the store in the context', () => {
-      const store = createStore(() => ({}))
+      const store = createStore(() => ({ hi: 'there' }))
 
-      @connect()
+      @connect(state => state)
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
-          <Container pass="through" />
-        </ProviderMock>
-      )
+      const tester = rtl.render(<Provider store={store}>
+        <Container pass="through" />
+      </Provider>)
 
-      const container = testRenderer.find(Container)
-      expect(container.instance().context.store).toBe(store)
+      expect(tester.getByTestId('hi')).toHaveTextContent('there')
     })
 
     it('should pass state and props to the given component', () => {
@@ -99,26 +93,22 @@ describe('React', () => {
         hello: 'world'
       }))
 
-      @connect(({ foo, baz }) => ({ foo, baz }))
+      @connect(({ foo, baz }) => ({ foo, baz }), {})
       class Container extends Component {
         render() {
           return <Passthrough {...this.props} />
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container pass="through" baz={50} />
-        </ProviderMock>
+        </Provider>
       )
-      const stub = testRenderer.find(Passthrough)
-      expect(stub.prop('pass')).toEqual('through')
-      expect(stub.prop('foo')).toEqual('bar')
-      expect(stub.prop('baz')).toEqual(42)
-      expect(stub.prop('hello')).toEqual(undefined)
-      expect(() =>
-        testRenderer.find(Container)
-      ).not.toThrow()
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('baz')).toHaveTextContent('42')
+      expect(tester.queryByTestId('hello')).toBe(null)
     })
 
     it('should subscribe class components to the store changes', () => {
@@ -131,76 +121,71 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
-
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('ab')
+      expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
     it('should subscribe pure function components to the store changes', () => {
       const store = createStore(stringBuilder)
 
-      let Container = connect(
-        state => ({ string: state })
+      const Container = connect(
+        state => ({ string: state }), {}
       )(function Container(props) {
-        return <Passthrough {...props}/>
+        return <Passthrough {...props} />
       })
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
 
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
       store.dispatch({ type: 'APPEND', body: 'b' })
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('ab')
+      expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
     it('should retain the store\'s context', () => {
       const store = new ContextBoundStore(stringBuilder)
 
       let Container = connect(
-        state => ({ string: state })
+        state => ({ string: state }), {}
       )(function Container(props) {
         return <Passthrough {...props}/>
       })
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
 
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
     })
 
     it('should handle dispatches before componentDidMount', () => {
       const store = createStore(stringBuilder)
 
-      @connect(state => ({ string: state }) )
+      @connect(state => ({ string: state }), {})
       class Container extends Component {
         componentDidMount() {
           store.dispatch({ type: 'APPEND', body: 'a' })
@@ -210,15 +195,12 @@ describe('React', () => {
           return <Passthrough {...this.props}/>
         }
       }
-
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
-
-      const stub = testRenderer.find(Passthrough)
-      expect(stub.prop('string')).toBe('a')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
     })
 
     it('should handle additional prop changes in addition to slice', () => {
@@ -226,7 +208,7 @@ describe('React', () => {
         foo: 'bar'
       }))
 
-      @connect(state => state)
+      @connect(state => state, {})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -253,23 +235,23 @@ describe('React', () => {
 
         render() {
           return (
-            <ProviderMock store={store}>
+            <Provider store={store}>
               <ConnectContainer bar={this.state.bar} />
-             </ProviderMock>
+             </Provider>
           )
         }
       }
 
-      const testRenderer = enzyme.mount(<Container />)
-      const stub = testRenderer.find(Passthrough)
-      expect(stub.prop('foo')).toEqual('bar')
-      expect(stub.prop('pass')).toEqual('through')
+      const tester = rtl.render(<Container />)
+
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
     })
 
     it('should handle unexpected prop changes with forceUpdate()', () => {
       const store = createStore(() => ({}))
 
-      @connect(state => state)
+      @connect(state => state, {})
       class ConnectContainer extends Component {
         render() {
           return (
@@ -292,16 +274,16 @@ describe('React', () => {
 
         render() {
           return (
-            <ProviderMock store={store}>
+            <Provider store={store}>
               <ConnectContainer bar={this.bar} ref={c => this.c = c} />
-            </ProviderMock>
+            </Provider>
           )
         }
       }
 
-      const testRenderer = enzyme.mount(<Container />)
-      const stub = testRenderer.find(Passthrough)
-      expect(stub.prop('bar')).toEqual('foo')
+      const tester = rtl.render(<Container />)
+
+      expect(tester.getByTestId('bar')).toHaveTextContent('foo')
     })
 
     it('should remove undefined props', () => {
@@ -326,21 +308,18 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <HolderContainer ref={instance => container = instance} />
-        </ProviderMock>
+        </Provider>
       )
 
-      expect(testRenderer.find(Passthrough).instance().props).toEqual({
-        x: true
-      })
+      expect(tester.getByTestId('x')).toHaveTextContent('true')
 
       props = {}
       container.forceUpdate()
 
-      expect(testRenderer.find(Passthrough).instance().props).toEqual({
-      })
+      expect(tester.queryByTestId('x')).toBe(null)
     })
 
     it('should remove undefined props without mapDispatch', () => {
@@ -365,30 +344,21 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <HolderContainer ref={instance => container = instance} />
-        </ProviderMock>
+        </Provider>
       )
 
-      const propsBefore = {
-        ...testRenderer.find(Passthrough).instance().props
-      }
+      expect(tester.getAllByTitle('prop').length).toBe(2)
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[function dispatch]')
+      expect(tester.getByTestId('x')).toHaveTextContent('true')
 
       props = {}
       container.forceUpdate()
 
-      const propsAfter = {
-        ...testRenderer.find(Passthrough).instance().props
-      }
-
-      expect(propsBefore).toEqual({
-        dispatch: store.dispatch,
-        x: true
-      })
-      expect(propsAfter).toEqual({
-        dispatch: store.dispatch,
-      }, 'x prop must be removed')
+      expect(tester.getAllByTitle('prop').length).toBe(1)
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[function dispatch]')
     })
 
     it('should ignore deep mutations in props', () => {
@@ -426,17 +396,16 @@ describe('React', () => {
 
         render() {
           return (
-            <ProviderMock store={store}>
+            <Provider store={store}>
               <ConnectContainer bar={this.state.bar} />
-            </ProviderMock>
+            </Provider>
           )
         }
       }
 
-      const testRenderer = enzyme.mount(<Container />)
-      const stub = testRenderer.find(Passthrough)
-      expect(stub.prop('foo')).toEqual('bar')
-      expect(stub.prop('pass')).toEqual('')
+      const tester = rtl.render(<Container/>)
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
     })
 
     it('should allow for merge to incorporate state and prop changes', () => {
@@ -449,6 +418,8 @@ describe('React', () => {
         }
       }
 
+      let merged
+      let externalSetState
       @connect(
         state => ({ stateThing: state }),
         dispatch => ({
@@ -457,10 +428,13 @@ describe('React', () => {
         (stateProps, actionProps, parentProps) => ({
           ...stateProps,
           ...actionProps,
-          mergedDoSomething(thing) {
-            const seed = stateProps.stateThing === '' ? 'HELLO ' : ''
-            actionProps.doSomething(seed + thing + parentProps.extra)
-          }
+          mergedDoSomething: (() => {
+            merged = function mergedDoSomething(thing) {
+              const seed = stateProps.stateThing === '' ? 'HELLO ' : ''
+              actionProps.doSomething(seed + thing + parentProps.extra)
+            }
+            return merged
+          })()
         })
       )
       class Container extends Component {
@@ -473,36 +447,35 @@ describe('React', () => {
         constructor() {
           super()
           this.state = { extra: 'z' }
+          externalSetState = this.setState.bind(this)
         }
 
         render() {
           return (
-            <ProviderMock store={store}>
+            <Provider store={store}>
               <Container extra={this.state.extra} />
-            </ProviderMock>
+            </Provider>
           )
         }
       }
 
-      const testRenderer = enzyme.mount(<OuterContainer />)
-      const stub = () => testRenderer.find(Passthrough)
-      expect(stub().prop('stateThing')).toBe('')
-      stub().prop('mergedDoSomething')('a')
-      testRenderer.update()
-      expect(stub().prop('stateThing')).toBe('HELLO az')
-      stub().prop('mergedDoSomething')('b')
-      testRenderer.update()
-      expect(stub().prop('stateThing')).toBe('HELLO azbz')
-      testRenderer.setState({ extra: 'Z' })
-      stub().prop('mergedDoSomething')('c')
-      testRenderer.update()
-      expect(stub().prop('stateThing')).toBe('HELLO azbzcZ')
+      const tester = rtl.render(<OuterContainer/>)
+
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('')
+      merged('a')
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO az')
+      merged('b')
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbz')
+      externalSetState({ extra: 'Z' })
+      merged('c')
+      expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbzcZ')
     })
 
     it('should merge actionProps into WrappedComponent', () => {
       const store = createStore(() => ({
         foo: 'bar'
       }))
+      store.dispatch.mine = 'hi'
 
       @connect(
         state => state,
@@ -514,19 +487,14 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container pass="through" />
-        </ProviderMock>
+        </Provider>
       )
-      const stub = testRenderer.find(Passthrough)
-      expect(stub.prop('dispatch')).toEqual(store.dispatch)
-      expect(stub.prop('foo')).toEqual('bar')
-      expect(() =>
-        testRenderer.find(Container)
-      ).not.toThrow()
-      const decorated = testRenderer.find(Container)
-      expect(decorated.instance().isSubscribed()).toBe(true)
+
+      expect(tester.getByTestId('dispatch')).toHaveTextContent('[my function dispatch]')
+      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
     })
 
     it('should not invoke mapState when props change if it only has one argument', () => {
@@ -566,10 +534,10 @@ describe('React', () => {
       }
 
       let outerComponent
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <OuterComponent ref={c => outerComponent = c} />
-        </ProviderMock>
+        </Provider>
       )
       outerComponent.setFoo('BAR')
       outerComponent.setFoo('DID')
@@ -613,10 +581,10 @@ describe('React', () => {
       }
 
       let outerComponent
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <OuterComponent ref={c => outerComponent = c} />
-        </ProviderMock>
+        </Provider>
       )
       outerComponent.setFoo('BAR')
       outerComponent.setFoo('DID')
@@ -661,10 +629,10 @@ describe('React', () => {
       }
 
       let outerComponent
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <OuterComponent ref={c => outerComponent = c} />
-        </ProviderMock>
+        </Provider>
       )
 
       outerComponent.setFoo('BAR')
@@ -713,10 +681,10 @@ describe('React', () => {
       }
 
       let outerComponent
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <OuterComponent ref={c => outerComponent = c} />
-        </ProviderMock>
+        </Provider>
       )
 
       outerComponent.setFoo('BAR')
@@ -761,10 +729,10 @@ describe('React', () => {
       }
 
       let outerComponent
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <OuterComponent ref={c => outerComponent = c} />
-        </ProviderMock>
+        </Provider>
       )
 
       outerComponent.setFoo('BAR')
@@ -810,10 +778,10 @@ describe('React', () => {
       }
 
       let outerComponent
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <OuterComponent ref={c => outerComponent = c} />
-        </ProviderMock>
+        </Provider>
       )
 
       outerComponent.setFoo('BAR')
@@ -829,6 +797,7 @@ describe('React', () => {
       const store = createStore(() => ({
         foo: 'bar'
       }))
+      store.dispatch.mine = 'hi'
 
       function runCheck(...connectArgs) {
         @connect(...connectArgs)
@@ -838,20 +807,14 @@ describe('React', () => {
           }
         }
 
-        const testRenderer = enzyme.mount(
-          <ProviderMock store={store}>
+        const tester = rtl.render(
+          <Provider store={store}>
             <Container pass="through" />
-          </ProviderMock>
+          </Provider>
         )
-        const stub = testRenderer.find(Passthrough)
-        expect(stub.prop('dispatch')).toEqual(store.dispatch)
-        expect(stub.prop('foo')).toBe(undefined)
-        expect(stub.prop('pass')).toEqual('through')
-        expect(() =>
-          testRenderer.find(Container)
-        ).not.toThrow()
-        const decorated = testRenderer.find(Container)
-        expect(decorated.instance().isSubscribed()).toBe(false)
+        expect(tester.getByTestId('dispatch')).toHaveTextContent('[my function dispatch]')
+        expect(tester.queryByTestId('foo')).toBe(null)
+        expect(tester.getByTestId('pass')).toHaveTextContent('through')
       }
 
       runCheck()
@@ -885,9 +848,9 @@ describe('React', () => {
 
       const div = document.createElement('div')
       ReactDOM.render(
-        <ProviderMock store={store}>
+        <Provider store={store}>
           <Container />
-        </ProviderMock>,
+        </Provider>,
         div
       )
 
@@ -915,9 +878,9 @@ describe('React', () => {
         ReactDOM.unmountComponentAtNode(div)
       )
       ReactDOM.render(
-        <ProviderMock store={store}>
+        <Provider store={store}>
           <Container />
-        </ProviderMock>,
+        </Provider>,
         div
       )
 
@@ -962,9 +925,9 @@ describe('React', () => {
 
       const div = document.createElement('div')
       ReactDOM.render(
-        <ProviderMock store={store}>
+        <Provider store={store}>
           <App />
-        </ProviderMock>,
+        </Provider>,
         div
       )
 
@@ -1037,9 +1000,9 @@ describe('React', () => {
       const div = document.createElement('div')
       document.body.appendChild(div)
       ReactDOM.render(
-        (<ProviderMock store={store}>
+        (<Provider store={store}>
           <RouterMock />
-        </ProviderMock>),
+        </Provider>),
         div
       )
 
@@ -1076,9 +1039,9 @@ describe('React', () => {
 
       const div = document.createElement('div')
       ReactDOM.render(
-        <ProviderMock store={store}>
+        <Provider store={store}>
           <Container />
-        </ProviderMock>,
+        </Provider>,
         div
       )
       expect(mapStateToPropsCalls).toBe(1)
@@ -1108,15 +1071,13 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
-
-      const stub = testRenderer.find(Passthrough)
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(stub.prop('string')).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(spy).toHaveBeenCalledTimes(2)
       store.dispatch({ type: 'APPEND', body: 'b' })
@@ -1128,6 +1089,7 @@ describe('React', () => {
     it('should shallowly compare the merged state to prevent unnecessary updates', () => {
       const store = createStore(stringBuilder)
       const spy = jest.fn(() => ({}))
+      const tree = {}
       function render({ string, pass }) {
         spy()
         return <Passthrough string={string} pass={pass} passVal={pass.val} />
@@ -1152,73 +1114,65 @@ describe('React', () => {
         constructor(props) {
           super(props)
           this.state = { pass: '' }
+          tree.setState = this.setState.bind(this)
         }
 
         render() {
           return (
-            <ProviderMock store={store}>
+            <Provider store={store}>
               <Container pass={this.state.pass} />
-            </ProviderMock>
+            </Provider>
           )
         }
       }
 
-      const testRenderer = enzyme.mount(<Root />)
-      const tree = testRenderer.instance()
+      const tester = rtl.render(<Root />)
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
 
       store.dispatch({ type: 'APPEND', body: 'a' })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(2)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
 
       tree.setState({ pass: '' })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(2)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe('')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('')
 
       tree.setState({ pass: 'through' })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(3)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe('through')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
       tree.setState({ pass: 'through' })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(3)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe('through')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
       const obj = { prop: 'val' }
       tree.setState({ pass: obj })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(4)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe(obj)
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
       tree.setState({ pass: obj })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(4)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe(obj)
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
       const obj2 = Object.assign({}, obj, { val: 'otherval' })
       tree.setState({ pass: obj2 })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(5)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('pass')).toBe(obj2)
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val","val":"otherval"}')
 
       obj2.val = 'mutation'
       tree.setState({ pass: obj2 })
-      testRenderer.update()
       expect(spy).toHaveBeenCalledTimes(5)
-      expect(testRenderer.find(Passthrough).prop('string')).toBe('a')
-      expect(testRenderer.find(Passthrough).prop('passVal')).toBe('otherval')
+      expect(tester.getByTestId('string')).toHaveTextContent('a')
+      expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val","val":"otherval"}')
     })
 
     it('should throw an error if a component is not passed to the function returned by connect', () => {
@@ -1243,231 +1197,120 @@ describe('React', () => {
       function AwesomeMap() { }
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => 1, () => ({}), () => ({}))}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => 'hey', () => ({}), () => ({}))}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => ({}), () => 1, () => ({}))}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => ({}), () => 'hey', () => ({}))}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => ({}), () => ({}), () => 1)}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
+      rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
-        </ProviderMock>
+        </Provider>
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toMatch(
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
       spy.mockRestore()
-    })
-
-    it('should recalculate the state and rebind the actions on hot update', () => {
-      const store = createStore(() => {})
-
-      @connect(
-        null,
-        () => ({ scooby: 'doo' })
-      )
-      class ContainerBefore extends Component {
-        render() {
-          return (
-            <Passthrough {...this.props} />
-          )
-        }
-      }
-
-      @connect(
-        () => ({ foo: 'baz' }),
-        () => ({ scooby: 'foo' })
-      )
-      class ContainerAfter extends Component {
-        render() {
-          return (
-            <Passthrough {...this.props} />
-          )
-        }
-      }
-
-      @connect(
-        () => ({ foo: 'bar' }),
-        () => ({ scooby: 'boo' })
-      )
-      class ContainerNext extends Component {
-        render() {
-          return (
-            <Passthrough {...this.props} />
-          )
-        }
-      }
-
-      let container
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
-          <ContainerBefore ref={instance => container = instance} />
-        </ProviderMock>
-      )
-      expect(testRenderer.find(Passthrough).prop('foo')).toEqual(undefined)
-      expect(testRenderer.find(Passthrough).prop('scooby')).toEqual('doo')
-
-      imitateHotReloading(ContainerBefore, ContainerAfter, container)
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('foo')).toEqual('baz')
-      expect(testRenderer.find(Passthrough).prop('scooby')).toEqual('foo')
-
-      imitateHotReloading(ContainerBefore, ContainerNext, container)
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('foo')).toEqual('bar')
-      expect(testRenderer.find(Passthrough).prop('scooby')).toEqual('boo')
-    })
-
-    it('should persist listeners through hot update', () => {
-      const ACTION_TYPE = "ACTION"
-      const store = createStore((state = {actions: 0}, action) => {
-        switch (action.type) {
-          case ACTION_TYPE: {
-            return {
-              actions: state.actions + 1
-            }
-          }
-          default:
-            return state
-        }
-      })
-
-      @connect(
-        (state) => ({ actions: state.actions })
-      )
-      class Child extends Component {
-        render() {
-          return <Passthrough {...this.props}/>
-        }
-      }
-
-      @connect(
-        () => ({ scooby: 'doo' })
-      )
-      class ParentBefore extends Component {
-        render() {
-          return (
-            <Child />
-          )
-        }
-      }
-
-      @connect(
-        () => ({ scooby: 'boo' })
-      )
-      class ParentAfter extends Component {
-        render() {
-          return (
-            <Child />
-          )
-        }
-      }
-
-      let container
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
-          <ParentBefore ref={instance => container = instance}/>
-        </ProviderMock>
-      )
-
-      imitateHotReloading(ParentBefore, ParentAfter, container)
-
-      store.dispatch({type: ACTION_TYPE})
-      testRenderer.update()
-
-      expect(testRenderer.find(Passthrough).prop('actions')).toEqual(1)
     })
 
     it('should set the displayName correctly', () => {
@@ -1539,6 +1382,8 @@ describe('React', () => {
         }
       }
 
+      const context = React.createContext(null)
+
       let actualState
 
       const expectedState = { foos: {} }
@@ -1553,7 +1398,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      enzyme.mount(<Decorated store={mockStore} />)
+      rtl.render(<Provider context={context.Provider} store={mockStore}><Decorated consumer={context.Consumer} /></Provider>)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1571,7 +1416,7 @@ describe('React', () => {
       const Decorated = decorator(Container)
 
       expect(() =>
-        enzyme.mount(<Decorated />)
+        rtl.render(<Decorated />)
       ).toThrow(
         /Could not find "store"/
       )
@@ -1579,7 +1424,7 @@ describe('React', () => {
       spy.mockRestore()
     })
 
-    it('should throw when trying to access the wrapped instance if withRef is not specified', () => {
+    it('should not throw when trying to access the wrapped instance if withRef is not specified', () => {
       const store = createStore(() => ({}))
 
       class Container extends Component {
@@ -1591,19 +1436,22 @@ describe('React', () => {
       const decorator = connect(state => state)
       const Decorated = decorator(Container)
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
-          <Decorated />
-        </ProviderMock>
-      )
+      class Wrapper extends Component {
+        render() {
+          return (
+            <Decorated ref={'hi'}/>
+          )
+        }
+      }
 
-      const decorated = testRenderer.find(Decorated)
-      expect(() => decorated.instance().getWrappedInstance()).toThrow(
-        /To access the wrapped instance, you need to specify \{ withRef: true \} in the options argument of the connect\(\) call\./
-      )
+      expect(() => rtl.render(
+        <Provider store={store}>
+          <Wrapper />
+        </Provider>
+      )).not.toThrow()
     })
 
-    it('should return the instance of the wrapped component for use in calling child methods', () => {
+    it('should return the instance of the wrapped component for use in calling child methods', async (done) => {
       const store = createStore(() => ({}))
 
       const someData = {
@@ -1616,24 +1464,33 @@ describe('React', () => {
         }
 
         render() {
-          return <Passthrough />
+          return <Passthrough loaded="yes" />
         }
       }
 
-      const decorator = connect(state => state, null, null, { withRef: true })
+      const decorator = connect(state => state, null, null)
       const Decorated = decorator(Container)
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
-          <Decorated />
-        </ProviderMock>
+      const ref = React.createRef()
+
+      class Wrapper extends Component {
+        render() {
+          return (
+            <Decorated ref={ref}/>
+          )
+        }
+      }
+
+      const tester = rtl.render(
+        <Provider store={store}>
+          <Wrapper />
+        </Provider>
       )
 
-      const decorated = testRenderer.find(Decorated)
+      await rtl.waitForElement(() => tester.getByTestId('loaded'))
 
-      expect(() => decorated.someInstanceMethod()).toThrow()
-      expect(decorated.instance().getWrappedInstance().someInstanceMethod()).toBe(someData)
-      expect(decorated.instance().wrappedInstance.someInstanceMethod()).toBe(someData)
+      expect(ref.current.someInstanceMethod()).toBe(someData)
+      done()
     })
 
     it('should wrap impure components without supressing updates', () => {
@@ -1652,10 +1509,12 @@ describe('React', () => {
       const decorator = connect(state => state, null, null, { pure: false })
       const Decorated = decorator(ImpureComponent)
 
+      let externalSetState
       class StatefulWrapper extends Component {
         constructor() {
           super()
           this.state = { value: 0 }
+          externalSetState = this.setState.bind(this)
         }
 
         getChildContext() {
@@ -1673,18 +1532,15 @@ describe('React', () => {
         statefulValue: PropTypes.number
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <StatefulWrapper />
-        </ProviderMock>
+        </Provider>
       )
 
-      const target = testRenderer.find(Passthrough)
-      const wrapper = testRenderer.find(StatefulWrapper).instance()
-      expect(target.prop('statefulValue')).toEqual(0)
-      wrapper.setState({ value: 1 })
-      testRenderer.update()
-      expect(testRenderer.find(Passthrough).prop('statefulValue')).toEqual(1)
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('0')
+      externalSetState({ value: 1 })
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('1')
     })
 
     it('calls mapState and mapDispatch for impure components', () => {
@@ -1713,12 +1569,16 @@ describe('React', () => {
       )
       const Decorated = decorator(ImpureComponent)
 
+      let externalSetState
+      let storeGetter
       class StatefulWrapper extends Component {
         constructor() {
           super()
+          storeGetter = { storeKey: 'foo' }
           this.state = {
-            storeGetter: { storeKey: 'foo' }
+            storeGetter
           }
+          externalSetState = this.setState.bind(this)
         }
         render() {
           return <Decorated storeGetter={this.state.storeGetter} />
@@ -1726,28 +1586,23 @@ describe('React', () => {
       }
 
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <StatefulWrapper />
-        </ProviderMock>
+        </Provider>
       )
 
-      const target = testRenderer.find(Passthrough)
-      const wrapper = testRenderer.find(StatefulWrapper).instance()
+      expect(mapStateSpy).toHaveBeenCalledTimes(1)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
+
+      // Impure update
+      storeGetter.storeKey = 'bar'
+      externalSetState({ storeGetter })
 
       expect(mapStateSpy).toHaveBeenCalledTimes(2)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
-      expect(target.prop('statefulValue')).toEqual('foo')
-
-      // Impure update
-      const storeGetter = wrapper.state.storeGetter
-      storeGetter.storeKey = 'bar'
-      wrapper.setState({ storeGetter })
-      testRenderer.update()
-
-      expect(mapStateSpy).toHaveBeenCalledTimes(3)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
-      expect(testRenderer.find(Passthrough).prop('statefulValue')).toEqual('bar')
+      expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
     it('should pass state consistently to mapState', () => {
@@ -1756,7 +1611,7 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       let childMapStateInvokes = 0
 
-      @connect(state => ({ state }), null, null, { withRef: true })
+      @connect(state => ({ state }), null, null)
       class Container extends Component {
 
         emitChange() {
@@ -1773,10 +1628,12 @@ describe('React', () => {
         }
       }
 
+      const childCalls = []
       @connect((state, parentProps) => {
         childMapStateInvokes++
+        childCalls.push([state, parentProps.parentState])
         // The state from parent props should always be consistent with the current state
-        expect(state).toEqual(parentProps.parentState)
+        //expect(state).toEqual(parentProps.parentState)
         return {}
       })
       class ChildContainer extends Component {
@@ -1785,27 +1642,40 @@ describe('React', () => {
         }
       }
 
-      const testRenderer = enzyme.mount(
-        <ProviderMock store={store}>
+      const tester = rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
 
       expect(childMapStateInvokes).toBe(1)
+      expect(childCalls).toEqual([
+        ['a', 'a']
+      ])
 
       // The store state stays consistent when setState calls are batched
       ReactDOM.unstable_batchedUpdates(() => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
       expect(childMapStateInvokes).toBe(2)
+      expect(childCalls).toEqual([
+        ['a', 'a'],
+        ['ac', 'ac'],
+      ])
 
       // setState calls DOM handlers are batched
-      const button = testRenderer.find('button')
-      button.prop('onClick')()
+      const button = tester.getByText('change')
+      rtl.fireEvent.click(button)
       expect(childMapStateInvokes).toBe(3)
 
       store.dispatch({ type: 'APPEND', body: 'd' })
       expect(childMapStateInvokes).toBe(4)
+      expect(childCalls).toEqual([
+        ['a', 'a'],
+        ['ac', 'ac'],
+        ['acb', 'acb'],
+        ['acbd', 'acbd'],
+      ])
     })
 
     it('should not render the wrapped component when mapState does not produce change', () => {
@@ -1824,10 +1694,10 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
 
       expect(renderCalls).toBe(1)
@@ -1857,16 +1727,16 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
 
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      const spy = jest.spyOn(Container.prototype, 'setState')
+      const spy = jest.spyOn(Provider.prototype, 'setState')
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(2)
@@ -1907,10 +1777,10 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
 
       expect(renderCalls).toBe(1)
@@ -1950,13 +1820,13 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <div>
             <Container name="a" />
             <Container name="b" />
           </div>
-        </ProviderMock>
+        </Provider>
       )
 
       store.dispatch({ type: 'test' })
@@ -1986,12 +1856,12 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <div>
             <Container name="a" />
           </div>
-        </ProviderMock>
+        </Provider>
       )
 
       store.dispatch({ type: 'test' })
@@ -2021,7 +1891,7 @@ describe('React', () => {
         return { ...stateProps, ...dispatchProps, name: parentProps.name }
       }
 
-      @connect(null, mapDispatchFactory, mergeParentDispatch)
+      @connect(() => ({}), mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
         componentDidUpdate() {
           updatedCount++
@@ -2050,10 +1920,10 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
 
       store.dispatch({ type: 'test' })
@@ -2074,10 +1944,10 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <Container />
-        </ProviderMock>
+        </Provider>
       )
 
       expect(renderCalls).toBe(1)
@@ -2110,12 +1980,12 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <Parent>
             <Container />
           </Parent>
-        </ProviderMock>
+        </Provider>
       )
 
       expect(renderCount).toBe(2)
@@ -2157,9 +2027,9 @@ describe('React', () => {
       store.dispatch({ type: 'fetch' })
       const div = document.createElement('div')
       ReactDOM.render(
-        <ProviderMock store={store}>
+        <Provider store={store}>
           <Parent />
-        </ProviderMock>,
+        </Provider>,
         div
       )
 
@@ -2189,10 +2059,10 @@ describe('React', () => {
         }
       }
 
-      enzyme.mount(
-        <ProviderMock store={store}>
+      rtl.render(
+        <Provider store={store}>
           <ImpureComponent />
-        </ProviderMock>
+        </Provider>
       )
 
       const rendersBeforeStateChange = renderCount
@@ -2205,10 +2075,10 @@ describe('React', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       try {
-        enzyme.mount(
-          <ProviderMock store={store}>
+        rtl.render(
+          <Provider store={store}>
             <Component pass="through" />
-          </ProviderMock>
+          </Provider>
         )
         return null
       } catch (error) {
@@ -2266,7 +2136,7 @@ describe('React', () => {
       }
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
-      enzyme.mount(<ProviderMock store={store}><Parent /></ProviderMock>)
+      rtl.render(<Provider store={store}><Parent /></Provider>)
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
       store.dispatch({ type: 'INC' })
@@ -2281,25 +2151,32 @@ describe('React', () => {
       @connect() // no mapStateToProps. therefore it should be transparent for subscriptions
       class B extends React.Component { render() { return <C {...this.props} /> }}
 
+      let calls = []
       @connect((state, props) => {
-        expect(props.count).toBe(state)
+        calls.push([state, props.count])
         return { count: state * 10 + props.count }
       })
       class C extends React.Component { render() { return <div>{this.props.count}</div> }}
 
       const store = createStore((state = 0, action) => (action.type === 'INC' ? state += 1 : state))
-      enzyme.mount(<ProviderMock store={store}><A /></ProviderMock>)
+      rtl.render(<Provider store={store}><A /></Provider>)
 
       store.dispatch({ type: 'INC' })
+
+      expect(calls).toEqual([
+        [0, 0],
+        [1, 1],
+      ])
     })
 
     it('should subscribe properly when a new store is provided via props', () => {
       const store1 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
       const store2 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
+      const customContext = React.createContext()
 
       @connect(state => ({ count: state }))
       class A extends Component {
-        render() { return <B store={store2} /> }
+        render() { return <B consumer={customContext.Consumer} /> }
       }
 
       const mapStateToPropsB = jest.fn(state => ({ count: state }))
@@ -2320,7 +2197,13 @@ describe('React', () => {
         render() { return <div>{this.props.count}</div> }
       }
 
-      enzyme.mount(<ProviderMock store={store1}><A /></ProviderMock>)
+      rtl.render(
+        <Provider store={store1}>
+          <Provider context={customContext.Provider} store={store2}>
+            <A />
+          </Provider>
+        </Provider>
+      )
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
@@ -2350,37 +2233,56 @@ describe('React', () => {
         }
       }
 
-      TestRenderer.create(
+      rtl.render(
         <React.StrictMode>
-          <ProviderMock store={store}>
+          <Provider store={store}>
             <Container />
-          </ProviderMock>
+          </Provider>
         </React.StrictMode>
       )
 
       expect(spy).not.toHaveBeenCalled()
     })
 
-    it('should receive the store in the context using a custom store key', () => {
+    it('should error on receiving a custom store key', () => {
       const store = createStore(() => ({}))
-      const CustomProvider = createProvider('customStoreKey')
+      store.dispatch.mine = 'hi'
       const connectOptions = { storeKey: 'customStoreKey' }
 
-      @connect(undefined, undefined, undefined, connectOptions)
-      class Container extends Component {
-        render() {
-          return <Passthrough {...this.props} />
+
+      expect(() => {
+        @connect(undefined, undefined, undefined, connectOptions)
+        class Container extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
         }
+        new Container()
+      }).toThrow(/storeKey is deprecated/)
+    })
+
+    it('should error on withRef', () => {
+      function Container() {
+        return <div>hi</div>
       }
-
-      const testRenderer = enzyme.mount(
-        <CustomProvider store={store}>
-          <Container />
-        </CustomProvider>
+      expect(() => {
+        connect(undefined, undefined, undefined, { withRef: true })(Container)
+      }).toThrow(
+        'withRef is removed. To access the wrapped instance, simply pass in ref'
       )
+    })
 
-      const container = testRenderer.find(Container)
-      expect(container.instance().store).toBe(store)
+    it('should error on custom store', () => {
+      function Comp() {
+        return <div>hi</div>
+      }
+      const Container = connect()(Comp)
+      function Oops() {
+        return <Container store={'oops'} />
+      }
+      expect(() => {
+        rtl.render(<Oops />)
+      }).toThrow(/passing redux store/)
     })
   })
 })

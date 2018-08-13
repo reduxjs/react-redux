@@ -1,35 +1,11 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, createElement } from 'react'
-import { polyfill } from 'react-lifecycles-compat'
+import React, { Component, PureComponent } from 'react'
+import propTypes from 'prop-types'
+import shallowEqual from 'shallow-equals'
+import { isValidElementType } from 'react-is'
 
-import Subscription from '../utils/Subscription'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
-
-let hotReloadingVersion = 0
-function noop() {}
-function makeUpdater(sourceSelector, store) {
-  return function updater(props, prevState) {
-    try {
-      const nextProps = sourceSelector(store.getState(), props)
-      if (nextProps !== prevState.props || prevState.error) {
-        return {
-          shouldComponentUpdate: true,
-          props: nextProps,
-          error: null,
-        }
-      }
-      return {
-        shouldComponentUpdate: false,
-      }
-    } catch (error) {
-      return {
-        shouldComponentUpdate: true,
-        error,
-      }
-    }
-  }
-}
+import { Consumer } from './Context'
 
 export default function connectAdvanced(
   /*
@@ -67,34 +43,33 @@ export default function connectAdvanced(
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
-    // the key of props/context to get the store
+    // the key of props/context to get the store [**does nothing, use consumer**]
     storeKey = 'store',
 
     // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
     withRef = false,
 
+    // the context consumer to use
+    consumer = Consumer,
+
     // additional options are passed through to the selectorFactory
     ...connectOptions
   } = {}
 ) {
-  const subscriptionKey = storeKey + 'Subscription'
-  const version = hotReloadingVersion++
+  invariant(!withRef,
+    `withRef is removed. To access the wrapped instance, simply pass in ref`
+  )
 
-  const contextTypes = {
-    [storeKey]: storeShape,
-    [subscriptionKey]: subscriptionShape,
-  }
-  const childContextTypes = {
-    [subscriptionKey]: subscriptionShape,
-  }
-
-  function getDerivedStateFromProps(nextProps, prevState) {
-    return prevState.updater(nextProps, prevState)
-  }
+  invariant(storeKey === 'store',
+    'storeKey is deprecated and does not do anything. To use a custom redux store for a single component, ' +
+    'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
+    'and the Consumer to this component as in <Provider context={context.Provider}><' +
+    'ConnectedComponent consumer={context.Consumer} /></Provider>'
+  )
 
   return function wrapWithConnect(WrappedComponent) {
     invariant(
-      typeof WrappedComponent == 'function',
+      isValidElementType(WrappedComponent),
       `You must pass a component to the function returned by ` +
       `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
     )
@@ -104,6 +79,19 @@ export default function connectAdvanced(
       || 'Component'
 
     const displayName = getDisplayName(wrappedComponentName)
+
+    class PureWrapper extends PureComponent {
+      render() {
+        const { forwardRef, ...props } = this.props
+        return <WrappedComponent {...props} ref={forwardRef} />
+      }
+    }
+    PureWrapper.propTypes = {
+      forwardRef: propTypes.oneOfType([
+        propTypes.func,
+        propTypes.object
+      ])
+    }
 
     const selectorFactoryOptions = {
       ...connectOptions,
@@ -119,172 +107,106 @@ export default function connectAdvanced(
     }
 
     class Connect extends Component {
-      constructor(props, context) {
-        super(props, context)
-
-        this.version = version
+      constructor(props) {
+        super(props)
+        invariant(!props[storeKey],
+          'passing redux store in props is deprecated and does not do anything. ' +
+          'To use a custom redux store for a single component, ' +
+          'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
+          'and the Consumer to this component as in <Provider context={context.Provider}><' +
+          wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
+        )
+        this.memoizeDerivedProps = this.makeMemoizer()
+        this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
         this.renderCount = 0
-        this.store = props[storeKey] || context[storeKey]
-        this.propsMode = Boolean(props[storeKey])
-        this.setWrappedInstance = this.setWrappedInstance.bind(this)
+      }
 
-        invariant(this.store,
-          `Could not find "${storeKey}" in either the context or props of ` +
-          `"${displayName}". Either wrap the root component in a <Provider>, ` +
-          `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
-        )
-
-        this.state = {
-          updater: this.createUpdater()
+      makeMemoizer() {
+        let lastProps
+        let lastState
+        let lastDerivedProps
+        let lastStore
+        let sourceSelector
+        let called = false
+        return (state, props, store) => {
+          if (called) {
+            const sameProps = connectOptions.pure && shallowEqual(lastProps, props)
+            const sameState = lastState === state
+            if (sameProps && sameState) {
+              return lastDerivedProps
+            }
+          }
+          if (store !== lastStore) {
+            sourceSelector = selectorFactory(store.dispatch, selectorFactoryOptions)
+          }
+          lastStore = store
+          called = true
+          lastProps = props
+          lastState = state
+          const nextProps = sourceSelector(state, props)
+          if (shallowEqual(lastDerivedProps, nextProps)) {
+            return lastDerivedProps
+          }
+          lastDerivedProps = nextProps
+          return lastDerivedProps
         }
-        this.initSubscription()
-      }
-
-      getChildContext() {
-        // If this component received store from props, its subscription should be transparent
-        // to any descendants receiving store+subscription from context; it passes along
-        // subscription passed to it. Otherwise, it shadows the parent subscription, which allows
-        // Connect to control ordering of notifications to flow top-down.
-        const subscription = this.propsMode ? null : this.subscription
-        return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
-      }
-
-      componentDidMount() {
-        if (!shouldHandleStateChanges) return
-
-        // componentWillMount fires during server side rendering, but componentDidMount and
-        // componentWillUnmount do not. Because of this, trySubscribe happens during ...didMount.
-        // Otherwise, unsubscription would never take place during SSR, causing a memory leak.
-        // To handle the case where a child component may have triggered a state change by
-        // dispatching an action in its componentWillMount, we have to re-run the select and maybe
-        // re-render.
-        this.subscription.trySubscribe()
-        this.runUpdater()
-      }
-
-      shouldComponentUpdate(_, nextState) {
-        return nextState.shouldComponentUpdate
-      }
-
-      componentWillUnmount() {
-        if (this.subscription) this.subscription.tryUnsubscribe()
-        this.subscription = null
-        this.notifyNestedSubs = noop
-        this.store = null
-        this.isUnmounted = true
-      }
-
-      getWrappedInstance() {
-        invariant(withRef,
-          `To access the wrapped instance, you need to specify ` +
-          `{ withRef: true } in the options argument of the ${methodName}() call.`
-        )
-        return this.wrappedInstance
-      }
-
-      setWrappedInstance(ref) {
-        this.wrappedInstance = ref
-      }
-
-      createUpdater() {
-        const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
-        return makeUpdater(sourceSelector, this.store)
-      }
-
-      runUpdater(callback = noop) {
-        if (this.isUnmounted) {
-          return
-        }
-
-        this.setState(prevState => prevState.updater(this.props, prevState), callback)
-      }
-
-      initSubscription() {
-        if (!shouldHandleStateChanges) return
-
-        // parentSub's source should match where store came from: props vs. context. A component
-        // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
-        this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
-
-        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
-        // the middle of the notification loop, where `this.subscription` will then be null. An
-        // extra null check every change can be avoided by copying the method onto `this` and then
-        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
-        // listeners logic is changed to not call listeners that have been unsubscribed in the
-        // middle of the notification loop.
-        this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
-      }
-
-      onStateChange() {
-        this.runUpdater(this.notifyNestedSubs)
-      }
-
-      isSubscribed() {
-        return Boolean(this.subscription) && this.subscription.isSubscribed()
       }
 
       addExtraProps(props) {
-        if (!withRef && !renderCountProp && !(this.propsMode && this.subscription)) return props
+        if (!forwardRef && !renderCountProp) return props
         // make a shallow copy so that fields added don't leak to the original selector.
         // this is especially important for 'ref' since that's a reference back to the component
         // instance. a singleton memoized selector would then be holding a reference to the
         // instance, preventing the instance from being garbage collected, and that would be bad
         const withExtras = { ...props }
-        if (withRef) withExtras.ref = this.setWrappedInstance
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
-        if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription
         return withExtras
       }
 
-      render() {
-        if (this.state.error) {
-          throw this.state.error
-        } else {
-          return createElement(WrappedComponent, this.addExtraProps(this.state.props))
+      renderWrappedComponent(value) {
+        invariant(value,
+          `Could not find "store" in either the context of ` +
+          `"${displayName}". Either wrap the root component in a <Provider>, ` +
+          `or pass a custom React context provider to <Provider> and the corresponding ` +
+          `React context consumer to ${displayName}.`
+        )
+        const { state, store } = value
+        const { forwardRef, ...otherProps } = this.props
+        const derivedProps = this.addExtraProps(this.memoizeDerivedProps(state, otherProps, store))
+        if (connectOptions.pure) {
+          return <PureWrapper {...derivedProps} forwardRef={forwardRef}/>
         }
+        return <WrappedComponent {...derivedProps} ref={forwardRef} />
+      }
+
+      render() {
+        const MyConsumer = this.props.consumer || consumer
+        return (
+          <MyConsumer>
+            {this.renderWrappedComponent}
+          </MyConsumer>
+        )
       }
     }
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
-    Connect.childContextTypes = childContextTypes
-    Connect.contextTypes = contextTypes
-    Connect.propTypes = contextTypes
-    Connect.getDerivedStateFromProps = getDerivedStateFromProps
-
-    if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentDidUpdate = function componentDidUpdate() {
-        // We are hot reloading!
-        if (this.version !== version) {
-          this.version = version
-
-          // If any connected descendants don't hot reload (and resubscribe in the process), their
-          // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
-          // listeners, this does mean that the old versions of connected descendants will still be
-          // notified of state changes; however, their onStateChange function is a no-op so this
-          // isn't a huge deal.
-          let oldListeners = [];
-
-          if (this.subscription) {
-            oldListeners = this.subscription.listeners.get()
-            this.subscription.tryUnsubscribe()
-          }
-          this.initSubscription()
-          if (shouldHandleStateChanges) {
-            this.subscription.trySubscribe()
-            oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
-          }
-
-          const updater = this.createUpdater()
-          this.setState({updater})
-          this.runUpdater()
-        }
-      }
+    Connect.propTypes = {
+      consumer: propTypes.object,
+      forwardRef: propTypes.oneOfType([
+        propTypes.func,
+        propTypes.object
+      ])
     }
 
-    polyfill(Connect)
+    function forwardRef(props, ref) {
+      return <Connect {...props} forwardRef={ref} />
+    }
 
-    return hoistStatics(Connect, WrappedComponent)
+    forwardRef.displayName = Connect.displayName
+    const forwarded = React.forwardRef(forwardRef)
+    forwarded.displayName = Connect.displayName
+    forwarded.WrappedComponent = WrappedComponent
+    return hoistStatics(forwarded, WrappedComponent)
   }
 }
