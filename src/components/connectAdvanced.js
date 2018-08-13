@@ -3,10 +3,9 @@ import invariant from 'invariant'
 import React, { Component, PureComponent } from 'react'
 import * as propTypes from 'prop-types'
 import shallowEqual from 'shallow-equals'
+import { isValidElementType } from 'react-is'
 
 import { Consumer } from './Context'
-
-let hotReloadingVersion = 0
 
 export default function connectAdvanced(
   /*
@@ -57,12 +56,13 @@ export default function connectAdvanced(
     ...connectOptions
   } = {}
 ) {
-  const subscriptionKey = storeKey + 'Subscription'
-  const version = hotReloadingVersion++
+  invariant(!withRef,
+    `withRef is removed. To access the wrapped instance, simply pass in ref`
+  )
 
   return function wrapWithConnect(WrappedComponent) {
     invariant(
-      typeof WrappedComponent == 'function',
+      isValidElementType(WrappedComponent),
       `You must pass a component to the function returned by ` +
       `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
     )
@@ -73,12 +73,12 @@ export default function connectAdvanced(
 
     const displayName = getDisplayName(wrappedComponentName)
 
-    const FinalWrapper = connectOptions.pure ?
-      class PureWrapper extends PureComponent {
-        render() {
-          return <WrappedComponent {...this.props} />
-        }
-      } : WrappedComponent
+    class PureWrapper extends PureComponent {
+      render() {
+        const { forwardRef, ...props } = this.props
+        return <WrappedComponent {...props} ref={forwardRef} />
+      }
+    }
 
     const selectorFactoryOptions = {
       ...connectOptions,
@@ -93,7 +93,7 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
-    class ReduxConsumer extends Component {
+    class Connect extends Component {
       constructor(props) {
         super(props)
         invariant(!props[storeKey],
@@ -104,6 +104,7 @@ export default function connectAdvanced(
         )
         this.memoizedProps = this.makeMemoizer()
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
+        this.renderCount = 0
       }
 
       makeMemoizer() {
@@ -138,15 +139,13 @@ export default function connectAdvanced(
       }
 
       addExtraProps(props) {
-        if (!withRef && !renderCountProp && !(this.propsMode && this.subscription)) return props
+        if (!forwardRef && !renderCountProp) return props
         // make a shallow copy so that fields added don't leak to the original selector.
         // this is especially important for 'ref' since that's a reference back to the component
         // instance. a singleton memoized selector would then be holding a reference to the
         // instance, preventing the instance from being garbage collected, and that would be bad
         const withExtras = { ...props }
-        if (withRef) withExtras.ref = this.setWrappedInstance
         if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
-        if (this.propsMode && this.subscription) withExtras[subscriptionKey] = this.subscription
         return withExtras
       }
 
@@ -158,8 +157,12 @@ export default function connectAdvanced(
           `React context consumer to ${displayName}.`
         )
         const { state, store } = value
-        const derivedProps = this.memoizedProps(state, this.props, store)
-        return <FinalWrapper {...derivedProps} />
+        const { forwardRef, ...otherProps } = this.props
+        const derivedProps = this.addExtraProps(this.memoizedProps(state, otherProps, store))
+        if (connectOptions.pure) {
+          return <PureWrapper {...derivedProps} forwardRef={forwardRef}/>
+        }
+        return <WrappedComponent {...derivedProps} ref={forwardRef} />
       }
 
       render() {
@@ -172,69 +175,24 @@ export default function connectAdvanced(
       }
     }
 
-    class Connect extends Component {
-      constructor(props, context) {
-        super(props, context)
-
-        this.version = version
-        this.renderCount = 0
-        this.propsMode = Boolean(props[storeKey])
-      }
-
-      getWrappedInstance() {
-        invariant(withRef,
-          `To access the wrapped instance, you need to specify ` +
-          `{ withRef: true } in the options argument of the ${methodName}() call.`
-        )
-        return this.wrappedInstance
-      }
-
-      setWrappedInstance(ref) {
-        this.wrappedInstance = ref
-      }
-
-      render() {
-        return (
-          <ReduxConsumer {...this.props} />
-        )
-      }
-    }
-
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
     Connect.propTypes = {
-      context: propTypes.object
+      consumer: propTypes.object,
+      forwardRef: propTypes.oneOfType([
+        propTypes.func,
+        propTypes.object
+      ])
     }
 
-    if (false && process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentDidUpdate = function componentDidUpdate() {
-        // We are hot reloading!
-        if (this.version !== version) {
-          this.version = version
-
-          // If any connected descendants don't hot reload (and resubscribe in the process), their
-          // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
-          // listeners, this does mean that the old versions of connected descendants will still be
-          // notified of state changes; however, their onStateChange function is a no-op so this
-          // isn't a huge deal.
-          let oldListeners = [];
-
-          if (this.subscription) {
-            oldListeners = this.subscription.listeners.get()
-            this.subscription.tryUnsubscribe()
-          }
-          this.initSubscription()
-          if (shouldHandleStateChanges) {
-            this.subscription.trySubscribe()
-            oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
-          }
-
-          this.createSelector()
-          this.triggerUpdateOnStoreStateChange()
-        }
-      }
+    function forwardRef(props, ref) {
+      return <Connect {...props} forwardRef={ref} />
     }
 
-    return hoistStatics(Connect, WrappedComponent)
+    forwardRef.displayName = Connect.displayName
+    const forwarded = React.forwardRef(forwardRef)
+    forwarded.displayName = Connect.displayName
+    forwarded.WrappedComponent = WrappedComponent
+    return hoistStatics(forwarded, WrappedComponent)
   }
 }

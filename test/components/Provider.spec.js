@@ -1,10 +1,8 @@
 /*eslint-disable react/prop-types*/
 
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import semver from 'semver'
 import { createStore } from 'redux'
-import { Provider, createProvider, connect } from '../../src/index.js'
+import { Provider, connect } from '../../src/index.js'
 import { Consumer } from '../../src/components/Context.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
@@ -12,6 +10,7 @@ import 'jest-dom/extend-expect'
 describe('React', () => {
   describe('Provider', () => {
     afterEach(() => rtl.cleanup())
+
     const createChild = (storeKey = 'store') => {
       class Child extends Component {
         render() {
@@ -174,7 +173,7 @@ describe('React', () => {
     store.dispatch({ type: 'APPEND', body: 'a' })
     let childMapStateInvokes = 0
 
-    @connect(state => ({ state }), null, null, { withRef: true })
+    @connect(state => ({ state }), null, null)
     class Container extends Component {
       emitChange() {
         store.dispatch({ type: 'APPEND', body: 'b' })
@@ -183,7 +182,7 @@ describe('React', () => {
       render() {
         return (
           <div>
-            <button ref="button" onClick={this.emitChange.bind(this)}>change</button>
+            <button onClick={this.emitChange.bind(this)}>change</button>
             <ChildContainer parentState={this.props.state} />
           </div>
         )
