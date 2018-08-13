@@ -2244,26 +2244,21 @@ describe('React', () => {
       expect(spy).not.toHaveBeenCalled()
     })
 
-    it('should receive the store in the context using a custom store key', () => {
+    it('should error on receiving a custom store key', () => {
       const store = createStore(() => ({}))
       store.dispatch.mine = 'hi'
-      const CustomProvider = Provider
       const connectOptions = { storeKey: 'customStoreKey' }
 
-      @connect(undefined, undefined, undefined, connectOptions)
-      class Container extends Component {
-        render() {
-          return <Passthrough {...this.props} />
+
+      expect(() => {
+        @connect(undefined, undefined, undefined, connectOptions)
+        class Container extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
         }
-      }
-
-      const tester = rtl.render(
-        <CustomProvider store={store}>
-          <Container />
-        </CustomProvider>
-      )
-
-      expect(tester.getByTestId('dispatch')).toHaveTextContent('[my function dispatch]')
+        new Container()
+      }).toThrow(/storeKey is deprecated/)
     })
 
     it('should error on withRef', () => {
@@ -2275,6 +2270,19 @@ describe('React', () => {
       }).toThrow(
         'withRef is removed. To access the wrapped instance, simply pass in ref'
       )
+    })
+
+    it('should error on custom store', () => {
+      function Comp() {
+        return <div>hi</div>
+      }
+      const Container = connect()(Comp)
+      function Oops(props) {
+        return <Container store={'oops'} />
+      }
+      expect(() => {
+        rtl.render(<Oops />)
+      }).toThrow(/passing redux store/)
     })
   })
 })

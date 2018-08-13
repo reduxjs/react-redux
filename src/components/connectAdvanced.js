@@ -44,7 +44,7 @@ export default function connectAdvanced(
     shouldHandleStateChanges = true,
 
     // the key of props/context to get the store [**does nothing, use consumer**]
-    storeKey = false,
+    storeKey = 'store',
 
     // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
     withRef = false,
@@ -58,6 +58,13 @@ export default function connectAdvanced(
 ) {
   invariant(!withRef,
     `withRef is removed. To access the wrapped instance, simply pass in ref`
+  )
+
+  invariant(storeKey === 'store',
+    'storeKey is deprecated and does not do anything. To use a custom redux store for a single component, ' +
+    'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
+    'and the Consumer to this component as in <Provider context={context.Provider}><' +
+    'ConnectedComponent consumer={context.Consumer} /></Provider>'
   )
 
   return function wrapWithConnect(WrappedComponent) {
@@ -103,7 +110,8 @@ export default function connectAdvanced(
       constructor(props) {
         super(props)
         invariant(!props[storeKey],
-          'storeKey is deprecated and does not do anything. To use a custom redux store for a single component, ' +
+          'passing redux store in props is deprecated and does not do anything. ' +
+          'To use a custom redux store for a single component, ' +
           'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
           'and the Consumer to this component as in <Provider context={context.Provider}><' +
           wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
