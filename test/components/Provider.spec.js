@@ -59,6 +59,7 @@ describe('React', () => {
         </Provider>
       )).not.toThrow(/a single React element child/)
       spy.mockRestore()
+      Provider.propTypes = propTypes
     })
 
     it('should add the store to the child context', () => {

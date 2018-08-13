@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Children, Component } from 'react'
+import React, { Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
@@ -1106,7 +1106,6 @@ describe('React', () => {
       )
       class Container extends Component {
         render() {
-          console.log('Container render', this.props)
           return render(this.props)
         }
       }
@@ -1116,10 +1115,6 @@ describe('React', () => {
           super(props)
           this.state = { pass: '' }
           tree.setState = this.setState.bind(this)
-        }
-
-        shouldComponentUpdate(_, last) {
-          return true
         }
 
         render() {
@@ -1899,11 +1894,9 @@ describe('React', () => {
       @connect(() => ({}), mapDispatchFactory, mergeParentDispatch)
       class Passthrough extends Component {
         componentDidUpdate() {
-          console.log('updated', this.props)
           updatedCount++
         }
         render() {
-          console.log('render', this.props)
           return <div />
         }
       }

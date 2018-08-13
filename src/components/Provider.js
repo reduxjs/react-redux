@@ -37,7 +37,7 @@ class Provider extends Component {
 
   componentDidUpdate(nextProps) {
     if (nextProps.store !== this.props.store) {
-      this.setState(state => {
+      this.setState(() => {
         if (this.unsubscribe) this.unsubscribe()
         this.unsubscribe = nextProps.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
         return {

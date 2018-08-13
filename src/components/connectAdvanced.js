@@ -79,6 +79,12 @@ export default function connectAdvanced(
         return <WrappedComponent {...props} ref={forwardRef} />
       }
     }
+    PureWrapper.propTypes = {
+      forwardRef: propTypes.oneOfType([
+        propTypes.func,
+        propTypes.object
+      ])
+    }
 
     const selectorFactoryOptions = {
       ...connectOptions,
