@@ -2277,7 +2277,7 @@ describe('React', () => {
         return <div>hi</div>
       }
       const Container = connect()(Comp)
-      function Oops(props) {
+      function Oops() {
         return <Container store={'oops'} />
       }
       expect(() => {
