@@ -18,8 +18,13 @@ describe('React', () => {
             <Consumer>
               {(value) => {
                 return (
-                  <div data-testid="store">
-                    {storeKey} - {value && value.store.mine ? value.store.mine : ''}
+                  <div>
+                    <div data-testid="store">
+                      {storeKey} - {value && value.store.mine ? value.store.mine : ''}
+                    </div>
+                    <div data-testid="value">
+                      value: {JSON.stringify(value.state)}
+                    </div>
                   </div>
                 )
               }}
@@ -101,7 +106,7 @@ describe('React', () => {
       store1.mine = '1'
       const store2 = createStore((state = 10) => state * 2)
       store2.mine = '2'
-      const store3 = createStore((state = 10) => state * state)
+      const store3 = createStore((state = 10) => state * state+1)
       store3.mine = '3'
 
       let externalSetState
@@ -123,12 +128,27 @@ describe('React', () => {
 
       const tester = rtl.render(<ProviderContainer />)
       expect(tester.getByTestId('store')).toHaveTextContent('store - 1')
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 11')
+      store1.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 12')
 
       externalSetState({ store: store2 })
       expect(tester.getByTestId('store')).toHaveTextContent('store - 2')
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 20')
+      store1.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 20')
+      store2.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 40')
 
       externalSetState({ store: store3 })
       expect(tester.getByTestId('store')).toHaveTextContent('store - 3')
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 101')
+      store1.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 101')
+      store2.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 101')
+      store3.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('value')).toHaveTextContent('value: 10202')
     })
 
     it('should handle subscriptions correctly when there is nested Providers', () => {
