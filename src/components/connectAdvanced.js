@@ -116,7 +116,7 @@ export default function connectAdvanced(
           'and the Consumer to this component as in <Provider context={context.Provider}><' +
           wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
         )
-        this.memoizedProps = this.makeMemoizer()
+        this.memoizeDerivedProps = this.makeMemoizer()
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
         this.renderCount = 0
       }
@@ -172,7 +172,7 @@ export default function connectAdvanced(
         )
         const { state, store } = value
         const { forwardRef, ...otherProps } = this.props
-        const derivedProps = this.addExtraProps(this.memoizedProps(state, otherProps, store))
+        const derivedProps = this.addExtraProps(this.memoizeDerivedProps(state, otherProps, store))
         if (connectOptions.pure) {
           return <PureWrapper {...derivedProps} forwardRef={forwardRef}/>
         }
