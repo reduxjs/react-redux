@@ -25,7 +25,12 @@ const config = {
     replace({
       'process.env.NODE_ENV': JSON.stringify(env)
     }),
-    commonjs()
+    commonjs({
+      namedExports: {
+        'node_modules/react-is/index.js': ['isValidElementType'],
+        'node_modules/prop-types/index.js': ['oneOfType', 'func', 'object']
+      }
+    })
   ]
 }
 
