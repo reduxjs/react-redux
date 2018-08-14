@@ -20,7 +20,7 @@ describe('React', () => {
                 return (
                   <div>
                     <div data-testid="store">
-                      {storeKey} - {value && value.store.mine ? value.store.mine : ''}
+                      {storeKey} - {value && value.store ? value.store.getState().mine : ''}
                     </div>
                     <div data-testid="value">
                       value: {JSON.stringify(value.state)}
@@ -68,8 +68,7 @@ describe('React', () => {
     })
 
     it('should add the store to the child context', () => {
-      const store = createStore(() => ({}))
-      store.mine = 'hi'
+      const store = createStore(() => ({ mine: 'hi'}))
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const tester = rtl.render(
@@ -84,8 +83,7 @@ describe('React', () => {
     })
 
     it('should add the store to the child context using a custom store key', () => {
-      const store = createStore(() => ({}))
-      store.mine = 'hi'
+      const store = createStore(() => ({ mine: 'hi' }))
       const CustomProvider = Provider;
       const CustomChild = createChild('customStoreKey');
 
@@ -103,11 +101,8 @@ describe('React', () => {
 
     it('accepts new store in props', () => {
       const store1 = createStore((state = 10) => state + 1)
-      store1.mine = '1'
       const store2 = createStore((state = 10) => state * 2)
-      store2.mine = '2'
       const store3 = createStore((state = 10) => state * state+1)
-      store3.mine = '3'
 
       let externalSetState
       class ProviderContainer extends Component {
@@ -127,13 +122,11 @@ describe('React', () => {
       }
 
       const tester = rtl.render(<ProviderContainer />)
-      expect(tester.getByTestId('store')).toHaveTextContent('store - 1')
       expect(tester.getByTestId('value')).toHaveTextContent('value: 11')
       store1.dispatch({ type: 'hi' })
       expect(tester.getByTestId('value')).toHaveTextContent('value: 12')
 
       externalSetState({ store: store2 })
-      expect(tester.getByTestId('store')).toHaveTextContent('store - 2')
       expect(tester.getByTestId('value')).toHaveTextContent('value: 20')
       store1.dispatch({ type: 'hi' })
       expect(tester.getByTestId('value')).toHaveTextContent('value: 20')
@@ -141,7 +134,6 @@ describe('React', () => {
       expect(tester.getByTestId('value')).toHaveTextContent('value: 40')
 
       externalSetState({ store: store3 })
-      expect(tester.getByTestId('store')).toHaveTextContent('store - 3')
       expect(tester.getByTestId('value')).toHaveTextContent('value: 101')
       store1.dispatch({ type: 'hi' })
       expect(tester.getByTestId('value')).toHaveTextContent('value: 101')
