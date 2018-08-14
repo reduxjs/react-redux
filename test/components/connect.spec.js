@@ -1766,7 +1766,7 @@ describe('React', () => {
         render() {
           return (
             <div>
-              <button ref="button" onClick={this.emitChange.bind(this)}>change</button>
+              <button onClick={this.emitChange.bind(this)}>change</button>
               <ChildContainer parentState={this.props.state} />
             </div>
           )
