@@ -11,3 +11,4 @@ test/**/lcov-report
 test/react/*/test/**/*.spec.js
 test/react/**/src
 lcov.info
+wallaby.js
