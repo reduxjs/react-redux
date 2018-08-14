@@ -238,7 +238,8 @@ describe('React', () => {
     expect(childMapStateInvokes).toBe(4)
   })
 
-  it('works in <StrictMode> without warnings (React 16.3+)', () => {
+
+  it.skip('works in <StrictMode> without warnings (React 16.3+)', () => {
     if (!React.StrictMode) {
       return
     }
@@ -255,4 +256,5 @@ describe('React', () => {
 
     expect(spy).not.toHaveBeenCalled()
   })
+
 })
