@@ -3,10 +3,6 @@ node_js:
   - "10"
 env:
   matrix:
-  - REACT=0.14
-  - REACT=15
-  - REACT=16.2
-  - REACT=16.3
   - REACT=16.4
   - REACT=16.5
   - REACT=16.6
