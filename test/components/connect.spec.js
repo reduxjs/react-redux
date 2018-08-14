@@ -2260,10 +2260,7 @@ describe('React', () => {
     })
 
     it('should error on receiving a custom store key', () => {
-      const store = createStore(() => ({}))
-      store.dispatch.mine = 'hi'
       const connectOptions = { storeKey: 'customStoreKey' }
-
 
       expect(() => {
         @connect(undefined, undefined, undefined, connectOptions)
@@ -2298,6 +2295,24 @@ describe('React', () => {
       expect(() => {
         rtl.render(<Oops />)
       }).toThrow(/passing redux store/)
+    })
+
+    it('should add a renderCount prop if specified in connect options', () => {
+      let value = 0
+      const store = createStore(() => ({ value: value++}))
+      function Comp(props) {
+        console.log(props)
+        return <div>{props.count}</div>
+      }
+      const Container = connect(undefined,undefined,undefined,{ renderCountProp: 'count' })(Comp)
+      const tester = rtl.render(
+        <ProviderMock store={store}>
+          <Container/>
+        </ProviderMock>
+      )
+      expect(tester.queryByText('0')).not.toBe(null)
+      store.dispatch({ type: 'hi' })
+      expect(tester.queryByText('1')).not.toBe(null)
     })
   })
 })

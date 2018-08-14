@@ -164,7 +164,7 @@ export default function connectAdvanced(
         let derivedProps = this.memoizeDerivedProps(state, otherProps, store)
 
         if (renderCountProp) {
-          derivedProps = { ...derivedProps, renderCountProp: this.renderCount++ }
+          derivedProps = { ...derivedProps, [renderCountProp]: this.renderCount++ }
         }
         if (connectOptions.pure) {
           return <PureWrapper {...derivedProps} forwardRef={forwardRef}/>
