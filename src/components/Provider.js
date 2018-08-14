@@ -29,13 +29,11 @@ class Provider extends Component {
 
   componentDidUpdate(lastProps) {
     if (lastProps.store !== this.props.store) {
-      this.setState(() => {
-        if (this.unsubscribe) this.unsubscribe()
-        this.unsubscribe = this.props.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
-        return {
-          state: this.props.store.getState(),
-          store: this.props.store
-        }
+      if (this.unsubscribe) this.unsubscribe()
+      this.unsubscribe = this.props.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
+      this.setState({
+        state: this.props.store.getState(),
+        store: this.props.store
       })
     }
   }
@@ -51,7 +49,6 @@ class Provider extends Component {
         return null
       }
       return {
-        ...prevState,
         state: newState
       }
     })

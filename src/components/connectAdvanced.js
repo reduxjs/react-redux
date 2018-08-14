@@ -137,9 +137,9 @@ export default function connectAdvanced(
             }
           }
           if (store !== lastStore) {
+            lastStore = store
             sourceSelector = selectorFactory(store.dispatch, selectorFactoryOptions)
           }
-          lastStore = store
           called = true
           lastProps = props
           lastState = state
@@ -152,17 +152,6 @@ export default function connectAdvanced(
         }
       }
 
-      addExtraProps(props) {
-        if (!forwardRef && !renderCountProp) return props
-        // make a shallow copy so that fields added don't leak to the original selector.
-        // this is especially important for 'ref' since that's a reference back to the component
-        // instance. a singleton memoized selector would then be holding a reference to the
-        // instance, preventing the instance from being garbage collected, and that would be bad
-        const withExtras = { ...props }
-        if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
-        return withExtras
-      }
-
       renderWrappedComponent(value) {
         invariant(value,
           `Could not find "store" in either the context of ` +
@@ -172,7 +161,11 @@ export default function connectAdvanced(
         )
         const { state, store } = value
         const { forwardRef, ...otherProps } = this.props
-        const derivedProps = this.addExtraProps(this.memoizeDerivedProps(state, otherProps, store))
+        let derivedProps = this.memoizeDerivedProps(state, otherProps, store)
+
+        if (renderCountProp) {
+          derivedProps = { ...derivedProps, renderCountProp: this.renderCount++ }
+        }
         if (connectOptions.pure) {
           return <PureWrapper {...derivedProps} forwardRef={forwardRef}/>
         }
