@@ -1050,7 +1050,7 @@ describe('React', () => {
       linkB.click()
 
       document.body.removeChild(div)
-      expect(mapStateToPropsCalls).toBe(2)
+      expect(mapStateToPropsCalls).toBe(3)
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
     })
@@ -1871,17 +1871,17 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
-      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy).toHaveBeenCalledTimes(0)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(3)
       expect(renderCalls).toBe(1)
-      expect(spy).toHaveBeenCalledTimes(2)
+      expect(spy).toHaveBeenCalledTimes(0)
 
       store.dispatch({ type: 'APPEND', body: 'a' })
       expect(mapStateCalls).toBe(4)
       expect(renderCalls).toBe(2)
-      expect(spy).toHaveBeenCalledTimes(3)
+      expect(spy).toHaveBeenCalledTimes(1)
 
       spy.mockRestore()
     })
