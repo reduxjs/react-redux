@@ -112,6 +112,9 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
+    // TODO Actually fix our use of componentWillReceiveProps
+    /* eslint-disable react/no-deprecated */
+
     class Connect extends Component {
       constructor(props, context) {
         super(props, context)
@@ -257,6 +260,8 @@ export default function connectAdvanced(
         }
       }
     }
+
+    /* eslint-enable react/no-deprecated */
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
