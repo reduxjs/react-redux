@@ -2286,7 +2286,6 @@ describe('React', () => {
       let value = 0
       const store = createStore(() => ({ value: value++}))
       function Comp(props) {
-        console.log(props)
         return <div>{props.count}</div>
       }
       const Container = connect(undefined,undefined,undefined,{ renderCountProp: 'count' })(Comp)
