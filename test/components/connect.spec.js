@@ -504,7 +504,7 @@ describe('React', () => {
 
       @connect(
         state => state,
-        dispatch => ({ exampleActionCreator })
+        () => ({ exampleActionCreator })
       )
       class Container extends Component {
         render() {
