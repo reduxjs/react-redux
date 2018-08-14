@@ -35,7 +35,7 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
   if (!existsSync(join(__dirname, 'react', version, 'src'))) {
     mkdirSync(join(__dirname, 'react', version, 'src'))
   }
-  
+
   console.log('Copying test files')
   tests.forEach((dir, i) => {
     if (existsSync(dest[i])) {
