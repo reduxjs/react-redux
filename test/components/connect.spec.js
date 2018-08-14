@@ -8,7 +8,6 @@ import { createStore } from 'redux'
 import { createProvider, connect } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
-import { TestRenderer, enzyme } from '../getTestDeps.js'
 
 describe('React', () => {
   describe('connect', () => {

@@ -27,12 +27,15 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
     join(__dirname, 'react', version, 'src', 'connect'),
     join(__dirname, 'react', version, 'src', 'utils'),
   ]
+
+  if (!existsSync(join(__dirname, 'react', version, 'test'))) {
+    throw new Error(`react version ${version}'s "test" directory is missing, cannot run tests`)
+  }
+
   if (!existsSync(join(__dirname, 'react', version, 'src'))) {
     mkdirSync(join(__dirname, 'react', version, 'src'))
   }
-  if (!existsSync(join(__dirname, 'react', version))) {
-    throw new Error(`getTestDeps.js is missing from react version ${version}'s "test" directory, cannot run tests`)
-  }
+  
   console.log('Copying test files')
   tests.forEach((dir, i) => {
     if (existsSync(dest[i])) {

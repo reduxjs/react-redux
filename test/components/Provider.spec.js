@@ -7,7 +7,6 @@ import { createStore } from 'redux'
 import { Provider, createProvider, connect } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
-import { TestRenderer, enzyme } from '../getTestDeps.js'
 
 const createExampleTextReducer = () => (state = "example text") => state;
 
