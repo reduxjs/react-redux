@@ -43,11 +43,6 @@
         "external-helpers",
         ["transform-react-remove-prop-types", { "removeImport": true }]
       ]
-    },
-    "production": {
-      "plugins": [
-        ["transform-react-remove-prop-types", { "removeImport": true }]
-      ]
     }
   }
 }
