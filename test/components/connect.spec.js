@@ -284,13 +284,12 @@ describe('React', () => {
         componentDidMount() {
           this.bar = 'foo'
           this.forceUpdate()
-          this.c.forceUpdate()
         }
 
         render() {
           return (
             <ProviderMock store={store}>
-              <ConnectContainer bar={this.bar} ref={c => this.c = c} />
+              <ConnectContainer bar={this.bar} />
             </ProviderMock>
           )
         }
@@ -1350,7 +1349,7 @@ describe('React', () => {
       expect(tester.getByTestId('scooby')).toHaveTextContent('boo')
     })
 
-    it('should persist listeners through hot update', () => {
+    it.skip('should persist listeners through hot update', () => {
       const ACTION_TYPE = "ACTION"
       const store = createStore((state = {actions: 0}, action) => {
         switch (action.type) {
@@ -1471,12 +1470,14 @@ describe('React', () => {
       expect(decorated.foo).toBe('bar')
     })
 
-    it.skip('should use the store from the props instead of from the context if present', () => {
+    it('should use a custom context provider and consumer if present', () => {
       class Container extends Component {
         render() {
           return <Passthrough />
         }
       }
+
+      const context = React.createContext(null)
 
       let actualState
 
@@ -1492,7 +1493,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      rtl.render(<Decorated store={mockStore} />)
+      rtl.render(<ProviderMock contextProvider={context.Provider} store={mockStore}><Decorated consumer={context.Consumer} /></ProviderMock>)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1554,7 +1555,7 @@ describe('React', () => {
 
     })
 
-    it.skip('should return the instance of the wrapped component for use in calling child methods', async (done) => {
+    it('should return the instance of the wrapped component for use in calling child methods', async (done) => {
       const store = createStore(() => ({}))
 
       const someData = {
@@ -1571,17 +1572,15 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state, null, null, { withRef: true })
+      const decorator = connect(state => state)
       const Decorated = decorator(Container)
 
-      let ref
+      const ref = React.createRef()
+
       class Wrapper extends Component {
         render() {
           return (
-            <Decorated ref={comp => {
-              if (!comp) return
-              ref = comp.getWrappedInstance()
-            }}/>
+            <Decorated ref={ref}/>
           )
         }
       }
@@ -1594,7 +1593,7 @@ describe('React', () => {
 
       await rtl.waitForElement(() => tester.getByTestId('loaded'))
 
-      expect(ref.someInstanceMethod()).toBe(someData)
+      expect(ref.current.someInstanceMethod()).toBe(someData)
       done()
     })
 
@@ -1717,7 +1716,7 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       let childMapStateInvokes = 0
 
-      @connect(state => ({ state }), null, null, { withRef: true })
+      @connect(state => ({ state }))
       class Container extends Component {
 
         emitChange() {
@@ -2292,7 +2291,7 @@ describe('React', () => {
     })
 
 
-    it.skip('works in <StrictMode> without warnings (React 16.3+)', () => {
+    it('works in <StrictMode> without warnings (React 16.3+)', () => {
       if (!React.StrictMode) {
         return
       }

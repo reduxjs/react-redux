@@ -19,14 +19,11 @@ describe('React', () => {
       class Child extends Component {
         render() {
           return (
-            <div data-testid="store">
               <ReactReduxContext.Consumer>
                 {({storeState}) => {
-                  return `${storeKey} - ${storeState}`
+                  return  <div data-testid="store">{`${storeKey} - ${storeState}`}</div>
                 }}
               </ReactReduxContext.Consumer>
-
-            </div>
           )
         }
       }
@@ -35,53 +32,34 @@ describe('React', () => {
     }
     const Child = createChild();
 
-    it('should enforce a single child', () => {
+    it('should not enforce a single child', () => {
       const store = createStore(() => ({}))
 
-      // Ignore propTypes warnings
+      // Ignore propTypes warning data-
       const propTypes = Provider.propTypes
       Provider.propTypes = {}
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-      try {
-        expect(() => rtl.render(
-          <Provider store={store}>
-            <div />
-          </Provider>
-        )).not.toThrow()
+      expect(() => rtl.render(
+        <Provider store={store}>
+          <div />
+        </Provider>
+      )).not.toThrow()
 
-        if (semver.lt(React.version, '15.0.0')) {
-          expect(() => rtl.render(
-            <Provider store={store}>
-            </Provider>
-          )).toThrow(/children with exactly one child/)
-        } else {
-          expect(() => rtl.render(
-            <Provider store={store}>
-            </Provider>
-          )).toThrow(/a single React element child/)
-        }
+      expect(() => rtl.render(
+        <Provider store={store}>
+        </Provider>
+      )).not.toThrow(/children with exactly one child/)
 
-        if (semver.lt(React.version, '15.0.0')) {
-          expect(() => rtl.render(
-            <Provider store={store}>
-              <div />
-              <div />
-            </Provider>
-          )).toThrow(/children with exactly one child/)
-        } else {
-          expect(() => rtl.render(
-            <Provider store={store}>
-              <div />
-              <div />
-            </Provider>
-          )).toThrow(/a single React element child/)
-        }
-      } finally {
-        Provider.propTypes = propTypes
-        spy.mockRestore()
-      }
+      expect(() => rtl.render(
+        <Provider store={store}>
+          <div />
+          <div />
+        </Provider>
+      )).not.toThrow(/a single React element child/)
+      spy.mockRestore()
+      Provider.propTypes = propTypes
     })
 
     it('should add the store state to context', () => {
@@ -100,10 +78,10 @@ describe('React', () => {
     })
 
 
-    it('should warn once when receiving a new store in props', () => {
+    it('accepts new store in props', () => {
       const store1 = createStore((state = 10) => state + 1)
       const store2 = createStore((state = 10) => state * 2)
-      const store3 = createStore((state = 10) => state * state)
+      const store3 = createStore((state = 10) => state * state+1)
 
       let externalSetState
       class ProviderContainer extends Component {
@@ -112,6 +90,7 @@ describe('React', () => {
           this.state = { store: store1 }
           externalSetState = this.setState.bind(this)
         }
+
         render() {
           return (
             <Provider store={this.state.store}>
@@ -123,27 +102,24 @@ describe('React', () => {
 
       const tester = rtl.render(<ProviderContainer />)
       expect(tester.getByTestId('store')).toHaveTextContent('store - 11')
+      store1.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 12')
 
-      let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       externalSetState({ store: store2 })
-      
-      expect(tester.getByTestId('store')).toHaveTextContent('store - 11')
-      expect(spy).toHaveBeenCalledTimes(1)
-      expect(spy.mock.calls[0][0]).toBe(
-        '<Provider> does not support changing `store` on the fly. ' +
-        'It is most likely that you see this error because you updated to ' +
-        'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
-        'automatically. See https://github.com/reduxjs/react-redux/releases/' +
-        'tag/v2.0.0 for the migration instructions.'
-      )
-      spy.mockRestore()
-      
-      spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 20')
+      store1.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 20')
+      store2.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 40')
+
       externalSetState({ store: store3 })
-      
-      expect(tester.getByTestId('store')).toHaveTextContent('store - 11')
-      expect(spy).toHaveBeenCalledTimes(0)
-      spy.mockRestore()
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 101')
+      store1.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 101')
+      store2.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 101')
+      store3.dispatch({ type: 'hi' })
+      expect(tester.getByTestId('store')).toHaveTextContent('store - 10202')
     })
 
     it('should handle subscriptions correctly when there is nested Providers', () => {
@@ -182,7 +158,7 @@ describe('React', () => {
       store.dispatch({ type: 'APPEND', body: 'a' })
       let childMapStateInvokes = 0
 
-      @connect(state => ({ state }), null, null, { withRef: true })
+      @connect(state => ({ state }))
       class Container extends Component {
         emitChange() {
           store.dispatch({ type: 'APPEND', body: 'b' })
@@ -198,10 +174,11 @@ describe('React', () => {
         }
       }
 
+      const childCalls = []
       @connect((state, parentProps) => {
         childMapStateInvokes++
+        childCalls.push([state, parentProps.parentState])
         // The state from parent props should always be consistent with the current state
-        expect(state).toEqual(parentProps.parentState)
         return {}
       })
       class ChildContainer extends Component {
@@ -221,6 +198,10 @@ describe('React', () => {
       // The store state stays consistent when setState calls are batched
       store.dispatch({ type: 'APPEND', body: 'c' })
       expect(childMapStateInvokes).toBe(2)
+      expect(childCalls).toEqual([
+        ['a',  'a'],
+        ['ac', 'ac']
+      ])
 
       // setState calls DOM handlers are batched
       const button = tester.getByText('change')
@@ -229,11 +210,17 @@ describe('React', () => {
 
       // Provider uses unstable_batchedUpdates() under the hood
       store.dispatch({ type: 'APPEND', body: 'd' })
+      expect(childCalls).toEqual([
+        ['a',  'a'],
+        ['ac', 'ac'], // then store update is processed
+        ['acb', 'acb'], // then store update is processed
+        ['acbd', 'acbd'], // then store update is processed
+      ])
       expect(childMapStateInvokes).toBe(4)
     })
 
 
-    it.skip('works in <StrictMode> without warnings (React 16.3+)', () => {
+    it('works in <StrictMode> without warnings (React 16.3+)', () => {
       if (!React.StrictMode) {
         return
       }
