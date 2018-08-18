@@ -2270,7 +2270,7 @@ describe('React', () => {
           }
         }
         new Container()
-      }).toThrow(/storeKey is deprecated/)
+      }).toThrow(/storeKey has been removed/)
     })
 
     it('should error on withRef', () => {
@@ -2294,7 +2294,7 @@ describe('React', () => {
       }
       expect(() => {
         rtl.render(<Oops />)
-      }).toThrow(/passing redux store/)
+      }).toThrow(/Passing redux store/)
     })
 
     it('should add a renderCount prop if specified in connect options', () => {

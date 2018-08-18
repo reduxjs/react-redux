@@ -3,9 +3,11 @@
 import React, { Component } from 'react'
 import { createStore } from 'redux'
 import { Provider, connect } from '../../src/index.js'
-import { Consumer } from '../../src/components/Context.js'
+import Context from '../../src/components/Context.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
+
+const Consumer = Context.Consumer
 
 describe('React', () => {
   describe('Provider', () => {

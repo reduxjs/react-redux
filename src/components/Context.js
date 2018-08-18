@@ -1,5 +1,5 @@
 import React from 'react'
 
-const { Provider, Consumer } = React.createContext(null)
+const Context = React.createContext(null)
 
-export { Provider, Consumer }
+export default Context
