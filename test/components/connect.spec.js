@@ -1,11 +1,11 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Children, Component } from 'react'
+import React, { Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
-import { createProvider, connect, Provider } from '../../src/index.js'
+import { connect, Provider } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 

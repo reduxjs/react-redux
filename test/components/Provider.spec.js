@@ -1,10 +1,9 @@
 /*eslint-disable react/prop-types*/
 
 import React, { Component } from 'react'
-import PropTypes from 'prop-types'
 import semver from 'semver'
 import { createStore } from 'redux'
-import { Provider, createProvider, connect } from '../../src/index.js'
+import { Provider, connect } from '../../src/index.js'
 import {ReactReduxContext} from "../../src/components/context"
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
@@ -88,9 +87,7 @@ describe('React', () => {
     it('should add the store state to context', () => {
       const store = createStore(createExampleTextReducer())
 
-      const spy = jest.spyOn(console, 'error').mockImplementation((e) => {
-        const q = 42;
-      })
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const tester = rtl.render(
         <Provider store={store}>
           <Child />

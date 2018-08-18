@@ -21,7 +21,7 @@ function warnAboutReceivingStore() {
   )
 }
 
-export function createProvider(storeKey = 'store') {
+export function createProvider() {
 
     class Provider extends Component {
 

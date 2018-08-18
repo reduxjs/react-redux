@@ -1,8 +1,10 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, { Component, PureComponent, createElement } from 'react'
+import PropTypes from 'prop-types'
+import React, { Component, PureComponent } from 'react'
 
 import {ReactReduxContext} from "./context";
+import {storeShape} from "../utils/PropTypes"
 
 let hotReloadingVersion = 0
 
@@ -43,9 +45,6 @@ export default function connectAdvanced(
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
-    // the key of props/context to get the store
-    storeKey = 'store',
-
     // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
     withRef = false,
 
@@ -75,7 +74,6 @@ export default function connectAdvanced(
       methodName,
       renderCountProp,
       shouldHandleStateChanges,
-      storeKey,
       withRef,
       displayName,
       wrappedComponentName,
@@ -86,6 +84,11 @@ export default function connectAdvanced(
     const OuterBaseComponent = connectOptions.pure ? PureComponent : Component;
 
     class ConnectInner extends Component {
+      static propTypes = {
+        wrapperProps : PropTypes.object,
+        store : storeShape,
+      };
+
       constructor(props) {
         super(props);
 
@@ -133,10 +136,7 @@ export default function connectAdvanced(
 
       shouldComponentUpdate(nextProps, nextState) {
         const childPropsChanged = nextState.childProps !== this.state.childProps;
-        const storeStateChanged = nextProps.storeState !== this.props.storeState;
         const hasError = !!nextState.error;
-
-        let wrapperPropsChanged = false;
 
         const shouldUpdate = childPropsChanged || hasError;
         return shouldUpdate;
@@ -155,6 +155,8 @@ export default function connectAdvanced(
     class Connect extends OuterBaseComponent {
       constructor(props) {
         super(props)
+
+        this.version = version
 
         this.renderInner = this.renderInner.bind(this);
       }
