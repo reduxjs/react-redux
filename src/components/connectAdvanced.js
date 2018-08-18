@@ -2,8 +2,9 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import PropTypes from 'prop-types'
 import React, { Component, PureComponent } from 'react'
+import { isValidElementType } from 'react-is'
 
-import {ReactReduxContext} from "./context";
+import {ReactReduxContext} from "./context"
 import {storeShape} from "../utils/PropTypes"
 
 let hotReloadingVersion = 0
@@ -38,26 +39,41 @@ export default function connectAdvanced(
     // probably overridden by wrapper functions such as connect()
     methodName = 'connectAdvanced',
 
-    // if defined, the name of the property passed to the wrapped element indicating the number of
-    // calls to render. useful for watching in react devtools for unnecessary re-renders.
-    renderCountProp = undefined,
-
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
-    // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
+
+    // the context consumer to use
+    consumer = ReactReduxContext.Consumer,
+
+    // REMOVED: the key of props/context to get the store
+    storeKey = 'store',
+
+    // REMOVED: expose the wrapped component via refs
     withRef = false,
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
   } = {}
 ) {
+  invariant(!withRef,
+    "withRef is removed. To access the wrapped instance, use a ref on the connected component"
+  )
+
+  invariant(storeKey === 'store',
+    'storeKey has been removed. To use a custom redux store for a single component, ' +
+    'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
+    'and the Consumer to this component as in <Provider context={context.Provider}><' +
+    'ConnectedComponent consumer={context.Consumer} /></Provider>'
+  )
+
+
   const version = hotReloadingVersion++
 
 
   return function wrapWithConnect(WrappedComponent) {
     invariant(
-      typeof WrappedComponent === 'function',
+      isValidElementType(WrappedComponent),
       `You must pass a component to the function returned by ` +
       `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
     )
@@ -72,32 +88,28 @@ export default function connectAdvanced(
       ...connectOptions,
       getDisplayName,
       methodName,
-      renderCountProp,
       shouldHandleStateChanges,
-      withRef,
       displayName,
       wrappedComponentName,
       WrappedComponent
     }
 
 
-    const OuterBaseComponent = connectOptions.pure ? PureComponent : Component;
+    const OuterBaseComponent = connectOptions.pure ? PureComponent : Component
+
+    function createChildSelector(store) {
+      return selectorFactory(store.dispatch, selectorFactoryOptions)
+    }
 
     class ConnectInner extends Component {
-      static propTypes = {
-        wrapperProps : PropTypes.object,
-        store : storeShape,
-      };
-
       constructor(props) {
-        super(props);
+        super(props)
 
         this.state = {
           wrapperProps : props.wrapperProps,
-          renderCount : 0,
           store : props.store,
           error : null,
-          childPropsSelector : this.createChildSelector(props.store),
+          childPropsSelector : createChildSelector(props.store),
           childProps : {},
         }
 
@@ -107,15 +119,20 @@ export default function connectAdvanced(
         }
       }
 
-      createChildSelector(store = this.state.store) {
-        return selectorFactory(store.dispatch, selectorFactoryOptions)
-      }
+
 
       static getChildPropsState(props, state) {
         try {
-          const nextProps = state.childPropsSelector(props.storeState, props.wrapperProps)
+          let {childPropsSelector} = state
+
+          if(props.store !== state.store) {
+            childPropsSelector = createChildSelector(props.store)
+          }
+
+          const nextProps = childPropsSelector(props.storeState, props.wrapperProps)
           if (nextProps === state.childProps) return null
-          return { childProps: nextProps }
+
+          return { childProps: nextProps, store : props.store, childPropsSelector }
         } catch (error) {
           return { error }
         }
@@ -125,7 +142,7 @@ export default function connectAdvanced(
         const nextChildProps = ConnectInner.getChildPropsState(props, state)
 
         if(nextChildProps === null) {
-          return null;
+          return null
         }
 
         return {
@@ -135,20 +152,39 @@ export default function connectAdvanced(
       }
 
       shouldComponentUpdate(nextProps, nextState) {
-        const childPropsChanged = nextState.childProps !== this.state.childProps;
-        const hasError = !!nextState.error;
+        const childPropsChanged = nextState.childProps !== this.state.childProps
+        const hasError = !!nextState.error
 
-        const shouldUpdate = childPropsChanged || hasError;
-        return shouldUpdate;
-
+        return  childPropsChanged || hasError
       }
 
       render() {
         if(this.state.error) {
-          throw this.state.error;
+          throw this.state.error
         }
 
-        return <WrappedComponent {...this.state.childProps} />
+        return <WrappedComponent {...this.state.childProps} ref={this.props.forwardRef} />
+      }
+    }
+
+    ConnectInner.propTypes = {
+      wrapperProps : PropTypes.object,
+      store : storeShape,
+    }
+
+
+    function createWrapperPropsMemoizer() {
+      let result, prevProps
+
+      return function wrapperPropsMemoizer(props) {
+        if(props === prevProps) {
+          return result
+        }
+
+        const {consumer, forwardRef, ...wrapperProps} = props
+        result = {consumer, forwardRef, wrapperProps}
+
+        return result
       }
     }
 
@@ -158,81 +194,59 @@ export default function connectAdvanced(
 
         this.version = version
 
-        this.renderInner = this.renderInner.bind(this);
-      }
-/*
-      addExtraProps(props) {
-          if (!withRef && !renderCountProp) return props;
+        this.renderInner = this.renderInner.bind(this)
 
-        // make a shallow copy so that fields added don't leak to the original selector.
-        // this is especially important for 'ref' since that's a reference back to the component
-        // instance. a singleton memoized selector would then be holding a reference to the
-        // instance, preventing the instance from being garbage collected, and that would be bad
-        const withExtras = { ...props }
-        //if (withRef) withExtras.ref = this.setWrappedInstance
-        if (renderCountProp) withExtras[renderCountProp] = this.renderCount++
-
-        return withExtras
+        this.wrapperPropsMemoizer = createWrapperPropsMemoizer()
       }
-*/
 
       renderInner(providerValue) {
-          const {storeState, store} = providerValue;
+          const {storeState, store} = providerValue
+
+          const {forwardRef, wrapperProps} = this.wrapperPropsMemoizer(this.props)
 
           return (
             <ConnectInner
               key={this.version}
               storeState={storeState}
               store={store}
-              wrapperProps={this.props}
+              wrapperProps={wrapperProps}
+              forwardRef={forwardRef}
             />
-          );
+          )
       }
 
       render() {
-          return (
-              <ReactReduxContext.Consumer>
-                  {this.renderInner}
-              </ReactReduxContext.Consumer>
-          )
+        const ContextConsumer = this.props.consumer || consumer
+
+        return (
+          <ContextConsumer>
+            {this.renderInner}
+          </ContextConsumer>
+        )
       }
     }
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
+    Connect.propTypes = {
+      consumer: PropTypes.object,
+      forwardRef: PropTypes.oneOfType([
+        PropTypes.func,
+        PropTypes.object
+      ])
+    }
 
     // TODO We're losing the ability to add a store as a prop. Not sure there's anything we can do about that.
 
-      // TODO With connect no longer managing subscriptions, I _think_ is is all unneeded
-      /*
-    if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
-        // We are hot reloading!
-        if (this.version !== version) {
-          this.version = version
-          this.initSelector()
 
-          // If any connected descendants don't hot reload (and resubscribe in the process), their
-          // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
-          // listeners, this does mean that the old versions of connected descendants will still be
-          // notified of state changes; however, their onStateChange function is a no-op so this
-          // isn't a huge deal.
-          let oldListeners = [];
 
-          if (this.subscription) {
-            oldListeners = this.subscription.listeners.get()
-            this.subscription.tryUnsubscribe()
-          }
-          this.initSubscription()
-          if (shouldHandleStateChanges) {
-            this.subscription.trySubscribe()
-            oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
-          }
-        }
-      }
-    }
-    */
 
-    return hoistStatics(Connect, WrappedComponent)
+    const forwarded = React.forwardRef(function (props, ref) {
+      return <Connect {...props} forwardRef={ref} />
+    })
+
+    forwarded.displayName = Connect.displayName
+    forwarded.WrappedComponent = WrappedComponent
+    return hoistStatics(forwarded, WrappedComponent)
   }
 }
