@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Provider as ContextProvider } from './Context'
+import Context from './Context'
+
+const ContextProvider = Context.Provider
 
 class Provider extends Component {
   constructor(props) {

@@ -5,7 +5,9 @@ import propTypes from 'prop-types'
 import shallowEqual from 'shallow-equals'
 import { isValidElementType } from 'react-is'
 
-import { Consumer } from './Context'
+import Context from './Context'
+
+const Consumer = Context.Consumer
 
 export default function connectAdvanced(
   /*
@@ -61,7 +63,7 @@ export default function connectAdvanced(
   )
 
   invariant(storeKey === 'store',
-    'storeKey is deprecated and does not do anything. To use a custom redux store for a single component, ' +
+    'storeKey has been removed and does not do anything. To use a custom redux store for a single component, ' +
     'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
     'and the Consumer to this component as in <Provider context={context.Provider}><' +
     'ConnectedComponent consumer={context.Consumer} /></Provider>'
@@ -110,7 +112,7 @@ export default function connectAdvanced(
       constructor(props) {
         super(props)
         invariant(!props[storeKey],
-          'passing redux store in props is deprecated and does not do anything. ' +
+          'Passing redux store in props has been removed and does not do anything. ' +
           'To use a custom redux store for a single component, ' +
           'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
           'and the Consumer to this component as in <Provider context={context.Provider}><' +
@@ -196,7 +198,6 @@ export default function connectAdvanced(
       return <Connect {...props} forwardRef={ref} />
     }
 
-    forwardRef.displayName = Connect.displayName
     const forwarded = React.forwardRef(forwardRef)
     forwarded.displayName = Connect.displayName
     forwarded.WrappedComponent = WrappedComponent
