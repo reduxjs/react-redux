@@ -1508,6 +1508,48 @@ describe('React', () => {
       done()
     })
 
+    it('should return the instance of the wrapped component for use in calling child methods, impure component', async (done) => {
+      const store = createStore(() => ({}))
+
+      const someData = {
+        some: 'data'
+      }
+
+      class Container extends Component {
+        someInstanceMethod() {
+          return someData
+        }
+
+        render() {
+          return <Passthrough loaded="yes" />
+        }
+      }
+
+      const decorator = connect(state => state, undefined, undefined, { withRef: 'forwardRef', pure: false })
+      const Decorated = decorator(Container)
+
+      const ref = React.createRef()
+
+      class Wrapper extends Component {
+        render() {
+          return (
+            <Decorated ref={ref}/>
+          )
+        }
+      }
+
+      const tester = rtl.render(
+        <ProviderMock store={store}>
+          <Wrapper />
+        </ProviderMock>
+      )
+
+      await rtl.waitForElement(() => tester.getByTestId('loaded'))
+
+      expect(ref.current.someInstanceMethod()).toBe(someData)
+      done()
+    })
+
     it('should wrap impure components without supressing updates', () => {
       const store = createStore(() => ({}))
 
