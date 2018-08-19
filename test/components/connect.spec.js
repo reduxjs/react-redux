@@ -1280,7 +1280,7 @@ describe('React', () => {
           {makeContainer(() => ({}), () => ({}), () => 1)}
         </ProviderMock>
       )
-      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy).toHaveBeenCalledTimes(2)
       expect(spy.mock.calls[0][0]).toMatch(
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
@@ -1293,7 +1293,7 @@ describe('React', () => {
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
         </ProviderMock>
       )
-      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy).toHaveBeenCalledTimes(2)
       expect(spy.mock.calls[0][0]).toMatch(
         /mergeProps\(\) in Connect\(Container\) must return a plain object/
       )
@@ -1390,7 +1390,7 @@ describe('React', () => {
       const decorator = connect(state => {
         actualState = state
         return {}
-      })
+      }, undefined, undefined, { consumer: context.Consumer })
       const Decorated = decorator(Container)
       const mockStore = {
         dispatch: () => {},
@@ -1468,7 +1468,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state, null, null)
+      const decorator = connect(state => state, undefined, undefined, { withRef: 'forwardRef' })
       const Decorated = decorator(Container)
 
       const ref = React.createRef()
@@ -2174,19 +2174,19 @@ describe('React', () => {
       const store2 = createStore((state = 0, action) => (action.type === 'INC' ? state + 1 : state))
       const customContext = React.createContext()
 
-      @connect(state => ({ count: state }))
+      @connect(state => ({ count: state }), undefined, undefined, { consumer: customContext.Consumer })
       class A extends Component {
-        render() { return <B consumer={customContext.Consumer} /> }
+        render() { return <B /> }
       }
 
       const mapStateToPropsB = jest.fn(state => ({ count: state }))
-      @connect(mapStateToPropsB)
+      @connect(mapStateToPropsB, undefined, undefined, { consumer: customContext.Consumer })
       class B extends Component {
         render() { return <C {...this.props} /> }
       }
 
       const mapStateToPropsC = jest.fn(state => ({ count: state }))
-      @connect(mapStateToPropsC)
+      @connect(mapStateToPropsC, undefined, undefined, { consumer: customContext.Consumer })
       class C extends Component {
         render() { return <D /> }
       }
@@ -2244,6 +2244,16 @@ describe('React', () => {
       expect(spy).not.toHaveBeenCalled()
     })
 
+    it('should error on withRef=true (must be "forwardRef")', () => {
+      class Container extends Component {
+        render() {
+          return <div>hi</div>
+        }
+      }
+      expect(() => connect(undefined, undefined, undefined, { withRef: true })(Container))
+        .toThrow(/withRef must be set/)
+    })
+
     it('should error on receiving a custom store key', () => {
       const connectOptions = { storeKey: 'customStoreKey' }
 
@@ -2256,17 +2266,6 @@ describe('React', () => {
         }
         new Container()
       }).toThrow(/storeKey has been removed/)
-    })
-
-    it('should error on withRef', () => {
-      function Container() {
-        return <div>hi</div>
-      }
-      expect(() => {
-        connect(undefined, undefined, undefined, { withRef: true })(Container)
-      }).toThrow(
-        'withRef is removed. To access the wrapped instance, simply pass in ref'
-      )
     })
 
     it('should error on custom store', () => {
@@ -2282,21 +2281,13 @@ describe('React', () => {
       }).toThrow(/Passing redux store/)
     })
 
-    it('should add a renderCount prop if specified in connect options', () => {
-      let value = 0
-      const store = createStore(() => ({ value: value++}))
+    it('should error on renderCount prop if specified in connect options', () => {
       function Comp(props) {
         return <div>{props.count}</div>
       }
-      const Container = connect(undefined,undefined,undefined,{ renderCountProp: 'count' })(Comp)
-      const tester = rtl.render(
-        <ProviderMock store={store}>
-          <Container/>
-        </ProviderMock>
-      )
-      expect(tester.queryByText('0')).not.toBe(null)
-      store.dispatch({ type: 'hi' })
-      expect(tester.queryByText('1')).not.toBe(null)
+      expect(() => {
+        connect(undefined,undefined,undefined,{ renderCountProp: 'count' })(Comp)
+      }).toThrow(/renderCountProp is removed/)
     })
   })
 })
