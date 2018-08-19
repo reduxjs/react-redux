@@ -2,12 +2,11 @@ import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, { Component, PureComponent } from 'react'
 import propTypes from 'prop-types'
-import shallowEqual from 'shallow-equals'
 import { isValidElementType } from 'react-is'
 
 import Context from './Context'
 
-const Consumer = Context.Consumer
+const ReduxConsumer = Context.Consumer
 
 export default function connectAdvanced(
   /*
@@ -52,14 +51,14 @@ export default function connectAdvanced(
     withRef = false,
 
     // the context consumer to use
-    consumer = Consumer,
+    consumer = ReduxConsumer,
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
   } = {}
 ) {
-  invariant(!withRef,
-    `withRef is removed. To access the wrapped instance, simply pass in ref`
+  invariant(renderCountProp === undefined,
+    `renderCountProp is removed. render counting is built into the latest React dev tools profiling extension`
   )
 
   invariant(storeKey === 'store',
@@ -69,11 +68,17 @@ export default function connectAdvanced(
     'ConnectedComponent consumer={context.Consumer} /></Provider>'
   )
 
+  const Consumer = consumer
+
   return function wrapWithConnect(WrappedComponent) {
     invariant(
       isValidElementType(WrappedComponent),
       `You must pass a component to the function returned by ` +
       `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
+    )
+    invariant(!withRef || withRef === 'forwardRef',
+      'withRef must be set to the text "forwardRef." Reference uses React.forwardRef and you may now access ref ' +
+      `directly instead of using getWrappedInstance() in component ${wrappedComponentName}`
     )
 
     const wrappedComponentName = WrappedComponent.displayName
@@ -82,13 +87,20 @@ export default function connectAdvanced(
 
     const displayName = getDisplayName(wrappedComponentName)
 
-    class PureWrapper extends PureComponent {
+    class PureWrapper extends Component {
+      shouldComponentUpdate(nextProps) {
+        return nextProps.derivedProps !== this.props.derivedProps
+      }
+
       render() {
-        const { forwardRef, ...props } = this.props
-        return <WrappedComponent {...props} ref={forwardRef} />
+        let { forwardRef, derivedProps } = this.props
+        return <WrappedComponent {...derivedProps} ref={forwardRef} />
       }
     }
+
     PureWrapper.propTypes = {
+      count: propTypes.object,
+      derivedProps: propTypes.object,
       forwardRef: propTypes.oneOfType([
         propTypes.func,
         propTypes.object
@@ -108,19 +120,31 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
-    class Connect extends Component {
+    const OuterBase = connectOptions.pure ? PureComponent : Component
+
+    class Connect extends OuterBase {
       constructor(props) {
         super(props)
-        invariant(!props[storeKey],
-          'Passing redux store in props has been removed and does not do anything. ' +
-          'To use a custom redux store for a single component, ' +
-          'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
-          'and the Consumer to this component as in <Provider context={context.Provider}><' +
-          wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
-        )
+        if (withRef) {
+          invariant(!props.props[storeKey],
+            'Passing redux store in props has been removed and does not do anything. ' +
+            'To use a custom redux store for a single component, ' +
+            'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
+            'and the Consumer to this component as in <Provider context={context.Provider}><' +
+            wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
+          )
+        } else {
+          invariant(!props[storeKey],
+            'Passing redux store in props has been removed and does not do anything. ' +
+            'To use a custom redux store for a single component, ' +
+            'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
+            'and the Consumer to this component as in <Provider context={context.Provider}><' +
+            wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
+          )
+
+        }
         this.memoizeDerivedProps = this.makeMemoizer()
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
-        this.renderCount = 0
       }
 
       makeMemoizer() {
@@ -132,7 +156,7 @@ export default function connectAdvanced(
         let called = false
         return (state, props, store) => {
           if (called) {
-            const sameProps = connectOptions.pure && shallowEqual(lastProps, props)
+            const sameProps = connectOptions.pure && lastProps === props
             const sameState = lastState === state
             if (sameProps && sameState) {
               return lastDerivedProps
@@ -146,7 +170,7 @@ export default function connectAdvanced(
           lastProps = props
           lastState = state
           const nextProps = sourceSelector(state, props)
-          if (shallowEqual(lastDerivedProps, nextProps)) {
+          if (lastDerivedProps === nextProps) {
             return lastDerivedProps
           }
           lastDerivedProps = nextProps
@@ -156,46 +180,56 @@ export default function connectAdvanced(
 
       renderWrappedComponent(value) {
         invariant(value,
-          `Could not find "store" in either the context of ` +
+          `Could not find "store" in the context of ` +
           `"${displayName}". Either wrap the root component in a <Provider>, ` +
           `or pass a custom React context provider to <Provider> and the corresponding ` +
-          `React context consumer to ${displayName}.`
+          `React context consumer to ${displayName} in connect options.`
         )
         const { state, store } = value
-        const { forwardRef, ...otherProps } = this.props
-        let derivedProps = this.memoizeDerivedProps(state, otherProps, store)
+        if (withRef) {
+          const { forwardRef, props } = this.props
+          let derivedProps = this.memoizeDerivedProps(state, props, store)
+          if (connectOptions.pure) {
+            return <PureWrapper derivedProps={derivedProps} forwardRef={forwardRef} />
+          }
 
-        if (renderCountProp) {
-          derivedProps = { ...derivedProps, [renderCountProp]: this.renderCount++ }
+          return <WrappedComponent {...derivedProps} ref={forwardRef} />
         }
+        let derivedProps = this.memoizeDerivedProps(state, this.props, store)
         if (connectOptions.pure) {
-          return <PureWrapper {...derivedProps} forwardRef={forwardRef}/>
+          return <PureWrapper derivedProps={derivedProps} />
         }
-        return <WrappedComponent {...derivedProps} ref={forwardRef} />
+
+        return <WrappedComponent {...derivedProps} />
       }
 
       render() {
-        const MyConsumer = this.props.consumer || consumer
         return (
-          <MyConsumer>
+          <Consumer>
             {this.renderWrappedComponent}
-          </MyConsumer>
+          </Consumer>
         )
       }
     }
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
-    Connect.propTypes = {
-      consumer: propTypes.object,
-      forwardRef: propTypes.oneOfType([
-        propTypes.func,
-        propTypes.object
-      ])
+    if (withRef) {
+      Connect.propTypes = {
+        props: propTypes.object,
+        forwardRef: propTypes.oneOfType([
+          propTypes.func,
+          propTypes.object
+        ])
+      }
+    }
+
+    if (!withRef) {
+      return hoistStatics(Connect, WrappedComponent)
     }
 
     function forwardRef(props, ref) {
-      return <Connect {...props} forwardRef={ref} />
+      return <Connect props={props} forwardRef={ref} />
     }
 
     const forwarded = React.forwardRef(forwardRef)
