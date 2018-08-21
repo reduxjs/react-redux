@@ -19,6 +19,7 @@
   "repository": "github:reduxjs/react-redux",
   "bugs": "https://github.com/reduxjs/react-redux/issues",
   "main": "./lib/index.js",
+  "unpkg": "dist/react-redux.js",
   "module": "es/index.js",
   "files": [
     "dist",
