@@ -241,12 +241,19 @@ export default function connectAdvanced(
 
 
 
+    /*
     const forwarded = React.forwardRef(function (props, ref) {
       return <Connect {...props} forwardRef={ref} />
     })
+    */
 
-    forwarded.displayName = Connect.displayName
-    forwarded.WrappedComponent = WrappedComponent
-    return hoistStatics(forwarded, WrappedComponent)
+
+    const Forwarded = (props) => <Connect {...props} />
+
+    Forwarded.displayName = Connect.displayName
+    Forwarded.WrappedComponent = WrappedComponent
+    return hoistStatics(Forwarded, WrappedComponent);
+
+    //return hoistStatics(Connect, WrappedComponent)
   }
 }
