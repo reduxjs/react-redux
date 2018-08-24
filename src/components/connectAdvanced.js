@@ -202,7 +202,7 @@ export default function connectAdvanced(
         const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
         this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
 
-        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
+        // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
         // the middle of the notification loop, where `this.subscription` will then be null. An
         // extra null check every change can be avoided by copying the method onto `this` and then
         // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
