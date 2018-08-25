@@ -146,8 +146,8 @@ export default function connectAdvanced(
           'Passing redux store in props has been removed and does not do anything. ' +
           'To use a custom redux store for a single component, ' +
           'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
-          'and the Consumer to this component as in <Provider context={context.Provider}><' +
-          wrappedComponentName + ' consumer={context.Consumer} /></Provider>'
+          'and the Consumer to this component\'s connect as in <Provider context={context.Provider}></Provider>' +
+          ` and connect(mapState, mapDispatch, undefined, { consumer=context.consumer })(${wrappedComponentName})`
         )
         this.generatedDerivedProps = this.makeDerivedPropsGenerator()
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
@@ -212,6 +212,13 @@ export default function connectAdvanced(
       }
 
       render() {
+        if (this.props.unstable_observedBits) {
+          return (
+            <Consumer unstable_observedBits={this.props.unstable_observedBits}>
+              {this.renderWrappedComponent}
+            </Consumer>
+          )
+        }
         return (
           <Consumer>
             {this.renderWrappedComponent}
