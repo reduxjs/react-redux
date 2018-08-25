@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.1.2",
-    "hoist-non-react-statics": "^3.0.0",
+    "hoist-non-react-statics": "^3.0.1",
     "invariant": "^2.2.4",
     "loose-envify": "^1.1.0",
     "prop-types": "^15.6.2",
