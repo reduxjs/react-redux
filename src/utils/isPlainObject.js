@@ -8,7 +8,11 @@ export default function isPlainObject(obj) {
   let proto = obj
   while (Object.getPrototypeOf(proto) !== null) {
     proto = Object.getPrototypeOf(proto)
+
+    if (proto.constructor && !(proto.constructor.create && Object.getPrototypeOf(proto.constructor.create(proto)) === proto)) {
+      return false
+    }
   }
 
-  return Object.getPrototypeOf(obj) === proto
+  return true
 }
