@@ -249,7 +249,7 @@ export default function connectAdvanced(
     }
 
     const forwarded = React.forwardRef(forwardRef)
-    forwarded.displayName = Connect.displayName
+    forwarded.displayName = displayName
     forwarded.WrappedComponent = WrappedComponent
     return hoistStatics(forwarded, WrappedComponent)
   }
