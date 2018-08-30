@@ -11,8 +11,8 @@ const sources = readdirSync(join(__dirname, 'sources'))
 const versions = readdirSync(join(__dirname, 'react-redux-versions')).map(version =>
   version.replace('react-redux-', '').replace('.min.js', ''))
 
-const reduxVersions = process.env.REDUX ? process.env.REDUX.split('|') : versions
-const benchmarksToRun = process.env.BENCHMARKS ? process.env.BENCHMARKS.split('|') : sources
+const reduxVersions = process.env.REDUX ? process.env.REDUX.split(':') : versions
+const benchmarksToRun = process.env.BENCHMARKS ? process.env.BENCHMARKS.split(':') : sources
 
 const versionPerfEntries = {};
 
