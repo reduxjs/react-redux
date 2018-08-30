@@ -37,7 +37,8 @@
     "prepare": "npm run clean && npm run build",
     "test": "node ./test/run-tests.js",
     "coverage": "codecov",
-    "setup:benchmarks": "node ./benchmarks/setupRuns.js"
+    "setup:benchmarks": "node ./benchmarks/setupRuns.js",
+    "benchmarks": "node ./benchmarks/runBenchmarks.js"
   },
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0-0 || ^16.0.0-0",
@@ -86,6 +87,7 @@
     "eslint": "^4.19.1",
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-react": "^7.9.1",
+    "express": "^4.16.3",
     "glob": "^7.1.1",
     "jest": "^23.4.1",
     "jest-dom": "^1.12.0",
