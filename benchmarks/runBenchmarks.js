@@ -32,16 +32,15 @@ async function runBenchmarks() {
       try {
         await serverUtils.runServer(9999 + i, toRun)
 
-        console.log(`    Checking max FPS...`)
+        console.log(`    Checking max FPS... (30 seconds)`)
         const fpsRunResults = await serverUtils.capturePageStats(browser, URL, null);
 
-        console.log(`    Running trace...`);
+        console.log(`    Running trace...    (30 seconds)`);
         const traceFilename = join(__dirname, 'runs', `trace-${benchmark}-${version}.json`)
         const traceRunResults = await serverUtils.capturePageStats(browser, URL, traceFilename);
 
-
         const {fpsValues} = fpsRunResults;
-        const {categories} = traceRunResults.traceMetrics;
+        const {categories} = traceRunResults.traceMetrics.profiling;
 
         // skip first two values = it's usually way lower due to page startup
         const fpsValuesWithoutFirst = fpsValues.slice(1);
@@ -74,6 +73,7 @@ async function runBenchmarks() {
       console.log("  Profile: ", profile)
     })
   })
+  process.exit(0)
 }
 
 runBenchmarks()

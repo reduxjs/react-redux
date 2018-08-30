@@ -13,7 +13,6 @@ module.exports = {
 
     const app = express();
 
-    console.log(`    Running server statically retrieving ${join(sources, 'build')}`)
     app.use(express.static(join(sources, 'build')))
 
     return new Promise((resolve, reject) => { // eslint-disable-line
