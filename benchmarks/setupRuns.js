@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 'use strict';
 
-const { readdirSync, copyFile, mkdirSync, readFileSync } = require('fs');
+const { readdirSync, copyFile } = require('fs');
 const rimraf = require('rimraf');
 const { join } = require('path');
 const spawn = require("cross-spawn");
