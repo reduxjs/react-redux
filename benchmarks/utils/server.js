@@ -50,7 +50,7 @@ module.exports = {
 
     const fpsStatsEntries = JSON.parse(
       await page.evaluate(() => JSON.stringify(window.getFpsStats()))
-    );
+    ) || []
 
     fpsValues = fpsStatsEntries.map(entry => entry.meta.details.FPS);
 

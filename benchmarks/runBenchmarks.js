@@ -45,7 +45,7 @@ async function runBenchmarks() {
         // skip first two values = it's usually way lower due to page startup
         const fpsValuesWithoutFirst = fpsValues.slice(1);
 
-        const average = fpsValuesWithoutFirst.reduce((sum, val) => sum + val, 0) / fpsValuesWithoutFirst.length;
+        const average = fpsValuesWithoutFirst.reduce((sum, val) => sum + val, 0) / fpsValuesWithoutFirst.length || 0;
 
         const fps = {average, values : fpsValues}
 
