@@ -69,8 +69,8 @@ async function runBenchmarks() {
       const {fps, profile} = versionResults;
 
       console.log(`  --${version}:`);
-      console.log("  FPS (average, values): ", fps.average, "; ", fps.values);
-      console.log("  Profile: ", profile)
+      console.log("  FPS (average, values): [higher is better]", fps.average, "; ", fps.values);
+      console.log("  Profile: [lower scripting is better]", profile)
     })
   })
   process.exit(0)
