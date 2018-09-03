@@ -4,6 +4,8 @@
 const { join } = require('path');
 const { readdirSync } = require('fs')
 const puppeteer = require("puppeteer");
+const Table = require("cli-table2");
+
 
 const serverUtils = require('./utils/server.js')
 
@@ -60,19 +62,29 @@ async function runBenchmarks() {
     }
   }
 
+  const table = new Table({
+    head: ['Benchmark', 'Version', 'Avg FPS', 'Scripting', 'Rendering', 'Painting', 'FPS Values']
+  });
+
   Object.keys(versionPerfEntries).sort().forEach(benchmark => {
     const versions = versionPerfEntries[benchmark]
-    console.log(`${benchmark} results:`)
-    Object.keys(versions).sort().forEach(version => {
+    Object.keys(versions).sort().map(version => {
       const versionResults = versions[version];
 
-      const {fps, profile} = versionResults;
+      const {fps, profile } = versionResults;
 
-      console.log(`  --${version}:`);
-      console.log("  FPS (average, values): [higher is better]", fps.average, "; ", fps.values);
-      console.log("  Profile: [lower scripting is better]", profile)
+      table.push([
+        benchmark,
+        version,
+        fps.average.toFixed(2),
+        profile.categories.scripting.toFixed(2),
+        profile.categories.rendering.toFixed(2),
+        profile.categories.painting.toFixed(2),
+        fps.values.toString()
+      ])
     })
   })
+  console.log(table.toString())
   process.exit(0)
 }
 

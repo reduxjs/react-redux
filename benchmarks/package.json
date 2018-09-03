@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "cli-table2": "^0.2.0",
     "puppeteer": "^1.7.0",
     "tracealyzer": "^0.9.3"
   }
