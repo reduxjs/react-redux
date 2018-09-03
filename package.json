@@ -37,7 +37,7 @@
     "prepare": "npm run clean && npm run build",
     "test": "node ./test/run-tests.js",
     "coverage": "codecov",
-    "setup:benchmarks": "node ./benchmarks/setupRuns.js",
+    "benchmarks:setup": "node ./benchmarks/setupRuns.js",
     "benchmarks": "node ./benchmarks/runBenchmarks.js"
   },
   "peerDependencies": {
