@@ -16,13 +16,18 @@ const versions = readdirSync(join(__dirname, 'react-redux-versions')).map(versio
 const reduxVersions = process.env.REDUX ? process.env.REDUX.split(':') : versions
 const benchmarksToRun = process.env.BENCHMARKS ? process.env.BENCHMARKS.split(':') : sources
 
-const versionPerfEntries = {};
+
 
 async function runBenchmarks() {
   for (let j = 0; j < benchmarksToRun.length; j++) {
     const benchmark = benchmarksToRun[j]
+
+    const versionPerfEntries = {};
+
     const source = join(__dirname, 'runs', benchmark)
     console.log(`Running benchmark ${benchmark}`)
+
+
     for (let i = 0; i < reduxVersions.length; i++) {
       const version = reduxVersions[i]
       const toRun = join(source, version)
@@ -51,30 +56,31 @@ async function runBenchmarks() {
 
         const fps = {average, values : fpsValues}
 
-        versionPerfEntries[benchmark] = versionPerfEntries[benchmark] ? versionPerfEntries[benchmark] : {}
-        versionPerfEntries[benchmark][version] = {fps, profile : {categories}};
+
+
+        versionPerfEntries[version] = {fps, profile : {categories}};
+
+
       } catch (e) {
-        console.log(e)
+        console.error(e)
         process.exit(-1)
       } finally {
         await browser.close()
       }
     }
-  }
 
-  const table = new Table({
-    head: ['Benchmark', 'Version', 'Avg FPS', 'Scripting', 'Rendering', 'Painting', 'FPS Values']
-  });
+    console.log(`\nResults for benchmark: ${benchmark}:`);
 
-  Object.keys(versionPerfEntries).sort().forEach(benchmark => {
-    const versions = versionPerfEntries[benchmark]
-    Object.keys(versions).sort().map(version => {
-      const versionResults = versions[version];
+    const table = new Table({
+      head: ['Version', 'Avg FPS', 'Scripting', 'Rendering', 'Painting', 'FPS Values']
+    });
 
-      const {fps, profile } = versionResults;
+    Object.keys(versionPerfEntries).sort().forEach(version => {
+      const versionResults = versionPerfEntries[version];
+
+      const {fps, profile} = versionResults;
 
       table.push([
-        benchmark,
         version,
         fps.average.toFixed(2),
         profile.categories.scripting.toFixed(2),
@@ -82,9 +88,12 @@ async function runBenchmarks() {
         profile.categories.painting.toFixed(2),
         fps.values.toString()
       ])
-    })
-  })
-  console.log(table.toString())
+    });
+
+    console.log(table.toString())
+  }
+
+
   process.exit(0)
 }
 
