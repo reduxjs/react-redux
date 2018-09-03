@@ -1,0 +1,38 @@
+{
+  "name": "stockticker",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "chance": "^1.0.16",
+    "fps-emitter": "^1.0.0",
+    "performance-mark-metadata": "^1.0.3",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-redux": "5.0.7",
+    "react-scripts": "1.1.5",
+    "redux": "^4.0.0",
+    "reselect": "^3.0.1"
+  },
+  "scripts": {
+    "start": "react-app-rewired  start",
+    "build": "react-app-rewired  build",
+    "test": "react-app-rewired  --env=jsdom",
+    "eject": "react-scripts eject",
+    "test:e2e": "jest --watch"
+  },
+  "browserslist": {
+    "development": [
+      "last 2 chrome versions",
+      "last 2 firefox versions",
+      "last 2 edge versions"
+    ],
+    "production": [
+      ">0.25%",
+      "not op_mini all",
+      "ie 11"
+    ]
+  },
+  "devDependencies": {
+    "react-app-rewired": "^1.5.2"
+  }
+}
