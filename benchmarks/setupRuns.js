@@ -10,6 +10,15 @@ const copy = require('recursive-copy')
 console.log('clearing out old runs...')
 rimraf.sync(join(__dirname, 'runs', '*'))
 
+console.log(`installing global dependencies of all benchmarks...`)
+let installTask = spawn.sync('npm', ['install'], {
+  cwd: __dirname,
+  stdio: 'inherit',
+});
+if (installTask.status > 0) {
+  process.exit(installTask.status);
+}
+
 const sources = readdirSync(join(__dirname, 'sources'))
 sources.forEach(benchmark => {
   const src = join(__dirname, 'sources', benchmark)
