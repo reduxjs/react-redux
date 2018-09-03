@@ -4,7 +4,9 @@
   "private": true,
   "dependencies": {
     "cli-table2": "^0.2.0",
+    "express": "^4.16.3",
     "puppeteer": "^1.7.0",
+    "recursive-copy": "^2.0.9",
     "tracealyzer": "^0.9.3"
   }
 }
