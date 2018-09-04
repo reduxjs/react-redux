@@ -37,9 +37,7 @@
     "lint": "eslint src test/utils test/components",
     "prepare": "npm run clean && npm run build",
     "test": "node ./test/run-tests.js",
-    "coverage": "codecov",
-    "benchmarks:setup": "node ./benchmarks/setupRuns.js",
-    "benchmarks": "node ./benchmarks/runBenchmarks.js"
+    "coverage": "codecov"
   },
   "peerDependencies": {
     "react": "^0.14.0 || ^15.0.0-0 || ^16.0.0-0",
