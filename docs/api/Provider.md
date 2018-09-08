@@ -23,9 +23,9 @@ The root of your component hierarchy.
 
 In the example below, the `<App />` component is our root-level component. This means it’s at the very top of our component hierarchy. 
 
-Vanilla React Example 
+**Vanilla React Example** 
 
-
+```js
     import React from 'react';
     import ReactDOM from 'react-dom';
     import { Provider } from 'react-redux';
@@ -41,12 +41,12 @@ Vanilla React Example
       </Provider>,
       document.getElementById('root')
     )
-    
+```    
 
 
-Usage with React Router
+**Usage with React Router**
 
-
+```js
     import React from 'react';
     import ReactDOM from 'react-dom';
     import { Provider } from 'react-redux';
@@ -70,6 +70,6 @@ Usage with React Router
       </Provider>,
       document.getElementById('root')
     )
-    
+```    
 
 
