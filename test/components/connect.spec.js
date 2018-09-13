@@ -1493,7 +1493,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      rtl.render(<ProviderMock contextProvider={context.Provider} store={mockStore}><Decorated consumer={context.Consumer} /></ProviderMock>)
+      rtl.render(<ProviderMock contextProvider={context.Provider} store={mockStore}><Decorated contextConsumer={context.Consumer} /></ProviderMock>)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1572,7 +1572,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state)
+      const decorator = connect(state => state, null, null, {forwardRef : true})
       const Decorated = decorator(Container)
 
       const ref = React.createRef()
@@ -1580,7 +1580,7 @@ describe('React', () => {
       class Wrapper extends Component {
         render() {
           return (
-            <Decorated ref={ref}/>
+            <Decorated ref={ref} />
           )
         }
       }
@@ -1589,7 +1589,6 @@ describe('React', () => {
           <Wrapper />
         </ProviderMock>
       )
-
 
       await rtl.waitForElement(() => tester.getByTestId('loaded'))
 

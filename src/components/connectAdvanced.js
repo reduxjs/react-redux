@@ -52,6 +52,9 @@ export default function connectAdvanced(
     // REMOVED: expose the wrapped component via refs
     withRef = false,
 
+    // use React's forwardRef to expose a ref of the wrapped component
+    forwardRef = false,
+
     // additional options are passed through to the selectorFactory
     ...connectOptions
   } = {}
@@ -181,8 +184,8 @@ export default function connectAdvanced(
           return result
         }
 
-        const {consumer, forwardRef, ...wrapperProps} = props
-        result = {consumer, forwardRef, wrapperProps}
+        const {contextConsumer, forwardRef, ...wrapperProps} = props
+        result = {contextConsumer, forwardRef, wrapperProps}
 
         return result
       }
@@ -216,7 +219,7 @@ export default function connectAdvanced(
       }
 
       render() {
-        const ContextConsumer = this.props.consumer || consumer
+        const ContextConsumer = this.props.contextConsumer || consumer
 
         return (
           <ContextConsumer>
@@ -229,7 +232,7 @@ export default function connectAdvanced(
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
     Connect.propTypes = {
-      consumer: PropTypes.object,
+      contextConsumer: PropTypes.object,
       forwardRef: PropTypes.oneOfType([
         PropTypes.func,
         PropTypes.object
@@ -239,22 +242,16 @@ export default function connectAdvanced(
     // TODO We're losing the ability to add a store as a prop. Not sure there's anything we can do about that.
 
 
+    let wrapperComponent = Connect
 
+    if(forwardRef) {
+      const forwarded = React.forwardRef(function (props, ref) {
+        return <Connect {...props} forwardRef={ref} />
+      })
 
-    /*
-    const forwarded = React.forwardRef(function (props, ref) {
-      return <Connect {...props} forwardRef={ref} />
-    })
-    */
+      wrapperComponent = forwarded
+    }
 
-/*
-    const Forwarded = (props) => <Connect {...props} />
-
-    Forwarded.displayName = Connect.displayName
-    Forwarded.WrappedComponent = WrappedComponent
-    return hoistStatics(Forwarded, WrappedComponent);
-    */
-
-    return hoistStatics(Connect, WrappedComponent)
+    return hoistStatics(wrapperComponent, WrappedComponent)
   }
 }
