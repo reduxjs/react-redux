@@ -1,15 +1,17 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Context from './Context'
+import Context, { createHashFunction } from './Context'
 
 const ContextProvider = Context.Provider
 
 class Provider extends Component {
   constructor(props) {
     super(props)
+    const state = props.store.getState()
     this.state = {
-      state: props.store.getState(),
-      store: props.store
+      state,
+      store: props.store,
+      hashFunction: createHashFunction(state)
     }
     this.unsubscribe = null
   }
@@ -33,9 +35,11 @@ class Provider extends Component {
     if (lastProps.store !== this.props.store) {
       if (this.unsubscribe) this.unsubscribe()
       this.unsubscribe = this.props.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
+      const state = this.props.store.getState()
       this.setState({
-        state: this.props.store.getState(),
-        store: this.props.store
+        state,
+        store: this.props.store,
+        hashFunction: createHashFunction(state)
       })
     }
   }
@@ -46,12 +50,12 @@ class Provider extends Component {
     }
 
     this.setState(prevState => {
-      const newState = prevState.store.getState()
-      if (prevState.state === newState) {
+      const state = prevState.store.getState()
+      if (prevState.state === state) {
         return null
       }
       return {
-        state: newState
+        state
       }
     })
   }

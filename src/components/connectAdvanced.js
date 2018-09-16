@@ -1,12 +1,25 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, { Component, PureComponent } from 'react'
+import React, {Component, PureComponent} from 'react'
 import propTypes from 'prop-types'
-import { isValidElementType } from 'react-is'
+import {isValidElementType} from 'react-is'
 
 import Context from './Context'
 
 const ReduxConsumer = Context.Consumer
+
+const createGetter = (source, callback) => {
+  const getter = {}
+
+  Object
+    .getOwnPropertyNames(source)
+    .forEach(key => getter[key] = {
+      get: () => callback(key),
+      enumerable: true
+    })
+
+  return getter
+};
 
 export default function connectAdvanced(
   /*
@@ -87,41 +100,34 @@ export default function connectAdvanced(
 
     const displayName = getDisplayName(wrappedComponentName)
 
-    let PureWrapper
 
-    if (withRef) {
-      class PureWrapperRef extends Component {
-        shouldComponentUpdate(nextProps) {
-          return nextProps.derivedProps !== this.props.derivedProps
-        }
+    class PureWrapper extends Component {
+      shouldComponentUpdate(nextProps) {
+        return nextProps.derivedProps !== this.props.derivedProps
+      }
 
-        render() {
-          let { forwardRef, derivedProps } = this.props
-          return <WrappedComponent {...derivedProps} ref={forwardRef} />
+      componentDidUpdate(prevProps) {
+        if (prevProps.observedBits !== this.props.observedBits) {
+          this.props.setObservedBits(this.props.observedBits)
         }
       }
-      PureWrapperRef.propTypes = {
-        derivedProps: propTypes.object,
-        forwardRef: propTypes.oneOfType([
-          propTypes.func,
-          propTypes.object
-        ])
-      }
-      PureWrapper = PureWrapperRef
-    } else {
-      class PureWrapperNoRef extends Component {
-        shouldComponentUpdate(nextProps) {
-          return nextProps.derivedProps !== this.props.derivedProps
-        }
 
-        render() {
-          return <WrappedComponent {...this.props.derivedProps} />
-        }
+      render() {
+        let {forwardRef, derivedProps} = this.props
+        return withRef
+          ? <WrappedComponent {...derivedProps} ref={forwardRef}/>
+          : <WrappedComponent {...derivedProps}/>
       }
-      PureWrapperNoRef.propTypes = {
-        derivedProps: propTypes.object,
-      }
-      PureWrapper = PureWrapperNoRef
+    }
+
+    PureWrapper.propTypes = {
+      observedProps: propTypes.number,
+      setObservedBits: propTypes.func,
+      derivedProps: propTypes.object,
+      forwardRef: propTypes.oneOfType([
+        propTypes.func,
+        propTypes.object
+      ]),
     }
 
     const selectorFactoryOptions = {
@@ -151,6 +157,24 @@ export default function connectAdvanced(
         )
         this.generatedDerivedProps = this.makeDerivedPropsGenerator()
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
+        this.setObservedBits = this.setObservedBits.bind(this)
+
+        this.state = {
+          observedBits: 0xFFFFFFFF
+        }
+      }
+
+      setObservedBits(bits) {
+        if (!connectOptions.observer && (bits || !selectorFactory)) {
+          this.setState(state => {
+            if (state.observedBits !== bits) {
+              return {
+                observedBits: 6 | bits
+              }
+            }
+            return null;
+          })
+        }
       }
 
       makeDerivedPropsGenerator() {
@@ -158,8 +182,11 @@ export default function connectAdvanced(
         let lastState
         let lastDerivedProps
         let lastStore
+        let lastHashFunction
         let sourceSelector
-        return (state, props, store) => {
+        let stateGetter
+        let observedBits
+        return (state, props, store, hashFunction) => {
           if ((connectOptions.pure && lastProps === props) && (lastState === state)) {
             return lastDerivedProps
           }
@@ -167,14 +194,33 @@ export default function connectAdvanced(
             lastStore = store
             sourceSelector = selectorFactory(store.dispatch, selectorFactoryOptions)
           }
+
+          if (hashFunction !== lastHashFunction) {
+            stateGetter = createGetter(state, key => {
+              observedBits = hashFunction(observedBits, key)
+              return lastState[key]
+            })
+            lastHashFunction = hashFunction
+          }
           lastProps = props
           lastState = state
-          const nextProps = sourceSelector(state, props)
-          if (lastDerivedProps === nextProps) {
-            return lastDerivedProps
+
+          observedBits = 0
+          const couldProxyState = typeof state === 'object' && !Array.isArray(state)
+          if (couldProxyState) {
+            const stateProxy = {}
+            Object.defineProperties(stateProxy, stateGetter);
+            lastDerivedProps = sourceSelector(stateProxy, props)
+            return {
+              derivedProps: lastDerivedProps,
+              observedBits
+            }
           }
-          lastDerivedProps = nextProps
-          return lastDerivedProps
+          lastDerivedProps = sourceSelector(state, props)
+          return {
+            derivedProps: lastDerivedProps,
+            observedBits: 0xFFFFFFFF
+          }
         }
       }
 
@@ -185,14 +231,21 @@ export default function connectAdvanced(
           `or pass a custom React context provider to <Provider> and the corresponding ` +
           `React context consumer to ${displayName} in connect options.`
         )
-        const { state, store } = value
-        const { forwardRef, props } = this.props
-        let derivedProps = this.generatedDerivedProps(state, props, store)
+        const {state, store, hashFunction} = value
+        const {forwardRef, props} = this.props
+        let {derivedProps, observedBits} = this.generatedDerivedProps(state, props, store, hashFunction)
         if (connectOptions.pure) {
-          return <PureWrapper derivedProps={derivedProps} forwardRef={forwardRef} />
+          return (
+            <PureWrapper
+              derivedProps={derivedProps}
+              observedBits={observedBits}
+              setObservedBits={this.setObservedBits}
+              forwardRef={forwardRef}
+            />
+          )
         }
 
-        return <WrappedComponent {...derivedProps} ref={forwardRef} />
+        return <WrappedComponent {...derivedProps} ref={forwardRef}/>
       }
 
       renderWrappedComponent(value) {
@@ -202,19 +255,25 @@ export default function connectAdvanced(
           `or pass a custom React context provider to <Provider> and the corresponding ` +
           `React context consumer to ${displayName} in connect options.`
         )
-        const { state, store } = value
-        let derivedProps = this.generatedDerivedProps(state, this.props, store)
+        const {state, store, hashFunction} = value
+        let {derivedProps, observedBits} = this.generatedDerivedProps(state, this.props, store, hashFunction)
         if (connectOptions.pure) {
-          return <PureWrapper derivedProps={derivedProps} />
+          return (
+            <PureWrapper
+              derivedProps={derivedProps}
+              observedBits={observedBits}
+              setObservedBits={this.setObservedBits}
+            />
+          )
         }
 
         return <WrappedComponent {...derivedProps} />
       }
 
       render() {
-        if (this.props.unstable_observedBits) {
+        if (this.state.observedBits) {
           return (
-            <Consumer unstable_observedBits={this.props.unstable_observedBits}>
+            <Consumer unstable_observedBits={this.state.observedBits}>
               {this.renderWrappedComponent}
             </Consumer>
           )
@@ -245,7 +304,7 @@ export default function connectAdvanced(
     }
 
     function forwardRef(props, ref) {
-      return <Connect props={props} forwardRef={ref} />
+      return <Connect props={props} forwardRef={ref}/>
     }
 
     const forwarded = React.forwardRef(forwardRef)
