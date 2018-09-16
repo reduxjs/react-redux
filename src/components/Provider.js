@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Context, { createHashFunction } from './Context'
+import shallowEqual from '../utils/shallowEqual'
 
 const ContextProvider = Context.Provider
 
@@ -32,13 +33,21 @@ class Provider extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    if (lastProps.store !== this.props.store) {
+    const state = this.props.store.getState()
+    const storesEqual = lastProps.store === this.props.store
+    if (!storesEqual) {
       if (this.unsubscribe) this.unsubscribe()
       this.unsubscribe = this.props.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
-      const state = this.props.store.getState()
       this.setState({
         state,
-        store: this.props.store,
+        store: this.props.store
+      })
+    }
+    if(
+      !storesEqual ||
+      !shallowEqual(Object.keys(state), Object.keys(lastProps.store.getState()))
+    ) {
+      this.setState({
         hashFunction: createHashFunction(state)
       })
     }
