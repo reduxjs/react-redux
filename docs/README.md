@@ -1,6 +1,8 @@
 # Table of Contents
 
-- [Redux: Usage with React](http://redux.js.org/docs/basics/UsageWithReact.html)
+
+
+- [Getting Started: adding React-Redux to a React todo app](./GettingStarted.md)
 - [API](api.md#api)
   - [`<Provider store>`](api.md#provider-store)
   - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
