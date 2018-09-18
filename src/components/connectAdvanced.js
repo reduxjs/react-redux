@@ -145,6 +145,8 @@ export default function connectAdvanced(
 
     const OuterBase = connectOptions.pure ? PureComponent : Component
 
+    const ALL_BITS = 0xFFFFFFFF;
+
     class Connect extends OuterBase {
       constructor(props) {
         super(props)
@@ -160,7 +162,7 @@ export default function connectAdvanced(
         this.setObservedBits = this.setObservedBits.bind(this)
 
         this.state = {
-          observedBits: 0xFFFFFFFF
+          observedBits: ALL_BITS
         }
       }
 
@@ -216,7 +218,7 @@ export default function connectAdvanced(
               lastObservedBits = observedBits;
             } else {
               lastDerivedProps = sourceSelector(state, props)
-              lastObservedBits = 0;
+              lastObservedBits = ALL_BITS;
             }
           }
 
@@ -274,7 +276,7 @@ export default function connectAdvanced(
       }
 
       render() {
-        if (this.state.observedBits) {
+        if (this.state.observedBits !== ALL_BITS) {
           return (
             <Consumer unstable_observedBits={this.state.observedBits}>
               {this.renderWrappedComponent}
