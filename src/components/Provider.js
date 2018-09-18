@@ -33,21 +33,13 @@ class Provider extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    const state = this.props.store.getState()
-    const storesEqual = lastProps.store === this.props.store
-    if (!storesEqual) {
+    if (lastProps.store !== this.props.store) {
       if (this.unsubscribe) this.unsubscribe()
       this.unsubscribe = this.props.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
+      const state = this.props.store.getState()
       this.setState({
         state,
-        store: this.props.store
-      })
-    }
-    if(
-      !storesEqual ||
-      !shallowEqual(Object.keys(state), Object.keys(lastProps.store.getState()))
-    ) {
-      this.setState({
+        store: this.props.store,
         hashFunction: createHashFunction(state)
       })
     }
@@ -62,6 +54,14 @@ class Provider extends Component {
       const state = prevState.store.getState()
       if (prevState.state === state) {
         return null
+      }
+      if(
+        !shallowEqual(Object.keys(prevState.state), Object.keys(state))
+      ) {
+        return {
+          state,
+          hashFunction: createHashFunction(state)
+        }
       }
       return {
         state

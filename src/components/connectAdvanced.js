@@ -186,6 +186,7 @@ export default function connectAdvanced(
         let sourceSelector
         let stateGetter
         let observedBits
+        let lastObservedBits;
         return (state, props, store, hashFunction) => {
           if ((connectOptions.pure && lastProps === props) && (lastState === state)) {
             return lastDerivedProps
@@ -202,24 +203,26 @@ export default function connectAdvanced(
             })
             lastHashFunction = hashFunction
           }
-          lastProps = props
-          lastState = state
+          if (lastProps !== props || lastState !== state) {
+            lastProps = props
+            lastState = state
 
-          observedBits = 0
-          const couldProxyState = typeof state === 'object' && !Array.isArray(state)
-          if (couldProxyState) {
-            const stateProxy = {}
-            Object.defineProperties(stateProxy, stateGetter);
-            lastDerivedProps = sourceSelector(stateProxy, props)
-            return {
-              derivedProps: lastDerivedProps,
-              observedBits
+            observedBits = 0
+            const couldProxyState = typeof state === 'object' && !Array.isArray(state)
+            if (couldProxyState) {
+              const stateProxy = {}
+              Object.defineProperties(stateProxy, stateGetter);
+              lastDerivedProps = sourceSelector(stateProxy, props)
+              lastObservedBits = observedBits;
+            } else {
+              lastDerivedProps = sourceSelector(state, props)
+              lastObservedBits = 0;
             }
           }
-          lastDerivedProps = sourceSelector(state, props)
+
           return {
             derivedProps: lastDerivedProps,
-            observedBits: 0xFFFFFFFF
+            observedBits: lastObservedBits
           }
         }
       }
