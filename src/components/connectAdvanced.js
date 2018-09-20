@@ -47,8 +47,11 @@ export default function connectAdvanced(
     // the key of props/context to get the store [**does nothing, use consumer**]
     storeKey = 'store',
 
-    // if true, the wrapped element is exposed by this HOC via the getWrappedInstance() function.
+    // REMOVED: expose the wrapped component via refs
     withRef = false,
+
+    // use React's forwardRef to expose a ref of the wrapped component
+    forwardRef = false,
 
     // the context consumer to use
     consumer = ReduxConsumer,
@@ -59,6 +62,10 @@ export default function connectAdvanced(
 ) {
   invariant(renderCountProp === undefined,
     `renderCountProp is removed. render counting is built into the latest React dev tools profiling extension`
+  )
+
+  invariant(!withRef,
+    "withRef is removed. To access the wrapped instance, use a ref on the connected component"
   )
 
   invariant(storeKey === 'store',
@@ -76,10 +83,6 @@ export default function connectAdvanced(
       `You must pass a component to the function returned by ` +
       `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
     )
-    invariant(!withRef || withRef === 'forwardRef',
-      'withRef must be set to the text "forwardRef." Reference uses React.forwardRef and you may now access ref ' +
-      `directly instead of using getWrappedInstance() in component ${wrappedComponentName}`
-    )
 
     const wrappedComponentName = WrappedComponent.displayName
       || WrappedComponent.name
@@ -89,7 +92,7 @@ export default function connectAdvanced(
 
     let PureWrapper
 
-    if (withRef) {
+    if (forwardRef) {
       class PureWrapperRef extends Component {
         shouldComponentUpdate(nextProps) {
           return nextProps.derivedProps !== this.props.derivedProps
@@ -131,7 +134,6 @@ export default function connectAdvanced(
       renderCountProp,
       shouldHandleStateChanges,
       storeKey,
-      withRef,
       displayName,
       wrappedComponentName,
       WrappedComponent
@@ -142,7 +144,7 @@ export default function connectAdvanced(
     class Connect extends OuterBase {
       constructor(props) {
         super(props)
-        invariant(withRef ? !props.props[storeKey] : !props[storeKey],
+        invariant(forwardRef ? !props.props[storeKey] : !props[storeKey],
           'Passing redux store in props has been removed and does not do anything. ' +
           'To use a custom redux store for a single component, ' +
           'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
@@ -229,7 +231,7 @@ export default function connectAdvanced(
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
-    if (withRef) {
+    if (forwardRef) {
       Connect.prototype.renderWrappedComponent = Connect.prototype.renderWrappedComponentWithRef
       Connect.propTypes = {
         props: propTypes.object,
@@ -240,7 +242,7 @@ export default function connectAdvanced(
       }
     }
 
-    if (!withRef) {
+    if (!forwardRef) {
       return hoistStatics(Connect, WrappedComponent)
     }
 

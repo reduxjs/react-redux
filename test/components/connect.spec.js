@@ -1483,7 +1483,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state, undefined, undefined, { withRef: 'forwardRef' })
+      const decorator = connect(state => state, undefined, undefined, { forwardRef : true })
       const Decorated = decorator(Container)
 
       const ref = React.createRef()
@@ -1525,7 +1525,7 @@ describe('React', () => {
         }
       }
 
-      const decorator = connect(state => state, undefined, undefined, { withRef: 'forwardRef', pure: false })
+      const decorator = connect(state => state, undefined, undefined, { forwardRef : true, pure: false })
       const Decorated = decorator(Container)
 
       const ref = React.createRef()
@@ -2301,14 +2301,14 @@ describe('React', () => {
       expect(spy).not.toHaveBeenCalled()
     })
 
-    it('should error on withRef=true (must be "forwardRef")', () => {
+    it('should error on withRef=true', () => {
       class Container extends Component {
         render() {
           return <div>hi</div>
         }
       }
       expect(() => connect(undefined, undefined, undefined, { withRef: true })(Container))
-        .toThrow(/withRef must be set/)
+        .toThrow(/withRef is removed/)
     })
 
     it('should error on receiving a custom store key', () => {
