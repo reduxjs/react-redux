@@ -8,18 +8,28 @@ import Context from './Context'
 
 const ReduxConsumer = Context.Consumer
 
-const createGetter = (source, callback) => {
-  const getter = {}
-
-  Object
-    .getOwnPropertyNames(source)
-    .forEach(key => getter[key] = {
-      get: () => callback(key),
-      enumerable: true
-    })
-
-  return getter
-};
+function createWithProxy(source) {
+  const usage = new Set();
+  const usedKeys = [];
+  const proxy = new Proxy(source, {
+    get(target, key) {
+      if (!usage.has(key)) {
+        usage.add(key);
+        usedKeys.push(key);
+      }
+      return target[key];
+    }
+  });
+  return {
+    proxy,
+    usage,
+    usedKeys,
+    resetUsage: () => {
+      usage.clear();
+      usedKeys.length = 0;
+    }
+  }
+}
 
 export default function connectAdvanced(
   /*
@@ -161,8 +171,14 @@ export default function connectAdvanced(
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
         this.setObservedBits = this.setObservedBits.bind(this)
 
+        let observedBits = ALL_BITS;
+        if(ReduxConsumer === Consumer && Context.unstable_read) {
+          const {state, store, hashFunction} = Context.unstable_read();
+          observedBits = this.generatedDerivedProps(state, this.props, store, hashFunction).observedBits
+        }
+
         this.state = {
-          observedBits: ALL_BITS
+          observedBits
         }
       }
 
@@ -186,8 +202,6 @@ export default function connectAdvanced(
         let lastStore
         let lastHashFunction
         let sourceSelector
-        let stateGetter
-        let observedBits
         let lastObservedBits;
         return (state, props, store, hashFunction) => {
           if ((connectOptions.pure && lastProps === props) && (lastState === state)) {
@@ -199,23 +213,17 @@ export default function connectAdvanced(
           }
 
           if (hashFunction !== lastHashFunction) {
-            stateGetter = createGetter(state, key => {
-              observedBits = hashFunction(observedBits, key)
-              return lastState[key]
-            })
             lastHashFunction = hashFunction
           }
           if (lastProps !== props || lastState !== state) {
             lastProps = props
             lastState = state
 
-            observedBits = 0
-            const couldProxyState = typeof state === 'object' && !Array.isArray(state)
+            const couldProxyState = typeof state === 'object'
             if (couldProxyState) {
-              const stateProxy = {}
-              Object.defineProperties(stateProxy, stateGetter);
-              lastDerivedProps = sourceSelector(stateProxy, props)
-              lastObservedBits = observedBits;
+              const stateProxy = createWithProxy(state);
+              lastDerivedProps = sourceSelector(stateProxy.proxy, props);
+              lastObservedBits = stateProxy.usedKeys.reduce( (acc, key) => hashFunction(acc, key), 0);
             } else {
               lastDerivedProps = sourceSelector(state, props)
               lastObservedBits = ALL_BITS;
