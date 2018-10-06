@@ -2,6 +2,7 @@
 id: api
 title: Api
 sidebar_label: Api
+hide_title: true
 ---
 
 # API
