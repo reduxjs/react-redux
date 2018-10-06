@@ -1,8 +1,14 @@
+---
+id: provider
+title: Provider
+sidebar_label: Provider
+---
+
 # `<Provider />`
 
 ## Overview
 
-The `<Provider />` makes the Redux `store` available to any nested components that have been wrapped in the `connect()` function. 
+The `<Provider />` makes the Redux `store` available to any nested components that have been wrapped in the `connect()` function.
 
 Since any React component in a React-Redux app can be connected, most applications will render a `<Provider>` at the top level, with the entire app’s component tree inside of it.
 
@@ -15,26 +21,26 @@ Note: If you really need to, you can manually pass `store` as a prop to a connec
 `store` (Redux Store)
 The single Redux `store` in your application.
 
-`children` (ReactElement) 
-The root of your component hierarchy. 
+`children` (ReactElement)
+The root of your component hierarchy.
 
 
 ### Example Usage
 
-In the example below, the `<App />` component is our root-level component. This means it’s at the very top of our component hierarchy. 
+In the example below, the `<App />` component is our root-level component. This means it’s at the very top of our component hierarchy.
 
-**Vanilla React Example** 
+**Vanilla React Example**
 
 ```js
     import React from 'react';
     import ReactDOM from 'react-dom';
     import { Provider } from 'react-redux';
-    
+
     import { App } from './App';
     import createStore from './createReduxStore';
-    
+
     const store = createStore();
-    
+
     ReactDOM.render(
       <Provider store={store}>
         <App />
@@ -51,14 +57,14 @@ In the example below, the `<App />` component is our root-level component. This 
     import ReactDOM from 'react-dom';
     import { Provider } from 'react-redux';
     import { Router, Route } from 'react-router-dom';
-    
+
     import { App } from './App';
     import { Foo } from './Foo';
     import { Bar } from './Bar';
     import createStore from './createReduxStore';
-    
+
     const store = createStore();
-    
+
     ReactDOM.render(
       <Provider store={store}>
         <Router history={history}>
@@ -71,5 +77,3 @@ In the example below, the `<App />` component is our root-level component. This 
       document.getElementById('root')
     )
 ```    
-
-
