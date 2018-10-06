@@ -1,3 +1,9 @@
+---
+id: getting-started
+title: Getting started
+sidebar_label: Getting started
+---
+
 # Getting Started
 
 [React-Redux](https://github.com/reduxjs/react-redux) is the official [React](https://reactjs.org/) binding for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update data.
