@@ -1,5 +1,13 @@
 /* your custom css */
 
+header.postHeader:empty {
+  display: none;
+}
+
+header.postHeader:empty + article h1 {
+  margin-top: 0;
+}
+
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 
