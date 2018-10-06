@@ -2,25 +2,26 @@
 id: api
 title: Api
 sidebar_label: Api
+hide_title: true
 ---
 
 # API
 
 <a id="provider"></a>
-### `<Provider store>`
+## Provider
 
 Makes the Redux store available to the `connect()` calls in the component hierarchy below. Normally, you can’t use `connect()` without wrapping a parent or ancestor component in `<Provider>`.
 
 If you *really* need to, you can manually pass `store` as a prop to every `connect()`ed component, but we only recommend to do this for stubbing `store` in unit tests, or in non-fully-React codebases. Normally, you should just use `<Provider>`.
 
-#### Props
+### Props
 
 * `store` (*[Redux Store](https://redux.js.org/api-reference/store)*): The single Redux store in your application.
 * `children` (*ReactElement*) The root of your component hierarchy.
 
-#### Example
+### Example
 
-##### Vanilla React
+#### Vanilla React
 
 ```js
 ReactDOM.render(
@@ -31,7 +32,7 @@ ReactDOM.render(
 )
 ```
 
-##### React Router
+#### React Router
 
 ```js
 ReactDOM.render(
@@ -48,15 +49,17 @@ ReactDOM.render(
 ```
 
 
-<a id="connect"></a>
-### `connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`
+## connect
+
+```
+connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])
+```
 
 Connects a React component to a Redux store. `connect` is a facade around `connectAdvanced`, providing a convenient API for the most common use cases.
 
 It does not modify the component class passed to it; instead, it *returns* a new, connected component class for you to use.
 
-<a id="connect-arguments"></a>
-#### Arguments
+### Arguments
 
 * [`mapStateToProps(state, [ownProps]): stateProps`] \(*Function*): If this argument is specified, the new component will subscribe to Redux store updates. This means that any time the store is updated, `mapStateToProps` will be called. The results of `mapStateToProps` must be a plain object, which will be merged into the component’s props. If you don't want to subscribe to store updates, pass `null` or `undefined` in place of `mapStateToProps`.
 
@@ -86,8 +89,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
   * [`areMergedPropsEqual`] *(Function)*: When pure, compares the result of `mergeProps` to its previous value. Default value: `shallowEqual`
   * [`storeKey`] *(String)*: The key of the context from where to read the store. You probably only need this if you are in the inadvisable position of having multiple stores. Default value: `'store'`
 
-<a id="connect-arguments-arity"></a>
-##### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
+#### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
 
 > Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if the formal definition of the function contains one mandatory parameter (function has length 1). For example, functions defined like below won't receive `ownProps` as the second argument.
 ```javascript
@@ -122,8 +124,7 @@ const mapStateToProps = (...args) => {
 }
 ```
 
-<a id="connect-optimizing"></a>
-##### Optimizing connect when options.pure is true
+#### Optimizing connect when options.pure is true
 
 When `options.pure` is true, `connect` performs several equality checks that are used to avoid unnecessary calls to `mapStateToProps`, `mapDispatchToProps`, `mergeProps`, and ultimately to `render`. These include `areStatesEqual`, `areOwnPropsEqual`, `areStatePropsEqual`, and `areMergedPropsEqual`. While the defaults are probably appropriate 99% of the time, you may wish to override them with custom implementations for performance or other reasons. Here are several examples:
 
@@ -137,20 +138,20 @@ When `options.pure` is true, `connect` performs several equality checks that are
 
 * You may wish to override `areMergedPropsEqual` to implement a `deepEqual` if your selectors produce complex props. ex: nested objects, new arrays, etc. (The deep equal check should be faster than just re-rendering.)
 
-#### Returns
+### Returns
 
 A higher-order React component class that passes state and action creators into your component derived from the supplied arguments. This is created by `connectAdvanced`, and details of this higher-order component are covered there.
 
 <a id="connect-examples"></a>
 #### Examples
 
-##### Inject just `dispatch` and don't listen to store
+#### Inject just `dispatch` and don't listen to store
 
 ```js
 export default connect()(TodoApp)
 ```
 
-##### Inject all action creators  (`addTodo`, `completeTodo`, ...) without subscribing to the store
+#### Inject all action creators  (`addTodo`, `completeTodo`, ...) without subscribing to the store
 
 ```js
 import * as actionCreators from './actionCreators'
@@ -158,7 +159,7 @@ import * as actionCreators from './actionCreators'
 export default connect(null, actionCreators)(TodoApp)
 ```
 
-##### Inject `dispatch` and every field in the global state
+#### Inject `dispatch` and every field in the global state
 
 >Don’t do this! It kills any performance optimizations because `TodoApp` will rerender after every state change.  
 >It’s better to have more granular `connect()` on several components in your view hierarchy that each only  
@@ -168,7 +169,7 @@ export default connect(null, actionCreators)(TodoApp)
 export default connect(state => state)(TodoApp)
 ```
 
-##### Inject `dispatch` and `todos`
+#### Inject `dispatch` and `todos`
 
 ```js
 function mapStateToProps(state) {
@@ -178,7 +179,7 @@ function mapStateToProps(state) {
 export default connect(mapStateToProps)(TodoApp)
 ```
 
-##### Inject `todos` and all action creators
+#### Inject `todos` and all action creators
 
 ```js
 import * as actionCreators from './actionCreators'
@@ -190,7 +191,7 @@ function mapStateToProps(state) {
 export default connect(mapStateToProps, actionCreators)(TodoApp)
 ```
 
-##### Inject `todos` and all action creators (`addTodo`, `completeTodo`, ...) as `actions`
+#### Inject `todos` and all action creators (`addTodo`, `completeTodo`, ...) as `actions`
 
 ```js
 import * as actionCreators from './actionCreators'
@@ -207,7 +208,7 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
-#####  Inject `todos` and a specific action creator (`addTodo`)
+####  Inject `todos` and a specific action creator (`addTodo`)
 
 ```js
 import { addTodo } from './actionCreators'
@@ -224,7 +225,8 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
-#####  Inject `todos` and specific action creators (`addTodo` and `deleteTodo`) with shorthand syntax
+####  Inject `todos` and specific action creators (`addTodo` and `deleteTodo`) with shorthand syntax
+
 ```js
 import { addTodo, deleteTodo } from './actionCreators'
 
@@ -240,7 +242,7 @@ const mapDispatchToProps = {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
-##### Inject `todos`, todoActionCreators as `todoActions`, and counterActionCreators as `counterActions`
+#### Inject `todos`, todoActionCreators as `todoActions`, and counterActionCreators as `counterActions`
 
 ```js
 import * as todoActionCreators from './todoActionCreators'
@@ -261,7 +263,7 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
-##### Inject `todos`, and todoActionCreators and counterActionCreators together as `actions`
+#### Inject `todos`, and todoActionCreators and counterActionCreators together as `actions`
 
 ```js
 import * as todoActionCreators from './todoActionCreators'
@@ -281,7 +283,7 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
-##### Inject `todos`, and all todoActionCreators and counterActionCreators directly as props
+#### Inject `todos`, and all todoActionCreators and counterActionCreators directly as props
 
 ```js
 import * as todoActionCreators from './todoActionCreators'
@@ -299,7 +301,7 @@ function mapDispatchToProps(dispatch) {
 export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
-##### Inject `todos` of a specific user depending on props
+#### Inject `todos` of a specific user depending on props
 
 ```js
 import * as actionCreators from './actionCreators'
@@ -311,7 +313,7 @@ function mapStateToProps(state, ownProps) {
 export default connect(mapStateToProps)(TodoApp)
 ```
 
-##### Inject `todos` of a specific user depending on props, and inject `props.userId` into the action
+#### Inject `todos` of a specific user depending on props, and inject `props.userId` into the action
 
 ```js
 import * as actionCreators from './actionCreators'
@@ -330,7 +332,8 @@ function mergeProps(stateProps, dispatchProps, ownProps) {
 export default connect(mapStateToProps, actionCreators, mergeProps)(TodoApp)
 ```
 
-##### Factory functions
+#### Factory functions
+
 Factory functions can be used for performance optimizations
 
 ```js
@@ -363,15 +366,17 @@ function mapDispatchToPropsFactory(initialState, initialProps) {
 export default connect(mapStateToPropsFactory, mapDispatchToPropsFactory)(TodoApp)
 ```
 
-<a id="connectAdvanced"></a>
-### `connectAdvanced(selectorFactory, [connectOptions])`
+## connectAdvanced
+
+```
+connectAdvanced(selectorFactory, [connectOptions])
+```
 
 Connects a React component to a Redux store. It is the base for `connect()` but is less opinionated about how to combine `state`, `props`, and `dispatch` into your final props. It makes no assumptions about defaults or memoization of results, leaving those responsibilities to the caller.
 
 It does not modify the component class passed to it; instead, it *returns* a new, connected component class for you to use.
 
-<a id="connectAdvanced-arguments"></a>
-#### Arguments
+### Arguments
 
 * `selectorFactory(dispatch, factoryOptions): selector(state, ownProps): props` \(*Function*): Initializes a selector function (during each instance's constructor). That selector function is called any time the connector component needs to compute new props, as a result of a store state change or receiving new props. The result of `selector` is expected to be a plain object, which is passed as the props to the wrapped component. If a consecutive call to `selector` returns the same object (`===`) as its previous call, the component will not be re-rendered. It's the responsibility of `selector` to return that previous object when appropriate.
 
@@ -392,25 +397,26 @@ It does not modify the component class passed to it; instead, it *returns* a new
   * Additionally, any extra options passed via `connectOptions` will be passed through to your `selectorFactory` in the `factoryOptions` argument.
 
 <a id="connectAdvanced-returns"></a>
-#### Returns
+
+### Returns
 
 A higher-order React component class that builds props from the store state and passes them to the wrapped component. A higher-order component is a function which accepts a component argument and returns a new component.
 
-##### Static Properties
+#### Static Properties
 
 * `WrappedComponent` *(Component)*: The original component class passed to `connectAdvanced(...)(Component)`.
 
-##### Static Methods
+#### Static Methods
 
 All the original static methods of the component are hoisted.
 
-##### Instance Methods
+#### Instance Methods
 
-###### `getWrappedInstance(): ReactComponent`
+##### `getWrappedInstance(): ReactComponent`
 
 Returns the wrapped component instance. Only available if you pass `{ withRef: true }` as part of the `options` argument.
 
-#### Remarks
+### Remarks
 
 * Since `connectAdvanced` returns a higher-order component, it needs to be invoked two times. The first time with its arguments as described above, and a second time, with the component: `connectAdvanced(selectorFactory)(MyComponent)`.
 
@@ -419,7 +425,7 @@ Returns the wrapped component instance. Only available if you pass `{ withRef: t
 <a id="connectAdvanced-examples"></a>
 #### Examples
 
-##### Inject `todos` of a specific user depending on props, and inject `props.userId` into the action
+#### Inject `todos` of a specific user depending on props, and inject `props.userId` into the action
 ```js
 import * as actionCreators from './actionCreators'
 import { bindActionCreators } from 'redux'
@@ -440,17 +446,19 @@ function selectorFactory(dispatch) {
 export default connectAdvanced(selectorFactory)(TodoApp)
 ```
 
-<a id="createProvider"></a>
-### `createProvider([storeKey])`
+## createProvider
+
+```
+createProvider([storeKey])
+```
 
 Creates a new `<Provider>` which will set the Redux Store on the passed key of the context. You probably only need this if you are in the inadvisable position of having multiple stores. You will also need to pass the same `storeKey` to the `options` argument of [`connect`](#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
 
-<a id="createProvider-arguments"></a>
-#### Arguments
+### Arguments
 
 * [`storeKey`] (*String*): The key of the context on which to set the store. Default value: `'store'`
 
-#### Examples
+### Examples
 Before creating multiple stores, please go through this FAQ: [Can or should I create multiple stores?](http://redux.js.org/docs/faq/StoreSetup.html#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself)
 
 ```js

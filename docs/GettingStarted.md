@@ -1,6 +1,7 @@
 ---
 id: getting-started
 title: Getting started
+hide_title: true
 sidebar_label: Getting started
 ---
 
@@ -24,7 +25,7 @@ yarn add react-redux
 
 <!-- perhaps add link to an extra quick start section? -->
 
-## `<Provider />` and `connect`
+## `Provider` and `connect`
 
 React-Redux consists of two main pieces. The first is a component called `<Provider />`, which makes the Redux store available to the rest of your app:
 
