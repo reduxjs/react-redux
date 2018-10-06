@@ -1,3 +1,9 @@
+---
+id: troubleshooting
+title: Troubleshooting
+sidebar_label: Troubleshooting
+---
+
 ## Troubleshooting
 
 Make sure to check out [Troubleshooting Redux](http://redux.js.org/docs/Troubleshooting.html) first.
