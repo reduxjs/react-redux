@@ -11,7 +11,7 @@
 const siteConfig = {
   title: "React Redux", // Title for your website.
   tagline: "React Redux Documentation",
-  url: "https://your-docusaurus-test-site.com", // Your website URL
+  url: "https://react-redux.js.org", // Your website URL
   baseUrl: "/", // Base URL for your project */
   // For github.io type URLs, you would set the url and baseUrl like:
   //   url: 'https://facebook.github.io',
@@ -19,7 +19,7 @@ const siteConfig = {
 
   // Used for publishing and more
   projectName: "react-redux",
-  organizationName: "facebook",
+  organizationName: "reduxjs",
   // For top-level user or org sites, the organization is still the same.
   // e.g., for the https://JoelMarcey.github.io site, it would be set like...
   //   organizationName: 'JoelMarcey'
@@ -38,8 +38,8 @@ const siteConfig = {
 
   /* Colors for website */
   colors: {
-    primaryColor: "#20232a",
-    secondaryColor: "#61dafb"
+    primaryColor: "#764ABC",
+    secondaryColor: "#764ABC",
   },
 
   /* Custom fonts for website */
