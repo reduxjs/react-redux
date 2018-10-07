@@ -1,8 +1,8 @@
 ---
 id: getting-started
-title: Getting started
+title: Getting Started
 hide_title: true
-sidebar_label: Getting started
+sidebar_label: Getting Started
 ---
 
 # Getting Started
@@ -308,12 +308,8 @@ export const getTodoList = store =>
   getTodosState(store) ? getTodosState(store).allIds : [];
 
 export const getTodoById = (store, id) =>
-  getTodoState(store) ? { ...getTodosState(store).byIds[id], id } : {};
+  getTodosState(store) ? { ...getTodosState(store).byIds[id], id } : {};
 
-/**
- * example of a slightly more complex selector
- * select from store combining information from multiple reducers
- */
 export const getTodos = store =>
   getTodoList(store).map(id => getTodoById(store, id));
 ```
@@ -462,7 +458,6 @@ Meanwhile, we also need to update our `<TodoList />` component to filter todos a
 // redux/selectors.js
 
 // ... other selectors
-
 export const getTodosByVisibilityFilter = (store, visibilityFilter) => {
   const allTodos = getTodos(store);
   switch (visibilityFilter) {
