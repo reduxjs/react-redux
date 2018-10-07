@@ -1,8 +1,8 @@
 ---
 id: connect-extracting-data-with-mapStateToProps
-title: Connect: Extracting Data with `mapStateToProps`
+title: Connect: Extracting Data with mapStateToProps
 hide_title: true
-sidebar_label: Connect: Extracting Data with `mapStateToProps`
+sidebar_label: Connect: Extracting Data with mapStateToProps
 ---
 
 # Connect: Extracting Data with `mapStateToProps`
@@ -146,7 +146,7 @@ Many common operations result in new object or array references being created:
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
-Put these operation in [memoized selector functions]() to ensure that they only run if the input values have changed.
+Put these operations in [memoized selector functions]() to ensure that they only run if the input values have changed.  This will also ensure that if the input values _haven't_ changed, `mapState` will still return the same result values as before, and `connect` can skip re-rendering.
 
 
 
