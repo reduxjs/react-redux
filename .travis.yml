@@ -1,8 +1,18 @@
 language: node_js
 node_js:
   - "8"
+before_install:
+  - 'nvm install-latest-npm'
+env:
+  matrix:
+  - REACT=0.14
+  - REACT=15
+  - REACT=16.2
+  - REACT=16.3
+  - REACT=16.4
+sudo: false
 script:
   - npm run lint
-  - npm test
+  - npm run test
 after_success:
   - npm run coverage

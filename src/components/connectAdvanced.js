@@ -1,34 +1,32 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
-import { polyfill } from 'react-lifecycles-compat'
 
 import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 
 let hotReloadingVersion = 0
+const dummyState = {}
 function noop() {}
-function makeUpdater(sourceSelector, store) {
-  return function updater(props, prevState) {
-    try {
-      const nextProps = sourceSelector(store.getState(), props)
-      if (nextProps !== prevState.props || prevState.error) {
-        return {
-          shouldComponentUpdate: true,
-          props: nextProps,
-          error: null,
+function makeSelectorStateful(sourceSelector, store) {
+  // wrap the selector in an object that tracks its results between runs.
+  const selector = {
+    run: function runComponentSelector(props) {
+      try {
+        const nextProps = sourceSelector(store.getState(), props)
+        if (nextProps !== selector.props || selector.error) {
+          selector.shouldComponentUpdate = true
+          selector.props = nextProps
+          selector.error = null
         }
-      }
-      return {
-        shouldComponentUpdate: false,
-      }
-    } catch (error) {
-      return {
-        shouldComponentUpdate: true,
-        error,
+      } catch (error) {
+        selector.shouldComponentUpdate = true
+        selector.error = error
       }
     }
   }
+
+  return selector
 }
 
 export default function connectAdvanced(
@@ -88,10 +86,6 @@ export default function connectAdvanced(
     [subscriptionKey]: subscriptionShape,
   }
 
-  function getDerivedStateFromProps(nextProps, prevState) {
-    return prevState.updater(nextProps, prevState)
-  }
-
   return function wrapWithConnect(WrappedComponent) {
     invariant(
       typeof WrappedComponent == 'function',
@@ -118,11 +112,15 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
+    // TODO Actually fix our use of componentWillReceiveProps
+    /* eslint-disable react/no-deprecated */
+
     class Connect extends Component {
       constructor(props, context) {
         super(props, context)
 
         this.version = version
+        this.state = {}
         this.renderCount = 0
         this.store = props[storeKey] || context[storeKey]
         this.propsMode = Boolean(props[storeKey])
@@ -134,9 +132,7 @@ export default function connectAdvanced(
           `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
 
-        this.state = {
-          updater: this.createUpdater()
-        }
+        this.initSelector()
         this.initSubscription()
       }
 
@@ -159,11 +155,16 @@ export default function connectAdvanced(
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
         this.subscription.trySubscribe()
-        this.runUpdater()
+        this.selector.run(this.props)
+        if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
 
-      shouldComponentUpdate(_, nextState) {
-        return nextState.shouldComponentUpdate
+      componentWillReceiveProps(nextProps) {
+        this.selector.run(nextProps)
+      }
+
+      shouldComponentUpdate() {
+        return this.selector.shouldComponentUpdate
       }
 
       componentWillUnmount() {
@@ -171,7 +172,8 @@ export default function connectAdvanced(
         this.subscription = null
         this.notifyNestedSubs = noop
         this.store = null
-        this.isUnmounted = true
+        this.selector.run = noop
+        this.selector.shouldComponentUpdate = false
       }
 
       getWrappedInstance() {
@@ -186,17 +188,10 @@ export default function connectAdvanced(
         this.wrappedInstance = ref
       }
 
-      createUpdater() {
+      initSelector() {
         const sourceSelector = selectorFactory(this.store.dispatch, selectorFactoryOptions)
-        return makeUpdater(sourceSelector, this.store)
-      }
-
-      runUpdater(callback = noop) {
-        if (this.isUnmounted) {
-          return
-        }
-
-        this.setState(prevState => prevState.updater(this.props, prevState), callback)
+        this.selector = makeSelectorStateful(sourceSelector, this.store)
+        this.selector.run(this.props)
       }
 
       initSubscription() {
@@ -207,7 +202,7 @@ export default function connectAdvanced(
         const parentSub = (this.propsMode ? this.props : this.context)[subscriptionKey]
         this.subscription = new Subscription(this.store, parentSub, this.onStateChange.bind(this))
 
-        // `notifyNestedSubs` is duplicated to handle the case where the component is  unmounted in
+        // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
         // the middle of the notification loop, where `this.subscription` will then be null. An
         // extra null check every change can be avoided by copying the method onto `this` and then
         // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
@@ -217,7 +212,24 @@ export default function connectAdvanced(
       }
 
       onStateChange() {
-        this.runUpdater(this.notifyNestedSubs)
+        this.selector.run(this.props)
+
+        if (!this.selector.shouldComponentUpdate) {
+          this.notifyNestedSubs()
+        } else {
+          this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
+          this.setState(dummyState)
+        }
+      }
+
+      notifyNestedSubsOnComponentDidUpdate() {
+        // `componentDidUpdate` is conditionally implemented when `onStateChange` determines it
+        // needs to notify nested subs. Once called, it unimplements itself until further state
+        // changes occur. Doing it this way vs having a permanent `componentDidUpdate` that does
+        // a boolean check every time avoids an extra method call most of the time, resulting
+        // in some perf boost.
+        this.componentDidUpdate = undefined
+        this.notifyNestedSubs()
       }
 
       isSubscribed() {
@@ -238,26 +250,31 @@ export default function connectAdvanced(
       }
 
       render() {
-        if (this.state.error) {
-          throw this.state.error
+        const selector = this.selector
+        selector.shouldComponentUpdate = false
+
+        if (selector.error) {
+          throw selector.error
         } else {
-          return createElement(WrappedComponent, this.addExtraProps(this.state.props))
+          return createElement(WrappedComponent, this.addExtraProps(selector.props))
         }
       }
     }
+
+    /* eslint-enable react/no-deprecated */
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
     Connect.childContextTypes = childContextTypes
     Connect.contextTypes = contextTypes
     Connect.propTypes = contextTypes
-    Connect.getDerivedStateFromProps = getDerivedStateFromProps
 
     if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentDidUpdate = function componentDidUpdate() {
+      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
         // We are hot reloading!
         if (this.version !== version) {
           this.version = version
+          this.initSelector()
 
           // If any connected descendants don't hot reload (and resubscribe in the process), their
           // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
@@ -275,15 +292,9 @@ export default function connectAdvanced(
             this.subscription.trySubscribe()
             oldListeners.forEach(listener => this.subscription.listeners.subscribe(listener))
           }
-
-          const updater = this.createUpdater()
-          this.setState({updater})
-          this.runUpdater()
         }
       }
     }
-
-    polyfill(Connect)
 
     return hoistStatics(Connect, WrappedComponent)
   }

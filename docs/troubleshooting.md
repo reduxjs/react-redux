@@ -1,3 +1,10 @@
+---
+id: troubleshooting
+title: Troubleshooting
+sidebar_label: Troubleshooting
+hide_title: true
+---
+
 ## Troubleshooting
 
 Make sure to check out [Troubleshooting Redux](http://redux.js.org/docs/Troubleshooting.html) first.
@@ -21,7 +28,7 @@ If you’re using React Router 0.13, you might [bump into this problem](https://
 
 Root view:
 
-```js
+```jsx
 Router.run(routes, Router.HistoryLocation, (Handler, routerState) => { // note "routerState" here
   ReactDOM.render(
     <Provider store={store}>
@@ -55,7 +62,7 @@ The _best_ solution to this is to make sure that your components are pure and pa
 
 If that’s not practical for whatever reason (for example, if you’re using a library that depends heavily on React context), you may pass the `pure: false` option to `connect()`:
 
-```
+```js
 function mapStateToProps(state) {
   return { todos: state.todos }
 }
