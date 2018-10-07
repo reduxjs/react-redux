@@ -1,8 +1,8 @@
 ---
 id: getting-started
-title: Getting started
+title: Getting Started
 hide_title: true
-sidebar_label: Getting started
+sidebar_label: Getting Started
 ---
 
 # Getting Started

@@ -1,6 +1,7 @@
 {
   "docs": {
     "Introduction": ["getting-started"],
+    "Using React Redux": ["connect-extracting-data-with-mapStateToProps"],
     "API Reference": ["api", "api/provider"],
     "Guides": ["troubleshooting"]
   }
