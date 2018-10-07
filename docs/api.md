@@ -23,7 +23,7 @@ If you *really* need to, you can manually pass `store` as a prop to every `conne
 
 #### Vanilla React
 
-```js
+```jsx
 ReactDOM.render(
   <Provider store={store}>
     <MyRootComponent />
@@ -34,7 +34,7 @@ ReactDOM.render(
 
 #### React Router
 
-```js
+```jsx
 ReactDOM.render(
   <Provider store={store}>
     <Router history={history}>
@@ -92,32 +92,33 @@ It does not modify the component class passed to it; instead, it *returns* a new
 #### The arity of mapStateToProps and mapDispatchToProps determines whether they receive ownProps
 
 > Note: `ownProps` **is not passed** to `mapStateToProps` and `mapDispatchToProps` if the formal definition of the function contains one mandatory parameter (function has length 1). For example, functions defined like below won't receive `ownProps` as the second argument.
-```javascript
+
+```js
 function mapStateToProps(state) {
   console.log(state); // state
   console.log(arguments[1]); // undefined
 }
 ```
-```javascript
+```js
 const mapStateToProps = (state, ownProps = {}) => {
   console.log(state); // state
   console.log(ownProps); // undefined
 }
 ```
 Functions with no mandatory parameters or two parameters **will receive** `ownProps`.
-```javascript
+```js
 const mapStateToProps = (state, ownProps) => {
   console.log(state); // state
   console.log(ownProps); // ownProps
 }
 ```
-```javascript
+```js
 function mapStateToProps() {
   console.log(arguments[0]); // state
   console.log(arguments[1]); // ownProps
 }
 ```
-```javascript
+```js
 const mapStateToProps = (...args) => {
   console.log(args[0]); // state
   console.log(args[1]); // ownProps
@@ -368,7 +369,7 @@ export default connect(mapStateToPropsFactory, mapDispatchToPropsFactory)(TodoAp
 
 ## connectAdvanced
 
-```
+```js
 connectAdvanced(selectorFactory, [connectOptions])
 ```
 
@@ -426,6 +427,7 @@ Returns the wrapped component instance. Only available if you pass `{ withRef: t
 #### Examples
 
 #### Inject `todos` of a specific user depending on props, and inject `props.userId` into the action
+
 ```js
 import * as actionCreators from './actionCreators'
 import { bindActionCreators } from 'redux'
@@ -448,7 +450,7 @@ export default connectAdvanced(selectorFactory)(TodoApp)
 
 ## createProvider
 
-```
+```js
 createProvider([storeKey])
 ```
 

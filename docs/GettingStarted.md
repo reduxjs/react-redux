@@ -19,7 +19,7 @@ npm install --save react-redux
 
 or
 
-```
+```bash
 yarn add react-redux
 ```
 
@@ -64,7 +64,7 @@ Correspondingly, the `connect` function takes two arguments, both optional:
 
 Normally, you’ll call `connect` in this way:
 
-```jsx
+```js
 const mapStateToProps = (state, ownProps) => ({
   // ... computed data from state and optionally ownProps
 });
@@ -185,7 +185,7 @@ Let’s work on `<AddTodo />` first. It needs to trigger changes to the `store` 
 
 Our `addTodo` action creator looks like this:
 
-```JavaScript
+```js
 // redux/actions.js
 import { ADD_TODO } from './actionTypes';
 
@@ -203,7 +203,7 @@ export const addTodo = content => ({
 
 By passing it to `connect`, our component receives it as a prop, and it will automatically dispatch the action when it’s called.
 
-```jsx
+```js
 // components/AddTodo.js
 
 // ... other imports
@@ -277,7 +277,7 @@ The `<TodoList />` component is responsible for rendering the list of todos. The
 
 Our `<Todo />` component takes the todo item as props. We have this information from the `byIds` field of the `todos`. However, we also need the information from the `allIds` field of the store indicating which todos and in what order they should be rendered. Our `mapStateToProps` function may look like this:
 
-```jsx
+```js
 // components/TodoList.js
 
 // ...other imports
@@ -299,7 +299,7 @@ export default connect(mapStateToProps)(TodoList);
 
 Luckily we have a selector that does exactly this. We may simply import the selector and use it here.
 
-```jsx
+```js
 // redux/selectors.js
 
 export const getTodosState = store => store.todos;
@@ -318,7 +318,7 @@ export const getTodos = store =>
   getTodoList(store).map(id => getTodoById(store, id));
 ```
 
-```jsx
+```js
 // components/TodoList.js
 
 // ...other imports
@@ -354,7 +354,7 @@ If you call `connect` without providing any arguments, your component will:
 - _not_ re-render when the store changes
 - receive `props.dispatch` that you may use to manually dispatch action
 
-```jsx
+```js
 // ... Component
 export default connect()(Component); // Component will receive `dispatch` (just like our <TodoList />!)
 ```
@@ -366,7 +366,7 @@ If you call `connect` with only `mapStateToProps`, your component will:
 - subscribe to the values that `mapStateToProps` extracts from the store, and re-render only when those values have changed
 - receive `props.dispatch` that you may use to manually dispatch action
 
-```jsx
+```js
 // ... Component
 const mapStateToProps = state => state.partOfState;
 export default connect(mapStateToProps)(Component);
@@ -379,7 +379,7 @@ If you call `connect` with only `mapDispatchToProps`, your component will:
 - _not_ re-render when the store changes
 - receive each of the action creators you inject with `mapDispatchToProps` as props and automatically dispatch the actions upon being called
 
-```jsx
+```js
 import { addTodo } from "./actionCreators";
 // ... Component
 export default connect(
@@ -395,7 +395,7 @@ If you call `connect` with both `mapStateToProps` and `mapDispatchToProps`, your
 - subscribe to the values that `mapStateToProps` extracts from the store, and re-render only when those values have changed
 - receive all of the action creators you inject with `mapDispatchToProps` as props and automatically dispatch the actions upon being called.
 
-```jsx
+```js
 import * as actionCreators from "./actionCreators";
 // ... Component
 const mapStateToProps = state => state.partOfState;
@@ -415,7 +415,7 @@ Now let’s connect the rest of our `<TodoApp />`.
 
 How should we implement the interaction of toggling todos? A keen reader might already have an answer. If you have your environment set up and have followed through up until this point, now is a good time to leave it aside and implement the feature by yourself. There would be no surprise that we connect our `<Todo />` to dispatch `toggleTodo` in a similar way:
 
-```jsx
+```js
 // components/Todo.js
 
 // ... other imports
@@ -438,7 +438,7 @@ Finally, let’s implement our `VisibilityFilters` feature.
 
 The `<VisibilityFilters />` component needs to be able to read from the store which filter is currently active, and dispatch actions to the store. Therefore, we need to pass both a `mapStateToProps` and `mapDispatchToProps`. The `mapStateToProps` here can be a simple accessor of the `visibilityFilter` state. And the `mapDispatchToProps` will contain the `setFilter` action creator.
 
-```jsx
+```js
 // components/VisibilityFilters.js
 
 // ... other imports
@@ -479,7 +479,7 @@ export const getTodosByVisibilityFilter = (store, visibilityFilter) => {
 
 And connecting to the store with the help of the selector:
 
-```jsx
+```js
 // components/TodoList.js
 
 // ...

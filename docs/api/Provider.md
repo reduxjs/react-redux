@@ -31,7 +31,7 @@ In the example below, the `<App />` component is our root-level component. This 
 
 **Vanilla React Example**
 
-```js
+```jsx
     import React from 'react';
     import ReactDOM from 'react-dom';
     import { Provider } from 'react-redux';
@@ -52,7 +52,7 @@ In the example below, the `<App />` component is our root-level component. This 
 
 **Usage with React Router**
 
-```js
+```jsx
     import React from 'react';
     import ReactDOM from 'react-dom';
     import { Provider } from 'react-redux';
