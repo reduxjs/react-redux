@@ -22,7 +22,7 @@ function mapStateToProps(state, ownProps?)
 
 It should take a first argument called `state`, optionally a second argument called `ownProps`, and return a plain object containing the data that the connected component needs.
 
-This function should be passed as the first argument to `connect`, and will be will be called every time when the Redux store state changes. If you do not wish to subscribe to the store, pass `null` or `undefined` to `connect` in place of `mapStateToProps`.
+This function should be passed as the first argument to `connect`, and will be called every time when the Redux store state changes. If you do not wish to subscribe to the store, pass `null` or `undefined` to `connect` in place of `mapStateToProps`.
 
 **It does not matter if a `mapStateToProps` function is written using the `function` keyword (`function mapState(state) { }` ) or as an arrow function (`const mapState = (state) => { }` )** - it will work the same either way.
 
