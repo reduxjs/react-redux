@@ -29,7 +29,7 @@ If you are on an older version of React Native, you’ll need to keep using [Rea
 
 ## Documentation
 
-- [Getting Started: adding React-Redux to a React todo app](docs/GettingStarted.md)
+- [Getting Started: adding React-Redux to a React todo app](docs/getting-started.md)
 - [API](docs/api.md#api)
   - [`<Provider store>`](docs/api.md#provider-store)
   - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](docs/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
