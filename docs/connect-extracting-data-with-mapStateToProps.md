@@ -62,7 +62,7 @@ function mapStateToProps(state, ownProps) {
 };
 
 // Later, in your application, a parent component renders:
-<ConnectedTodo id=123} />
+<ConnectedTodo id={123} />
 // and your component receives props.id, props.todo, and props.visibilityFilter
 ```
 
