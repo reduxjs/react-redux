@@ -34,13 +34,13 @@ class Footer extends React.Component {
           </a>
           <div>
             <h5>Docs</h5>
-            <a href={this.docUrl("getting-started", this.props.language)}>
+            <a href={this.docUrl("getting-started")}>
               Getting Started
             </a>
-            <a href={this.docUrl("api", this.props.language)}>
+            <a href={this.docUrl("api")}>
               Api
             </a>
-            <a href={this.docUrl("troubleshooting", this.props.language)}>
+            <a href={this.docUrl("troubleshooting")}>
               Troubleshooting
             </a>
           </div>
@@ -56,7 +56,6 @@ class Footer extends React.Component {
           </div>
           <div>
             <h5>More</h5>
-            <a href={`${this.props.config.baseUrl}blog`}>Blog</a>
             <a href="https://github.com/reduxjs/react-redux/">GitHub</a>
             <a
               className="github-button"
