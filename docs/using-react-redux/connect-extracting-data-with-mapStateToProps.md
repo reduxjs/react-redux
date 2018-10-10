@@ -143,6 +143,7 @@ Many common operations result in new object or array references being created:
 
 - Creating new arrays with `someArray.map()` or `someArray.filter()`
 - Merging arrays with `array.concat`
+- Selecting portion of an array with `array.slice`
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
