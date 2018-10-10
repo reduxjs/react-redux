@@ -187,7 +187,7 @@ Our `addTodo` action creator looks like this:
 
 ```js
 // redux/actions.js
-import { ADD_TODO } from './actionTypes';
+import { ADD_TODO } from "./actionTypes";
 
 let nextTodoId = 0;
 export const addTodo = content => ({
@@ -497,7 +497,6 @@ Now we've finished a very simple example of a todo app with React-Redux. All our
 - [Usage with React](https://redux.js.org/basics/usagewithreact)
 - [Using the React-Redux Bindings](https://blog.isquaredsoftware.com/presentations/workshops/redux-fundamentals/react-redux.html)
 - [Higher Order Components in Depth](https://medium.com/@franleplant/react-higher-order-components-in-depth-cf9032ee6c3e)
-  <!-- - [Presentational and Container Components](https://medium.com/@dan_abramov/smart-and-dumb-components-7ca2f9a7c7d0) -->
 - [Computing Derived Data](https://redux.js.org/recipes/computingderiveddata#sharing-selectors-across-multiple-components)
 - [Idiomatic Redux: Using Reselect Selectors for Encapsulation and Performance](https://blog.isquaredsoftware.com/2017/12/idiomatic-redux-using-reselect-selectors/)
 

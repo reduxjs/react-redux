@@ -34,15 +34,16 @@ class Footer extends React.Component {
           </a>
           <div>
             <h5>Docs</h5>
-            <a href={this.docUrl("getting-started")}>
-              Getting Started
+            <a href={this.docUrl("getting-started")}>Introduction</a>
+            <a
+              href={this.docUrl(
+                "using-react-redux/connect-extracting-data-with-mapStateToProps"
+              )}
+            >
+              Using React-Redux
             </a>
-            <a href={this.docUrl("api")}>
-              Api
-            </a>
-            <a href={this.docUrl("troubleshooting")}>
-              Troubleshooting
-            </a>
+            <a href={this.docUrl("api")}>API Reference</a>
+            <a href={this.docUrl("troubleshooting")}>Guides</a>
           </div>
           <div>
             <h5>Community</h5>

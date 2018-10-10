@@ -1,7 +1,7 @@
 ---
 id: api
 title: Api
-sidebar_label: Api
+sidebar_label: API
 hide_title: true
 ---
 

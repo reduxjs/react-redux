@@ -26,9 +26,12 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    { doc: "getting-started", label: "Getting started" },
-    { doc: "api", label: "Api" },
-    { doc: "troubleshooting", label: "Troubleshooting" }
+    { doc: "getting-started", label: "Getting Started" },
+    {
+      doc: "using-react-redux/connect-extracting-data-with-mapStateToProps",
+      label: "Using React-Redux"
+    },
+    { doc: "api", label: "API" }
   ],
 
   /* path to images for header/footer */
@@ -39,7 +42,7 @@ const siteConfig = {
   /* Colors for website */
   colors: {
     primaryColor: "#764ABC",
-    secondaryColor: "#764ABC",
+    secondaryColor: "#764ABC"
   },
 
   /* Custom fonts for website */
@@ -78,7 +81,7 @@ const siteConfig = {
 
   // You may provide arbitrary config keys to be used as needed by your
   // template. For example, if you need your repo's URL...
-  repoUrl: "https://github.com/reduxjs/react-redux",
+  repoUrl: "https://github.com/reduxjs/react-redux"
 };
 
 module.exports = siteConfig;

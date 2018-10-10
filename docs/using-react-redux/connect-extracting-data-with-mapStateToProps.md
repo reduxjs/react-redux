@@ -131,7 +131,7 @@ To summarize the behavior of the component wrapped by `connect` with `mapStateTo
 
 |                              | `(state) => stateProps`                | `(state, ownProps) => stateProps`                                                            |
 | ---------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `mapStateToProps` runs when: | store `state` is `===` different       | store `state` changes <br /> or <br />any field of `ownProps` is different                   |
+| `mapStateToProps` runs when: | store `state` changes       | store `state` changes <br /> or <br />any field of `ownProps` is different                   |
 | component re-renders when:   | any field of `stateProps` is different | any field of `stateProps` is different <br /> or <br /> any field of `ownProps` is different |
 
 
@@ -143,6 +143,7 @@ Many common operations result in new object or array references being created:
 
 - Creating new arrays with `someArray.map()` or `someArray.filter()`
 - Merging arrays with `array.concat`
+- Selecting portion of an array with `array.slice`
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
@@ -222,16 +223,6 @@ function mapStateToProps(...args) {
   console.log(args[1]); // ownProps
 }
 ```
-
-
-
-
-<!--
-## Next Up
-- Connect: Dispatching Actions with `mapDispatchToProps` →
-- Further optimizing `mapStateToProps` performances by writing memoized selectors or using Reselect →
-- Understanding whys and hows →
--->
 
 ## Links and References
 
