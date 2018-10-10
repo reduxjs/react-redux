@@ -6,11 +6,6 @@
     "react": "16.4",
     "react-dom": "16.4"
   },
-  "jest": {
-    "testURL": "http://localhost",
-    "collectCoverage": true,
-    "coverageDirectory": "./coverage"
-  },
   "scripts": {
     "test": "jest"
   },

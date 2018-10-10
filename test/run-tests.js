@@ -7,10 +7,10 @@ try {
   require('./install-test-deps.js')
   if (version.toLowerCase() === 'all') {
     readdirSync(join(__dirname, 'react')).forEach(version => {
-      npmRun.execSync(`cd test/react/${version} && npm test`, { stdio: 'inherit' })
+      npmRun.execSync(`cd test/react/${version} && npm test -- -c ../../jest.config.js`, { stdio: 'inherit' })
     })
   } else {
-    npmRun.execSync(`cd test/react/${version} && npm test`, { stdio: 'inherit' })
+    npmRun.execSync(`cd test/react/${version} && npm test -- -c ../../jest.config.js`, { stdio: 'inherit' })
   }
 } finally {
   npmRun.execSync('cd ../../..')

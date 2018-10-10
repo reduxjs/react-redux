@@ -7,11 +7,6 @@
     "react-dom": "16.3",
     "react-test-renderer": "16.3"
   },
-  "jest": {
-    "testURL": "http://localhost",
-    "collectCoverage": true,
-    "coverageDirectory": "./coverage"
-  },
   "scripts": {
     "test": "jest"
   },
