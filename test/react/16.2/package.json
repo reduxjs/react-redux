@@ -2,12 +2,8 @@
   "private": true,
   "devDependencies": {
     "create-react-class": "^15.6.3",
-    "jest": "^23.4.2",
     "react": "16.2",
     "react-dom": "16.2"
-  },
-  "scripts": {
-    "test": "jest"
   },
   "dependencies": {
     "jest-dom": "^1.12.0",
