@@ -29,7 +29,7 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
   ]
 
   if (!existsSync(join(__dirname, 'react', version, 'test'))) {
-    throw new Error(`react version ${version}'s "test" directory is missing, cannot run tests`)
+    mkdirSync(join(__dirname, 'react', version, 'test'))
   }
 
   if (!existsSync(join(__dirname, 'react', version, 'src'))) {
