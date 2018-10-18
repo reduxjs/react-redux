@@ -8,11 +8,12 @@ const env = process.env.NODE_ENV
 
 const config = {
   input: 'src/index.js',
-  external: ['react', 'redux'],
+  external: ['prop-types', 'react', 'redux'],
   output: {
     format: 'umd',
     name: 'ReactRedux',
     globals: {
+      'prop-types': 'PropTypes',
       react: 'React',
       redux: 'Redux'
     }
