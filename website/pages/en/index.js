@@ -51,9 +51,10 @@ const ProjectTitle = () => (
   <h2 className="projectTitle">
     {siteConfig.title}
     <small>
-    <MarkdownBlock>
-      Official React bindings for [Redux](https://github.com/reduxjs/redux)
-    </MarkdownBlock></small>
+      <MarkdownBlock>
+        Official React bindings for [Redux](https://github.com/reduxjs/redux)
+      </MarkdownBlock>
+    </small>
   </h2>
 );
 
@@ -73,8 +74,8 @@ class HomeSplash extends React.Component {
         <div className="inner">
           <ProjectTitle />
           <PromoSection>
-            <Button href={docUrl("getting-started", language)}>
-              Get started
+            <Button href={docUrl("introduction/quick-start", language)}>
+              Quick Start
             </Button>
             <Button href="https://github.com/reduxjs/react-redux">
               Github
@@ -92,13 +93,8 @@ const Installation = () => (
     style={{ textAlign: "center" }}
   >
     <h2>Installation</h2>
-    <MarkdownBlock>
-      React Redux requires **React 0.14 or later.**
-    </MarkdownBlock>
-    <MarkdownBlock>
-      ``` npm install --save
-      react-redux ```
-    </MarkdownBlock>
+    <MarkdownBlock>React Redux requires **React 0.14 or later.**</MarkdownBlock>
+    <MarkdownBlock>``` npm install --save react-redux ```</MarkdownBlock>
   </div>
 );
 
