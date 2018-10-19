@@ -1,102 +1,21 @@
 ---
-id: getting-started
-title: Getting Started
+id: basic-tutorial
+title: Basic Tutorial
 hide_title: true
-sidebar_label: Getting Started
+sidebar_label: Basic Tutorial
 ---
 
-# Getting Started
+# Basic Tutorial
 
-[React-Redux](https://github.com/reduxjs/react-redux) is the official [React](https://reactjs.org/) binding for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update data.
-
-## Installation
-
-To use React-Redux with your React app:
-
-```bash
-npm install --save react-redux
-```
-
-or
-
-```bash
-yarn add react-redux
-```
-
-<!-- perhaps add link to an extra quick start section? -->
-
-## `Provider` and `connect`
-
-React-Redux consists of two main pieces. The first is a component called `<Provider />`, which makes the Redux store available to the rest of your app:
-
-```js
-import React from "react";
-import ReactDOM from "react-dom";
-
-import { Provider } from "react-redux";
-import store from "./store";
-
-import App from "./App";
-
-const rootElement = document.getElementById("root");
-ReactDOM.render(
-  <Provider store={store}>
-    <App />
-  </Provider>,
-  rootElement
-);
-```
-
-The second piece is a function called `connect()`, which encapsulates the process of talking to the store.
-
-It enables you to:
-
-- Read data from the Redux `store` into your app’s connected components as props
-- Dispatch actions to your `store` from any of your app’s connected components
-
-Correspondingly, the `connect` function takes two arguments, both optional:
-
-- `mapStateToProps`: called every time the store state changes. It receives the entire store state, and should return an object of data this component needs.
-
-- `mapDispatchToProps`: this parameter can either be a function, or an object.
-  - If it’s a function, it will be called once on component creation. It will receive `dispatch` as an argument, and should return an object full of functions that use `dispatch` to dispatch actions.
-  - If it’s an object full of action creators, each action creator will be turned into a prop function that automatically dispatches its action when called. **Note**: We recommend using this “object shorthand” form.
-
-Normally, you’ll call `connect` in this way:
-
-```js
-const mapStateToProps = (state, ownProps) => ({
-  // ... computed data from state and optionally ownProps
-});
-
-const mapDispatchToProps = {
-  // ... normally is an object full of action creators
-};
-
-// `connect` returns a new function that accepts the component to wrap:
-const connectToStore = connect(
-  mapStateToProps,
-  mapDispatchToProps
-);
-// and that function returns the connected, wrapper component:
-const ConnectedComponent = connectToStore(Component);
-
-// We normally do both in one step, like this:
-connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Component);
-```
+To see how to use React-Redux in practice, we’ll show a step-by-step example by creating a todo list app.
 
 ## A Todo List Example
-
-To see this in practice, we’ll show a step-by-step example by creating a todo list app using React-Redux.
 
 **Jump to**
 
 - 🤞 [Just show me the code](https://codesandbox.io/s/9on71rvnyo)
 - 👆 [Providing the store](#providing-the-store)
-- ✌️ [Common Ways of Calling Connect](#common-ways-of-calling-connect)
+- ✌️ [Connecting the Component](#connecting-the-components)
 
 **The React UI Components**
 
@@ -177,9 +96,41 @@ Notice how our `<TodoApp />` is now wrapped with the `<Provider />` with `store`
 
 ### Connecting the Components
 
-Our components need to read values from the Redux store (and re-read the values when the store updates). They also need to dispatch actions to trigger updates.
+React-Redux provides a `connect` function for you to read values from the Redux store (and re-read the values when the store updates). 
 
-`connect` takes in two parameters. The first one allows you to define which pieces of data from the store are needed by this component. The second one allows you to indicate which actions that component might dispatch. By convention, they are called `mapStateToProps` and `mapDispatchToProps`, respectively. The return of this call is another function that accepts the component on a second call. This is an example of a pattern called [_higher order components_](https://medium.com/@franleplant/react-higher-order-components-in-depth-cf9032ee6c3e).
+The `connect` function takes two arguments, both optional:
+
+- `mapStateToProps`: called every time the store state changes. It receives the entire store state, and should return an object of data this component needs.
+
+- `mapDispatchToProps`: this parameter can either be a function, or an object.
+  - If it’s a function, it will be called once on component creation. It will receive `dispatch` as an argument, and should return an object full of functions that use `dispatch` to dispatch actions.
+  - If it’s an object full of action creators, each action creator will be turned into a prop function that automatically dispatches its action when called. **Note**: We recommend using this “object shorthand” form.
+
+Normally, you’ll call `connect` in this way:
+
+```js
+const mapStateToProps = (state, ownProps) => ({
+  // ... computed data from state and optionally ownProps
+});
+
+const mapDispatchToProps = {
+  // ... normally is an object full of action creators
+};
+
+// `connect` returns a new function that accepts the component to wrap:
+const connectToStore = connect(
+  mapStateToProps,
+  mapDispatchToProps
+);
+// and that function returns the connected, wrapper component:
+const ConnectedComponent = connectToStore(Component);
+
+// We normally do both in one step, like this:
+connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Component);
+```
 
 Let’s work on `<AddTodo />` first. It needs to trigger changes to the `store` to add new todos. Therefore, it needs to be able to `dispatch` actions to the store. Here’s how we do it.
 
