@@ -1,6 +1,8 @@
 # Table of Contents
 
-- [Getting Started: adding React-Redux to a React todo app](./getting-started.md)
+- Introduction
+  - [Quick Start: adding React-Redux to a React todo app](./introduction/quick-start.md)
+  - [Basic Tutorial](./introduction/basic-tutorial.md)
 - Using React-Redux
   - [Connect: Extracting Data with `mapStateToProps`](./using-react-redux/connect-extracting-data-with-mapStateToProps.md)
 - [API](api.md#api)

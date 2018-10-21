@@ -26,7 +26,7 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    { doc: "getting-started", label: "Getting Started" },
+    { doc: "introduction/quick-start", label: "Quick Start" },
     {
       doc: "using-react-redux/connect-extracting-data-with-mapStateToProps",
       label: "Using React-Redux"
