@@ -102,9 +102,10 @@ function mapStateToProps(state) {
 ```js
 const mapStateToProps = (state, ownProps = {}) => {
   console.log(state); // state
-  console.log(ownProps); // undefined
+  console.log(ownProps); // {}
 }
 ```
+
 Functions with no mandatory parameters or two parameters **will receive** `ownProps`.
 ```js
 const mapStateToProps = (state, ownProps) => {
