@@ -2,9 +2,8 @@
   "private": true,
   "devDependencies": {
     "create-react-class": "^15.6.3",
-    "react": "16.3",
-    "react-dom": "16.3",
-    "react-test-renderer": "16.3"
+    "react": "16.5",
+    "react-dom": "16.5"
   },
   "dependencies": {
     "jest-dom": "^1.12.0",

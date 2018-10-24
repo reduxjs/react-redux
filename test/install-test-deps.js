@@ -5,7 +5,7 @@ const { readdirSync, existsSync, copyFile, mkdirSync } = require('fs');
 const rimraf = require('rimraf');
 const { join } = require('path');
 const spawn = require("cross-spawn");
-const reactVersion = process.env.REACT || '16.4'
+const reactVersion = process.env.REACT || '16.5'
 
 readdirSync(join(__dirname, 'react')).forEach(version => {
   if (reactVersion.toLowerCase() !== 'all' && version !== reactVersion) {
@@ -29,7 +29,7 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
   ]
 
   if (!existsSync(join(__dirname, 'react', version, 'test'))) {
-    throw new Error(`react version ${version}'s "test" directory is missing, cannot run tests`)
+    mkdirSync(join(__dirname, 'react', version, 'test'))
   }
 
   if (!existsSync(join(__dirname, 'react', version, 'src'))) {

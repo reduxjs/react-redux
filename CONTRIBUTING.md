@@ -45,10 +45,10 @@ To run in explicit React versions (the number is the version, so `test:16.3` wil
 REACT=16.4 npm run test:ci
 ```
 
-To run tests in all supported React versions, `0.14`, `15`, `16.2`, `16.3`, `16.4`,
+To run tests in all supported React versions, `0.14`, `15`, `16.2`, `16.3`, `16.4`, 16.5`,
 ```
 REACT=all npm run test:ci
-``` 
+```
 
 To continuously watch and run tests, run the following:
 ```
@@ -71,7 +71,6 @@ test/
   XX/
    package.json
    test/
-    getTestDeps.js
 ```
 
 So, for example, to test against React 15.4:
@@ -83,49 +82,20 @@ test/
   15.4/
    package.json
    test/
-    getTestDeps.js
 ```
 
-The package.json must include the correct versions of `react`, `react-dom`,
-`react-test-renderer` and the correct enzyme adapter for the React version
-being used, as well as the needed `create-react-class`, `jest`, `enzyme` versions
-and the `jest` and `scripts` sections copied verbatim like this:
+The package.json must include the correct versions of `react` & `react-dom`
+as well as the needed `create-react-class` like this:
 
 ```json
 {
   "private": true,
   "devDependencies": {
     "create-react-class": "^15.6.3",
-    "enzyme": "^3.3.0",
-    "enzyme-adapter-react-15.4": "^1.0.6",
-    "jest": "^23.4.2",
     "react": "15.4",
-    "react-dom": "15.4",
-    "react-test-renderer": "15.4"
-  },
-  "jest": {
-    "testURL": "http://localhost",
-    "collectCoverage": true,
-    "coverageDirectory": "./coverage"
-  },
-  "scripts": {
-    "test": "jest"
+    "react-dom": "15.4"
   }
 }
-```
-
-`getTestDeps.js` should load the version-specific enzyme adapter and
-test renderer (all versions newer than 0.14 use `react-test-renderer`,
-0.14 uses `react-addons-test-utils`):
-
-```js
-import enzyme from 'enzyme'
-import TestRenderer from 'react-test-renderer'
-import Adapter from 'enzyme-adapter-react-15.4'
-
-enzyme.configure({ adapter: new Adapter() })
-
-export { TestRenderer, enzyme }
 ```
 
 Then you can run tests against this version with:
@@ -156,6 +126,7 @@ env:
   - REACT=16.2
   - REACT=16.3
   - REACT=16.4
+  - REACT=16.5
 sudo: false
 script:
   - npm run lint

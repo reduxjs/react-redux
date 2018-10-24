@@ -2,17 +2,8 @@
   "private": true,
   "devDependencies": {
     "create-react-class": "^15.6.3",
-    "jest": "^23.4.2",
     "react": "16.4",
     "react-dom": "16.4"
-  },
-  "jest": {
-    "testURL": "http://localhost",
-    "collectCoverage": true,
-    "coverageDirectory": "./coverage"
-  },
-  "scripts": {
-    "test": "jest"
   },
   "dependencies": {
     "jest-dom": "^1.12.0",
