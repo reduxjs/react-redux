@@ -12,10 +12,12 @@ const siteConfig = {
   title: "React Redux", // Title for your website.
   tagline: "React Redux Documentation",
   url: "https://react-redux.js.org", // Your website URL
-  baseUrl: "/", // Base URL for your project */
-  // For github.io type URLs, you would set the url and baseUrl like:
-  //   url: 'https://facebook.github.io',
-  //   baseUrl: '/test-site/',
+  baseUrl: "/",
+  algolia: {
+    apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
+    indexName: 'react-redux',
+    algoliaOptions: {}
+  },
 
   // Used for publishing and more
   projectName: "react-redux",
