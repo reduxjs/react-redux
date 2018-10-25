@@ -257,7 +257,6 @@ export default function connectAdvanced(
         if (selector.error) {
           throw selector.error
         } else {
-          // return <WrappedComponent {...this.addExtraProps(selector.props)} />
           return createElement(WrappedComponent, this.addExtraProps(selector.props))
         }
       }
