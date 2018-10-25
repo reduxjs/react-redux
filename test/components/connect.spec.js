@@ -108,6 +108,21 @@ describe('React', () => {
       expect(tester.getByTestId('hi')).toHaveTextContent('there')
     })
 
+    it('Should work with a memo component, if it exists', () => {
+      if (React.memo) {
+        const store = createStore(() => ({ hi: 'there' }))
+
+        const Container = React.memo((props) => <Passthrough {...props} />)
+        const WrappedContainer = connect(state => state)(Container);
+
+        const tester = rtl.render(<ProviderMock store={store}>
+            <WrappedContainer pass="through" />
+        </ProviderMock>)
+
+        expect(tester.getByTestId('hi')).toHaveTextContent('there')
+      }
+    });
+
     it('should pass state and props to the given component', () => {
       const store = createStore(() => ({
         foo: 'bar',
