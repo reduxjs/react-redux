@@ -1,6 +1,7 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import { Component, createElement } from 'react'
+import { isValidElementType } from 'react-is'
 
 import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
@@ -88,7 +89,7 @@ export default function connectAdvanced(
 
   return function wrapWithConnect(WrappedComponent) {
     invariant(
-      typeof WrappedComponent == 'function',
+      isValidElementType(WrappedComponent),
       `You must pass a component to the function returned by ` +
       `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
     )
@@ -256,6 +257,7 @@ export default function connectAdvanced(
         if (selector.error) {
           throw selector.error
         } else {
+          // return <WrappedComponent {...this.addExtraProps(selector.props)} />
           return createElement(WrappedComponent, this.addExtraProps(selector.props))
         }
       }
