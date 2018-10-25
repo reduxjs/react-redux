@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Children, Component, memo } from 'react'
+import React, { Children, Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
@@ -108,18 +108,19 @@ describe('React', () => {
       expect(tester.getByTestId('hi')).toHaveTextContent('there')
     })
 
-    // TODO: test that fails in all but 16.6 because it's new and only exists there.
-    it.skip('Should work with a memo component', () => {
-      const store = createStore(() => ({ hi: 'there' }))
+    it('Should work with a memo component, if it exists', () => {
+      if (React.memo) {
+        const store = createStore(() => ({ hi: 'there' }))
 
-      const Container = memo((props) => <Passthrough {...props} />)
-      const WrappedContainer = connect(state => state)(Container);
+        const Container = React.memo((props) => <Passthrough {...props} />)
+        const WrappedContainer = connect(state => state)(Container);
 
-      const tester = rtl.render(<ProviderMock store={store}>
-          <WrappedContainer pass="through" />
-      </ProviderMock>)
+        const tester = rtl.render(<ProviderMock store={store}>
+            <WrappedContainer pass="through" />
+        </ProviderMock>)
 
-      expect(tester.getByTestId('hi')).toHaveTextContent('there')
+        expect(tester.getByTestId('hi')).toHaveTextContent('there')
+      }
     });
 
     it('should pass state and props to the given component', () => {
