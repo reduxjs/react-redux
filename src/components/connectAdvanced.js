@@ -1,13 +1,10 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import PropTypes from 'prop-types'
-import React, { Component, PureComponent } from 'react'
+import React, { useContext, useMemo} from 'react'
 import { isValidElementType } from 'react-is'
 
 import {ReactReduxContext} from "./context"
-import {storeShape} from "../utils/PropTypes"
-
-let hotReloadingVersion = 0
 
 
 export default function connectAdvanced(
@@ -43,8 +40,8 @@ export default function connectAdvanced(
     shouldHandleStateChanges = true,
 
 
-    // the context consumer to use
-    consumer = ReactReduxContext.Consumer,
+    // the context to use
+    context : defaultContext = ReactReduxContext,
 
     // REMOVED: the key of props/context to get the store
     storeKey = 'store',
@@ -65,13 +62,10 @@ export default function connectAdvanced(
 
   invariant(storeKey === 'store',
     'storeKey has been removed. To use a custom redux store for a single component, ' +
-    'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
-    'and the Consumer to this component as in <Provider context={context.Provider}><' +
-    'ConnectedComponent consumer={context.Consumer} /></Provider>'
+    'create a custom React context with React.createContext() and pass it to react-redux\'s Provider ' +
+    'and this component as in <Provider context={MyCustomContext}><' +
+    'ConnectedComponent context={MyCustomContext} /></Provider>'
   )
-
-
-  const version = hotReloadingVersion++
 
 
   return function wrapWithConnect(WrappedComponent) {
@@ -98,159 +92,47 @@ export default function connectAdvanced(
     }
 
 
-    const OuterBaseComponent = connectOptions.pure ? PureComponent : Component
-
     function createChildSelector(store) {
       return selectorFactory(store.dispatch, selectorFactoryOptions)
     }
 
-    class ConnectInner extends Component {
-      constructor(props) {
-        super(props)
 
-        this.state = {
-          wrapperProps : props.wrapperProps,
-          store : props.store,
-          error : null,
-          childPropsSelector : createChildSelector(props.store),
-          childProps : {},
-        }
+    function ConnectFunction(props) {
+      const {context, forwardRef, ...wrapperProps} = props
+      const contextToRead = context || defaultContext
 
-        this.state = {
-          ...this.state,
-          ...ConnectInner.getChildPropsState(props, this.state)
-        }
-      }
+      const {store, storeState} = useContext(contextToRead)
+      const childPropsSelector = useMemo(() =>  createChildSelector(store), [store])
 
+      const childProps = childPropsSelector(storeState, wrapperProps)
 
+      const renderedChild = useMemo(() => {
+        return <WrappedComponent {...childProps} ref={forwardRef} />
+      }, [childProps, forwardRef])
 
-      static getChildPropsState(props, state) {
-        try {
-          let {childPropsSelector} = state
-
-          if(props.store !== state.store) {
-            childPropsSelector = createChildSelector(props.store)
-          }
-
-          const nextProps = childPropsSelector(props.storeState, props.wrapperProps)
-          if (nextProps === state.childProps) return null
-
-          return { childProps: nextProps, store : props.store, childPropsSelector }
-        } catch (error) {
-          return { error }
-        }
-      }
-
-      static getDerivedStateFromProps(props, state) {
-        const nextChildProps = ConnectInner.getChildPropsState(props, state)
-
-        if(nextChildProps === null) {
-          return null
-        }
-
-        return {
-          ...nextChildProps,
-          wrapperProps : props.wrapperProps,
-        }
-      }
-
-      shouldComponentUpdate(nextProps, nextState) {
-        const childPropsChanged = nextState.childProps !== this.state.childProps
-        const hasError = !!nextState.error
-
-        return  childPropsChanged || hasError
-      }
-
-      render() {
-        if(this.state.error) {
-          throw this.state.error
-        }
-
-        return <WrappedComponent {...this.state.childProps} ref={this.props.forwardRef} />
-      }
+      return renderedChild
     }
 
-    ConnectInner.propTypes = {
-      wrapperProps : PropTypes.object,
-      store : storeShape,
-    }
-
-
-    function createWrapperPropsMemoizer() {
-      let result, prevProps
-
-      return function wrapperPropsMemoizer(props) {
-        if(props === prevProps) {
-          return result
-        }
-
-        const {contextConsumer, forwardRef, ...wrapperProps} = props
-        result = {contextConsumer, forwardRef, wrapperProps}
-
-        return result
-      }
-    }
-
-    class Connect extends OuterBaseComponent {
-      constructor(props) {
-        super(props)
-
-        this.version = version
-
-        this.renderInner = this.renderInner.bind(this)
-
-        this.wrapperPropsMemoizer = createWrapperPropsMemoizer()
-      }
-
-      renderInner(providerValue) {
-          const {storeState, store} = providerValue
-
-          const {forwardRef, wrapperProps} = this.wrapperPropsMemoizer(this.props)
-
-          return (
-            <ConnectInner
-              key={this.version}
-              storeState={storeState}
-              store={store}
-              wrapperProps={wrapperProps}
-              forwardRef={forwardRef}
-            />
-          )
-      }
-
-      render() {
-        const ContextConsumer = this.props.contextConsumer || consumer
-
-        return (
-          <ContextConsumer>
-            {this.renderInner}
-          </ContextConsumer>
-        )
-      }
-    }
-
-    Connect.WrappedComponent = WrappedComponent
-    Connect.displayName = displayName
-    Connect.propTypes = {
-      contextConsumer: PropTypes.object,
-      forwardRef: PropTypes.oneOfType([
-        PropTypes.func,
-        PropTypes.object
-      ])
-    }
 
     // TODO We're losing the ability to add a store as a prop. Not sure there's anything we can do about that.
 
 
-    let wrapperComponent = Connect
+    let wrapperComponent = ConnectFunction
 
     if(forwardRef) {
       const forwarded = React.forwardRef(function (props, ref) {
-        return <Connect {...props} forwardRef={ref} />
+        return <ConnectFunction {...props} forwardRef={ref} />
       })
 
       wrapperComponent = forwarded
     }
+
+    wrapperComponent.WrappedComponent = WrappedComponent
+    wrapperComponent.displayName = displayName
+    wrapperComponent.propTypes = {
+      context: PropTypes.object,
+    }
+
 
     return hoistStatics(wrapperComponent, WrappedComponent)
   }

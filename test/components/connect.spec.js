@@ -1493,7 +1493,7 @@ describe('React', () => {
         getState: () => expectedState
       }
 
-      rtl.render(<ProviderMock contextProvider={context.Provider} store={mockStore}><Decorated contextConsumer={context.Consumer} /></ProviderMock>)
+      rtl.render(<ProviderMock context={context} store={mockStore}><Decorated context={context} /></ProviderMock>)
 
       expect(actualState).toEqual(expectedState)
     })
@@ -1696,16 +1696,16 @@ describe('React', () => {
       )
 
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(2)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+      expect(mapStateSpy).toHaveBeenCalledTimes(1)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
       // Impure update
       storeGetter.storeKey = 'bar'
       externalSetState({ storeGetter })
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(3)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
+      expect(mapStateSpy).toHaveBeenCalledTimes(2)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 

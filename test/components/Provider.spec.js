@@ -1,7 +1,6 @@
 /*eslint-disable react/prop-types*/
 
 import React, { Component } from 'react'
-import semver from 'semver'
 import { createStore } from 'redux'
 import { Provider, connect } from '../../src/index.js'
 import {ReactReduxContext} from "../../src/components/context"

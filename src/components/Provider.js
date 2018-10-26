@@ -1,25 +1,8 @@
-import React, { Component, Children } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { storeShape } from '../utils/PropTypes'
-import warning from '../utils/warning'
 
 import {ReactReduxContext} from "./context"
-
-let didWarnAboutReceivingStore = false
-function warnAboutReceivingStore() {
-  if (didWarnAboutReceivingStore) {
-    return
-  }
-  didWarnAboutReceivingStore = true
-
-  warning(
-    '<Provider> does not support changing `store` on the fly. ' +
-    'It is most likely that you see this error because you updated to ' +
-    'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
-    'automatically. See https://github.com/reduxjs/react-redux/releases/' +
-    'tag/v2.0.0 for the migration instructions.'
-  )
-}
 
 export function createProvider() {
 
@@ -83,12 +66,12 @@ export function createProvider() {
         }
 
         render() {
-          const ContextProvider = this.props.contextProvider || ReactReduxContext.Provider
+          const Context = this.props.context || ReactReduxContext
 
             return (
-                <ContextProvider value={this.state}>
+                <Context.Provider value={this.state}>
                     {this.props.children}
-                </ContextProvider>
+                </Context.Provider>
             )
         }
     }
@@ -97,7 +80,7 @@ export function createProvider() {
     Provider.propTypes = {
       store: storeShape.isRequired,
       children: PropTypes.element.isRequired,
-      contextProvider : PropTypes.object,
+      context : PropTypes.object,
     }
 
     return Provider
