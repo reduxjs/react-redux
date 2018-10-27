@@ -28,6 +28,9 @@ This function should be passed as the first argument to `connect`, and will be c
 
 ### Arguments
 
+1. **`state`**
+2. **`ownProps` (optional)**
+
 #### `state`
 
 The first argument to a `mapStateToProps` function is the entire Redux store state (the same value returned by a call to `store.getState()`).  Because of this, the first argument is traditionally just called `state`.  (While you can give the argument any name you want, calling it `store` would be incorrect - it's the "state value", not the "store instance".)
@@ -131,13 +134,13 @@ To summarize the behavior of the component wrapped by `connect` with `mapStateTo
 
 |                              | `(state) => stateProps`                | `(state, ownProps) => stateProps`                                                            |
 | ---------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `mapStateToProps` runs when: | store `state` changes       | store `state` changes <br /> or <br />any field of `ownProps` is different                   |
+| `mapStateToProps` runs when: | store `state` changes                  | store `state` changes <br /> or <br />any field of `ownProps` is different                   |
 | component re-renders when:   | any field of `stateProps` is different | any field of `stateProps` is different <br /> or <br /> any field of `ownProps` is different |
 
 
 ### Only Return New Object References If Needed
 
-React-Redux does shallow comparisons to see if the `mapState` results have changed.  It’s easy to accidentally return new object or array references every time, which would cause your component to re-render even if the data is actually the same.
+React-Redux does shallow comparisons to see if the `mapStateToProps` results have changed.  It’s easy to accidentally return new object or array references every time, which would cause your component to re-render even if the data is actually the same.
 
 Many common operations result in new object or array references being created:
 
@@ -147,7 +150,7 @@ Many common operations result in new object or array references being created:
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
-Put these operations in [memoized selector functions]() to ensure that they only run if the input values have changed.  This will also ensure that if the input values _haven't_ changed, `mapState` will still return the same result values as before, and `connect` can skip re-rendering.
+Put these operations in [memoized selector functions]() to ensure that they only run if the input values have changed.  This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
 
 
 
