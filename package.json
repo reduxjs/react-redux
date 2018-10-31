@@ -40,7 +40,7 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^16.4.0-0",
+    "react": "^16.6.0-0",
     "redux": "^2.0.0 || ^3.0.0 || ^4.0.0-0"
   },
   "dependencies": {
@@ -49,8 +49,7 @@
     "invariant": "^2.2.4",
     "loose-envify": "^1.1.0",
     "prop-types": "^15.6.2",
-    "react-is": "^16.6.0",
-    "shallow-equals": "^1.0.0"
+    "react-is": "^16.6.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",
