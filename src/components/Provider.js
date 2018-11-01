@@ -1,8 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Context from './Context'
-
-const ContextProvider = Context.Provider
+import {ReactReduxContext} from './Context'
 
 class Provider extends Component {
   constructor(props) {
@@ -57,11 +55,11 @@ class Provider extends Component {
   }
 
   render() {
-    const Context = this.props.context || ContextProvider
+    const Context = this.props.context || ReactReduxContext
     return (
-      <Context value={this.state}>
+      <Context.Provider value={this.state}>
         {this.props.children}
-      </Context>
+      </Context.Provider>
     )
   }
 }

@@ -4,9 +4,7 @@ import React, { Component, PureComponent } from 'react'
 import propTypes from 'prop-types'
 import { isValidElementType } from 'react-is'
 
-import Context from './Context'
-
-const ReduxConsumer = Context.Consumer
+import {ReactReduxContext} from './Context'
 
 export default function connectAdvanced(
   /*
@@ -54,7 +52,7 @@ export default function connectAdvanced(
     forwardRef = false,
 
     // the context consumer to use
-    consumer = ReduxConsumer,
+    context = ReactReduxContext,
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
@@ -75,7 +73,8 @@ export default function connectAdvanced(
     'ConnectedComponent consumer={context.Consumer} /></Provider>'
   )
 
-  const Consumer = consumer
+
+  const Context = context
 
   return function wrapWithConnect(WrappedComponent) {
     invariant(
@@ -216,15 +215,15 @@ export default function connectAdvanced(
       render() {
         if (this.props.unstable_observedBits) {
           return (
-            <Consumer unstable_observedBits={this.props.unstable_observedBits}>
+            <Context.Consumer unstable_observedBits={this.props.unstable_observedBits}>
               {this.renderWrappedComponent}
-            </Consumer>
+            </Context.Consumer>
           )
         }
         return (
-          <Consumer>
+          <Context.Consumer>
             {this.renderWrappedComponent}
-          </Consumer>
+          </Context.Consumer>
         )
       }
     }
