@@ -35,14 +35,14 @@ export default function connectAdvanced(
     // probably overridden by wrapper functions such as connect()
     methodName = 'connectAdvanced',
 
-    // if defined, the name of the property passed to the wrapped element indicating the number of
+    // REMOVED: if defined, the name of the property passed to the wrapped element indicating the number of
     // calls to render. useful for watching in react devtools for unnecessary re-renders.
     renderCountProp = undefined,
 
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
-    // the key of props/context to get the store [**does nothing, use consumer**]
+    // REMOVED: the key of props/context to get the store
     storeKey = 'store',
 
     // REMOVED: expose the wrapped component via refs
@@ -66,11 +66,13 @@ export default function connectAdvanced(
     "withRef is removed. To access the wrapped instance, use a ref on the connected component"
   )
 
+  const customStoreWarningMessage =  'To use a custom Redux store for specific components,  create a custom React context with ' +
+    'React.createContext(), and pass the context object to React-Redux\'s Provider and specific components' +
+    ' like:  <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' +
+    'You may also pass a {context : MyContext} option to connect'
+
   invariant(storeKey === 'store',
-    'storeKey has been removed and does not do anything. To use a custom redux store for a single component, ' +
-    'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
-    'and the Consumer to this component as in <Provider context={context.Provider}><' +
-    'ConnectedComponent consumer={context.Consumer} /></Provider>'
+    'storeKey has been removed and does not do anything. ' + customStoreWarningMessage
   )
 
 
@@ -103,7 +105,7 @@ export default function connectAdvanced(
         }
       }
       PureWrapperRef.propTypes = {
-        derivedProps: propTypes.object,
+        //derivedProps: propTypes.object,
         forwardRef: propTypes.oneOfType([
           propTypes.func,
           propTypes.object
@@ -121,7 +123,7 @@ export default function connectAdvanced(
         }
       }
       PureWrapperNoRef.propTypes = {
-        derivedProps: propTypes.object,
+        //derivedProps: propTypes.object,
       }
       PureWrapper = PureWrapperNoRef
     }
@@ -144,11 +146,7 @@ export default function connectAdvanced(
       constructor(props) {
         super(props)
         invariant(forwardRef ? !props.props[storeKey] : !props[storeKey],
-          'Passing redux store in props has been removed and does not do anything. ' +
-          'To use a custom redux store for a single component, ' +
-          'create a custom React context with React.createContext() and pass the Provider to react-redux\'s provider ' +
-          'and the Consumer to this component\'s connect as in <Provider context={context.Provider}></Provider>' +
-          ` and connect(mapState, mapDispatch, undefined, { consumer=context.consumer })(${wrappedComponentName})`
+          'Passing redux store in props has been removed and does not do anything. ' + customStoreWarningMessage
         )
         this.generatedDerivedProps = this.makeDerivedPropsGenerator()
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
@@ -213,13 +211,6 @@ export default function connectAdvanced(
       }
 
       render() {
-        if (this.props.unstable_observedBits) {
-          return (
-            <Context.Consumer unstable_observedBits={this.props.unstable_observedBits}>
-              {this.renderWrappedComponent}
-            </Context.Consumer>
-          )
-        }
         return (
           <Context.Consumer>
             {this.renderWrappedComponent}
