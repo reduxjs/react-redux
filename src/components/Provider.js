@@ -5,57 +5,64 @@ import {ReactReduxContext} from './Context'
 class Provider extends Component {
   constructor(props) {
     super(props)
+
+    const {store} = props
+
     this.state = {
-      state: props.store.getState(),
-      store: props.store
+      storeState : store.getState(),
+      store,
     }
-    this.unsubscribe = null
   }
 
   componentDidMount() {
-    this.isUnmounted = false
-    const state = this.state.store.getState()
-    this.unsubscribe = this.state.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
-
-    if (state !== this.state.state) {
-      this.setState({ state })
-    }
+    this._isMounted = true
+    this.subscribe()
   }
 
   componentWillUnmount() {
-    this.isUnmounted = true
-    if (this.unsubscribe) this.unsubscribe()
+    if(this.unsubscribe) this.unsubscribe()
+
+    this._isMounted = false
   }
 
-  componentDidUpdate(lastProps) {
-    if (lastProps.store !== this.props.store) {
-      if (this.unsubscribe) this.unsubscribe()
-      this.unsubscribe = this.props.store.subscribe(this.triggerUpdateOnStoreStateChange.bind(this))
-      this.setState({
-        state: this.props.store.getState(),
-        store: this.props.store
+  componentDidUpdate(prevProps) {
+    if(this.props.store !== prevProps.store) {
+      if(this.unsubscribe) this.unsubscribe()
+
+      this.subscribe()
+    }
+  }
+
+  subscribe() {
+    const {store} = this.props
+
+    this.unsubscribe = store.subscribe( () => {
+      const newStoreState = store.getState()
+
+      if(!this._isMounted) {
+        return
+      }
+
+      this.setState(providerState => {
+        // If the value is the same, skip the unnecessary state update.
+        if(providerState.storeState === newStoreState) {
+          return null
+        }
+
+        return {storeState : newStoreState}
       })
-    }
-  }
-
-  triggerUpdateOnStoreStateChange() {
-    if (this.isUnmounted) {
-      return
-    }
-
-    this.setState(prevState => {
-      const newState = prevState.store.getState()
-      if (prevState.state === newState) {
-        return null
-      }
-      return {
-        state: newState
-      }
     })
+
+    // Actions might have been dispatched between render and mount - handle those
+    const postMountStoreState = store.getState()
+    if(postMountStoreState !== this.state.storeState) {
+      this.setState({storeState : postMountStoreState})
+    }
   }
 
   render() {
     const Context = this.props.context || ReactReduxContext
+
     return (
       <Context.Provider value={this.state}>
         {this.props.children}

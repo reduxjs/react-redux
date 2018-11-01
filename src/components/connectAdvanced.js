@@ -186,9 +186,9 @@ export default function connectAdvanced(
           `or pass a custom React context provider to <Provider> and the corresponding ` +
           `React context consumer to ${displayName} in connect options.`
         )
-        const { state, store } = value
+        const { storeState, store } = value
         const { forwardRef, props } = this.props
-        let derivedProps = this.generatedDerivedProps(state, props, store)
+        let derivedProps = this.generatedDerivedProps(storeState, props, store)
         if (connectOptions.pure) {
           return <PureWrapper derivedProps={derivedProps} forwardRef={forwardRef} />
         }
@@ -203,8 +203,8 @@ export default function connectAdvanced(
           `or pass a custom React context provider to <Provider> and the corresponding ` +
           `React context consumer to ${displayName} in connect options.`
         )
-        const { state, store } = value
-        let derivedProps = this.generatedDerivedProps(state, this.props, store)
+        const { storeState, store } = value
+        let derivedProps = this.generatedDerivedProps(storeState, this.props, store)
         if (connectOptions.pure) {
           return <PureWrapper derivedProps={derivedProps} />
         }
