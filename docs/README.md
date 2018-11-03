@@ -9,4 +9,5 @@
   - [`<Provider store>`](./api/Provider.md)
   - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](./api/connect.md)
   - [`connectAdvanced(selectorFactory, [connectOptions])`](./api/connect-advanced.md)
+  - [Selector Functions](./using-react-redux/selector-functions.md)
 - [Troubleshooting](troubleshooting.md#troubleshooting)
