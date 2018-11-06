@@ -1,7 +1,6 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, { Component, PureComponent } from 'react'
-import propTypes from 'prop-types'
 import { isValidElementType } from 'react-is'
 
 import {ReactReduxContext} from './Context'
@@ -110,17 +109,6 @@ export default function connectAdvanced(
 
     if(pure) {
       OuterBaseComponent = PureComponent
-    }
-
-    class PureWrapper extends Component {
-      shouldComponentUpdate(nextProps) {
-        return nextProps.derivedProps !== this.props.derivedProps
-      }
-
-      render() {
-        let { forwardedRef, derivedProps } = this.props
-        return <WrappedComponent {...derivedProps} ref={forwardedRef} />
-      }
     }
 
     function makeDerivedPropsSelector() {
