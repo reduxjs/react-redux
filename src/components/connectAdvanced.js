@@ -86,8 +86,8 @@ export default function connectAdvanced(
       invariant(
         isValidElementType(WrappedComponent),
         `You must pass a component to the function returned by ` +
-        `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
-      );
+          `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
+      )
     }
 
     const wrappedComponentName =

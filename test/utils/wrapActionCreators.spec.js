@@ -3,7 +3,6 @@ import wrapActionCreators from '../../src/utils/wrapActionCreators'
 describe('Utils', () => {
   describe('wrapActionCreators', () => {
     it('should return a function that wraps argument in a call to bindActionCreators', () => {
-
       function dispatch(action) {
         return {
           dispatched: action
@@ -24,7 +23,6 @@ describe('Utils', () => {
       const bound = wrapped(dispatch)
       expect(bound.action).not.toThrow()
       expect(bound.action().dispatched).toBe(actionResult)
-
     })
   })
 })
