@@ -40,17 +40,16 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^0.14.0 || ^15.0.0-0 || ^16.0.0-0",
+    "react": "^16.6.0-0",
     "redux": "^2.0.0 || ^3.0.0 || ^4.0.0-0"
   },
   "dependencies": {
     "@babel/runtime": "^7.1.2",
-    "hoist-non-react-statics": "^3.0.0",
+    "hoist-non-react-statics": "^3.0.1",
     "invariant": "^2.2.4",
     "loose-envify": "^1.1.0",
-    "prop-types": "^15.6.1",
-    "react-is": "^16.6.0",
-    "react-lifecycles-compat": "^3.0.0"
+    "prop-types": "^15.6.2",
+    "react-is": "^16.6.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",

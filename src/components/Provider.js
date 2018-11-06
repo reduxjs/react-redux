@@ -1,60 +1,84 @@
-import { Component, Children } from 'react'
+import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { storeShape, subscriptionShape } from '../utils/PropTypes'
-import warning from '../utils/warning'
+import { ReactReduxContext } from './Context'
 
-let didWarnAboutReceivingStore = false
-function warnAboutReceivingStore() {
-  if (didWarnAboutReceivingStore) {
-    return
+class Provider extends Component {
+  constructor(props) {
+    super(props)
+
+    const { store } = props
+
+    this.state = {
+      storeState: store.getState(),
+      store
+    }
   }
-  didWarnAboutReceivingStore = true
 
-  warning(
-    '<Provider> does not support changing `store` on the fly. ' +
-    'It is most likely that you see this error because you updated to ' +
-    'Redux 2.x and React Redux 2.x which no longer hot reload reducers ' +
-    'automatically. See https://github.com/reduxjs/react-redux/releases/' +
-    'tag/v2.0.0 for the migration instructions.'
-  )
-}
+  componentDidMount() {
+    this._isMounted = true
+    this.subscribe()
+  }
 
-export function createProvider(storeKey = 'store') {
-    const subscriptionKey = `${storeKey}Subscription`
+  componentWillUnmount() {
+    if (this.unsubscribe) this.unsubscribe()
 
-    class Provider extends Component {
-        getChildContext() {
-          return { [storeKey]: this[storeKey], [subscriptionKey]: null }
-        }
+    this._isMounted = false
+  }
 
-        constructor(props, context) {
-          super(props, context)
-          this[storeKey] = props.store;
-        }
+  componentDidUpdate(prevProps) {
+    if (this.props.store !== prevProps.store) {
+      if (this.unsubscribe) this.unsubscribe()
 
-        render() {
-          return Children.only(this.props.children)
-        }
+      this.subscribe()
     }
+  }
 
-    if (process.env.NODE_ENV !== 'production') {
-      Provider.prototype.componentWillReceiveProps = function (nextProps) {
-        if (this[storeKey] !== nextProps.store) {
-          warnAboutReceivingStore()
-        }
+  subscribe() {
+    const { store } = this.props
+
+    this.unsubscribe = store.subscribe(() => {
+      const newStoreState = store.getState()
+
+      if (!this._isMounted) {
+        return
       }
-    }
 
-    Provider.propTypes = {
-        store: storeShape.isRequired,
-        children: PropTypes.element.isRequired,
-    }
-    Provider.childContextTypes = {
-        [storeKey]: storeShape.isRequired,
-        [subscriptionKey]: subscriptionShape,
-    }
+      this.setState(providerState => {
+        // If the value is the same, skip the unnecessary state update.
+        if (providerState.storeState === newStoreState) {
+          return null
+        }
 
-    return Provider
+        return { storeState: newStoreState }
+      })
+    })
+
+    // Actions might have been dispatched between render and mount - handle those
+    const postMountStoreState = store.getState()
+    if (postMountStoreState !== this.state.storeState) {
+      this.setState({ storeState: postMountStoreState })
+    }
+  }
+
+  render() {
+    const Context = this.props.context || ReactReduxContext
+
+    return (
+      <Context.Provider value={this.state}>
+        {this.props.children}
+      </Context.Provider>
+    )
+  }
 }
 
-export default createProvider()
+Provider.propTypes = {
+  store: PropTypes.shape({
+    subscribe: PropTypes.func.isRequired,
+    dispatch: PropTypes.func.isRequired,
+    getState: PropTypes.func.isRequired
+  }),
+  context: PropTypes.object,
+  children: PropTypes.any
+}
+
+export default Provider

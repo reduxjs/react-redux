@@ -1,5 +1,6 @@
-import Provider, { createProvider } from './components/Provider'
+import Provider from './components/Provider'
 import connectAdvanced from './components/connectAdvanced'
+import { ReactReduxContext } from './components/Context'
 import connect from './connect/connect'
 
-export { Provider, createProvider, connectAdvanced, connect }
+export { Provider, connectAdvanced, ReactReduxContext, connect }
