@@ -1472,7 +1472,7 @@ describe('React', () => {
       expect(decorated.foo).toBe('bar')
     })
 
-    it('should use a custom context provider and consumer if present', () => {
+    it('should use a custom context provider and consumer if given as an option to connect', () => {
       class Container extends Component {
         render() {
           return <Passthrough />
@@ -1484,18 +1484,59 @@ describe('React', () => {
       let actualState
 
       const expectedState = { foos: {} }
+      const ignoredState = {bars : {} }
+
       const decorator = connect(state => {
         actualState = state
         return {}
       }, undefined, undefined, { context })
       const Decorated = decorator(Container)
-      const mockStore = {
-        dispatch: () => {},
-        subscribe: () => {},
-        getState: () => expectedState
+
+      const store1 = createStore(() => expectedState);
+      const store2 = createStore(() => ignoredState);
+
+      rtl.render(
+        <ProviderMock context={context} store={store1}>
+          <ProviderMock store={store2}>
+            <Decorated  />
+          </ProviderMock>
+        </ProviderMock>
+      )
+
+      expect(actualState).toEqual(expectedState)
+    })
+
+
+    it('should use a custom context provider and consumer if passed as a prop to the component', () => {
+      class Container extends Component {
+        render() {
+          return <Passthrough />
+        }
       }
 
-      rtl.render(<ProviderMock context={context} store={mockStore}><Decorated context={context} /></ProviderMock>)
+      const context = React.createContext(null)
+
+      let actualState
+
+      const expectedState = { foos: {} }
+      const ignoredState = {bars : {} }
+
+      const decorator = connect(state => {
+        actualState = state
+        return {}
+      })
+      const Decorated = decorator(Container)
+
+      const store1 = createStore(() => expectedState);
+      const store2 = createStore(() => ignoredState);
+
+      rtl.render(
+        <ProviderMock context={context} store={store1}>
+          <ProviderMock store={store2}>
+            <Decorated  context={context} />
+          </ProviderMock>
+        </ProviderMock>
+      )
 
       expect(actualState).toEqual(expectedState)
     })
