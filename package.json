@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "6.0.0-beta.1",
+  "version": "6.0.0-beta.2",
   "description": "Official React bindings for Redux",
   "keywords": [
     "react",
@@ -42,7 +42,7 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^16.6.0-0",
+    "react": "^16.4.0-0",
     "redux": "^2.0.0 || ^3.0.0 || ^4.0.0-0"
   },
   "dependencies": {
