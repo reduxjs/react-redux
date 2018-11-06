@@ -3,7 +3,7 @@ import invariant from 'invariant'
 import React, { Component, PureComponent } from 'react'
 import { isValidElementType } from 'react-is'
 
-import {ReactReduxContext} from './Context'
+import { ReactReduxContext } from './Context'
 
 export default function connectAdvanced(
   /*
@@ -57,23 +57,27 @@ export default function connectAdvanced(
     ...connectOptions
   } = {}
 ) {
-  invariant(renderCountProp === undefined,
+  invariant(
+    renderCountProp === undefined,
     `renderCountProp is removed. render counting is built into the latest React dev tools profiling extension`
   )
 
-  invariant(!withRef,
-    "withRef is removed. To access the wrapped instance, use a ref on the connected component"
+  invariant(
+    !withRef,
+    'withRef is removed. To access the wrapped instance, use a ref on the connected component'
   )
 
-  const customStoreWarningMessage =  'To use a custom Redux store for specific components,  create a custom React context with ' +
-    'React.createContext(), and pass the context object to React-Redux\'s Provider and specific components' +
+  const customStoreWarningMessage =
+    'To use a custom Redux store for specific components,  create a custom React context with ' +
+    "React.createContext(), and pass the context object to React-Redux's Provider and specific components" +
     ' like:  <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' +
     'You may also pass a {context : MyContext} option to connect'
 
-  invariant(storeKey === 'store',
-    'storeKey has been removed and does not do anything. ' + customStoreWarningMessage
+  invariant(
+    storeKey === 'store',
+    'storeKey has been removed and does not do anything. ' +
+      customStoreWarningMessage
   )
-
 
   const Context = context
 
@@ -81,12 +85,11 @@ export default function connectAdvanced(
     invariant(
       isValidElementType(WrappedComponent),
       `You must pass a component to the function returned by ` +
-      `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
+        `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
     )
 
-    const wrappedComponentName = WrappedComponent.displayName
-      || WrappedComponent.name
-      || 'Component'
+    const wrappedComponentName =
+      WrappedComponent.displayName || WrappedComponent.name || 'Component'
 
     const displayName = getDisplayName(wrappedComponentName)
 
@@ -102,12 +105,12 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
-    const {pure} = connectOptions
+    const { pure } = connectOptions
 
     let OuterBaseComponent = Component
     let FinalWrappedComponent = WrappedComponent
 
-    if(pure) {
+    if (pure) {
       OuterBaseComponent = PureComponent
     }
 
@@ -119,13 +122,16 @@ export default function connectAdvanced(
       let sourceSelector
 
       return function selectDerivedProps(state, props, store) {
-        if ((pure && lastProps === props) && (lastState === state)) {
+        if (pure && lastProps === props && lastState === state) {
           return lastDerivedProps
         }
 
         if (store !== lastStore) {
           lastStore = store
-          sourceSelector = selectorFactory(store.dispatch, selectorFactoryOptions)
+          sourceSelector = selectorFactory(
+            store.dispatch,
+            selectorFactoryOptions
+          )
         }
 
         lastProps = props
@@ -146,10 +152,12 @@ export default function connectAdvanced(
       let lastChildProps, lastForwardRef, lastChildElement
 
       return function selectChildElement(childProps, forwardRef) {
-        if(childProps !== lastChildProps || forwardRef !== lastForwardRef) {
+        if (childProps !== lastChildProps || forwardRef !== lastForwardRef) {
           lastChildProps = childProps
           lastForwardRef = forwardRef
-          lastChildElement = <FinalWrappedComponent {...childProps} ref={forwardRef} />
+          lastChildElement = (
+            <FinalWrappedComponent {...childProps} ref={forwardRef} />
+          )
         }
 
         return lastChildElement
@@ -159,8 +167,10 @@ export default function connectAdvanced(
     class Connect extends OuterBaseComponent {
       constructor(props) {
         super(props)
-        invariant(forwardRef ? !props.wrapperProps[storeKey] : !props[storeKey],
-          'Passing redux store in props has been removed and does not do anything. ' + customStoreWarningMessage
+        invariant(
+          forwardRef ? !props.wrapperProps[storeKey] : !props[storeKey],
+          'Passing redux store in props has been removed and does not do anything. ' +
+            customStoreWarningMessage
         )
         this.selectDerivedProps = makeDerivedPropsSelector()
         this.selectChildElement = makeChildElementSelector()
@@ -168,29 +178,34 @@ export default function connectAdvanced(
       }
 
       renderWrappedComponent(value) {
-        invariant(value,
+        invariant(
+          value,
           `Could not find "store" in the context of ` +
-          `"${displayName}". Either wrap the root component in a <Provider>, ` +
-          `or pass a custom React context provider to <Provider> and the corresponding ` +
-          `React context consumer to ${displayName} in connect options.`
+            `"${displayName}". Either wrap the root component in a <Provider>, ` +
+            `or pass a custom React context provider to <Provider> and the corresponding ` +
+            `React context consumer to ${displayName} in connect options.`
         )
         const { storeState, store } = value
 
         let wrapperProps = this.props
         let forwardedRef
 
-        if(forwardRef) {
+        if (forwardRef) {
           wrapperProps = this.props.wrapperProps
           forwardedRef = this.props.forwardedRef
         }
 
-        let derivedProps = this.selectDerivedProps(storeState, wrapperProps, store)
+        let derivedProps = this.selectDerivedProps(
+          storeState,
+          wrapperProps,
+          store
+        )
 
-        if(pure) {
-          return this.selectChildElement(derivedProps, forwardedRef);
+        if (pure) {
+          return this.selectChildElement(derivedProps, forwardedRef)
         }
 
-        return <FinalWrappedComponent {...derivedProps} ref={forwardedRef}/>
+        return <FinalWrappedComponent {...derivedProps} ref={forwardedRef} />
       }
 
       render() {
@@ -208,7 +223,10 @@ export default function connectAdvanced(
     Connect.displayName = displayName
 
     if (forwardRef) {
-      const forwarded = React.forwardRef(function forwardConnectRef(props, ref) {
+      const forwarded = React.forwardRef(function forwardConnectRef(
+        props,
+        ref
+      ) {
         return <Connect wrapperProps={props} forwardedRef={ref} />
       })
 
