@@ -7,8 +7,8 @@ let jestConfig = {
   collectCoverage: true,
   coverageDirectory: `${__dirname}/coverage`,
   transform: {
-    '.js$': `${__dirname}/babel-transformer.jest.js`,
-  },
+    '.js$': `${__dirname}/babel-transformer.jest.js`
+  }
 }
 
 require('./install-test-deps.js')
@@ -23,7 +23,7 @@ if (version.toLowerCase() === 'all') {
 } else {
   jestConfig = {
     ...jestConfig,
-    rootDir: `${__dirname}/react/${version}`,
+    rootDir: `${__dirname}/react/${version}`
   }
 }
 

@@ -97,18 +97,21 @@ export function pureFinalPropsSelectorFactory(
 // props have not changed. If false, the selector will always return a new
 // object and shouldComponentUpdate will always return true.
 
-export default function finalPropsSelectorFactory(dispatch, {
-  initMapStateToProps,
-  initMapDispatchToProps,
-  initMergeProps,
-  ...options
-}) {
+export default function finalPropsSelectorFactory(
+  dispatch,
+  { initMapStateToProps, initMapDispatchToProps, initMergeProps, ...options }
+) {
   const mapStateToProps = initMapStateToProps(dispatch, options)
   const mapDispatchToProps = initMapDispatchToProps(dispatch, options)
   const mergeProps = initMergeProps(dispatch, options)
 
   if (process.env.NODE_ENV !== 'production') {
-    verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, options.displayName)
+    verifySubselectors(
+      mapStateToProps,
+      mapDispatchToProps,
+      mergeProps,
+      options.displayName
+    )
   }
 
   const selectorFactory = options.pure

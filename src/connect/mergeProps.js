@@ -6,7 +6,8 @@ export function defaultMergeProps(stateProps, dispatchProps, ownProps) {
 
 export function wrapMergePropsFunc(mergeProps) {
   return function initMergePropsProxy(
-    dispatch, { displayName, pure, areMergedPropsEqual }
+    dispatch,
+    { displayName, pure, areMergedPropsEqual }
   ) {
     let hasRunOnce = false
     let mergedProps
@@ -17,7 +18,6 @@ export function wrapMergePropsFunc(mergeProps) {
       if (hasRunOnce) {
         if (!pure || !areMergedPropsEqual(nextMergedProps, mergedProps))
           mergedProps = nextMergedProps
-
       } else {
         hasRunOnce = true
         mergedProps = nextMergedProps
@@ -32,18 +32,13 @@ export function wrapMergePropsFunc(mergeProps) {
 }
 
 export function whenMergePropsIsFunction(mergeProps) {
-  return (typeof mergeProps === 'function')
+  return typeof mergeProps === 'function'
     ? wrapMergePropsFunc(mergeProps)
     : undefined
 }
 
 export function whenMergePropsIsOmitted(mergeProps) {
-  return (!mergeProps)
-    ? () => defaultMergeProps
-    : undefined
+  return !mergeProps ? () => defaultMergeProps : undefined
 }
 
-export default [
-  whenMergePropsIsFunction,
-  whenMergePropsIsOmitted
-]
+export default [whenMergePropsIsFunction, whenMergePropsIsOmitted]

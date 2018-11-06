@@ -2,20 +2,22 @@ import { bindActionCreators } from 'redux'
 import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
 
 export function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
-  return (typeof mapDispatchToProps === 'function')
+  return typeof mapDispatchToProps === 'function'
     ? wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps')
     : undefined
 }
 
 export function whenMapDispatchToPropsIsMissing(mapDispatchToProps) {
-  return (!mapDispatchToProps)
+  return !mapDispatchToProps
     ? wrapMapToPropsConstant(dispatch => ({ dispatch }))
     : undefined
 }
 
 export function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
-  return (mapDispatchToProps && typeof mapDispatchToProps === 'object')
-    ? wrapMapToPropsConstant(dispatch => bindActionCreators(mapDispatchToProps, dispatch))
+  return mapDispatchToProps && typeof mapDispatchToProps === 'object'
+    ? wrapMapToPropsConstant(dispatch =>
+        bindActionCreators(mapDispatchToProps, dispatch)
+      )
     : undefined
 }
 
