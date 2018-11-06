@@ -110,7 +110,6 @@ export default function connectAdvanced(
 
     if(pure) {
       OuterBaseComponent = PureComponent
-      //FinalWrappedComponent = React.memo(WrappedComponent)
     }
 
     class PureWrapper extends Component {
@@ -207,10 +206,12 @@ export default function connectAdvanced(
       }
 
       render() {
+        const ContextToUse = this.props.context || Context
+
         return (
-          <Context.Consumer>
+          <ContextToUse.Consumer>
             {this.renderWrappedComponent}
-          </Context.Consumer>
+          </ContextToUse.Consumer>
         )
       }
     }
