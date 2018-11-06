@@ -34,8 +34,10 @@
     "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/react-redux.min.js",
     "build": "npm run build:commonjs && npm run build:es && npm run build:umd && npm run build:umd:min",
     "clean": "rimraf lib dist es coverage",
+    "format": "prettier --write '{src,test}/**/*.js'",
     "lint": "eslint src test/utils test/components",
     "prepare": "npm run clean && npm run build",
+    "pretest": "npm run lint",
     "test": "node ./test/run-tests.js",
     "coverage": "codecov"
   },

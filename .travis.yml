@@ -8,7 +8,6 @@ env:
   - REACT=16.6
 sudo: false
 script:
-  - npm run lint
-  - npm run test
+  - npm test
 after_success:
   - npm run coverage
