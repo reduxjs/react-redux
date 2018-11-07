@@ -150,7 +150,9 @@ Many common operations result in new object or array references being created:
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
-Put these operations in [memoized selector functions]() to ensure that they only run if the input values have changed.  This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
+Put these operations in memoized selector functions like [reselect](https://github.com/reduxjs/reselect) to ensure that they only run if the input values have changed.  This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
+
+If you are not sure what should be memoized, or want to test quality of your memoization, you may use [why-did-you-update-redux](https://github.com/theKashey/why-did-you-update-redux). If you dont like selectors or memoization at all - feel free to use [automatic memoization](https://github.com/theKashey/beautiful-react-redux).
 
 
 
