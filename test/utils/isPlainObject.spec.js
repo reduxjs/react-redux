@@ -17,5 +17,6 @@ describe('isPlainObject', () => {
     expect(isPlainObject(null)).toBe(false)
     expect(isPlainObject()).toBe(false)
     expect(isPlainObject({ x: 1, y: 2 })).toBe(true)
+    expect(isPlainObject(Object.create(null))).toBe(true)
   })
 })
