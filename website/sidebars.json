@@ -1,11 +1,20 @@
 {
   "docs": {
-    "Introduction": ["introduction/quick-start", "introduction/basic-tutorial"],
+    "Introduction": [
+      "introduction/quick-start",
+      "introduction/basic-tutorial",
+      "introduction/why-use-react-redux"
+    ],
     "Using React-Redux": [
       "using-react-redux/connect-extracting-data-with-mapStateToProps",
       "using-react-redux/connect-dispatching-actions-with-mapDispatchToProps"
     ],
-    "API Reference": ["api", "api/provider"],
-    "Guides": ["troubleshooting"]
+    "API Reference": [
+      "api",
+      "api/provider"
+    ],
+    "Guides": [
+      "troubleshooting"
+    ]
   }
 }
