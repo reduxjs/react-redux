@@ -203,11 +203,7 @@ export default function connectAdvanced(
           store
         )
 
-        if (pure) {
-          return this.selectChildElement(derivedProps, forwardedRef)
-        }
-
-        return <FinalWrappedComponent {...derivedProps} ref={forwardedRef} />
+        return this.selectChildElement(derivedProps, forwardedRef)
       }
 
       render() {
