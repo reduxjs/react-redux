@@ -1564,7 +1564,7 @@ describe('React', () => {
       expect(actualState).toEqual(expectedState)
     })
 
-    it.skip('should throw an error if the store is not in the props or context', () => {
+    it('should throw an error if the store is not in the props or context', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       class Container extends Component {
