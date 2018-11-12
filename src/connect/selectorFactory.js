@@ -74,12 +74,13 @@ export function pureFinalPropsSelectorFactory(
   function handleSubsequentCalls(nextState, nextOwnProps) {
     const propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps)
     const stateChanged = !areStatesEqual(nextState, state)
+    const propsAndStateChanged = propsChanged && stateChanged
     state = nextState
     ownProps = nextOwnProps
 
-    if (propsChanged && stateChanged) return handleNewPropsAndNewState()
-    if (propsChanged) return handleNewProps()
-    if (stateChanged) return handleNewState()
+    if (propsAndStateChanged) return handleNewPropsAndNewState()
+    if (!propsAndStateChanged && propsChanged) return handleNewProps()
+    if (!propsAndStateChanged && stateChanged) return handleNewState()
     return mergedProps
   }
 
