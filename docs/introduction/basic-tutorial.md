@@ -237,11 +237,8 @@ import { connect } from "react-redux";
 const TodoList = // ... UI component implementation
 
 const mapStateToProps = state => {
-  const { byIds, allIds } = state.todos || {};
-  const todos =
-    allIds && allIds.length
-      ? allIds.map(id => (byIds ? { ...byIds[id], id } : null))
-      : null;
+  const { byIds, allIds = [] } = state.todos || {};
+  const todos = allIds.map(id => (byIds ? { ...byIds[id], id } : null));
   return { todos };
 };
 
