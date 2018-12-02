@@ -1,11 +1,20 @@
 {
   "docs": {
-    "Introduction": ["introduction/quick-start", "introduction/basic-tutorial"],
+    "Introduction": [
+      "introduction/quick-start",
+      "introduction/basic-tutorial",
+      "introduction/why-use-react-redux"
+    ],
     "Using React-Redux": [
       "using-react-redux/connect-mapstate",
       "using-react-redux/connect-mapdispatch"
     ],
-    "API Reference": ["api", "api/provider"],
-    "Guides": ["troubleshooting"]
+    "API Reference": [
+      "api",
+      "api/provider"
+    ],
+    "Guides": [
+      "troubleshooting"
+    ]
   }
 }
