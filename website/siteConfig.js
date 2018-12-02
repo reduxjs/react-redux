@@ -13,6 +13,7 @@ const siteConfig = {
   tagline: "React Redux Documentation",
   url: "https://react-redux.js.org", // Your website URL
   baseUrl: "/",
+  docsUrl : "",
   algolia: {
     apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
     indexName: 'react-redux',
@@ -30,7 +31,7 @@ const siteConfig = {
   headerLinks: [
     { doc: "introduction/quick-start", label: "Quick Start" },
     {
-      doc: "using-react-redux/connect-extracting-data-with-mapStateToProps",
+      doc: "using-react-redux/connect-mapstate",
       label: "Using React-Redux"
     },
     { doc: "api", label: "API" }

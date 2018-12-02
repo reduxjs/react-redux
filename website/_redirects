@@ -1,0 +1,6 @@
+/docs/using-react-redux/connect-extracting-data-with-mapStateToProps              /using-react-redux/connect-mapstate
+/docs/using-react-redux/connect-extracting-data-with-mapstatetoprops              /using-react-redux/connect-mapstate
+/docs/using-react-redux/connect-dispatching-actions-with-mapDispatchToProps       /using-react-redux/connect-mapdispatch
+/docs/using-react-redux/connect-dispatching-actions-with-mapdispatchtoprops       /using-react-redux/connect-mapdispatch
+
+/docs/*          /:splat

@@ -1,5 +1,5 @@
 ---
-id: connect-extracting-data-with-mapStateToProps
+id: connect-mapstate
 title: Connect: Extracting Data with mapStateToProps
 hide_title: true
 sidebar_label: Connect: Extracting Data with mapStateToProps
