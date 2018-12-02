@@ -1,5 +1,5 @@
 ---
-id: connect-dispatching-actions-with-mapDispatchToProps
+id: connect-mapdispatch
 title: Connect: Dispatching Actions with mapDispatchToProps
 hide_title: true
 sidebar_label: Connect: Dispatching Actions with mapDispatchToProps
