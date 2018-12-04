@@ -2390,8 +2390,8 @@ describe('React', () => {
         }
       }
 
-      const store = createStore(
-        (state = 0, action) => (action.type === 'INC' ? state + 1 : state)
+      const store = createStore((state = 0, action) =>
+        action.type === 'INC' ? state + 1 : state
       )
       rtl.render(
         <ProviderMock store={store}>
@@ -2429,8 +2429,8 @@ describe('React', () => {
         }
       }
 
-      const store = createStore(
-        (state = 0, action) => (action.type === 'INC' ? (state += 1) : state)
+      const store = createStore((state = 0, action) =>
+        action.type === 'INC' ? (state += 1) : state
       )
       rtl.render(
         <ProviderMock store={store}>
@@ -2442,11 +2442,11 @@ describe('React', () => {
     })
 
     it('should subscribe properly when a new store is provided via props', () => {
-      const store1 = createStore(
-        (state = 0, action) => (action.type === 'INC' ? state + 1 : state)
+      const store1 = createStore((state = 0, action) =>
+        action.type === 'INC' ? state + 1 : state
       )
-      const store2 = createStore(
-        (state = 0, action) => (action.type === 'INC' ? state + 1 : state)
+      const store2 = createStore((state = 0, action) =>
+        action.type === 'INC' ? state + 1 : state
       )
       const customContext = React.createContext()
 
