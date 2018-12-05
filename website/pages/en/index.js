@@ -93,7 +93,7 @@ const Installation = () => (
     style={{ textAlign: "center" }}
   >
     <h2>Installation</h2>
-    <MarkdownBlock>React Redux requires **React 0.14 or later.**</MarkdownBlock>
+    <MarkdownBlock>React Redux requires **React 16.4 or later.**</MarkdownBlock>
     <MarkdownBlock>``` npm install --save react-redux ```</MarkdownBlock>
   </div>
 );
