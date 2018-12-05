@@ -45,7 +45,7 @@ To run in explicit React versions (the number is the version, so `test:16.3` wil
 REACT=16.4 npm run test:ci
 ```
 
-To run tests in all supported React versions, `0.14`, `15`, `16.2`, `16.3`, `16.4`, 16.5`,
+To run tests in all supported React versions, `16.4`, 16.5`,
 ```
 REACT=all npm run test:ci
 ```
@@ -120,11 +120,6 @@ before_install:
   - 'nvm install-latest-npm'
 env:
   matrix:
-  - REACT=0.14
-  - REACT=15
-  - REACT=15.4
-  - REACT=16.2
-  - REACT=16.3
   - REACT=16.4
   - REACT=16.5
 sudo: false

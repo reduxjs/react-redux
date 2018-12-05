@@ -11,7 +11,7 @@ Performant and flexible.
 
 ## Installation
 
-React Redux requires **React 0.14 or later.**
+React Redux requires **React 16.4 or later.**
 
 ```
 npm install --save react-redux
