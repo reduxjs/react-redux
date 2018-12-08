@@ -1,0 +1,20 @@
+{
+  "version-5.1.1-docs": {
+    "Introduction": [
+      "version-5.1.1-introduction/quick-start",
+      "version-5.1.1-introduction/basic-tutorial",
+      "version-5.1.1-introduction/why-use-react-redux"
+    ],
+    "Using React-Redux": [
+      "version-5.1.1-using-react-redux/connect-mapstate",
+      "version-5.1.1-using-react-redux/connect-mapdispatch"
+    ],
+    "API Reference": [
+      "version-5.1.1-api",
+      "version-5.1.1-api/provider"
+    ],
+    "Guides": [
+      "version-5.1.1-troubleshooting"
+    ]
+  }
+}
