@@ -48,6 +48,7 @@
              This is the version that is configured automatically when you first
              install this project.
            </p>
+           {/* uncomment here if we have pre-release notes
            <h3 id="rc">Pre-release versions</h3>
            <table className="versions">
              <tbody>
@@ -61,7 +62,7 @@
                  </td>
                </tr>
              </tbody>
-           </table>
+           </table> */}
            <h3 id="archive">Past Versions</h3>
            <table className="versions">
              <tbody>

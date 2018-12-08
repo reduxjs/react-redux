@@ -1,8 +1,9 @@
 ---
-id: api
+id: version-6.0.0-api
 title: Api
 sidebar_label: API
 hide_title: true
+original_id: api
 ---
 
 # API
@@ -444,3 +445,4 @@ function selectorFactory(dispatch) {
   }
 }
 export default connectAdvanced(selectorFactory)(TodoApp)
+```
