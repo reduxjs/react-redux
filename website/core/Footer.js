@@ -10,7 +10,7 @@ const React = require("react");
 class Footer extends React.Component {
   docUrl(doc, language) {
     const baseUrl = this.props.config.baseUrl;
-    return `${baseUrl}docs/${language ? `${language}/` : ""}${doc}`;
+    return `${baseUrl}${language ? `${language}/` : ""}${doc}`;
   }
 
   pageUrl(doc, language) {
@@ -54,6 +54,9 @@ class Footer extends React.Component {
             >
               Stack Overflow
             </a>
+            <a href="https://discord.gg/0ZcbPKXt5bZ6au5t">
+              Discord
+            </a>
           </div>
           <div>
             <h5>More</h5>
@@ -70,6 +73,15 @@ class Footer extends React.Component {
               Star
             </a>
           </div>
+        </section>
+        <section className="copyright">
+          {this.props.config.copyright}<br />
+          Some icons copyright <a
+            href="https://fontawesome.com/license/free"
+            style={{color : "white"}}
+          >
+            Font Awesome
+          </a>
         </section>
       </footer>
     );
