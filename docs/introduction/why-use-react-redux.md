@@ -40,6 +40,8 @@ While it is possible to write this logic by hand, doing so would become very rep
 
 The process of subscribing to the store, checking for updated data, and triggering a re-render can be made more generic and reusable.  **A UI binding library like React-Redux handles the store interaction logic, so you don't have to write that code yourself.**
 
+> **Note**: For a deeper look at how React-Redux works internally and how it handles the store interaction for you, see **[Idiomatic Redux: The History and Implementation of React-Redux](https://blog.isquaredsoftware.com/2018/11/react-redux-history-implementation/)**.
+
 
 ## Reasons to Use React-Redux
 
