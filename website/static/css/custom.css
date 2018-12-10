@@ -8,6 +8,100 @@ header.postHeader:empty + article h1 {
   margin-top: 0;
 }
 
+a {
+  /* blue links - kickin' it old-school! */
+  color: blue;
+}
+a:hover {
+  /* add underlines for a11y */
+  text-decoration: underline;
+}
+a:visited {
+  color: $primaryColor;
+}
+.fixedHeaderContainer header .headerTitleWithLogo {
+  color : white;
+}
+.navigationSlider .slidingNav ul a {
+  color : white !important;
+  font-weight: 400 !important;
+}
+.navigationSlider .slidingNav ul a[href*="github"] {
+  font-size: 0;
+}
+.navigationSlider .slidingNav ul a[href*="github"]::before {
+  content : "";
+  width : 32px;
+  height : 32px;
+  background: url("/img/github-brands.svg");
+}
+.nav-footer .copyright,
+.nav-footer .sitemap a {
+  /* increase link contrast */
+  color: white;
+}
+.button.hero {
+  background: $primaryColor;
+  color: #fff;
+  font-size: 30px;
+  padding: .5em 1.25em;
+  font-weight: bold;
+}
+.button.hero:visited {
+  background: $primaryColor;
+  color: #fff;
+}
+.button.hero:hover {
+  background: #fff;
+  color: $primaryColor;
+}
+.productShowcaseSection .featureBlock {
+  padding: 40px 0;
+}
+.productShowcaseSection .featureBlock img {
+  width: 60px;
+  height: 60px;
+  max-width: 60px;
+  max-height: 60px;
+}
+.blockContent > div p {
+  text-align: justify;
+}
+.container .wrapper .alignLeft h2 {
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+@media only screen and (max-device-width: 480px) {
+  .productShowcaseSection .featureBlock {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .featureBlock .imageAlignTop .blockImage {
+    margin-bottom: 0;
+  }
+
+  .featureBlock .blockContent h2 {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+
+  .featureBlock .blockContent {
+    margin-bottom: 25px;
+  }
+  
+  .homeSplashFade img {
+    width : 60px;
+    height : 60px;
+  }
+
+  .homeSplashFade h1 {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 

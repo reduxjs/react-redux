@@ -11,6 +11,8 @@ sidebar_label: Quick Start
 
 ## Installation
 
+React-Redux version 6 requires **React 16.4 or later.**
+
 To use React-Redux with your React app:
 
 ```bash
@@ -22,6 +24,8 @@ or
 ```bash
 yarn add react-redux
 ```
+
+You'll also need to [install Redux](https://redux-docs.netlify.com/introduction/installation) and [set up a Redux store](https://redux-docs.netlify.com/recipes/configuring-your-store) in your app.
 
 ## `Provider` and `connect`
 
@@ -68,3 +72,9 @@ export default connect(
   mapDispatchToProps
 )(Counter);
 ```
+
+## Help and Discussion
+
+The **[#redux channel](https://discord.gg/0ZcbPKXt5bZ6au5t)** of the **[Reactiflux Discord community](http://www.reactiflux.com)** is our official resource for all questions related to learning and using Redux. Reactiflux is a great place to hang out, ask questions, and learn - come join us!
+
+You can also ask questions on [Stack Overflow](https://stackoverflow.com) using the **[#redux tag](https://stackoverflow.com/questions/tagged/redux)**.

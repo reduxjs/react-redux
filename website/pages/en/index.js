@@ -9,7 +9,7 @@ const React = require("react");
 
 const CompLibrary = require("../../core/CompLibrary.js");
 
-const MarkdownBlock = CompLibrary.MarkdownBlock; /* Used to read markdown */
+const {MarkdownBlock, GridBlock, Container} = CompLibrary; /* Used to read markdown */
 
 const siteConfig = require(`${process.cwd()}/siteConfig.js`);
 
@@ -17,11 +17,14 @@ function docUrl(doc, language) {
   return `${siteConfig.baseUrl}${language ? `${language}/` : ""}${doc}`;
 }
 
+function imgUrl(img) {
+  return `${siteConfig.baseUrl}img/${img}`;
+}
 class Button extends React.Component {
   render() {
     return (
       <div className="pluginWrapper buttonWrapper">
-        <a className="button" href={this.props.href} target={this.props.target}>
+        <a className="button hero" href={this.props.href} target={this.props.target}>
           {this.props.children}
         </a>
       </div>
@@ -48,14 +51,16 @@ const Logo = props => (
 );
 
 const ProjectTitle = () => (
-  <h2 className="projectTitle">
-    {siteConfig.title}
-    <small>
-      <MarkdownBlock>
-        Official React bindings for [Redux](https://github.com/reduxjs/redux)
-      </MarkdownBlock>
-    </small>
-  </h2>
+  <React.Fragment>
+    <div style={{display : "flex", justifyContent : "center", alignItems : "center"}}>
+      <img src={"img/redux.svg"} alt="Redux logo" width={100} height={100}/>
+      <h1 className="projectTitle">{siteConfig.title}</h1>
+    </div>
+
+    <h2 style={{marginTop : "0.5em"}}>
+      Official React bindings for Redux
+    </h2>
+    </React.Fragment>
 );
 
 const PromoSection = props => (
@@ -75,10 +80,7 @@ class HomeSplash extends React.Component {
           <ProjectTitle />
           <PromoSection>
             <Button href={docUrl("introduction/quick-start", language)}>
-              Quick Start
-            </Button>
-            <Button href="https://github.com/reduxjs/react-redux">
-              Github
+              Get Started
             </Button>
           </PromoSection>
         </div>
@@ -87,15 +89,45 @@ class HomeSplash extends React.Component {
   }
 }
 
-const Installation = () => (
-  <div
-    className="productShowcaseSection paddingBottom"
-    style={{ textAlign: "center" }}
+const Block = props => (
+  <Container
+    id={props.id}
+    background={props.background}
+    className={props.className}
   >
-    <h2>Installation</h2>
-    <MarkdownBlock>React Redux requires **React 16.4 or later.**</MarkdownBlock>
-    <MarkdownBlock>``` npm install --save react-redux ```</MarkdownBlock>
-  </div>
+    <GridBlock align="center" contents={props.children} layout={props.layout}/>
+  </Container>
+);
+
+const FeaturesTop = props => (
+  <Block layout="fourColumn" className="featureBlock">
+    {[
+      {
+        content: "React-Redux is maintained by the Redux team, and **kept up-to-date with the latest APIs from Redux and React**.",
+        image : imgUrl("noun_Certificate_1945625.svg"),
+        imageAlign: 'top',
+        title: "Official"
+      },
+      {
+        content: "**Designed to work with React's component model**.  You define how to extract the values your component needs from Redux, and your component receives them as props.",
+        image : imgUrl("noun_Check_1870817.svg"),
+        imageAlign: 'top',
+        title: "Predictable"
+      },
+      {
+        content: "Creates wrapper components that **manage the store interaction logic for you**, so you don't have to write it yourself.",
+        image : imgUrl("noun_Box_1664404.svg"),
+        imageAlign: 'top',
+        title: "Encapsulated"
+      },
+      {
+        content: "Automatically implements **complex performance optimizations**, so that your own component only re-renders when the data it needs has actually changed.",
+        image : imgUrl("noun_Rocket_1245262.svg"),
+        imageAlign: 'top',
+        title: "Optimized"
+      },
+    ]}
+  </Block>
 );
 
 class Index extends React.Component {
@@ -106,7 +138,11 @@ class Index extends React.Component {
       <div>
         <HomeSplash language={language} />
         <div className="mainContainer">
-          <Installation />
+          <div className="productShowcaseSection">
+            <Container background="light">
+              <FeaturesTop />
+            </Container>
+          </div>
         </div>
       </div>
     );

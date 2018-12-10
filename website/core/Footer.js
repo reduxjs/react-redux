@@ -10,7 +10,7 @@ const React = require("react");
 class Footer extends React.Component {
   docUrl(doc, language) {
     const baseUrl = this.props.config.baseUrl;
-    return `${baseUrl}docs/${language ? `${language}/` : ""}${doc}`;
+    return `${baseUrl}${language ? `${language}/` : ""}${doc}`;
   }
 
   pageUrl(doc, language) {
@@ -54,6 +54,9 @@ class Footer extends React.Component {
             >
               Stack Overflow
             </a>
+            <a href="https://discord.gg/0ZcbPKXt5bZ6au5t">
+              Discord
+            </a>
           </div>
           <div>
             <h5>More</h5>
@@ -70,6 +73,35 @@ class Footer extends React.Component {
               Star
             </a>
           </div>
+        </section>
+        <section className="copyright">
+          {this.props.config.copyright}<br />
+          Some icons copyright <a
+            href="https://fontawesome.com/license/free"
+            style={{color : "white"}}
+          >
+            Font Awesome
+          </a>  and <a
+          href="https://thenounproject.com"
+          style={{color : "white"}}
+        >
+          Noun Project
+        </a> (<a
+          href="https://thenounproject.com/term/certificate/1945625/"
+          style={{color : "white"}}
+        >
+          prasong tadoungsorn
+        </a>, <a
+          href="https://thenounproject.com/term/box/1664404/"
+          style={{color : "white"}}
+        >
+          Vladimir Belochkin
+        </a>, <a
+          href="https://thenounproject.com/term/rocket/1245262/"
+          style={{color : "white"}}
+        >
+          Atif Arshad
+        </a>)
         </section>
       </footer>
     );
