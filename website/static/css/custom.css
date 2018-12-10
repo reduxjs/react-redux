@@ -71,6 +71,27 @@ a:visited {
   margin-top: 10px;
   margin-bottom: 5px;
 }
+
+@media only screen and (max-device-width: 480px) {
+  .productShowcaseSection .featureBlock {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .featureBlock .imageAlignTop .blockImage {
+    margin-bottom: 0;
+  }
+
+  .featureBlock .blockContent h2 {
+    margin-top: 0;
+    margin-bottom: 5px;
+  }
+
+  .featureBlock .blockContent {
+    margin-bottom: 25px;
+  }
+}
+
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
 }
 
