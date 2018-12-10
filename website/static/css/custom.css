@@ -90,6 +90,16 @@ a:visited {
   .featureBlock .blockContent {
     margin-bottom: 25px;
   }
+  
+  .homeSplashFade img {
+    width : 60px;
+    height : 60px;
+  }
+
+  .homeSplashFade h1 {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
 }
 
 @media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
