@@ -33,6 +33,7 @@ const siteConfig = {
     { doc: "using-react-redux/connect-mapstate", label: "Using React-Redux"},
     { doc: "api", label: "API" },
     { href : "https://www.github.com/reduxjs/react-redux", label : "Github"},
+    { href: "/introduction/quick-start#help-and-discussion", label: "Need help?" },
   ],
 
   /* path to images for header/footer */

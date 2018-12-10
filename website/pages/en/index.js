@@ -101,15 +101,32 @@ const Block = props => (
 
 const FeaturesTop = props => (
   <Block layout="fourColumn" className="featureBlock">
-    {/*[
+    {[
       {
-        content: "Redux helps you write applications that **behave consistently**, run in different environments (client, server, and native), and are **easy to test**.",
-        //image: imgUrl('icon/time.png'),
+        content: "React-Redux is maintained by the Redux team, and **kept up-to-date with the latest APIs from Redux and React**.",
+        image : imgUrl("noun_Certificate_1945625.svg"),
+        imageAlign: 'top',
+        title: "Official"
+      },
+      {
+        content: "**Designed to work with React's component model**.  You define how to extract the values your component needs from Redux, and your component receives them as props.",
         image : imgUrl("noun_Check_1870817.svg"),
         imageAlign: 'top',
         title: "Predictable"
       },
-    ]*/}
+      {
+        content: "Creates wrapper components that **manage the store interaction logic for you**, so you don't have to write it yourself.",
+        image : imgUrl("noun_Box_1664404.svg"),
+        imageAlign: 'top',
+        title: "Encapsulated"
+      },
+      {
+        content: "Automatically implements **complex performance optimizations**, so that your own component only re-renders when the data it needs has actually changed.",
+        image : imgUrl("noun_Rocket_1245262.svg"),
+        imageAlign: 'top',
+        title: "Optimized"
+      },
+    ]}
   </Block>
 );
 
@@ -121,6 +138,11 @@ class Index extends React.Component {
       <div>
         <HomeSplash language={language} />
         <div className="mainContainer">
+          <div className="productShowcaseSection">
+            <Container background="light">
+              <FeaturesTop />
+            </Container>
+          </div>
         </div>
       </div>
     );
