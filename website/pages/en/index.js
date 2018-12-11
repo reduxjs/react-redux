@@ -135,7 +135,7 @@ const OtherLibraries = props => (
     {[
       {
         content: "A predictable state container for JavaScript applications",
-        title: "[Redux ![link2](img/external-link-square-alt-solid.svg)](https://react-redux.js.org) "
+        title: "[Redux ![link2](img/external-link-square-alt-solid.svg)](https://redux.js.org) "
       },
       {
         content: "A simple batteries-included toolset to make using Redux easier",
