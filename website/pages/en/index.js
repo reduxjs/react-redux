@@ -130,6 +130,22 @@ const FeaturesTop = props => (
   </Block>
 );
 
+const OtherLibraries = props => (
+  <Block layout="twoColumn" className="libBlock">
+    {[
+      {
+        content: "A predictable state container for JavaScript applications",
+        title: "[Redux ![link2](img/external-link-square-alt-solid.svg)](https://redux.js.org) "
+      },
+      {
+        content: "A simple batteries-included toolset to make using Redux easier",
+        title: "[Redux Starter Kit ![link2](img/external-link-square-alt-solid.svg)](https://redux-starter-kit.js.org)"
+      },
+    ]}
+  </Block>
+);
+
+
 class Index extends React.Component {
   render() {
     const language = this.props.language || "";
@@ -141,6 +157,12 @@ class Index extends React.Component {
           <div className="productShowcaseSection">
             <Container background="light">
               <FeaturesTop />
+            </Container>
+            <Container>
+              <h2 style={{marginTop : "0.5em"}}>
+                Other Libraries from the Redux Team
+              </h2>
+              <OtherLibraries/>
             </Container>
           </div>
         </div>
