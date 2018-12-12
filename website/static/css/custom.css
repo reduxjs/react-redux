@@ -68,7 +68,7 @@ a:visited {
 
 
 .featureBlock .blockContent > div p {
-  text-align: justify;
+  text-align: left;
 }
 
 .libBlock > div p {
