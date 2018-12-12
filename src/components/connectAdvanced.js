@@ -5,6 +5,14 @@ import { isValidElementType } from 'react-is'
 
 import { ReactReduxContext } from './Context'
 
+const stringifyComponent = Comp => {
+  try {
+    return JSON.stringify(Comp)
+  } catch (err) {
+    return String(Comp)
+  }
+}
+
 export default function connectAdvanced(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -86,7 +94,9 @@ export default function connectAdvanced(
       invariant(
         isValidElementType(WrappedComponent),
         `You must pass a component to the function returned by ` +
-          `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
+          `${methodName}. Instead received ${stringifyComponent(
+            WrappedComponent
+          )}`
       )
     }
 
