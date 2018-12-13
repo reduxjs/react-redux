@@ -37,7 +37,7 @@ class Footer extends React.Component {
             <a href={this.docUrl("introduction/quick-start")}>Introduction</a>
             <a
               href={this.docUrl(
-                "using-react-redux/connect-extracting-data-with-mapStateToProps"
+                "using-react-redux/connect-mapstate"
               )}
             >
               Using React-Redux
