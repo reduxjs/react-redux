@@ -2604,5 +2604,19 @@ describe('React', () => {
         )(Comp)
       }).toThrow(/renderCountProp is removed/)
     })
+
+    it('should not error on valid component with circular structure', () => {
+      const createComp = Tag => {
+        const Comp = React.forwardRef(function Comp(props) {
+          return <Tag>{props.count}</Tag>
+        })
+        Comp.__real = Comp
+        return Comp
+      }
+
+      expect(() => {
+        connect()(createComp('div'))
+      }).not.toThrow()
+    })
   })
 })

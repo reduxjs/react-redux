@@ -42,12 +42,12 @@ npm run test
 
 To run in explicit React versions (the number is the version, so `test:16.3` will run in React version `16.3`):
 ```
-REACT=16.4 npm run test:ci
+REACT=16.4 npm run test
 ```
 
 To run tests in all supported React versions, `16.4`, 16.5`,
 ```
-REACT=all npm run test:ci
+REACT=all npm run test
 ```
 
 To continuously watch and run tests, run the following:
