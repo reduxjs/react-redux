@@ -151,9 +151,11 @@ export default function connectAdvanced(
 
         const nextProps = sourceSelector(state, props)
 
-        if (lastDerivedProps === nextProps) {
-          return lastDerivedProps
-        }
+        // Conditional test costs more than just assigning each time
+        // See: https://jsperf.com/conditional-vs-not
+        // if (lastDerivedProps === nextProps) {
+        //   return lastDerivedProps
+        // }
 
         lastDerivedProps = nextProps
         return lastDerivedProps
