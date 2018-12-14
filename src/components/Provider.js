@@ -6,11 +6,12 @@ class Provider extends Component {
   constructor(props) {
     super(props)
 
-    const { store } = props
+    const { store, UNSAFE_readLatestStoreStateOnFirstRender } = props
 
     this.state = {
       storeState: store.getState(),
-      store
+      store,
+      readStoreStateOnFirstRender: UNSAFE_readLatestStoreStateOnFirstRender,
     }
   }
 

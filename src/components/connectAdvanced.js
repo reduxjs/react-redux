@@ -186,7 +186,13 @@ export default function connectAdvanced(
         )
         this.selectDerivedProps = makeDerivedPropsSelector()
         this.selectChildElement = makeChildElementSelector()
+        this.isFirstRender = true
         this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
+      }
+
+      componentDidMount() {
+        console.log(`component ${wrappedComponentName} did mount`)
+        this.isFirstRender = false
       }
 
       renderWrappedComponent(value) {
@@ -197,7 +203,7 @@ export default function connectAdvanced(
             `or pass a custom React context provider to <Provider> and the corresponding ` +
             `React context consumer to ${displayName} in connect options.`
         )
-        const { storeState, store } = value
+        const { storeState, store, readStoreStateOnFirstRender } = value
 
         let wrapperProps = this.props
         let forwardedRef
@@ -207,8 +213,14 @@ export default function connectAdvanced(
           forwardedRef = this.props.forwardedRef
         }
 
+        let newStoreState = storeState
+        if (readStoreStateOnFirstRender && this.isFirstRender) {
+          console.log(`recompute state for getting last one on component ${wrappedComponentName}`)
+          newStoreState = store.getState()
+        }
+
         let derivedProps = this.selectDerivedProps(
-          storeState,
+          newStoreState,
           wrapperProps,
           store
         )
