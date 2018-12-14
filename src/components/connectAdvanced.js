@@ -151,10 +151,6 @@ export default function connectAdvanced(
 
         const nextProps = sourceSelector(state, props)
 
-        if (lastDerivedProps === nextProps) {
-          return lastDerivedProps
-        }
-
         lastDerivedProps = nextProps
         return lastDerivedProps
       }
