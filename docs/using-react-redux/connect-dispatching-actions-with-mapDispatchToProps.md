@@ -374,7 +374,7 @@ There are discussions regarding whether to provide `dispatch` to your components
 
 ### Can I `mapDispatchToProps` without `mapStateToProps` in Redux?
 
-Yes. You can skip the first parameter by passing `undefined` or `null`. Your component will not subscribe to the store, and will still receive the dispatch props defined by `mapStateToProps`.
+Yes. You can skip the first parameter by passing `undefined` or `null`. Your component will not subscribe to the store, and will still receive the dispatch props defined by `mapDispatchToProps`.
 
 ```js
 connect(
