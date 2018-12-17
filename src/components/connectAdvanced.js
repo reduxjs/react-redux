@@ -213,7 +213,7 @@ export default function connectAdvanced(
       }
 
       render() {
-        const ContextToUse = (this.props.context && this.props.context.Consumer) ? this.props.context : Context
+        const ContextToUse = this.props.context && this.props.context.Consumer ? this.props.context : Context
 
         return (
           <ContextToUse.Consumer>
