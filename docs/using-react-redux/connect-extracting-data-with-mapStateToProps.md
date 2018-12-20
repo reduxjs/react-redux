@@ -127,7 +127,7 @@ Much like a Redux reducer, a `mapStateToProps` function should always be 100% pu
 
 ### Return Values Determine If Your Component Re-Renders
 
-React-Redux internally implements the `shouldComponentUpdate` method such that the wrapper component re-renders precisely when the data your component needs has changed. By default, React-Redux decides whether the contents of the object returned from `mapStateToProps` are different using `===` comparison (a "shallow equality" check) on each fields of the returned object. If any of the fields have changed, then your component will be re-rendered so it can receive the updated values as props.  Note that returning a mutated object of the same reference is a common mistake that can result in your component not re-rendering when expected.
+React Redux internally implements the `shouldComponentUpdate` method such that the wrapper component re-renders precisely when the data your component needs has changed. By default, React Redux decides whether the contents of the object returned from `mapStateToProps` are different using `===` comparison (a "shallow equality" check) on each fields of the returned object. If any of the fields have changed, then your component will be re-rendered so it can receive the updated values as props.  Note that returning a mutated object of the same reference is a common mistake that can result in your component not re-rendering when expected.
 
 
 To summarize the behavior of the component wrapped by `connect` with `mapStateToProps` to extract data from the store:
@@ -140,7 +140,7 @@ To summarize the behavior of the component wrapped by `connect` with `mapStateTo
 
 ### Only Return New Object References If Needed
 
-React-Redux does shallow comparisons to see if the `mapStateToProps` results have changed.  It’s easy to accidentally return new object or array references every time, which would cause your component to re-render even if the data is actually the same.
+React Redux does shallow comparisons to see if the `mapStateToProps` results have changed.  It’s easy to accidentally return new object or array references every time, which would cause your component to re-render even if the data is actually the same.
 
 Many common operations result in new object or array references being created:
 

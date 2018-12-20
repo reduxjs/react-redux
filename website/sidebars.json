@@ -5,7 +5,7 @@
       "introduction/basic-tutorial",
       "introduction/why-use-react-redux"
     ],
-    "Using React-Redux": [
+    "Using React Redux": [
       "using-react-redux/connect-mapstate",
       "using-react-redux/connect-mapdispatch"
     ],
