@@ -7,7 +7,7 @@ sidebar_label: Basic Tutorial
 
 # Basic Tutorial
 
-To see how to use React-Redux in practice, we’ll show a step-by-step example by creating a todo list app.
+To see how to use React Redux in practice, we’ll show a step-by-step example by creating a todo list app.
 
 ## A Todo List Example
 
@@ -24,7 +24,7 @@ We have implemented our React UI components as follows:
 - `TodoApp` is the entry component for our app. It renders the header, the `AddTodo`, `TodoList`, and `VisibilityFilters` components.
 - `AddTodo` is the component that allows a user to input a todo item and add to the list upon clicking its “Add Todo” button:
   - It uses a controlled input that sets state upon `onChange`.
-  - When the user clicks on the “Add Todo” button, it dispatches the action (that we will provide using React-Redux) to add the todo to the store.
+  - When the user clicks on the “Add Todo” button, it dispatches the action (that we will provide using React Redux) to add the todo to the store.
 - `TodoList` is the component that renders the list of todos:
   - It renders the filtered list of todos when one of the `VisibilityFilters` is selected.
 - `Todo` is the component that renders a single todo item:
@@ -66,11 +66,11 @@ You may check out [this CodeSandbox](https://codesandbox.io/s/6vwyqrpqk3) for th
 
 <br />
 
-We will now show how to connect this store to our app using React-Redux.
+We will now show how to connect this store to our app using React Redux.
 
 ### Providing the Store
 
-First we need to make the `store` available to our app. To do this, we wrap our app with the `<Provider />` API provided by React-Redux.
+First we need to make the `store` available to our app. To do this, we wrap our app with the `<Provider />` API provided by React Redux.
 
 ```jsx
 // index.js
@@ -96,7 +96,7 @@ Notice how our `<TodoApp />` is now wrapped with the `<Provider />` with `store`
 
 ### Connecting the Components
 
-React-Redux provides a `connect` function for you to read values from the Redux store (and re-read the values when the store updates). 
+React Redux provides a `connect` function for you to read values from the Redux store (and re-read the values when the store updates). 
 
 The `connect` function takes two arguments, both optional:
 
@@ -439,14 +439,14 @@ const mapStateToProps = state => {
 export default connect(mapStateToProps)(TodoList);
 ```
 
-Now we've finished a very simple example of a todo app with React-Redux. All our components are connected! Isn't that nice? 🎉🎊
+Now we've finished a very simple example of a todo app with React Redux. All our components are connected! Isn't that nice? 🎉🎊
 
 ![](https://i.imgur.com/ONqer2R.png)
 
 ## Links
 
 - [Usage with React](https://redux.js.org/basics/usagewithreact)
-- [Using the React-Redux Bindings](https://blog.isquaredsoftware.com/presentations/workshops/redux-fundamentals/react-redux.html)
+- [Using the React Redux Bindings](https://blog.isquaredsoftware.com/presentations/workshops/redux-fundamentals/react-redux.html)
 - [Higher Order Components in Depth](https://medium.com/@franleplant/react-higher-order-components-in-depth-cf9032ee6c3e)
 - [Computing Derived Data](https://redux.js.org/recipes/computingderiveddata#sharing-selectors-across-multiple-components)
 - [Idiomatic Redux: Using Reselect Selectors for Encapsulation and Performance](https://blog.isquaredsoftware.com/2017/12/idiomatic-redux-using-reselect-selectors/)

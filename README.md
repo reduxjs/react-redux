@@ -29,7 +29,7 @@ If you are on an older version of React Native, you’ll need to keep using [Rea
 
 ## Documentation
 
-The React-Redux docs are now published at **https://react-redux.js.org** .
+The React Redux docs are now published at **https://react-redux.js.org** .
 
 We're currently expanding and rewriting our docs content - check back soon for more updates!
 

@@ -10,7 +10,7 @@
 
 const siteConfig = {
   title: "React Redux", // Title for your website.
-  tagline: "React Redux Documentation",
+  tagline: "Official React bindings for Redux",
   url: "https://react-redux.js.org", // Your website URL
   baseUrl: "/",
   docsUrl : "",
@@ -30,24 +30,21 @@ const siteConfig = {
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
     { doc: "introduction/quick-start", label: "Quick Start" },
-    {
-      doc: "using-react-redux/connect-mapstate",
-      label: "Using React-Redux"
-    },
+    { doc: "using-react-redux/connect-mapstate", label: "Using React Redux"},
     { doc: "api/connect", label: "API" },
     { href : "https://www.github.com/reduxjs/react-redux", label : "Github"},
     { href: "/introduction/quick-start#help-and-discussion", label: "Need help?" },
   ],
 
   /* path to images for header/footer */
-  // headerIcon: "img/redux.svg",
-  // footerIcon: "img/redux.svg",
+  headerIcon: "img/redux_white.svg",
+  footerIcon: "img/redux_white.svg",
   favicon: "img/favicon/favicon.ico",
 
   /* Colors for website */
   colors: {
     primaryColor: "#764ABC",
-    secondaryColor: "#764ABC"
+    secondaryColor: "#764ABC",
   },
 
   /* Custom fonts for website */
@@ -65,7 +62,7 @@ const siteConfig = {
   */
 
   // This copyright info is used in /core/Footer.js and blog RSS/Atom feeds.
-  copyright: `Copyright © ${new Date().getFullYear()} Your Name or Your Company Name`,
+  copyright: 'Copyright (c) 2015-present Dan Abramov and the Redux documentation authors.',
 
   highlight: {
     // Highlight.js theme to use for syntax highlighting in code blocks.
@@ -73,20 +70,29 @@ const siteConfig = {
   },
 
   // Add custom scripts here that would be placed in <script> tags.
-  scripts: ["https://buttons.github.io/buttons.js"],
+  scripts: [
+    "/scripts/sidebarScroll.js",
+    "/scripts/codeblock.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js",
+    "https://buttons.github.io/buttons.js",
+  ],
 
+
+  enableUpdateTime: true,
   // On page navigation for the current documentation page.
   onPageNav: "separate",
   // No .html extensions for paths.
   cleanUrl: true,
 
   // Open Graph and Twitter card images.
-  ogImage: "img/docusaurus.png",
-  twitterImage: "img/docusaurus.png",
+  ogImage: "img/redux-logo-landscape.png",
+  twitterImage: "img/redux-logo-twitter.png",
 
   // You may provide arbitrary config keys to be used as needed by your
   // template. For example, if you need your repo's URL...
-  repoUrl: "https://github.com/reduxjs/react-redux"
+  repoUrl: "https://github.com/reduxjs/react-redux",
+  
+  gaTrackingId : "UA-130598673-2",
 };
 
 module.exports = siteConfig;

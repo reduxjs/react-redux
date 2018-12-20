@@ -5,6 +5,14 @@ import { isValidElementType } from 'react-is'
 
 import { ReactReduxContext } from './Context'
 
+const stringifyComponent = Comp => {
+  try {
+    return JSON.stringify(Comp)
+  } catch (err) {
+    return String(Comp)
+  }
+}
+
 export default function connectAdvanced(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -69,7 +77,7 @@ export default function connectAdvanced(
 
   const customStoreWarningMessage =
     'To use a custom Redux store for specific components,  create a custom React context with ' +
-    "React.createContext(), and pass the context object to React-Redux's Provider and specific components" +
+    "React.createContext(), and pass the context object to React Redux's Provider and specific components" +
     ' like:  <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' +
     'You may also pass a {context : MyContext} option to connect'
 
@@ -86,7 +94,9 @@ export default function connectAdvanced(
       invariant(
         isValidElementType(WrappedComponent),
         `You must pass a component to the function returned by ` +
-          `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
+          `${methodName}. Instead received ${stringifyComponent(
+            WrappedComponent
+          )}`
       )
     }
 
@@ -140,10 +150,6 @@ export default function connectAdvanced(
         lastState = state
 
         const nextProps = sourceSelector(state, props)
-
-        if (lastDerivedProps === nextProps) {
-          return lastDerivedProps
-        }
 
         lastDerivedProps = nextProps
         return lastDerivedProps

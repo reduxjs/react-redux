@@ -7,11 +7,13 @@ sidebar_label: Quick Start
 
 # Quick Start
 
-[React-Redux](https://github.com/reduxjs/react-redux) is the official [React](https://reactjs.org/) binding for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update data.
+[React Redux](https://github.com/reduxjs/react-redux) is the official [React](https://reactjs.org/) binding for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update data.
 
 ## Installation
 
-To use React-Redux with your React app:
+React Redux 6.x requires **React 16.4 or later.**
+
+To use React Redux with your React app:
 
 ```bash
 npm install --save react-redux
@@ -23,9 +25,11 @@ or
 yarn add react-redux
 ```
 
+You'll also need to [install Redux](https://redux-docs.netlify.com/introduction/installation) and [set up a Redux store](https://redux-docs.netlify.com/recipes/configuring-your-store) in your app.
+
 ## `Provider` and `connect`
 
-React-Redux provides `<Provider />`, which makes the Redux store available to the rest of your app:
+React Redux provides `<Provider />`, which makes the Redux store available to the rest of your app:
 
 ```js
 import React from "react";
@@ -45,7 +49,7 @@ ReactDOM.render(
 );
 ```
 
-React-Redux provides a `connect` function for you to connect your component to the store.
+React Redux provides a `connect` function for you to connect your component to the store.
 
 Normally, you’ll call `connect` in this way:
 
@@ -68,3 +72,9 @@ export default connect(
   mapDispatchToProps
 )(Counter);
 ```
+
+## Help and Discussion
+
+The **[#redux channel](https://discord.gg/0ZcbPKXt5bZ6au5t)** of the **[Reactiflux Discord community](http://www.reactiflux.com)** is our official resource for all questions related to learning and using Redux. Reactiflux is a great place to hang out, ask questions, and learn - come join us!
+
+You can also ask questions on [Stack Overflow](https://stackoverflow.com) using the **[#redux tag](https://stackoverflow.com/questions/tagged/redux)**.

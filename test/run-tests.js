@@ -27,4 +27,7 @@ if (version.toLowerCase() === 'all') {
   }
 }
 
-npmRun.execSync(`jest -c '${JSON.stringify(jestConfig)}'`, { stdio: 'inherit' })
+npmRun.execSync(
+  `jest -c '${JSON.stringify(jestConfig)}' ${process.argv.slice(2).join(' ')}`,
+  { stdio: 'inherit' }
+)
