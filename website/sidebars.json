@@ -10,8 +10,10 @@
       "using-react-redux/connect-mapdispatch"
     ],
     "API Reference": [
-      "api",
-      "api/provider"
+      "api/connect",
+      "api/provider",
+      "api/connect-advanced",
+      "api/create-provider"
     ],
     "Guides": [
       "troubleshooting"

@@ -42,7 +42,7 @@ class Footer extends React.Component {
             >
               Using React-Redux
             </a>
-            <a href={this.docUrl("api")}>API Reference</a>
+            <a href={this.docUrl("api/connect")}>API Reference</a>
             <a href={this.docUrl("troubleshooting")}>Guides</a>
           </div>
           <div>
