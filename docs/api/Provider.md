@@ -2,6 +2,7 @@
 id: provider
 title: Provider
 sidebar_label: Provider
+hide_title: true
 ---
 
 # `<Provider />`
