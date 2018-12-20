@@ -352,7 +352,7 @@ export default connect(
 )(Component);
 ```
 
-These four cases cover the most basic usages of `connect`. To read more about `connect`, continue reading our [API section](./api.md) that explains it in more detail.
+These four cases cover the most basic usages of `connect`. To read more about `connect`, continue reading our [API section](./api/connect.md) that explains it in more detail.
 
 <!-- TODO: Put up link to the page that further explains connect -->
 
