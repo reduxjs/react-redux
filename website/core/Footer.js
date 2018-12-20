@@ -40,7 +40,7 @@ class Footer extends React.Component {
                 "using-react-redux/connect-mapstate"
               )}
             >
-              Using React-Redux
+              Using React Redux
             </a>
             <a href={this.docUrl("api")}>API Reference</a>
             <a href={this.docUrl("troubleshooting")}>Guides</a>

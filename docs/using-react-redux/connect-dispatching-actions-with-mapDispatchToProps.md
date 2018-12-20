@@ -12,8 +12,8 @@ As the second argument passed in to `connect`, `mapDispatchToProps` is used for 
 `dispatch` is a function of the Redux store. You call `store.dispatch` to dispatch an action.
 This is the only way to trigger a state change.
 
-With React-Redux, your components never access the store directly - `connect` does it for you.
-React-Redux gives you two ways to let components dispatch actions:
+With React Redux, your components never access the store directly - `connect` does it for you.
+React Redux gives you two ways to let components dispatch actions:
 
 - By default, a connected component receives `props.dispatch` and can dispatch actions itself.
 - `connect` can accept an argument called `mapDispatchToProps`, which lets you create functions that dispatch when called, and pass those functions as props to your component.
@@ -92,7 +92,7 @@ const TodoList = ({ todos, toggleTodo }) => (
 );
 ```
 
-This is what React-Redux’s `connect` does — it encapsulates the logic of talking to the Redux store and lets you not worry about it. And this is what you should totally make full use of in your implementation.
+This is what React Redux’s `connect` does — it encapsulates the logic of talking to the Redux store and lets you not worry about it. And this is what you should totally make full use of in your implementation.
 
 ## Two Forms of `mapDispatchToProps`
 
@@ -281,7 +281,7 @@ Note that:
 - Your component will no longer receive `dispatch` as a prop
 
 ```js
-// React-Redux does this for you automatically:
+// React Redux does this for you automatically:
 dispatch => bindActionCreators(mapDispatchToProps, dispatch);
 ```
 
@@ -385,7 +385,7 @@ connect(
 
 ### Can I call `store.dispatch`?
 
-It's an anti-pattern to interact with the store directly in a React component, whether it's an explicit import of the store or accessing it via context (see the [Redux FAQ entry on store setup](https://redux.js.org/faq/storesetup#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself) for more details). Let React-Redux’s `connect` handle the access to the store, and use the `dispatch` it passes to the props to dispatch actions.
+It's an anti-pattern to interact with the store directly in a React component, whether it's an explicit import of the store or accessing it via context (see the [Redux FAQ entry on store setup](https://redux.js.org/faq/storesetup#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself) for more details). Let React Redux’s `connect` handle the access to the store, and use the `dispatch` it passes to the props to dispatch actions.
 
 ## Links and References
 

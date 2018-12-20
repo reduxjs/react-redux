@@ -21,4 +21,4 @@ about: Something isn't working correctly.
 
 
 
-**Which versions of React, ReactDOM/React Native, Redux, and React-Redux are you using?  Which browser and OS are affected by this issue? Did this work in previous versions of React-Redux?**
+**Which versions of React, ReactDOM/React Native, Redux, and React Redux are you using?  Which browser and OS are affected by this issue? Did this work in previous versions of React Redux?**

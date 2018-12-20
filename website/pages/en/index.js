@@ -103,7 +103,7 @@ const FeaturesTop = props => (
   <Block layout="fourColumn" className="featureBlock">
     {[
       {
-        content: "React-Redux is maintained by the Redux team, and **kept up-to-date with the latest APIs from Redux and React**.",
+        content: "React Redux is maintained by the Redux team, and **kept up-to-date with the latest APIs from Redux and React**.",
         image : imgUrl("noun_Certificate_1945625.svg"),
         imageAlign: 'top',
         title: "Official"
