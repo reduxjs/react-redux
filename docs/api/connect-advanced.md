@@ -8,12 +8,16 @@ hide_title: true
 # `connectAdvanced()`
 
 ```js
-connectAdvanced(selectorFactory, [connectOptions])
+connectAdvanced(selectorFactory, connectOptions?)
 ```
 
 Connects a React component to a Redux store. It is the base for `connect()` but is less opinionated about how to combine `state`, `props`, and `dispatch` into your final props. It makes no assumptions about defaults or memoization of results, leaving those responsibilities to the caller.
 
 It does not modify the component class passed to it; instead, it *returns* a new, connected component class for you to use.
+
+Most applications will not need to use this, as the default behavior in `connect` is intended to work for most use cases.
+
+> Note: `connectAdvanced` was added in version 5.0, and `connect` was reimplemented as a specific set of parameters to `connectAdvanced`.  
 
 ## Arguments
 
@@ -29,9 +33,7 @@ It does not modify the component class passed to it; instead, it *returns* a new
 
   * [`shouldHandleStateChanges`] *(Boolean)*: controls whether the connector component subscribes to redux store state changes. If set to false, it will only re-render when parent component re-renders. Default value:  `true`
 
-  * [`storeKey`] *(String)*: the key of props/context to get the store. You probably only need this if you are in the inadvisable position of having multiple stores. Default value: `'store'`
-
-  * [`withRef`] *(Boolean)*: If true, stores a ref to the wrapped component instance and makes it available via `getWrappedInstance()` method. Default value: `false`
+  * [`forwardRef`] *(Boolean)*: If true, adding a ref to the connected wrapper component will actually return the instance of the wrapped component.
 
   * Additionally, any extra options passed via `connectOptions` will be passed through to your `selectorFactory` in the `factoryOptions` argument.
 
@@ -49,11 +51,7 @@ A higher-order React component class that builds props from the store state and 
 
 All the original static methods of the component are hoisted.
 
-### Instance Methods
 
-#### `getWrappedInstance(): ReactComponent`
-
-Returns the wrapped component instance. Only available if you pass `{ withRef: true }` as part of the `options` argument.
 
 ## Remarks
 
@@ -73,8 +71,10 @@ import { bindActionCreators } from 'redux'
 function selectorFactory(dispatch) {
   let ownProps = {}
   let result = {}
+  
   const actions = bindActionCreators(actionCreators, dispatch)
   const addTodo = (text) => actions.addTodo(ownProps.userId, text)
+  
   return (nextState, nextOwnProps) => {
     const todos = nextState.todos[nextOwnProps.userId]
     const nextResult = { ...nextOwnProps, todos, addTodo }
