@@ -12,8 +12,7 @@
     "API Reference": [
       "api/connect",
       "api/provider",
-      "api/connect-advanced",
-      "api/create-provider"
+      "api/connect-advanced"
     ],
     "Guides": [
       "troubleshooting"
