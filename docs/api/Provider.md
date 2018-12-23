@@ -25,7 +25,6 @@ The single Redux `store` in your application.
 `children` (ReactElement)
 The root of your component hierarchy.
 
-
 ### Example Usage
 
 In the example below, the `<App />` component is our root-level component. This means it’s at the very top of our component hierarchy.
@@ -33,48 +32,47 @@ In the example below, the `<App />` component is our root-level component. This 
 **Vanilla React Example**
 
 ```jsx
-    import React from 'react';
-    import ReactDOM from 'react-dom';
-    import { Provider } from 'react-redux';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import { Provider } from 'react-redux'
 
-    import { App } from './App';
-    import createStore from './createReduxStore';
+import { App } from './App'
+import createStore from './createReduxStore'
 
-    const store = createStore();
+const store = createStore()
 
-    ReactDOM.render(
-      <Provider store={store}>
-        <App />
-      </Provider>,
-      document.getElementById('root')
-    )
-```    
-
+ReactDOM.render(
+  <Provider store={store}>
+    <App />
+  </Provider>,
+  document.getElementById('root')
+)
+```
 
 **Usage with React Router**
 
 ```jsx
-    import React from 'react';
-    import ReactDOM from 'react-dom';
-    import { Provider } from 'react-redux';
-    import { Router, Route } from 'react-router-dom';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import { Provider } from 'react-redux'
+import { Router, Route } from 'react-router-dom'
 
-    import { App } from './App';
-    import { Foo } from './Foo';
-    import { Bar } from './Bar';
-    import createStore from './createReduxStore';
+import { App } from './App'
+import { Foo } from './Foo'
+import { Bar } from './Bar'
+import createStore from './createReduxStore'
 
-    const store = createStore();
+const store = createStore()
 
-    ReactDOM.render(
-      <Provider store={store}>
-        <Router history={history}>
-          <Route path="/" component={App}>
-            <Route path="foo" component={Foo}/>
-            <Route path="bar" component={Bar}/>
-          </Route>
-        </Router>
-      </Provider>,
-      document.getElementById('root')
-    )
-```    
+ReactDOM.render(
+  <Provider store={store}>
+    <Router history={history}>
+      <Route path="/" component={App}>
+        <Route path="foo" component={Foo} />
+        <Route path="bar" component={Bar} />
+      </Route>
+    </Router>
+  </Provider>,
+  document.getElementById('root')
+)
+```
