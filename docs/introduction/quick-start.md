@@ -27,7 +27,7 @@ yarn add react-redux
 
 You'll also need to [install Redux](https://redux-docs.netlify.com/introduction/installation) and [set up a Redux store](https://redux-docs.netlify.com/recipes/configuring-your-store) in your app.
 
-## `<Provider />` 
+## `<Provider />`
 
 React Redux provides `<Provider />`, which makes the Redux store available to the rest of your app:
 
@@ -75,43 +75,6 @@ export default connect(
 )(Counter)
 ```
 
-## Using with Context
-
-React Redux exports the default context instance it uses for `<Provider />` so that your connected components may access the store by doing this:
-
-
-```js
-import { ReactReduxContext } from 'react-redux'
-
-// in your connected component
-render() {
-  return (
-    <ReactReduxContext.Consumer>
-      {({ store }) => <div>{store}</div>}
-    </ReactReduxContext.Consumer>
-  )
-}
-```
-
-Alternatively, you may provide a custom context by providing your context instance to both `<Provider />` and _all_ of your connected components.
-
-```js
-// <Provider />
-<Provider context={MyContext} store={store}>
-  <App />
-</Provider>
-```
-
-```js
-// connected components:
-export default connect(mapState, mapDispatch, null, {
-  context: MyContext
-})(MyComponent);
-
-// or
-const ConnectedComponent = connect(mapState, mapDispatch)(MyComponent);
-<ConnectedComponent context={MyContext} />
-```
 
 ## Help and Discussion
 
