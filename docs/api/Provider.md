@@ -13,9 +13,7 @@ The `<Provider />` makes the Redux `store` available to any nested components th
 
 Since any React component in a React Redux app can be connected, most applications will render a `<Provider>` at the top level, with the entire app’s component tree inside of it.
 
-Normally, you can’t use a connected component unless it is nested inside of a `<Provider>` .
-
-Note: If you really need to, you can manually pass `store` as a prop to a connected component, but we only recommend to do this for stubbing `store` in unit tests, or in non-fully-React codebases. Normally, you should just use `<Provider>`.
+Normally, you can’t use a connected component unless it is nested inside of a `<Provider>`.
 
 ### Props
 
@@ -24,6 +22,29 @@ The single Redux `store` in your application.
 
 `children` (ReactElement)
 The root of your component hierarchy.
+
+`context`
+You may provide a context instance. If you do so, you will need to provide the same context instance to all of your connected components as well. Failure to provide the correct context results in runtime error:
+
+> Invariant Violation
+>
+> Could not find "store" in the context of "Connect(MyComponent)". Either wrap the root component in a <Provider>, or pass a custom React context provider to <Provider> and the corresponding React context consumer to Connect(Todo) in connect options.
+
+**Note:** You do not need to provide custom context in order to access the store.
+React Redux exports the context instance it uses by default so that you can access the store by:
+
+```js
+import { ReactReduxContext } from 'react-redux'
+
+// in your connected component
+render() {
+  return (
+    <ReactReduxContext.Consumer>
+      {({ store }) => <div>{store}</div>}
+    </ReactReduxContext.Consumer>
+  )
+}
+```
 
 ### Example Usage
 

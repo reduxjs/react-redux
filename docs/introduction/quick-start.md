@@ -27,7 +27,7 @@ yarn add react-redux
 
 You'll also need to [install Redux](https://redux-docs.netlify.com/introduction/installation) and [set up a Redux store](https://redux-docs.netlify.com/recipes/configuring-your-store) in your app.
 
-## `Provider` and `connect`
+## `<Provider />`
 
 React Redux provides `<Provider />`, which makes the Redux store available to the rest of your app:
 
@@ -48,6 +48,8 @@ ReactDOM.render(
   rootElement
 )
 ```
+
+## `connect()`
 
 React Redux provides a `connect` function for you to connect your component to the store.
 
@@ -72,6 +74,7 @@ export default connect(
   mapDispatchToProps
 )(Counter)
 ```
+
 
 ## Help and Discussion
 
