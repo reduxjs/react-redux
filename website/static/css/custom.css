@@ -8,15 +8,6 @@ header.postHeader:empty + article h1 {
   margin-top: 0;
 }
 
-.homeContainer .homeWrapper {
-  padding-bottom: 1em;
-}
-
-.mainContainer {
-  padding-top: 24px;
-  padding-bottom: 24px;
-}
-
 .post article a {
   /* add underlines to links in blocks of text for a11y */
   color: $primaryColor;
@@ -25,6 +16,7 @@ header.postHeader:empty + article h1 {
   position: relative;
   transition: outline-offset 0.2s ease-in-out;
 }
+
 .post article a:hover,
 .post article a:focus,
 .post article a:active {
@@ -38,6 +30,7 @@ header.postHeader:empty + article h1 {
   position: relative;
   transition: outline-offset 0.2s ease-in-out;
 }
+
 .post article blockquote {
   color: black;
   background-color: $accentColor4;
@@ -63,11 +56,13 @@ header.postHeader:empty + article h1 {
   outline: none;
   text-decoration: underline;
 }
+
 .post article blockquote {
   color: black;
   background-color: $accentColor4;
   border-left: 8px solid $accentColor5;
 }
+
 .post article blockquote a {
   /* add underlines to links in blocks of text for a11y */
   color: black;
@@ -76,6 +71,7 @@ header.postHeader:empty + article h1 {
   position: relative;
   transition: outline-offset 0.2s ease-in-out;
 }
+
 .post article blockquote a:hover,
 .post article blockquote a:focus,
 .post article blockquote a:active {
@@ -86,12 +82,14 @@ header.postHeader:empty + article h1 {
   outline: none;
   text-decoration: underline;
 }
+
 .post article .hash-link {
   /* add underlines to links in blocks of text for a11y */
   color: $accentColor1;
   transition: outline-offset 0.2s ease-in-out;
   opacity: 1;
 }
+
 .post article .hash-link:hover,
 .post article .hash-link:focus,
 .post article .hash-link:active {
@@ -101,57 +99,68 @@ header.postHeader:empty + article h1 {
   box-shadow: 0 0 0 0 $accentColor6;
   transition: outline-offset 0.2s ease-in-out;
 }
+
 .hash-link .hash-link-icon {
   fill: currentColor;
 }
+
 .fixedHeaderContainer header .headerTitleWithLogo {
-  color : white;
+  color: white;
   display: block !important;
 }
+
 .navigationSlider .slidingNav ul.nav-site a {
-  color : white;
+  color: white;
   font-weight: 400;
 }
+
 .navigationSlider .slidingNav ul.nav-site a:hover,
 .navigationSlider .slidingNav ul.nav-site a:focus,
 .navigationSlider .slidingNav ul.nav-site a:active {
-  color : white;
+  color: white;
   font-weight: 400;
   text-decoration: underline;
 }
-.navigationSlider .slidingNav ul a[href*="github"] {
+
+.navigationSlider .slidingNav ul a[href*='github'] {
   font-size: 0;
 }
-.navigationSlider .slidingNav ul a[href*="github"]::before {
-  content : "";
-  width : 32px;
-  height : 32px;
-  background: url("/img/github-brands.svg");
+
+.navigationSlider .slidingNav ul a[href*='github']::before {
+  content: '';
+  width: 32px;
+  height: 32px;
+  background: url('/img/github-brands.svg');
 }
+
 .nav-footer .copyright,
 .nav-footer .sitemap a {
   /* increase link contrast */
   color: white;
 }
+
 .button.hero {
   background: $primaryColor;
   color: #fff;
   font-size: 30px;
-  padding: .5em 1.25em;
+  padding: 0.5em 1.25em;
   font-weight: bold;
 }
+
 .button.hero:visited {
   background: $primaryColor;
   color: #fff;
 }
+
 .button.hero:hover {
   background: #fff;
   color: $primaryColor;
 }
-.productShowcaseSection .rowContainer {
-  padding-top: 30px;
-  padding-bottom: 30px;
+
+.productShowcaseSection .featureBlock {
+  padding: 40px 0;
 }
+
 .productShowcaseSection .featureBlock img {
   width: 60px;
   height: 60px;
@@ -166,13 +175,15 @@ header.postHeader:empty + article h1 {
 .libBlock > div p {
   text-align: center;
 }
+
 .libBlock h2 a,
 .libBlock h2 a:visited {
-  color : black;
+  color: black;
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
 .libBlock img {
   margin-left: 5px;
   max-width: 16px !important;
@@ -184,15 +195,10 @@ header.postHeader:empty + article h1 {
   margin-bottom: 5px;
 }
 
-.libsContainer {
-  display: flex;
-  justify-content: center;
-}
-
 @media only screen and (max-device-width: 480px) {
   .productShowcaseSection .featureBlock {
-    padding-top: 0;
-    padding-bottom: 0;
+    padding-top: 30px;
+    padding-bottom: 5px;
   }
 
   .featureBlock .imageAlignTop .blockImage {
@@ -207,10 +213,10 @@ header.postHeader:empty + article h1 {
   .featureBlock .blockContent {
     margin-bottom: 25px;
   }
-  
+
   .homeSplashFade img {
-    width : 60px;
-    height : 60px;
+    width: 60px;
+    height: 60px;
   }
 
   .homeSplashFade h1 {
@@ -250,9 +256,6 @@ header.postHeader:empty + article h1 {
 
   .navSearchWrapper:after {
     left: 35px;
-  }
-  .libsContainer {
-    flex-direction: column;
   }
 }
 
