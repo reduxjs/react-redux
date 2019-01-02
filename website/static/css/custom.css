@@ -157,6 +157,10 @@ header.postHeader:empty + article h1 {
   color: $primaryColor;
 }
 
+.homeContainer .homeWrapper {
+  padding-bottom: 0;
+}
+
 .productShowcaseSection .featureBlock {
   padding: 40px 0;
 }
