@@ -6,11 +6,12 @@ class Provider extends Component {
   constructor(props) {
     super(props)
 
-    const { store } = props
+    const { store, modifyStore } = props
 
     this.state = {
       storeState: store.getState(),
-      store
+      store,
+      modifyStore
     }
   }
 
@@ -77,6 +78,7 @@ Provider.propTypes = {
     dispatch: PropTypes.func.isRequired,
     getState: PropTypes.func.isRequired
   }),
+  modifyStore: PropTypes.func,
   context: PropTypes.object,
   children: PropTypes.any
 }
