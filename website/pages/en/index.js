@@ -100,7 +100,7 @@ const Block = props => (
 );
 
 const FeaturesTop = props => (
-  <Block layout="fourColumn" className="featureBlock">
+  <Block layout="fourColumn" className="rowContainer featureBlock">
     {[
       {
         content: "React Redux is maintained by the Redux team, and **kept up-to-date with the latest APIs from Redux and React**.",
