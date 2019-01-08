@@ -1,7 +1,7 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, { Component, PureComponent } from 'react'
-import { isValidElementType } from 'react-is'
+import { isValidElementType, isContextConsumer } from 'react-is'
 
 import { ReactReduxContext } from './Context'
 
@@ -213,7 +213,12 @@ export default function connectAdvanced(
       }
 
       render() {
-        const ContextToUse = this.props.context || Context
+        const ContextToUse =
+          this.props.context &&
+          this.props.context.Consumer &&
+          isContextConsumer(<this.props.context.Consumer />)
+            ? this.props.context
+            : Context
 
         return (
           <ContextToUse.Consumer>
