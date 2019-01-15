@@ -47,13 +47,13 @@ export default connect(
   mapDispatch,
   null,
   { context: MyContext }
-)(MyComponent)
+)(MyComponent);
 
 // or, call connect as normal to start
 const ConnectedComponent = connect(
   mapState,
   mapDispatch
-)(MyComponent)
+)(MyComponent);
 
 // Later, pass the custom context as a prop to the connected component
 <ConnectedComponent context={MyContext} />
@@ -85,13 +85,13 @@ const storeB = createStore(reducerB);
 
 // supply the context instances to Provider
 function App() {
-	return (
-	  <Provider store={storeA} context={ContextA} />
-		<Provider store={storeB} context={ContextB}>
-		  <App />
-		</Provider>
-	  </Provider>
-	);
+  return (
+    <Provider store={storeA} context={ContextA} />
+      <Provider store={storeB} context={ContextB}>
+        <RootModule />
+      </Provider>
+    </Provider>
+  );
 }
 
 // fetch the corresponding store with connected components
@@ -132,7 +132,7 @@ function MyConnectedComponent() {
         // component where it can be used in lifecycle methods
       }}
     </ReactReduxContext.Consumer>
-  )
+  );
 }
 ```
 
