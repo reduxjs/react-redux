@@ -120,7 +120,6 @@ export default function connectAdvanced(
     const { pure } = connectOptions
 
     let OuterBaseComponent = Component
-    let FinalWrappedComponent = WrappedComponent
 
     if (pure) {
       OuterBaseComponent = PureComponent
@@ -131,15 +130,25 @@ export default function connectAdvanced(
       let lastState
       let lastDerivedProps
       let lastStore
+      let lastSelectorFactoryOptions
       let sourceSelector
 
-      return function selectDerivedProps(state, props, store) {
+      return function selectDerivedProps(
+        state,
+        props,
+        store,
+        selectorFactoryOptions
+      ) {
         if (pure && lastProps === props && lastState === state) {
           return lastDerivedProps
         }
 
-        if (store !== lastStore) {
+        if (
+          store !== lastStore ||
+          lastSelectorFactoryOptions !== selectorFactoryOptions
+        ) {
           lastStore = store
+          lastSelectorFactoryOptions = selectorFactoryOptions
           sourceSelector = selectorFactory(
             store.dispatch,
             selectorFactoryOptions
@@ -157,14 +166,23 @@ export default function connectAdvanced(
     }
 
     function makeChildElementSelector() {
-      let lastChildProps, lastForwardRef, lastChildElement
+      let lastChildProps, lastForwardRef, lastChildElement, lastComponent
 
-      return function selectChildElement(childProps, forwardRef) {
-        if (childProps !== lastChildProps || forwardRef !== lastForwardRef) {
+      return function selectChildElement(
+        WrappedComponent,
+        childProps,
+        forwardRef
+      ) {
+        if (
+          childProps !== lastChildProps ||
+          forwardRef !== lastForwardRef ||
+          lastComponent !== WrappedComponent
+        ) {
           lastChildProps = childProps
           lastForwardRef = forwardRef
+          lastComponent = WrappedComponent
           lastChildElement = (
-            <FinalWrappedComponent {...childProps} ref={forwardRef} />
+            <WrappedComponent {...childProps} ref={forwardRef} />
           )
         }
 
@@ -182,7 +200,14 @@ export default function connectAdvanced(
         )
         this.selectDerivedProps = makeDerivedPropsSelector()
         this.selectChildElement = makeChildElementSelector()
-        this.renderWrappedComponent = this.renderWrappedComponent.bind(this)
+        this.indirectRenderWrappedComponent = this.indirectRenderWrappedComponent.bind(
+          this
+        )
+      }
+
+      indirectRenderWrappedComponent(value) {
+        // calling renderWrappedComponent on prototype from indirectRenderWrappedComponent bound to `this`
+        return this.renderWrappedComponent(value)
       }
 
       renderWrappedComponent(value) {
@@ -206,10 +231,15 @@ export default function connectAdvanced(
         let derivedProps = this.selectDerivedProps(
           storeState,
           wrapperProps,
-          store
+          store,
+          selectorFactoryOptions
         )
 
-        return this.selectChildElement(derivedProps, forwardedRef)
+        return this.selectChildElement(
+          WrappedComponent,
+          derivedProps,
+          forwardedRef
+        )
       }
 
       render() {
@@ -222,7 +252,7 @@ export default function connectAdvanced(
 
         return (
           <ContextToUse.Consumer>
-            {this.renderWrappedComponent}
+            {this.indirectRenderWrappedComponent}
           </ContextToUse.Consumer>
         )
       }

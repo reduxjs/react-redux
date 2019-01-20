@@ -1,4 +1,6 @@
 const npmRun = require('npm-run')
+const fs = require('fs')
+const path = require('path')
 const LATEST_VERSION = '16.6'
 const version = process.env.REACT || LATEST_VERSION
 
@@ -27,7 +29,13 @@ if (version.toLowerCase() === 'all') {
   }
 }
 
+const configFilePath = path.join(__dirname, 'jest-config.json')
+
+fs.writeFileSync(configFilePath, JSON.stringify(jestConfig))
+
+const commandLine = `jest -c "${configFilePath}" ${process.argv.slice(2).join(' ')}`
+
 npmRun.execSync(
-  `jest -c '${JSON.stringify(jestConfig)}' ${process.argv.slice(2).join(' ')}`,
+  commandLine,
   { stdio: 'inherit' }
 )

@@ -10,6 +10,7 @@ test/**/lcov.info
 test/**/lcov-report
 test/react/*/test/**/*.spec.js
 test/react/**/src
+test/jest-config.json
 lcov.info
 
 lib/core/metadata.js
