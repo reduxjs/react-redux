@@ -210,7 +210,6 @@ The return value of `mergeProps` is referred to as `mergedProps` and the fields 
   pure?: boolean,
   areStatesEqual?: Function,
   areOwnPropsEqual?: Function,
-  areOwnPropsEqual?: Function,
   areStatePropsEqual?: Function,
   areMergedPropsEqual?: Function,
   forwardRef?: boolean,
