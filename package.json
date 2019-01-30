@@ -45,7 +45,7 @@
     "invariant": "^2.2.4",
     "loose-envify": "^1.4.0",
     "prop-types": "^15.6.2",
-    "react-is": "^16.6.3"
+    "react-is": "^16.7.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.0",
