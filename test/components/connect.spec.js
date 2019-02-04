@@ -879,13 +879,17 @@ describe('React', () => {
       }
 
       const div = document.createElement('div')
-      store.subscribe(() => ReactDOM.unmountComponentAtNode(div))
+      store.subscribe(() => {
+        ReactDOM.unmountComponentAtNode(div)
+      })
       ReactDOM.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>,
         div
       )
+
+      rtl.flushEffects();
 
       expect(mapStateToPropsCalls).toBe(1)
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})

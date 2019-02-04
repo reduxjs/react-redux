@@ -287,19 +287,48 @@ export default function connectAdvanced(
 
       const store = props.store || contextValue.store;
 
-
-
       const childPropsSelector = useMemo(() =>  createChildSelector(store), [store])
 
-      const [storeState, setStoreState] = useState(store.getState())
+      const [previousStoreState, setStoreState] = useState(store.getState())
+
+      const setLatestStoreState = () => {
+        const latestStoreState = store.getState();
+
+        if(latestStoreState !== previousStoreState) {
+          setStoreState(latestStoreState)
+        }
+      }
 
       useEffect(() => {
-        return store.subscribe(() => {
-          setStoreState(store.getState())
-        })
+        let didUnsubscribe = false;
+
+        const checkForUpdates = () => {
+          if (didUnsubscribe) {
+            // Don't run stale listeners.
+            // Redux doesn't guarantee unsubscriptions happen until next dispatch.
+            return;
+          }
+
+          setLatestStoreState();
+        };
+
+        // Pull data from the store after first render in case the store has
+        // changed since we began.
+        checkForUpdates();
+
+        console.log("Subscribing for component type: ", Connect.displayName)
+        const unsubscribe = store.subscribe(checkForUpdates)
+
+        const unsubscribeWrapper = () => {
+          didUnsubscribe = true
+          unsubscribe();
+        }
+
+        return unsubscribeWrapper;
+
       }, [store])
 
-      const childProps = childPropsSelector(storeState, wrapperProps)
+      const childProps = childPropsSelector(previousStoreState, wrapperProps)
 
       const renderedChild = useMemo(() => {
         return <WrappedComponent {...childProps} ref={forwardedRef} />
