@@ -286,6 +286,7 @@ export default function connectAdvanced(
       )
 
       const store = props.store || contextValue.store;
+      const subscribe = props.store ? props.store.subscribe : contextValue.subscribe
 
       const childPropsSelector = useMemo(() =>  createChildSelector(store), [store])
 
@@ -316,8 +317,8 @@ export default function connectAdvanced(
         // changed since we began.
         checkForUpdates();
 
-        console.log("Subscribing for component type: ", Connect.displayName)
-        const unsubscribe = store.subscribe(checkForUpdates)
+        //console.log("Subscribing for component type: ", Connect.displayName)
+        const unsubscribe = subscribe(checkForUpdates)
 
         const unsubscribeWrapper = () => {
           didUnsubscribe = true
@@ -326,7 +327,7 @@ export default function connectAdvanced(
 
         return unsubscribeWrapper;
 
-      }, [store])
+      }, [store, subscribe])
 
       const childProps = childPropsSelector(previousStoreState, wrapperProps)
 
