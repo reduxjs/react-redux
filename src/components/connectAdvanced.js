@@ -1,6 +1,6 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, { Component, PureComponent } from 'react'
+import React, { Component, PureComponent, useState, useContext, useMemo, useCallback, useEffect } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 
 import { ReactReduxContext } from './Context'
@@ -189,7 +189,7 @@ export default function connectAdvanced(
         return lastChildElement
       }
     }
-
+/*
     class Connect extends OuterBaseComponent {
       constructor(props) {
         super(props)
@@ -257,6 +257,58 @@ export default function connectAdvanced(
         )
       }
     }
+    */
+
+    function createChildSelector(store) {
+      return selectorFactory(store.dispatch, selectorFactoryOptions)
+    }
+
+
+    function ConnectFunction(props) {
+      const {context, forwardedRef, ...wrapperProps} = props
+
+      const ContextToUse = useMemo(() => {
+        return props.context &&
+          props.context.Consumer &&
+          isContextConsumer(<props.context.Consumer />)
+            ? props.context
+            : Context
+      }, [props.context, Context])
+
+      const contextValue = useContext(ContextToUse)
+
+      invariant(
+        props.store || contextValue,
+        `Could not find "store" in the context of ` +
+        `"${displayName}". Either wrap the root component in a <Provider>, ` +
+        `or pass a custom React context provider to <Provider> and the corresponding ` +
+        `React context consumer to ${displayName} in connect options.`
+      )
+
+      const store = props.store || contextValue.store;
+
+
+
+      const childPropsSelector = useMemo(() =>  createChildSelector(store), [store])
+
+      const [storeState, setStoreState] = useState(store.getState())
+
+      useEffect(() => {
+        return store.subscribe(() => {
+          setStoreState(store.getState())
+        })
+      }, [store])
+
+      const childProps = childPropsSelector(storeState, wrapperProps)
+
+      const renderedChild = useMemo(() => {
+        return <WrappedComponent {...childProps} ref={forwardedRef} />
+      }, [childProps, forwardedRef])
+
+      return renderedChild
+    }
+
+    const Connect = ConnectFunction;
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
