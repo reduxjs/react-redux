@@ -16,7 +16,7 @@ class Provider extends Component {
 
   componentDidMount() {
     this._isMounted = true
-    this.subscribe()
+    //this.subscribe()
   }
 
   componentWillUnmount() {
@@ -29,7 +29,7 @@ class Provider extends Component {
     if (this.props.store !== prevProps.store) {
       if (this.unsubscribe) this.unsubscribe()
 
-      this.subscribe()
+      //this.subscribe()
     }
   }
 
