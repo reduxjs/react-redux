@@ -1,7 +1,8 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, { Component, PureComponent, useState, useContext, useMemo, useCallback, useEffect } from 'react'
+import React, { Component, PureComponent, useState, useContext, useMemo, useCallback, useEffect, useRef , useReducer} from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
+import shallowEqual from "../utils/shallowEqual";
 
 import { ReactReduxContext } from './Context'
 
@@ -263,9 +264,23 @@ export default function connectAdvanced(
       return selectorFactory(store.dispatch, selectorFactoryOptions)
     }
 
+    const usePureOnlyMemo = pure ? useMemo : (x => x())
+
+    let renderCount = 0
+
+    function storeStateUpdatesReducer(state, action) {
+      const [prevStoreState, updateCount = 0] = state;
+      return [action.payload, updateCount + 1]
+    }
 
     function ConnectFunction(props) {
-      const {context, forwardedRef, ...wrapperProps} = props
+      const [context, forwardedRef, wrapperProps] = useMemo(() => {
+        const {context, forwardedRef, ...wrapperProps} = props;
+        return [context, forwardedRef, wrapperProps];
+      }, [props])
+      //const {context, forwardedRef, ...wrapperProps} = props
+
+      console.log("ConnectFunction rerendering: ", Connect.displayName)
 
       const ContextToUse = useMemo(() => {
         return props.context &&
@@ -285,20 +300,45 @@ export default function connectAdvanced(
         `React context consumer to ${displayName} in connect options.`
       )
 
+      renderCount += 1
+
       const store = props.store || contextValue.store;
       const subscribe = props.store ? props.store.subscribe : contextValue.subscribe
 
-      const childPropsSelector = useMemo(() =>  createChildSelector(store), [store])
+      //store.renderCount = renderCount
+      //subscribe.renderCount = renderCount
 
-      const [previousStoreState, setStoreState] = useState(store.getState())
+      const childPropsSelector = useMemo(() =>  {
+        console.log("createChildSelector running")
+        return createChildSelector(store)
+      }, [store])
 
-      const setLatestStoreState = () => {
-        const latestStoreState = store.getState();
+      //const [previousStoreState, setStoreState] = useState(store.getState())
+      const [ [previousStoreState, storeUpdateCount], dispatch] = useReducer(storeStateUpdatesReducer, [store.getState()])
 
-        if(latestStoreState !== previousStoreState) {
-          setStoreState(latestStoreState)
+      //const [childProps, setChildProps] = useState(() => childPropsSelector(store.getState(), wrapperProps))
+
+      const lastChildProps = useRef();
+      const lastWrapperProps = useRef(wrapperProps);
+      const childPropsFromStoreUpdate = useRef();
+      //const previousStoreState = useRef(store.getState());
+
+      //const actualChildProps = childPropsSelector(previousStoreState.current, wrapperProps)
+      const actualChildProps = usePureOnlyMemo(() => {
+        if(childPropsFromStoreUpdate.current) {
+          return childPropsFromStoreUpdate.current;
         }
-      }
+
+        return childPropsSelector(previousStoreState, wrapperProps)
+      }, [previousStoreState, wrapperProps]);
+
+      useEffect(() => {
+        lastWrapperProps.current = wrapperProps
+        lastChildProps.current = actualChildProps
+        childPropsFromStoreUpdate.current = null;
+      })
+
+      //console.log({store, subscribe, childPropsSelector})
 
       useEffect(() => {
         let didUnsubscribe = false;
@@ -310,7 +350,32 @@ export default function connectAdvanced(
             return;
           }
 
-          setLatestStoreState();
+          const latestStoreState = store.getState();
+
+
+          const newChildProps = childPropsSelector(latestStoreState, lastWrapperProps.current);
+
+          //previousStoreState.current = latestStoreState;
+
+          if(newChildProps !== lastChildProps.current) {
+            //setChildProps(newChildProps);
+            console.log("Store state update caused child props change: ", Connect.displayName, newChildProps)
+            //setStoreState(latestStoreState)
+            dispatch({type : "STORE_UPDATED", payload : latestStoreState})
+            lastChildProps.current = newChildProps;
+            childPropsFromStoreUpdate.current = newChildProps
+          }
+
+
+          //updateChildProps()
+
+          /*
+          if(latestStoreState !== previousStoreState) {
+
+
+            //setStoreState(latestStoreState)
+          }
+          */
         };
 
         // Pull data from the store after first render in case the store has
@@ -327,13 +392,17 @@ export default function connectAdvanced(
 
         return unsubscribeWrapper;
 
-      }, [store, subscribe])
+      }, [store, subscribe, childPropsSelector])
 
-      const childProps = childPropsSelector(previousStoreState, wrapperProps)
+
+
+      //let actualChildProps = childProps;
+
+
 
       const renderedChild = useMemo(() => {
-        return <WrappedComponent {...childProps} ref={forwardedRef} />
-      }, [childProps, forwardedRef])
+        return <WrappedComponent {...actualChildProps} ref={forwardedRef} />
+      }, [WrappedComponent, actualChildProps, forwardedRef])
 
       return renderedChild
     }

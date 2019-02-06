@@ -983,7 +983,11 @@ describe('React', () => {
       App = connect(() => ({}))(App)
 
       let A = () => <h1>A</h1>
-      A = connect(() => ({ calls: ++mapStateToPropsCalls }))(A)
+      function mapState(state) {
+        const calls = ++mapStateToPropsCalls;
+        return {calls};
+      }
+      A = connect(mapState)(A)
 
       const B = () => <h1>B</h1>
 
@@ -1021,12 +1025,15 @@ describe('React', () => {
 
       const div = document.createElement('div')
       document.body.appendChild(div)
+      console.log("Initial ReactDOM.render()")
       ReactDOM.render(
         <ProviderMock store={store}>
           <RouterMock />
         </ProviderMock>,
         div
       )
+
+      console.log("Initial render complete")
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -1035,7 +1042,11 @@ describe('React', () => {
       linkB.click()
 
       document.body.removeChild(div)
-      expect(mapStateToPropsCalls).toBe(2)
+      // Called 3 times:
+      // - Initial mount
+      // - After first link click, stil mounted
+      // - After second link click, but the queued state update is discarded due to batching as it's unmounted
+      expect(mapStateToPropsCalls).toBe(3)
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
     })
@@ -1847,16 +1858,19 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(1)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
+      // 1) Initial render
+      // 2) Post-mount check
+      expect(mapStateSpy).toHaveBeenCalledTimes(2)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
       // Impure update
       storeGetter.storeKey = 'bar'
       externalSetState({ storeGetter })
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(2)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+      // 3) After the the impure update
+      expect(mapStateSpy).toHaveBeenCalledTimes(3)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
@@ -1910,7 +1924,9 @@ describe('React', () => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
       expect(childMapStateInvokes).toBe(2)
+      console.log(childCalls)
       expect(childCalls).toEqual([['a', 'a'], ['ac', 'ac']])
+
 
       // setState calls DOM handlers are batched
       const button = tester.getByText('change')
