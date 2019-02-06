@@ -9,13 +9,14 @@ const env = process.env.NODE_ENV
 
 const config = {
   input: 'src/index.js',
-  external: Object.keys(pkg.peerDependencies || {}),
+  external: ['react', 'redux', 'react-dom'],//Object.keys(pkg.peerDependencies || {}),
   output: {
     format: 'umd',
     name: 'ReactRedux',
     globals: {
       react: 'React',
-      redux: 'Redux'
+      redux: 'Redux',
+      'react-dom': 'ReactDOM',
     }
   },
   plugins: [
@@ -32,6 +33,9 @@ const config = {
         'node_modules/react-is/index.js': [
           'isValidElementType',
           'isContextConsumer'
+        ],
+        'node_modules/react-dom/index.js': [
+          "unstable_batchedUpdates"
         ]
       }
     })
