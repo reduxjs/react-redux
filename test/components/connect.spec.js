@@ -161,9 +161,15 @@ describe('React', () => {
         </ProviderMock>
       )
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
       expect(tester.getByTestId('string')).toHaveTextContent('a')
-      store.dispatch({ type: 'APPEND', body: 'b' })
+
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'b' })
+      })
       expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
@@ -1815,9 +1821,11 @@ describe('React', () => {
 
       const mapStateSpy = jest.fn()
       const mapDispatchSpy = jest.fn().mockReturnValue({})
+      const impureRenderSpy = jest.fn()
 
       class ImpureComponent extends Component {
         render() {
+          impureRenderSpy()
           return <Passthrough statefulValue={this.props.value} />
         }
       }
@@ -1857,24 +1865,36 @@ describe('React', () => {
 
       // 1) Initial render
       // 2) Post-mount check
+      // 3) After "wasted" re-render
       expect(mapStateSpy).toHaveBeenCalledTimes(2)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+
+      // 1) Initial render
+      // 2) Triggered by post-mount check with impure results
+      expect(impureRenderSpy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
       // Impure update
       storeGetter.storeKey = 'bar'
+      console.log("Triggering external setState update")
       externalSetState({ storeGetter })
 
-      // 3) After the the impure update
+      // 4) After the the impure update
       expect(mapStateSpy).toHaveBeenCalledTimes(3)
       expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
+
+      // 3) Triggered by impure update
+      expect(impureRenderSpy).toHaveBeenCalledTimes(3)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
     it('should pass state consistently to mapState', () => {
       const store = createStore(stringBuilder)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       let childMapStateInvokes = 0
 
       @connect(state => ({ state }))
@@ -1917,7 +1937,12 @@ describe('React', () => {
       expect(childCalls).toEqual([['a', 'a']])
 
       // The store state stays consistent when setState calls are batched
+      /*
       ReactDOM.unstable_batchedUpdates(() => {
+
+      })
+      */
+      rtl.act(() => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
       expect(childMapStateInvokes).toBe(2)
@@ -2274,6 +2299,7 @@ describe('React', () => {
       @connect(null)
       class Parent extends React.Component {
         componentWillUnmount() {
+          console.log("Parent: componentWillUnmount");
           this.props.dispatch({ type: 'clean' })
         }
 
@@ -2282,9 +2308,13 @@ describe('React', () => {
         }
       }
 
-      @connect(state => ({
-        profile: state.data.profile
-      }))
+      function mapState(state) {
+        return {
+          profile : state.data.profile
+        }
+      }
+
+      @connect(mapState)
       class Child extends React.Component {
         render() {
           return null
@@ -2292,7 +2322,10 @@ describe('React', () => {
       }
 
       const store = createStore(reducer)
-      store.dispatch({ type: 'fetch' })
+      rtl.act(() => {
+        store.dispatch({ type: 'fetch' })
+      })
+
       const div = document.createElement('div')
       ReactDOM.render(
         <ProviderMock store={store}>
@@ -2301,6 +2334,13 @@ describe('React', () => {
         div
       )
 
+      /* TODO One more test to fix. Here's what's happening:
+
+        _Intended_ Behavior
+        1. Unmount tree
+        2.
+
+       */
       ReactDOM.unmountComponentAtNode(div)
     })
 
@@ -2454,7 +2494,10 @@ describe('React', () => {
       )
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
-      store.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store.dispatch({ type: 'INC' })
+      })
+
       expect(mapStateToProps).toHaveBeenCalledTimes(2)
     })
 
@@ -2492,7 +2535,10 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store.dispatch({ type: 'INC' })
+      })
+
     })
 
     it('should subscribe properly when a new store is provided via props', () => {
@@ -2561,12 +2607,17 @@ describe('React', () => {
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
 
-      store1.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store1.dispatch({ type: 'INC' })
+      })
+
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
 
-      store2.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store2.dispatch({ type: 'INC' })
+      })
       expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)

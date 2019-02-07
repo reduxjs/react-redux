@@ -13,7 +13,7 @@ class Provider extends Component {
     this.state = {
       storeState: store.getState(),
       store,
-      subscribe : this.childSubscribe.bind(this),
+      //subscribe : this.childSubscribe.bind(this),
     }
 
     this.subscriptions = new Set();
@@ -22,7 +22,7 @@ class Provider extends Component {
 
   componentDidMount() {
     this._isMounted = true
-    this.subscribe()
+    //this.subscribe()
   }
 
   componentWillUnmount() {
@@ -87,7 +87,7 @@ class Provider extends Component {
     const Context = this.props.context || ReactReduxContext
 
     return (
-      <Context.Provider value={this.state}>
+      <Context.Provider value={{store: this.props.store}}>
         {this.props.children}
       </Context.Provider>
     )

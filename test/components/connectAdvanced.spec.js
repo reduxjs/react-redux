@@ -64,13 +64,17 @@ describe('React', () => {
         }
       })(Inner)
 
+
       rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'NEW_REFERENCE' })
+      rtl.act(() => {
+        store.dispatch({ type: 'NEW_REFERENCE' })
+      })
+
 
       // Should have mapped the state on mount and on the dispatch
       expect(mapCount).toEqual(3)
