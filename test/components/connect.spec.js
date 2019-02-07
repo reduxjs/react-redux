@@ -9,11 +9,6 @@ import { Provider as ProviderMock, connect } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
-function renderAndFlush(componentTree) {
-  const tester = rtl.render(componentTree);
-  rtl.flushEffects();
-  return tester;
-}
 
 describe('React', () => {
   describe('connect', () => {
@@ -95,7 +90,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container pass="through" />
         </ProviderMock>
@@ -111,7 +106,7 @@ describe('React', () => {
         const Container = React.memo(props => <Passthrough {...props} />)
         const WrappedContainer = connect(state => state)(Container)
 
-        const tester = renderAndFlush(
+        const tester = rtl.render(
           <ProviderMock store={store}>
             <WrappedContainer pass="through" />
           </ProviderMock>
@@ -138,7 +133,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container pass="through" baz={50} />
         </ProviderMock>
@@ -160,7 +155,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -183,7 +178,7 @@ describe('React', () => {
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -208,7 +203,7 @@ describe('React', () => {
       })
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -234,7 +229,7 @@ describe('React', () => {
           return <Passthrough {...this.props} />
         }
       }
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -279,7 +274,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(<Container />)
+      const tester = rtl.render(<Container />)
 
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
       expect(tester.getByTestId('pass')).toHaveTextContent('through')
@@ -315,7 +310,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(<Container />)
+      const tester = rtl.render(<Container />)
 
       expect(tester.getByTestId('bar')).toHaveTextContent('foo')
     })
@@ -341,7 +336,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <HolderContainer ref={instance => (container = instance)} />
         </ProviderMock>
@@ -373,7 +368,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <HolderContainer ref={instance => (container = instance)} />
         </ProviderMock>
@@ -434,7 +429,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(<Container />)
+      const tester = rtl.render(<Container />)
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
     })
@@ -490,7 +485,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(<OuterContainer />)
+      const tester = rtl.render(<OuterContainer />)
 
       expect(tester.getByTestId('stateThing')).toHaveTextContent('')
       merged('a')
@@ -519,7 +514,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container pass="through" />
         </ProviderMock>
@@ -568,7 +563,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => (outerComponent = c)} />
         </ProviderMock>
@@ -614,7 +609,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => (outerComponent = c)} />
         </ProviderMock>
@@ -662,7 +657,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => (outerComponent = c)} />
         </ProviderMock>
@@ -717,7 +712,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => (outerComponent = c)} />
         </ProviderMock>
@@ -767,7 +762,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => (outerComponent = c)} />
         </ProviderMock>
@@ -819,7 +814,7 @@ describe('React', () => {
       }
 
       let outerComponent
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={c => (outerComponent = c)} />
         </ProviderMock>
@@ -847,7 +842,7 @@ describe('React', () => {
           }
         }
 
-        const tester = renderAndFlush(
+        const tester = rtl.render(
           <ProviderMock store={store}>
             <Container pass="through" />
           </ProviderMock>
@@ -882,14 +877,16 @@ describe('React', () => {
       store.subscribe(() => {
         ReactDOM.unmountComponentAtNode(div)
       })
-      ReactDOM.render(
-        <ProviderMock store={store}>
-          <Container />
-        </ProviderMock>,
-        div
-      )
 
-      rtl.flushEffects();
+      rtl.act(() => {
+        ReactDOM.render(
+          <ProviderMock store={store}>
+            <Container />
+          </ProviderMock>,
+          div
+        )
+      })
+
 
       expect(mapStateToPropsCalls).toBe(1)
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -1104,7 +1101,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1159,7 +1156,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(<Root />)
+      const tester = rtl.render(<Root />)
       expect(spy).toHaveBeenCalledTimes(1)
       expect(tester.getByTestId('string')).toHaveTextContent('')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
@@ -1236,7 +1233,7 @@ describe('React', () => {
       function AwesomeMap() {}
 
       let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => 1, () => ({}), () => ({}))}
         </ProviderMock>
@@ -1249,7 +1246,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => 'hey', () => ({}), () => ({}))}
         </ProviderMock>
@@ -1262,7 +1259,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => new AwesomeMap(), () => ({}), () => ({}))}
         </ProviderMock>
@@ -1275,7 +1272,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 1, () => ({}))}
         </ProviderMock>
@@ -1288,7 +1285,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => 'hey', () => ({}))}
         </ProviderMock>
@@ -1301,7 +1298,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => new AwesomeMap(), () => ({}))}
         </ProviderMock>
@@ -1314,7 +1311,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 1)}
         </ProviderMock>
@@ -1327,7 +1324,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => 'hey')}
         </ProviderMock>
@@ -1340,7 +1337,7 @@ describe('React', () => {
       rtl.cleanup()
 
       spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           {makeContainer(() => ({}), () => ({}), () => new AwesomeMap())}
         </ProviderMock>
@@ -1381,7 +1378,7 @@ describe('React', () => {
         }
       }
       let container
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <ContainerBefore ref={instance => (container = instance)} />
         </ProviderMock>
@@ -1432,7 +1429,7 @@ describe('React', () => {
       }
 
       let container
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <ParentBefore ref={instance => (container = instance)} />
         </ProviderMock>
@@ -1541,7 +1538,7 @@ describe('React', () => {
       const store1 = createStore(() => expectedState)
       const store2 = createStore(() => ignoredState)
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock context={context} store={store1}>
           <ProviderMock store={store2}>
             <Decorated />
@@ -1575,7 +1572,7 @@ describe('React', () => {
       const store1 = createStore(() => expectedState)
       const store2 = createStore(() => ignoredState)
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock context={context} store={store1}>
           <ProviderMock store={store2}>
             <Decorated context={context} />
@@ -1607,7 +1604,7 @@ describe('React', () => {
 
       const store = createStore(() => expectedState)
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Decorated context={nonContext} />
         </ProviderMock>
@@ -1628,7 +1625,7 @@ describe('React', () => {
       const decorator = connect(() => {})
       const Decorated = decorator(Container)
 
-      expect(() => renderAndFlush(<Decorated />)).toThrow(/Could not find "store"/)
+      expect(() => rtl.render(<Decorated />)).toThrow(/Could not find "store"/)
 
       spy.mockRestore()
     })
@@ -1654,7 +1651,7 @@ describe('React', () => {
       // TODO Remove this when React is fixed, per https://github.com/facebook/react/issues/11098
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       expect(() =>
-        renderAndFlush(
+        rtl.render(
           <ProviderMock store={store}>
             <Wrapper />
           </ProviderMock>
@@ -1698,7 +1695,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Wrapper />
         </ProviderMock>
@@ -1743,7 +1740,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Wrapper />
         </ProviderMock>
@@ -1799,7 +1796,7 @@ describe('React', () => {
         statefulValue: PropTypes.number
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
@@ -1852,7 +1849,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <StatefulWrapper />
         </ProviderMock>
@@ -1910,7 +1907,7 @@ describe('React', () => {
         }
       }
 
-      const tester = renderAndFlush(
+      const tester = rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1959,7 +1956,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -1992,7 +1989,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2035,7 +2032,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2078,7 +2075,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -2114,7 +2111,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <div>
             <Container name="a" />
@@ -2182,7 +2179,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2210,7 +2207,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Container />
         </ProviderMock>
@@ -2251,7 +2248,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Parent>
             <Container />
@@ -2340,7 +2337,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <ImpureComponent />
         </ProviderMock>
@@ -2356,7 +2353,7 @@ describe('React', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       try {
-        renderAndFlush(
+        rtl.render(
           <ProviderMock store={store}>
             <Component pass="through" />
           </ProviderMock>
@@ -2450,7 +2447,7 @@ describe('React', () => {
       const store = createStore((state = 0, action) =>
         action.type === 'INC' ? state + 1 : state
       )
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <Parent />
         </ProviderMock>
@@ -2489,7 +2486,7 @@ describe('React', () => {
       const store = createStore((state = 0, action) =>
         action.type === 'INC' ? (state += 1) : state
       )
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store}>
           <A />
         </ProviderMock>
@@ -2553,7 +2550,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <ProviderMock store={store1}>
           <ProviderMock context={customContext} store={store2}>
             <A />
@@ -2589,7 +2586,7 @@ describe('React', () => {
         }
       }
 
-      renderAndFlush(
+      rtl.render(
         <React.StrictMode>
           <ProviderMock store={store}>
             <Container />
@@ -2644,7 +2641,7 @@ describe('React', () => {
         return <Container store={'oops'} />
       }
       expect(() => {
-        renderAndFlush(<Oops />)
+        rtl.render(<Oops />)
       }).toThrow(/Passing redux store/)
     })
 
