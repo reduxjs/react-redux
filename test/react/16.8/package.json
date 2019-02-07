@@ -2,8 +2,8 @@
   "private": true,
   "devDependencies": {
     "create-react-class": "^15.6.3",
-    "react": "^16.8.0-alpha.1",
-    "react-dom": "^16.8.0-alpha.1"
+    "react": "^16.8.1",
+    "react-dom": "^16.8.1"
   },
   "dependencies": {
     "jest-dom": "^1.12.0",
