@@ -428,7 +428,7 @@ export default function connectAdvanced(
         checkForUpdates();
 
         const unsubscribeWrapper = () => {
-          console.log(`${Connect.displayName}: unsubscribing`)
+          //console.log(`${Connect.displayName}: unsubscribing`)
           didUnsubscribe = true
           //unsubscribe();
           subscription.tryUnsubscribe()
@@ -455,7 +455,7 @@ export default function connectAdvanced(
       return renderedChild
     }
 
-    const Connect = ConnectFunction;
+    const Connect = pure ? React.memo(ConnectFunction) : ConnectFunction;
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
