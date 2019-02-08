@@ -193,9 +193,15 @@ describe('React', () => {
       spy.mockRestore()
 
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(tester.getByTestId('string')).toHaveTextContent('a')
-      store.dispatch({ type: 'APPEND', body: 'b' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'b' })
+      })
+
       expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
@@ -494,12 +500,24 @@ describe('React', () => {
       const tester = rtl.render(<OuterContainer />)
 
       expect(tester.getByTestId('stateThing')).toHaveTextContent('')
-      merged('a')
+      rtl.act(() => {
+        merged('a')
+      })
+
       expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO az')
-      merged('b')
+      rtl.act(() => {
+        merged('b')
+      })
+
       expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbz')
-      externalSetState({ extra: 'Z' })
-      merged('c')
+      rtl.act(() => {
+        externalSetState({ extra: 'Z' })
+      })
+
+      rtl.act(() => {
+        merged('c')
+      })
+
       expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbzcZ')
     })
 
@@ -1114,11 +1132,20 @@ describe('React', () => {
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(2)
-      store.dispatch({ type: 'APPEND', body: 'b' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'b' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
-      store.dispatch({ type: 'APPEND', body: '' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: '' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
     })
 

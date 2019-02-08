@@ -356,7 +356,7 @@ export default function connectAdvanced(
         return childPropsSelector(store.getState(), wrapperProps)
       }, [store, previousStateUpdateResult, wrapperProps]);
 
-      useEffect(() => {
+      useLayoutEffect(() => {
         lastWrapperProps.current = wrapperProps
         lastChildProps.current = actualChildProps
 
@@ -366,7 +366,7 @@ export default function connectAdvanced(
         }
       })
 
-      useEffect(() => {
+      useLayoutEffect(() => {
         if (!shouldHandleStateChanges) return
 
         let didUnsubscribe = false;
