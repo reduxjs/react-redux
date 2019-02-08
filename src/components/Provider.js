@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
+import Subscription from "../utils/Subscription";
 
 import {unstable_batchedUpdates} from "react-dom";
 
@@ -10,9 +11,16 @@ class Provider extends Component {
 
     const { store } = props
 
+
+
+    this.notifySubscribers = this.notifySubscribers.bind(this);
+    const subscription = new Subscription(store);
+    subscription.onStateChange = this.notifySubscribers;
+
     this.state = {
       //storeState: store.getState(),
       store,
+      subscription
       //subscribe : this.childSubscribe.bind(this),
     }
 
@@ -22,11 +30,19 @@ class Provider extends Component {
 
   componentDidMount() {
     this._isMounted = true
+
+    this.state.subscription.trySubscribe();
+
+    if(this.previousState !== this.props.store.getState()) {
+      this.state.subscription.notifyNestedSubs()
+    }
     //this.subscribe()
   }
 
   componentWillUnmount() {
     if (this.unsubscribe) this.unsubscribe()
+
+    this.state.subscription.tryUnsubscribe()
 
     this._isMounted = false
 
@@ -35,7 +51,10 @@ class Provider extends Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.store !== prevProps.store) {
-      this.setState({store : this.props.store});
+      this.state.subscription.tryUnsubscribe()
+      const subscription = new Subscription(this.props.store);
+      subscription.onStateChange = this.notifySubscribers;
+      this.setState({store : this.props.store, subscription});
       //if (this.unsubscribe) this.unsubscribe()
 
       //this.subscribe()
@@ -43,11 +62,15 @@ class Provider extends Component {
   }
 
   notifySubscribers() {
+    this.state.subscription.notifyNestedSubs()
+    /*
     unstable_batchedUpdates(() => {
+
       this.subscriptions.forEach(cb => {
         cb();
       })
     })
+    */
   }
 
   subscribe() {

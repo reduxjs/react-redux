@@ -224,7 +224,10 @@ describe('React', () => {
       spy.mockRestore()
 
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(tester.getByTestId('string')).toHaveTextContent('a')
     })
 
@@ -914,7 +917,10 @@ describe('React', () => {
 
       expect(mapStateToPropsCalls).toBe(1)
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(0)
       expect(mapStateToPropsCalls).toBe(1)
       spy.mockRestore()
@@ -958,7 +964,10 @@ describe('React', () => {
       )
 
       try {
-        store.dispatch({ type: 'APPEND', body: 'A' })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'A' })
+        })
+
       } finally {
         ReactDOM.unmountComponentAtNode(div)
       }
@@ -1495,7 +1504,10 @@ describe('React', () => {
 
       imitateHotReloading(ParentBefore, ParentAfter, container)
 
-      store.dispatch({ type: ACTION_TYPE })
+      rtl.act(() => {
+        store.dispatch({ type: ACTION_TYPE })
+      })
+
 
       expect(tester.getByTestId('actions')).toHaveTextContent('1')
     })
@@ -2007,7 +2019,10 @@ describe('React', () => {
       rtl.fireEvent.click(button)
       expect(childMapStateInvokes).toBe(3)
 
-      store.dispatch({ type: 'APPEND', body: 'd' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'd' })
+      })
+
       expect(childMapStateInvokes).toBe(4)
       expect(childCalls).toEqual([
         ['a', 'a'],
@@ -2042,7 +2057,10 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
 
       // After store a change mapState has been called
       expect(mapStateCalls).toBe(2)
@@ -2075,15 +2093,24 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(mapStateCalls).toBe(3)
       expect(renderCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(mapStateCalls).toBe(4)
       expect(renderCalls).toBe(2)
     })
@@ -2161,7 +2188,10 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'test' })
+      rtl.act(() => {
+        store.dispatch({ type: 'test' })
+      })
+
       expect(updatedCount).toBe(0)
       expect(memoizedReturnCount).toBe(2)
     })
@@ -2196,7 +2226,10 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'test' })
+      rtl.act(() => {
+        store.dispatch({ type: 'test' })
+      })
+
       expect(initialOwnProps).toBe(undefined)
       expect(initialState).not.toBe(undefined)
       expect(secondaryOwnProps).not.toBe(undefined)
@@ -2262,7 +2295,10 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'test' })
+      rtl.act(() => {
+        store.dispatch({ type: 'test' })
+      })
+
       expect(updatedCount).toBe(0)
       expect(memoizedReturnCount).toBe(2)
     })
@@ -2293,7 +2329,10 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
 
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
@@ -2436,7 +2475,10 @@ describe('React', () => {
       )
 
       const rendersBeforeStateChange = renderCount
-      store.dispatch({ type: 'ACTION' })
+      rtl.act(() => {
+        store.dispatch({ type: 'ACTION' })
+      })
+
       expect(renderCount).toBe(rendersBeforeStateChange + 1)
     })
 
