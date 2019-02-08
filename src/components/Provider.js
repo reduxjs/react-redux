@@ -11,7 +11,7 @@ class Provider extends Component {
     const { store } = props
 
     this.state = {
-      storeState: store.getState(),
+      //storeState: store.getState(),
       store,
       //subscribe : this.childSubscribe.bind(this),
     }
@@ -35,9 +35,10 @@ class Provider extends Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.store !== prevProps.store) {
-      if (this.unsubscribe) this.unsubscribe()
+      this.setState({store : this.props.store});
+      //if (this.unsubscribe) this.unsubscribe()
 
-      this.subscribe()
+      //this.subscribe()
     }
   }
 
@@ -87,7 +88,7 @@ class Provider extends Component {
     const Context = this.props.context || ReactReduxContext
 
     return (
-      <Context.Provider value={{store: this.props.store}}>
+      <Context.Provider value={this.state}>
         {this.props.children}
       </Context.Provider>
     )

@@ -280,7 +280,7 @@ export default function connectAdvanced(
         return [context, forwardedRef, wrapperProps];
       }, [props])
 
-      console.log("ConnectFunction rerendering: ", Connect.displayName)
+      //console.log("ConnectFunction rerendering: ", Connect.displayName)
 
       const ContextToUse = useMemo(() => {
         return props.context &&
@@ -304,12 +304,14 @@ export default function connectAdvanced(
       //const subscribe = props.store ? props.store.subscribe : contextValue.subscribe
 
       const childPropsSelector = useMemo(() =>  {
-        console.log("createChildSelector running")
+        //console.log("createChildSelector running")
         return createChildSelector(store)
       }, [store])
 
       const [subscription, notifyNestedSubs] = useMemo(() => {
         if (!shouldHandleStateChanges) return []
+
+        //console.log(`${Connect.displayName}: recalculating subscription`)
 
         // parentSub's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
@@ -328,6 +330,7 @@ export default function connectAdvanced(
       }, [store, contextValue.subscription])
 
       const overriddenContextValue = useMemo(() => {
+        //console.log(`${Connect.displayName}: recalculating overriddenContextValue`)
         return {
           ...contextValue,
           subscription
@@ -399,7 +402,7 @@ export default function connectAdvanced(
             notifyNestedSubs()
           }
           else {
-            console.log("Store state update caused child props change: ", Connect.displayName, newChildProps)
+            //console.log("Store state update caused child props change: ", Connect.displayName, newChildProps)
             //setStoreState(latestStoreState)
             dispatch({
               type : "STORE_UPDATED",

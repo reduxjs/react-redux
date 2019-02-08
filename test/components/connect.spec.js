@@ -1127,6 +1127,7 @@ describe('React', () => {
       const spy = jest.fn(() => ({}))
       const tree = {}
       function render({ string, pass }) {
+        //console.error(new Error("child render"))
         spy()
         return <Passthrough string={string} pass={pass} passVal={pass.val} />
       }
@@ -1167,39 +1168,60 @@ describe('React', () => {
       expect(tester.getByTestId('string')).toHaveTextContent('')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-      tree.setState({ pass: '' })
+      rtl.act(() => {
+        tree.setState({ pass: '' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-      tree.setState({ pass: 'through' })
+      rtl.act(() => {
+        tree.setState({ pass: 'through' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
-      tree.setState({ pass: 'through' })
+      rtl.act(() => {
+        tree.setState({ pass: 'through' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
       const obj = { prop: 'val' }
-      tree.setState({ pass: obj })
+      rtl.act(() => {
+        tree.setState({ pass: obj })
+      })
+
       expect(spy).toHaveBeenCalledTimes(4)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
-      tree.setState({ pass: obj })
+      rtl.act(() => {
+        tree.setState({ pass: obj })
+      })
+
       expect(spy).toHaveBeenCalledTimes(4)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
       const obj2 = Object.assign({}, obj, { val: 'otherval' })
-      tree.setState({ pass: obj2 })
+      rtl.act(() => {
+        tree.setState({ pass: obj2 })
+      })
+
       expect(spy).toHaveBeenCalledTimes(5)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent(
@@ -1207,7 +1229,10 @@ describe('React', () => {
       )
 
       obj2.val = 'mutation'
-      tree.setState({ pass: obj2 })
+      rtl.act(() => {
+        tree.setState({ pass: obj2 })
+      })
+
       expect(spy).toHaveBeenCalledTimes(5)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent(
