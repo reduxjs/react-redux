@@ -88,10 +88,9 @@ const store = createStore()
 ReactDOM.render(
   <Provider store={store}>
     <Router history={history}>
-      <Route path="/" component={App}>
-        <Route path="foo" component={Foo} />
-        <Route path="bar" component={Bar} />
-      </Route>
+      <Route exact path="/" component={App} />
+      <Route path="/foo" component={Foo} />
+      <Route path="/bar" component={Bar} />
     </Router>
   </Provider>,
   document.getElementById('root')
