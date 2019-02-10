@@ -28,7 +28,7 @@ You may provide a context instance. If you do so, you will need to provide the s
 
 > Invariant Violation
 >
-> Could not find "store" in the context of "Connect(MyComponent)". Either wrap the root component in a <Provider>, or pass a custom React context provider to <Provider> and the corresponding React context consumer to Connect(Todo) in connect options.
+> Could not find "store" in the context of "Connect(MyComponent)". Either wrap the root component in a `<Provider>`, or pass a custom React context provider to `<Provider>` and the corresponding React context consumer to Connect(Todo) in connect options.
 
 **Note:** You do not need to provide custom context in order to access the store.
 React Redux exports the context instance it uses by default so that you can access the store by:
