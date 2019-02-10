@@ -40,7 +40,9 @@ import { ReactReduxContext } from 'react-redux'
 render() {
   return (
     <ReactReduxContext.Consumer>
-      {({ store }) => <div>{store}</div>}
+      {({ store }) => {
+        // do something with the store here
+      }}
     </ReactReduxContext.Consumer>
   )
 }
