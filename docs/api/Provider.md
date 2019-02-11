@@ -5,7 +5,7 @@ sidebar_label: Provider
 hide_title: true
 ---
 
-# `<Provider />`
+# `Provider`
 
 ## Overview
 
