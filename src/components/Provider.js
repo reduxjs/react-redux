@@ -37,13 +37,13 @@ class Provider extends Component {
     const { store } = this.props
 
     this.unsubscribe = store.subscribe(() => {
-      const newStoreState = store.getState()
-
       if (!this._isMounted) {
         return
       }
 
       this.setState(providerState => {
+        const newStoreState = store.getState()
+
         // If the value is the same, skip the unnecessary state update.
         if (providerState.storeState === newStoreState) {
           return null
