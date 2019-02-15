@@ -130,25 +130,15 @@ export default function connectAdvanced(
       let lastState
       let lastDerivedProps
       let lastStore
-      let lastSelectorFactoryOptions
       let sourceSelector
 
-      return function selectDerivedProps(
-        state,
-        props,
-        store,
-        selectorFactoryOptions
-      ) {
+      return function selectDerivedProps(state, props, store) {
         if (pure && lastProps === props && lastState === state) {
           return lastDerivedProps
         }
 
-        if (
-          store !== lastStore ||
-          lastSelectorFactoryOptions !== selectorFactoryOptions
-        ) {
+        if (store !== lastStore) {
           lastStore = store
-          lastSelectorFactoryOptions = selectorFactoryOptions
           sourceSelector = selectorFactory(
             store.dispatch,
             selectorFactoryOptions
@@ -166,21 +156,15 @@ export default function connectAdvanced(
     }
 
     function makeChildElementSelector() {
-      let lastChildProps, lastForwardRef, lastChildElement, lastComponent
+      let lastChildProps, lastChildElement
 
       return function selectChildElement(
         WrappedComponent,
         childProps,
         forwardRef
       ) {
-        if (
-          childProps !== lastChildProps ||
-          forwardRef !== lastForwardRef ||
-          lastComponent !== WrappedComponent
-        ) {
+        if (childProps !== lastChildProps) {
           lastChildProps = childProps
-          lastForwardRef = forwardRef
-          lastComponent = WrappedComponent
           lastChildElement = (
             <WrappedComponent {...childProps} ref={forwardRef} />
           )
