@@ -1,19 +1,13 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, {
-  Component,
-  PureComponent,
-  useState,
   useContext,
   useMemo,
-  useCallback,
   useEffect,
   useRef,
-  useReducer,
-  useLayoutEffect
+  useReducer
 } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
-import shallowEqual from '../utils/shallowEqual'
 import Subscription from '../utils/Subscription'
 
 import { ReactReduxContext } from './Context'
@@ -132,161 +126,19 @@ export default function connectAdvanced(
 
     const { pure } = connectOptions
 
-    let OuterBaseComponent = Component
-
-    if (pure) {
-      OuterBaseComponent = PureComponent
-    }
-
-    function makeDerivedPropsSelector() {
-      let lastProps
-      let lastState
-      let lastDerivedProps
-      let lastStore
-      let lastSelectorFactoryOptions
-      let sourceSelector
-
-      return function selectDerivedProps(
-        state,
-        props,
-        store,
-        selectorFactoryOptions
-      ) {
-        if (pure && lastProps === props && lastState === state) {
-          return lastDerivedProps
-        }
-
-        if (
-          store !== lastStore ||
-          lastSelectorFactoryOptions !== selectorFactoryOptions
-        ) {
-          lastStore = store
-          lastSelectorFactoryOptions = selectorFactoryOptions
-          sourceSelector = selectorFactory(
-            store.dispatch,
-            selectorFactoryOptions
-          )
-        }
-
-        lastProps = props
-        lastState = state
-
-        const nextProps = sourceSelector(state, props)
-
-        lastDerivedProps = nextProps
-        return lastDerivedProps
-      }
-    }
-
-    function makeChildElementSelector() {
-      let lastChildProps, lastForwardRef, lastChildElement, lastComponent
-
-      return function selectChildElement(
-        WrappedComponent,
-        childProps,
-        forwardRef
-      ) {
-        if (
-          childProps !== lastChildProps ||
-          forwardRef !== lastForwardRef ||
-          lastComponent !== WrappedComponent
-        ) {
-          lastChildProps = childProps
-          lastForwardRef = forwardRef
-          lastComponent = WrappedComponent
-          lastChildElement = (
-            <WrappedComponent {...childProps} ref={forwardRef} />
-          )
-        }
-
-        return lastChildElement
-      }
-    }
-    /*
-    class Connect extends OuterBaseComponent {
-      constructor(props) {
-        super(props)
-        invariant(
-          forwardRef ? !props.wrapperProps[storeKey] : !props[storeKey],
-          'Passing redux store in props has been removed and does not do anything. ' +
-            customStoreWarningMessage
-        )
-        this.selectDerivedProps = makeDerivedPropsSelector()
-        this.selectChildElement = makeChildElementSelector()
-        this.indirectRenderWrappedComponent = this.indirectRenderWrappedComponent.bind(
-          this
-        )
-      }
-
-      indirectRenderWrappedComponent(value) {
-        // calling renderWrappedComponent on prototype from indirectRenderWrappedComponent bound to `this`
-        return this.renderWrappedComponent(value)
-      }
-
-      renderWrappedComponent(value) {
-        invariant(
-          value,
-          `Could not find "store" in the context of ` +
-            `"${displayName}". Either wrap the root component in a <Provider>, ` +
-            `or pass a custom React context provider to <Provider> and the corresponding ` +
-            `React context consumer to ${displayName} in connect options.`
-        )
-        const { storeState, store } = value
-
-        let wrapperProps = this.props
-        let forwardedRef
-
-        if (forwardRef) {
-          wrapperProps = this.props.wrapperProps
-          forwardedRef = this.props.forwardedRef
-        }
-
-        let derivedProps = this.selectDerivedProps(
-          storeState,
-          wrapperProps,
-          store,
-          selectorFactoryOptions
-        )
-
-        return this.selectChildElement(
-          WrappedComponent,
-          derivedProps,
-          forwardedRef
-        )
-      }
-
-      render() {
-        const ContextToUse =
-          this.props.context &&
-          this.props.context.Consumer &&
-          isContextConsumer(<this.props.context.Consumer />)
-            ? this.props.context
-            : Context
-
-        return (
-          <ContextToUse.Consumer>
-            {this.indirectRenderWrappedComponent}
-          </ContextToUse.Consumer>
-        )
-      }
-    }
-    */
-
     function createChildSelector(store) {
       return selectorFactory(store.dispatch, selectorFactoryOptions)
     }
 
     const usePureOnlyMemo = pure ? useMemo : x => x()
 
-    let renderCount = 0
-
     function storeStateUpdatesReducer(state, action) {
-      const [previousStateUpdateResult, updateCount = 0] = state
+      const [, updateCount = 0] = state
       return [action.payload, updateCount + 1]
     }
 
     function ConnectFunction(props) {
-      const [context, forwardedRef, wrapperProps] = useMemo(
+      const [propsContext, forwardedRef, wrapperProps] = useMemo(
         () => {
           const { context, forwardedRef, ...wrapperProps } = props
           return [context, forwardedRef, wrapperProps]
@@ -294,17 +146,15 @@ export default function connectAdvanced(
         [props]
       )
 
-      //console.log("ConnectFunction rerendering: ", Connect.displayName)
-
       const ContextToUse = useMemo(
         () => {
-          return props.context &&
-            props.context.Consumer &&
-            isContextConsumer(<props.context.Consumer />)
-            ? props.context
+          return propsContext &&
+            propsContext.Consumer &&
+            isContextConsumer(<propsContext.Consumer />)
+            ? propsContext
             : Context
         },
-        [props.context, Context]
+        [propsContext, Context]
       )
 
       const contextValue = useContext(ContextToUse)
@@ -318,11 +168,9 @@ export default function connectAdvanced(
       )
 
       const store = props.store || contextValue.store
-      //const subscribe = props.store ? props.store.subscribe : contextValue.subscribe
 
       const childPropsSelector = useMemo(
         () => {
-          //console.log("createChildSelector running")
           return createChildSelector(store)
         },
         [store]
@@ -331,8 +179,6 @@ export default function connectAdvanced(
       const [subscription, notifyNestedSubs] = useMemo(
         () => {
           if (!shouldHandleStateChanges) return []
-
-          //console.log(`${Connect.displayName}: recalculating subscription`)
 
           // parentSub's source should match where store came from: props vs. context. A component
           // connected to the store via props shouldn't use subscription from context, or vice versa.
@@ -359,7 +205,6 @@ export default function connectAdvanced(
 
       const overriddenContextValue = useMemo(
         () => {
-          //console.log(`${Connect.displayName}: recalculating overriddenContextValue`)
           return {
             ...contextValue,
             subscription
@@ -368,10 +213,10 @@ export default function connectAdvanced(
         [contextValue, subscription]
       )
 
-      const [
-        [previousStateUpdateResult, storeUpdateCount],
-        dispatch
-      ] = useReducer(storeStateUpdatesReducer, []) //, [{latestStoreState: store.getState()}])
+      const [[previousStateUpdateResult], dispatch] = useReducer(
+        storeStateUpdatesReducer,
+        []
+      )
 
       if (previousStateUpdateResult && previousStateUpdateResult.error) {
         throw previousStateUpdateResult.error
@@ -428,22 +273,9 @@ export default function connectAdvanced(
               error = e
             }
 
-            /*
-            this.selector.run(this.props)
-
-            if (!this.selector.shouldComponentUpdate) {
-              this.notifyNestedSubs()
-            } else {
-              this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
-              this.setState(dummyState)
-            }
-           */
-
             if (newChildProps === lastChildProps.current) {
               notifyNestedSubs()
             } else {
-              //console.log("Store state update caused child props change: ", Connect.displayName, newChildProps)
-              //setStoreState(latestStoreState)
               dispatch({
                 type: 'STORE_UPDATED',
                 payload: {
@@ -459,17 +291,13 @@ export default function connectAdvanced(
           // Pull data from the store after first render in case the store has
           // changed since we began.
 
-          //console.log("Subscribing for component type: ", Connect.displayName)
-          //const unsubscribe = subscribe(checkForUpdates)
           subscription.onStateChange = checkForUpdates
           subscription.trySubscribe()
 
           checkForUpdates()
 
           const unsubscribeWrapper = () => {
-            //console.log(`${Connect.displayName}: unsubscribing`)
             didUnsubscribe = true
-            //unsubscribe();
             subscription.tryUnsubscribe()
           }
 

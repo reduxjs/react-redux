@@ -1012,7 +1012,7 @@ describe('React', () => {
       let A = () => <h1>A</h1>
       function mapState(state) {
         const calls = ++mapStateToPropsCalls
-        return { calls }
+        return { calls, state }
       }
       A = connect(mapState)(A)
 
@@ -1052,15 +1052,12 @@ describe('React', () => {
 
       const div = document.createElement('div')
       document.body.appendChild(div)
-      console.log('Initial ReactDOM.render()')
       ReactDOM.render(
         <ProviderMock store={store}>
           <RouterMock />
         </ProviderMock>,
         div
       )
-
-      console.log('Initial render complete')
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -1936,7 +1933,6 @@ describe('React', () => {
 
       // Impure update
       storeGetter.storeKey = 'bar'
-      console.log('Triggering external setState update')
       externalSetState({ storeGetter })
 
       // 4) After the the impure update
@@ -1996,17 +1992,10 @@ describe('React', () => {
       expect(childMapStateInvokes).toBe(1)
       expect(childCalls).toEqual([['a', 'a']])
 
-      // The store state stays consistent when setState calls are batched
-      /*
-      ReactDOM.unstable_batchedUpdates(() => {
-
-      })
-      */
       rtl.act(() => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
       expect(childMapStateInvokes).toBe(2)
-      console.log(childCalls)
       expect(childCalls).toEqual([['a', 'a'], ['ac', 'ac']])
 
       // setState calls DOM handlers are batched
@@ -2383,7 +2372,6 @@ describe('React', () => {
       @connect(null)
       class Parent extends React.Component {
         componentWillUnmount() {
-          console.log('Parent: componentWillUnmount')
           this.props.dispatch({ type: 'clean' })
         }
 

@@ -3,8 +3,6 @@ import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
 import Subscription from '../utils/Subscription'
 
-import { unstable_batchedUpdates } from 'react-dom'
-
 class Provider extends Component {
   constructor(props) {
     super(props)
@@ -16,13 +14,10 @@ class Provider extends Component {
     subscription.onStateChange = this.notifySubscribers
 
     this.state = {
-      //storeState: store.getState(),
       store,
       subscription
-      //subscribe : this.childSubscribe.bind(this),
     }
 
-    this.subscriptions = new Set()
     this.previousState = store.getState()
   }
 
@@ -34,7 +29,6 @@ class Provider extends Component {
     if (this.previousState !== this.props.store.getState()) {
       this.state.subscription.notifyNestedSubs()
     }
-    //this.subscribe()
   }
 
   componentWillUnmount() {
@@ -43,8 +37,6 @@ class Provider extends Component {
     this.state.subscription.tryUnsubscribe()
 
     this._isMounted = false
-
-    this.subscriptions.clear()
   }
 
   componentDidUpdate(prevProps) {
@@ -53,56 +45,11 @@ class Provider extends Component {
       const subscription = new Subscription(this.props.store)
       subscription.onStateChange = this.notifySubscribers
       this.setState({ store: this.props.store, subscription })
-      //if (this.unsubscribe) this.unsubscribe()
-
-      //this.subscribe()
     }
   }
 
   notifySubscribers() {
     this.state.subscription.notifyNestedSubs()
-    /*
-    unstable_batchedUpdates(() => {
-
-      this.subscriptions.forEach(cb => {
-        cb();
-      })
-    })
-    */
-  }
-
-  subscribe() {
-    const { store } = this.props
-    const { subscriptions } = this
-
-    const flushUpdates = () => {
-      const state = store.getState()
-      if (state === this.previousState) {
-        return
-      }
-      this.previousState = state
-      unstable_batchedUpdates(() => {
-        subscriptions.forEach(cb => {
-          cb(state)
-        })
-      })
-    }
-
-    this.unsubscribe = store.subscribe(() => {
-      if (this._isMounted) {
-        flushUpdates()
-      }
-    })
-
-    // handle the case where there were updates before we subscribed
-    flushUpdates()
-  }
-
-  childSubscribe(cb) {
-    const { subscriptions } = this
-    subscriptions.add(cb)
-    // cb(this.previousState)
-    return () => subscriptions.delete(cb)
   }
 
   render() {
