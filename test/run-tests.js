@@ -33,9 +33,8 @@ const configFilePath = path.join(__dirname, 'jest-config.json')
 
 fs.writeFileSync(configFilePath, JSON.stringify(jestConfig))
 
-const commandLine = `jest -c "${configFilePath}" ${process.argv.slice(2).join(' ')}`
+const commandLine = `jest -c "${configFilePath}" ${process.argv
+  .slice(2)
+  .join(' ')}`
 
-npmRun.execSync(
-  commandLine,
-  { stdio: 'inherit' }
-)
+npmRun.execSync(commandLine, { stdio: 'inherit' })

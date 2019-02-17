@@ -9,7 +9,6 @@ import { Provider as ProviderMock, connect } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
-
 describe('React', () => {
   describe('connect', () => {
     const propMapper = prop => {
@@ -914,7 +913,6 @@ describe('React', () => {
         )
       })
 
-
       expect(mapStateToPropsCalls).toBe(1)
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       rtl.act(() => {
@@ -967,7 +965,6 @@ describe('React', () => {
         rtl.act(() => {
           store.dispatch({ type: 'APPEND', body: 'A' })
         })
-
       } finally {
         ReactDOM.unmountComponentAtNode(div)
       }
@@ -1014,8 +1011,8 @@ describe('React', () => {
 
       let A = () => <h1>A</h1>
       function mapState(state) {
-        const calls = ++mapStateToPropsCalls;
-        return {calls};
+        const calls = ++mapStateToPropsCalls
+        return { calls }
       }
       A = connect(mapState)(A)
 
@@ -1055,7 +1052,7 @@ describe('React', () => {
 
       const div = document.createElement('div')
       document.body.appendChild(div)
-      console.log("Initial ReactDOM.render()")
+      console.log('Initial ReactDOM.render()')
       ReactDOM.render(
         <ProviderMock store={store}>
           <RouterMock />
@@ -1063,7 +1060,7 @@ describe('React', () => {
         div
       )
 
-      console.log("Initial render complete")
+      console.log('Initial render complete')
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -1508,7 +1505,6 @@ describe('React', () => {
         store.dispatch({ type: ACTION_TYPE })
       })
 
-
       expect(tester.getByTestId('actions')).toHaveTextContent('1')
     })
 
@@ -1940,7 +1936,7 @@ describe('React', () => {
 
       // Impure update
       storeGetter.storeKey = 'bar'
-      console.log("Triggering external setState update")
+      console.log('Triggering external setState update')
       externalSetState({ storeGetter })
 
       // 4) After the the impure update
@@ -2013,7 +2009,6 @@ describe('React', () => {
       console.log(childCalls)
       expect(childCalls).toEqual([['a', 'a'], ['ac', 'ac']])
 
-
       // setState calls DOM handlers are batched
       const button = tester.getByText('change')
       rtl.fireEvent.click(button)
@@ -2060,7 +2055,6 @@ describe('React', () => {
       rtl.act(() => {
         store.dispatch({ type: 'APPEND', body: 'a' })
       })
-
 
       // After store a change mapState has been called
       expect(mapStateCalls).toBe(2)
@@ -2333,7 +2327,6 @@ describe('React', () => {
         store.dispatch({ type: 'APPEND', body: 'a' })
       })
 
-
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
     })
@@ -2390,7 +2383,7 @@ describe('React', () => {
       @connect(null)
       class Parent extends React.Component {
         componentWillUnmount() {
-          console.log("Parent: componentWillUnmount");
+          console.log('Parent: componentWillUnmount')
           this.props.dispatch({ type: 'clean' })
         }
 
@@ -2401,7 +2394,7 @@ describe('React', () => {
 
       function mapState(state) {
         return {
-          profile : state.data.profile
+          profile: state.data.profile
         }
       }
 
@@ -2632,7 +2625,6 @@ describe('React', () => {
       rtl.act(() => {
         store.dispatch({ type: 'INC' })
       })
-
     })
 
     it('should subscribe properly when a new store is provided via props', () => {

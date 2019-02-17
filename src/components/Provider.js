@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
-import Subscription from "../utils/Subscription";
+import Subscription from '../utils/Subscription'
 
-import {unstable_batchedUpdates} from "react-dom";
+import { unstable_batchedUpdates } from 'react-dom'
 
 class Provider extends Component {
   constructor(props) {
@@ -11,11 +11,9 @@ class Provider extends Component {
 
     const { store } = props
 
-
-
-    this.notifySubscribers = this.notifySubscribers.bind(this);
-    const subscription = new Subscription(store);
-    subscription.onStateChange = this.notifySubscribers;
+    this.notifySubscribers = this.notifySubscribers.bind(this)
+    const subscription = new Subscription(store)
+    subscription.onStateChange = this.notifySubscribers
 
     this.state = {
       //storeState: store.getState(),
@@ -24,16 +22,16 @@ class Provider extends Component {
       //subscribe : this.childSubscribe.bind(this),
     }
 
-    this.subscriptions = new Set();
-    this.previousState = store.getState();
+    this.subscriptions = new Set()
+    this.previousState = store.getState()
   }
 
   componentDidMount() {
     this._isMounted = true
 
-    this.state.subscription.trySubscribe();
+    this.state.subscription.trySubscribe()
 
-    if(this.previousState !== this.props.store.getState()) {
+    if (this.previousState !== this.props.store.getState()) {
       this.state.subscription.notifyNestedSubs()
     }
     //this.subscribe()
@@ -46,15 +44,15 @@ class Provider extends Component {
 
     this._isMounted = false
 
-    this.subscriptions.clear();
+    this.subscriptions.clear()
   }
 
   componentDidUpdate(prevProps) {
     if (this.props.store !== prevProps.store) {
       this.state.subscription.tryUnsubscribe()
-      const subscription = new Subscription(this.props.store);
-      subscription.onStateChange = this.notifySubscribers;
-      this.setState({store : this.props.store, subscription});
+      const subscription = new Subscription(this.props.store)
+      subscription.onStateChange = this.notifySubscribers
+      this.setState({ store: this.props.store, subscription })
       //if (this.unsubscribe) this.unsubscribe()
 
       //this.subscribe()

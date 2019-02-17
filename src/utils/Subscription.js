@@ -1,4 +1,4 @@
-import {unstable_batchedUpdates} from "react-dom";
+import { unstable_batchedUpdates } from 'react-dom'
 
 // encapsulates the subscription logic for connecting a component to the redux store, as
 // well as nesting subscriptions of descendant components, so that we can ensure the
@@ -20,7 +20,7 @@ function createListenerCollection() {
     },
 
     notify() {
-      const listeners = current = next
+      const listeners = (current = next)
       unstable_batchedUpdates(() => {
         for (let i = 0; i < listeners.length; i++) {
           listeners[i]()
@@ -70,7 +70,7 @@ export default class Subscription {
   }
 
   handleChangeWrapper() {
-    if(this.onStateChange) {
+    if (this.onStateChange) {
       this.onStateChange()
     }
   }
@@ -81,7 +81,7 @@ export default class Subscription {
 
   trySubscribe() {
     if (!this.unsubscribe) {
-/*
+      /*
       if(onStateChange) {
         this.onStateChange = onStateChange
       }
@@ -93,7 +93,6 @@ export default class Subscription {
         : this.store.subscribe(this.handleChangeWrapper)
 
       this.listeners = createListenerCollection()
-
     }
   }
 
