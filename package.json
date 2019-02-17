@@ -76,7 +76,7 @@
     "prettier": "^1.15.3",
     "react": "^16.8.2",
     "react-dom": "^16.8.2",
-    "react-testing-library": "^5.5.3",
+    "react-testing-library": "^5.8.0",
     "redux": "^4.0.1",
     "rimraf": "^2.6.2",
     "rollup": "^0.67.4",
