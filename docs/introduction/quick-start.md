@@ -16,7 +16,7 @@ React Redux 6.x requires **React 16.4 or later.**
 To use React Redux with your React app:
 
 ```bash
-npm install --save react-redux
+npm install react-redux
 ```
 
 or
