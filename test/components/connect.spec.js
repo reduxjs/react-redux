@@ -102,7 +102,7 @@ describe('React', () => {
       if (React.memo) {
         const store = createStore(() => ({ hi: 'there' }))
 
-        const Container = React.memo(props => <Passthrough {...props} />)
+        const Container = React.memo(props => <Passthrough {...props} />) // eslint-disable-line
         const WrappedContainer = connect(state => state)(Container)
 
         const tester = rtl.render(
