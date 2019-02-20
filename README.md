@@ -1,20 +1,16 @@
 React Redux
 =========================
 
-Official React bindings for [Redux](https://github.com/reduxjs/redux).  
-Performant and flexible.
+This is an **alpha** fork of React-Redux.  Use at your own risk!  (But please let it us know how it runs.)
 
-[![build status](https://img.shields.io/travis/reduxjs/react-redux/master.svg?style=flat-square)](https://travis-ci.org/reduxjs/react-redux) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
-[![npm downloads](https://img.shields.io/npm/dm/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
-[![redux channel on discord](https://img.shields.io/badge/discord-redux@reactiflux-61DAFB.svg?style=flat-square)](http://www.reactiflux.com)
 
 
 ## Installation
 
-React Redux requires **React 16.4 or later.**
+React Redux requires **React 16.8 or later.**
 
 ```
-npm install --save react-redux
+npm install --save @acemarke/react-redux@next.
 ```
 
 This assumes that you’re using [npm](http://npmjs.com/) package manager with a module bundler like [Webpack](https://webpack.js.org/) or [Browserify](http://browserify.org/) to consume [CommonJS modules](http://webpack.github.io/docs/commonjs.html).
