@@ -102,7 +102,7 @@ describe('React', () => {
       if (React.memo) {
         const store = createStore(() => ({ hi: 'there' }))
 
-        const Container = React.memo(props => <Passthrough {...props} />) // eslint-disable-line
+        const Container = React.memo(props => <Passthrough {...props} />)
         const WrappedContainer = connect(state => state)(Container)
 
         const tester = rtl.render(
@@ -137,6 +137,7 @@ describe('React', () => {
           <Container pass="through" baz={50} />
         </ProviderMock>
       )
+
       expect(tester.getByTestId('pass')).toHaveTextContent('through')
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
       expect(tester.getByTestId('baz')).toHaveTextContent('42')
@@ -159,9 +160,15 @@ describe('React', () => {
         </ProviderMock>
       )
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
       expect(tester.getByTestId('string')).toHaveTextContent('a')
-      store.dispatch({ type: 'APPEND', body: 'b' })
+
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'b' })
+      })
       expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
@@ -185,9 +192,15 @@ describe('React', () => {
       spy.mockRestore()
 
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(tester.getByTestId('string')).toHaveTextContent('a')
-      store.dispatch({ type: 'APPEND', body: 'b' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'b' })
+      })
+
       expect(tester.getByTestId('string')).toHaveTextContent('ab')
     })
 
@@ -210,7 +223,10 @@ describe('React', () => {
       spy.mockRestore()
 
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(tester.getByTestId('string')).toHaveTextContent('a')
     })
 
@@ -486,12 +502,24 @@ describe('React', () => {
       const tester = rtl.render(<OuterContainer />)
 
       expect(tester.getByTestId('stateThing')).toHaveTextContent('')
-      merged('a')
+      rtl.act(() => {
+        merged('a')
+      })
+
       expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO az')
-      merged('b')
+      rtl.act(() => {
+        merged('b')
+      })
+
       expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbz')
-      externalSetState({ extra: 'Z' })
-      merged('c')
+      rtl.act(() => {
+        externalSetState({ extra: 'Z' })
+      })
+
+      rtl.act(() => {
+        merged('c')
+      })
+
       expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbzcZ')
     })
 
@@ -872,17 +900,25 @@ describe('React', () => {
       }
 
       const div = document.createElement('div')
-      store.subscribe(() => ReactDOM.unmountComponentAtNode(div))
-      ReactDOM.render(
-        <ProviderMock store={store}>
-          <Container />
-        </ProviderMock>,
-        div
-      )
+      store.subscribe(() => {
+        ReactDOM.unmountComponentAtNode(div)
+      })
+
+      rtl.act(() => {
+        ReactDOM.render(
+          <ProviderMock store={store}>
+            <Container />
+          </ProviderMock>,
+          div
+        )
+      })
 
       expect(mapStateToPropsCalls).toBe(1)
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(0)
       expect(mapStateToPropsCalls).toBe(1)
       spy.mockRestore()
@@ -926,7 +962,9 @@ describe('React', () => {
       )
 
       try {
-        store.dispatch({ type: 'APPEND', body: 'A' })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'A' })
+        })
       } finally {
         ReactDOM.unmountComponentAtNode(div)
       }
@@ -972,7 +1010,11 @@ describe('React', () => {
       App = connect(() => ({}))(App)
 
       let A = () => <h1>A</h1>
-      A = connect(() => ({ calls: ++mapStateToPropsCalls }))(A)
+      function mapState(state) {
+        const calls = ++mapStateToPropsCalls
+        return { calls, state }
+      }
+      A = connect(mapState)(A)
 
       const B = () => <h1>B</h1>
 
@@ -1024,7 +1066,11 @@ describe('React', () => {
       linkB.click()
 
       document.body.removeChild(div)
-      expect(mapStateToPropsCalls).toBe(2)
+      // Called 3 times:
+      // - Initial mount
+      // - After first link click, stil mounted
+      // - After second link click, but the queued state update is discarded due to batching as it's unmounted
+      expect(mapStateToPropsCalls).toBe(3)
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
     })
@@ -1089,11 +1135,20 @@ describe('React', () => {
       )
       expect(spy).toHaveBeenCalledTimes(1)
       expect(tester.getByTestId('string')).toHaveTextContent('')
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(2)
-      store.dispatch({ type: 'APPEND', body: 'b' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'b' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
-      store.dispatch({ type: 'APPEND', body: '' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: '' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
     })
 
@@ -1142,39 +1197,60 @@ describe('React', () => {
       expect(tester.getByTestId('string')).toHaveTextContent('')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-      tree.setState({ pass: '' })
+      rtl.act(() => {
+        tree.setState({ pass: '' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-      tree.setState({ pass: 'through' })
+      rtl.act(() => {
+        tree.setState({ pass: 'through' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
-      tree.setState({ pass: 'through' })
+      rtl.act(() => {
+        tree.setState({ pass: 'through' })
+      })
+
       expect(spy).toHaveBeenCalledTimes(3)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
       const obj = { prop: 'val' }
-      tree.setState({ pass: obj })
+      rtl.act(() => {
+        tree.setState({ pass: obj })
+      })
+
       expect(spy).toHaveBeenCalledTimes(4)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
-      tree.setState({ pass: obj })
+      rtl.act(() => {
+        tree.setState({ pass: obj })
+      })
+
       expect(spy).toHaveBeenCalledTimes(4)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
       const obj2 = Object.assign({}, obj, { val: 'otherval' })
-      tree.setState({ pass: obj2 })
+      rtl.act(() => {
+        tree.setState({ pass: obj2 })
+      })
+
       expect(spy).toHaveBeenCalledTimes(5)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent(
@@ -1182,7 +1258,10 @@ describe('React', () => {
       )
 
       obj2.val = 'mutation'
-      tree.setState({ pass: obj2 })
+      rtl.act(() => {
+        tree.setState({ pass: obj2 })
+      })
+
       expect(spy).toHaveBeenCalledTimes(5)
       expect(tester.getByTestId('string')).toHaveTextContent('a')
       expect(tester.getByTestId('pass')).toHaveTextContent(
@@ -1418,7 +1497,9 @@ describe('React', () => {
 
       imitateHotReloading(ParentBefore, ParentAfter, container)
 
-      store.dispatch({ type: ACTION_TYPE })
+      rtl.act(() => {
+        store.dispatch({ type: ACTION_TYPE })
+      })
 
       expect(tester.getByTestId('actions')).toHaveTextContent('1')
     })
@@ -1796,9 +1877,11 @@ describe('React', () => {
 
       const mapStateSpy = jest.fn()
       const mapDispatchSpy = jest.fn().mockReturnValue({})
+      const impureRenderSpy = jest.fn()
 
       class ImpureComponent extends Component {
         render() {
+          impureRenderSpy()
           return <Passthrough statefulValue={this.props.value} />
         }
       }
@@ -1836,23 +1919,37 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(1)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
+      // 1) Initial render
+      // 2) Post-mount check
+      // 3) After "wasted" re-render
+      expect(mapStateSpy).toHaveBeenCalledTimes(2)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+
+      // 1) Initial render
+      // 2) Triggered by post-mount check with impure results
+      expect(impureRenderSpy).toHaveBeenCalledTimes(2)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
       // Impure update
       storeGetter.storeKey = 'bar'
       externalSetState({ storeGetter })
 
-      expect(mapStateSpy).toHaveBeenCalledTimes(2)
-      expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+      // 4) After the the impure update
+      expect(mapStateSpy).toHaveBeenCalledTimes(3)
+      expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
+
+      // 3) Triggered by impure update
+      expect(impureRenderSpy).toHaveBeenCalledTimes(3)
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
     it('should pass state consistently to mapState', () => {
       const store = createStore(stringBuilder)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       let childMapStateInvokes = 0
 
       @connect(state => ({ state }))
@@ -1894,8 +1991,7 @@ describe('React', () => {
       expect(childMapStateInvokes).toBe(1)
       expect(childCalls).toEqual([['a', 'a']])
 
-      // The store state stays consistent when setState calls are batched
-      ReactDOM.unstable_batchedUpdates(() => {
+      rtl.act(() => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
       expect(childMapStateInvokes).toBe(2)
@@ -1906,7 +2002,10 @@ describe('React', () => {
       rtl.fireEvent.click(button)
       expect(childMapStateInvokes).toBe(3)
 
-      store.dispatch({ type: 'APPEND', body: 'd' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'd' })
+      })
+
       expect(childMapStateInvokes).toBe(4)
       expect(childCalls).toEqual([
         ['a', 'a'],
@@ -1941,7 +2040,9 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
 
       // After store a change mapState has been called
       expect(mapStateCalls).toBe(2)
@@ -1974,15 +2075,24 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(mapStateCalls).toBe(3)
       expect(renderCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
+
       expect(mapStateCalls).toBe(4)
       expect(renderCalls).toBe(2)
     })
@@ -2060,7 +2170,10 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'test' })
+      rtl.act(() => {
+        store.dispatch({ type: 'test' })
+      })
+
       expect(updatedCount).toBe(0)
       expect(memoizedReturnCount).toBe(2)
     })
@@ -2095,7 +2208,10 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'test' })
+      rtl.act(() => {
+        store.dispatch({ type: 'test' })
+      })
+
       expect(initialOwnProps).toBe(undefined)
       expect(initialState).not.toBe(undefined)
       expect(secondaryOwnProps).not.toBe(undefined)
@@ -2161,7 +2277,10 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'test' })
+      rtl.act(() => {
+        store.dispatch({ type: 'test' })
+      })
+
       expect(updatedCount).toBe(0)
       expect(memoizedReturnCount).toBe(2)
     })
@@ -2192,7 +2311,9 @@ describe('React', () => {
       expect(renderCalls).toBe(1)
       expect(mapStateCalls).toBe(1)
 
-      store.dispatch({ type: 'APPEND', body: 'a' })
+      rtl.act(() => {
+        store.dispatch({ type: 'APPEND', body: 'a' })
+      })
 
       expect(mapStateCalls).toBe(2)
       expect(renderCalls).toBe(1)
@@ -2258,9 +2379,13 @@ describe('React', () => {
         }
       }
 
-      @connect(state => ({
-        profile: state.data.profile
-      }))
+      function mapState(state) {
+        return {
+          profile: state.data.profile
+        }
+      }
+
+      @connect(mapState)
       class Child extends React.Component {
         render() {
           return null
@@ -2268,7 +2393,10 @@ describe('React', () => {
       }
 
       const store = createStore(reducer)
-      store.dispatch({ type: 'fetch' })
+      rtl.act(() => {
+        store.dispatch({ type: 'fetch' })
+      })
+
       const div = document.createElement('div')
       ReactDOM.render(
         <ProviderMock store={store}>
@@ -2320,7 +2448,10 @@ describe('React', () => {
       )
 
       const rendersBeforeStateChange = renderCount
-      store.dispatch({ type: 'ACTION' })
+      rtl.act(() => {
+        store.dispatch({ type: 'ACTION' })
+      })
+
       expect(renderCount).toBe(rendersBeforeStateChange + 1)
     })
 
@@ -2430,7 +2561,10 @@ describe('React', () => {
       )
 
       expect(mapStateToProps).toHaveBeenCalledTimes(1)
-      store.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store.dispatch({ type: 'INC' })
+      })
+
       expect(mapStateToProps).toHaveBeenCalledTimes(2)
     })
 
@@ -2468,7 +2602,9 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store.dispatch({ type: 'INC' })
+      })
     })
 
     it('should subscribe properly when a new store is provided via props', () => {
@@ -2537,12 +2673,17 @@ describe('React', () => {
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
 
-      store1.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store1.dispatch({ type: 'INC' })
+      })
+
       expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
 
-      store2.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        store2.dispatch({ type: 'INC' })
+      })
       expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
       expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
@@ -2608,7 +2749,7 @@ describe('React', () => {
       }).toThrow(/storeKey has been removed/)
     })
 
-    it('should error on custom store', () => {
+    it.skip('should error on custom store', () => {
       function Comp() {
         return <div>hi</div>
       }
