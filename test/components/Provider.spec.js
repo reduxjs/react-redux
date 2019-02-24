@@ -19,9 +19,17 @@ describe('React', () => {
         render() {
           return (
             <ReactReduxContext.Consumer>
-              {({ storeState }) => {
+              {({ store }) => {
+                let text = ''
+
+                if (store) {
+                  text = store.getState().toString()
+                }
+
                 return (
-                  <div data-testid="store">{`${storeKey} - ${storeState}`}</div>
+                  <div data-testid="store">
+                    {storeKey} - {text}
+                  </div>
                 )
               }}
             </ReactReduxContext.Consumer>
