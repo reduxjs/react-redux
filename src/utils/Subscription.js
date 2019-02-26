@@ -49,10 +49,11 @@ function createListenerCollection() {
 }
 
 export default class Subscription {
-  constructor(store, parentSub) {
+  constructor(store, parentSub, onStateChange) {
     this.store = store
     this.parentSub = parentSub
     this.unsubscribe = null
+    this.onStateChange = onStateChange
     this.listeners = nullListeners
 
     this.handleChangeWrapper = this.handleChangeWrapper.bind(this)
