@@ -42,33 +42,25 @@ describe('React', () => {
         }
       })
 
-      const component1 = props => {
-        renderSpy1()
-
-        return <Component2 list={props.list} />
-      }
-
-      const Component1 = component1Decorator(component1)
-
-      const renderSpy2 = jest.fn()
-
-      const Component2 = props => {
+      const component2 = props => {
         const [state, setState] = React.useState({ list: props.list })
 
         React.useEffect(() => {
-          setState({ list: props.list })
+          setState(prevState => ({ ...prevState, list: props.list }))
         }, [props.list])
 
-        renderSpy2()
+        renderSpy1()
 
-        return <Component3 list={state.list} />
+        return <Component2 list={state.list} />
       }
 
-      const mapStateSpy3 = jest.fn()
-      const renderSpy3 = jest.fn()
+      const Component1 = component1Decorator(component2)
 
-      const component3Decorator = connect((state, ownProps) => {
-        mapStateSpy3()
+      const mapStateSpy2 = jest.fn()
+      const renderSpy2 = jest.fn()
+
+      const component2Decorator = connect((state, ownProps) => {
+        mapStateSpy2()
 
         return {
           mappedProp: ownProps.list.map(id => state.byId[id])
@@ -76,12 +68,12 @@ describe('React', () => {
       })
 
       const component3 = () => {
-        renderSpy3()
+        renderSpy2()
 
         return <div>Hello</div>
       }
 
-      const Component3 = component3Decorator(component3)
+      const Component2 = component2Decorator(component3)
 
       rtl.render(
         <ProviderMock store={store}>
@@ -90,20 +82,18 @@ describe('React', () => {
       )
 
       expect(mapStateSpy1).toHaveBeenCalledTimes(1)
-      expect(renderSpy1).toHaveBeenCalledTimes(1)
-      expect(renderSpy2).toHaveBeenCalledTimes(2)
-      expect(mapStateSpy3).toHaveBeenCalledTimes(1)
-      expect(renderSpy3).toHaveBeenCalledTimes(1)
+      expect(renderSpy1).toHaveBeenCalledTimes(2)
+      expect(mapStateSpy2).toHaveBeenCalledTimes(1)
+      expect(renderSpy2).toHaveBeenCalledTimes(1)
 
       rtl.act(() => {
         store.dispatch({ type: 'FOO' })
       })
 
       expect(mapStateSpy1).toHaveBeenCalledTimes(2)
-      expect(renderSpy1).toHaveBeenCalledTimes(2)
-      expect(renderSpy2).toHaveBeenCalledTimes(4)
-      expect(mapStateSpy3).toHaveBeenCalledTimes(3)
-      expect(renderSpy3).toHaveBeenCalledTimes(3)
+      expect(renderSpy1).toHaveBeenCalledTimes(4)
+      expect(mapStateSpy2).toHaveBeenCalledTimes(3)
+      expect(renderSpy2).toHaveBeenCalledTimes(3)
     })
   })
 })
