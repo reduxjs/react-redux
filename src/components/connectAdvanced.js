@@ -12,6 +12,10 @@ import Subscription from '../utils/Subscription'
 
 import { ReactReduxContext } from './Context'
 
+const EMPTY_ARRAY = []
+
+const NO_SUBSCRIPTION_ARRAY = [null, null]
+
 const stringifyComponent = Comp => {
   try {
     return JSON.stringify(Comp)
@@ -19,6 +23,13 @@ const stringifyComponent = Comp => {
     return String(Comp)
   }
 }
+
+function storeStateUpdatesReducer(state, action) {
+  const [, updateCount] = state
+  return [action.payload, updateCount + 1]
+}
+
+const initStateUpdates = () => [null, 0]
 
 export default function connectAdvanced(
   /*
@@ -132,11 +143,6 @@ export default function connectAdvanced(
 
     const usePureOnlyMemo = pure ? useMemo : x => x()
 
-    function storeStateUpdatesReducer(state, action) {
-      const [, updateCount = 0] = state
-      return [action.payload, updateCount + 1]
-    }
-
     function ConnectFunction(props) {
       const [propsContext, forwardedRef, wrapperProps] = useMemo(() => {
         const { context, forwardedRef, ...wrapperProps } = props
@@ -168,7 +174,7 @@ export default function connectAdvanced(
       }, [store])
 
       const [subscription, notifyNestedSubs] = useMemo(() => {
-        if (!shouldHandleStateChanges) return []
+        if (!shouldHandleStateChanges) return NO_SUBSCRIPTION_ARRAY
 
         // parentSub's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
@@ -197,7 +203,8 @@ export default function connectAdvanced(
 
       const [[previousStateUpdateResult], dispatch] = useReducer(
         storeStateUpdatesReducer,
-        []
+        EMPTY_ARRAY,
+        initStateUpdates
       )
 
       if (previousStateUpdateResult && previousStateUpdateResult.error) {
@@ -311,6 +318,7 @@ export default function connectAdvanced(
     }
 
     const Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
+
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
 
