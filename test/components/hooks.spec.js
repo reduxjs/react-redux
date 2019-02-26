@@ -95,13 +95,15 @@ describe('React', () => {
       expect(mapStateSpy3).toHaveBeenCalledTimes(1)
       expect(renderSpy3).toHaveBeenCalledTimes(1)
 
-      store.dispatch({ type: 'FOO' })
+      rtl.act(() => {
+        store.dispatch({ type: 'FOO' })
+      })
 
       expect(mapStateSpy1).toHaveBeenCalledTimes(2)
       expect(renderSpy1).toHaveBeenCalledTimes(2)
-      expect(renderSpy2).toHaveBeenCalledTimes(3)
-      expect(mapStateSpy3).toHaveBeenCalledTimes(2)
-      expect(renderSpy3).toHaveBeenCalledTimes(2)
+      expect(renderSpy2).toHaveBeenCalledTimes(4)
+      expect(mapStateSpy3).toHaveBeenCalledTimes(3)
+      expect(renderSpy3).toHaveBeenCalledTimes(3)
     })
   })
 })
