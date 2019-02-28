@@ -12,7 +12,11 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
     console.log(`skipping ${version}, ${reactVersion} was specified`)
     return
   }
-  const tests = [join(__dirname, 'components'), join(__dirname, 'utils')]
+  const tests = [
+    join(__dirname, 'components'),
+    join(__dirname, 'integration'),
+    join(__dirname, 'utils')
+  ]
   const srcs = [
     join(__dirname, '..', 'src', 'components'),
     join(__dirname, '..', 'src', 'connect'),
@@ -20,6 +24,7 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
   ]
   const dest = [
     join(__dirname, 'react', version, 'test', 'components'),
+    join(__dirname, 'react', version, 'test', 'integration'),
     join(__dirname, 'react', version, 'test', 'utils')
   ]
   const srcDest = [
