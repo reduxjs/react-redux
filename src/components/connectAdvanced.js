@@ -209,7 +209,10 @@ export default function connectAdvanced(
       const childPropsFromStoreUpdate = useRef()
 
       const actualChildProps = usePureOnlyMemo(() => {
-        if (childPropsFromStoreUpdate.current) {
+        if (
+          childPropsFromStoreUpdate.current &&
+          wrapperProps === lastWrapperProps.current
+        ) {
           return childPropsFromStoreUpdate.current
         }
 

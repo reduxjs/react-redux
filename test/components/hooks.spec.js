@@ -34,6 +34,8 @@ describe('React', () => {
       const mapStateSpy1 = jest.fn()
       const renderSpy1 = jest.fn()
 
+      let component1StateList
+
       const component1Decorator = connect(state => {
         mapStateSpy1()
 
@@ -42,8 +44,10 @@ describe('React', () => {
         }
       })
 
-      const component2 = props => {
+      const component1 = props => {
         const [state, setState] = React.useState({ list: props.list })
+
+        component1StateList = state.list
 
         React.useEffect(() => {
           setState(prevState => ({ ...prevState, list: props.list }))
@@ -54,7 +58,7 @@ describe('React', () => {
         return <Component2 list={state.list} />
       }
 
-      const Component1 = component1Decorator(component2)
+      const Component1 = component1Decorator(component1)
 
       const mapStateSpy2 = jest.fn()
       const renderSpy2 = jest.fn()
@@ -67,13 +71,15 @@ describe('React', () => {
         }
       })
 
-      const component3 = () => {
+      const component2 = props => {
         renderSpy2()
+
+        expect(props.list).toBe(component1StateList)
 
         return <div>Hello</div>
       }
 
-      const Component2 = component2Decorator(component3)
+      const Component2 = component2Decorator(component2)
 
       rtl.render(
         <ProviderMock store={store}>
@@ -81,19 +87,36 @@ describe('React', () => {
         </ProviderMock>
       )
 
+      // 1. Initial render
       expect(mapStateSpy1).toHaveBeenCalledTimes(1)
+
+      // 1.Initial render
+      // 2. C1 useEffect
       expect(renderSpy1).toHaveBeenCalledTimes(2)
+
+      // 1. Initial render
       expect(mapStateSpy2).toHaveBeenCalledTimes(1)
+
+      // 1. Initial render
       expect(renderSpy2).toHaveBeenCalledTimes(1)
 
       rtl.act(() => {
         store.dispatch({ type: 'FOO' })
       })
 
+      // 2. Store dispatch
       expect(mapStateSpy1).toHaveBeenCalledTimes(2)
+
+      // 3. Store dispatch
+      // 4. C1 useEffect
       expect(renderSpy1).toHaveBeenCalledTimes(4)
+
+      // 2. Connect(C2) subscriber
+      // 3. Ignored prev child props in re-render and re-runs mapState
       expect(mapStateSpy2).toHaveBeenCalledTimes(3)
-      expect(renderSpy2).toHaveBeenCalledTimes(3)
+
+      // 2. Batched update from nested subscriber / C1 re-render
+      expect(renderSpy2).toHaveBeenCalledTimes(2)
     })
   })
 })
