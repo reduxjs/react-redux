@@ -138,24 +138,18 @@ export default function connectAdvanced(
     }
 
     function ConnectFunction(props) {
-      const [propsContext, forwardedRef, wrapperProps] = useMemo(
-        () => {
-          const { context, forwardedRef, ...wrapperProps } = props
-          return [context, forwardedRef, wrapperProps]
-        },
-        [props]
-      )
+      const [propsContext, forwardedRef, wrapperProps] = useMemo(() => {
+        const { context, forwardedRef, ...wrapperProps } = props
+        return [context, forwardedRef, wrapperProps]
+      }, [props])
 
-      const ContextToUse = useMemo(
-        () => {
-          return propsContext &&
-            propsContext.Consumer &&
-            isContextConsumer(<propsContext.Consumer />)
-            ? propsContext
-            : Context
-        },
-        [propsContext, Context]
-      )
+      const ContextToUse = useMemo(() => {
+        return propsContext &&
+          propsContext.Consumer &&
+          isContextConsumer(<propsContext.Consumer />)
+          ? propsContext
+          : Context
+      }, [propsContext, Context])
 
       const contextValue = useContext(ContextToUse)
 
@@ -169,49 +163,37 @@ export default function connectAdvanced(
 
       const store = props.store || contextValue.store
 
-      const childPropsSelector = useMemo(
-        () => {
-          return createChildSelector(store)
-        },
-        [store]
-      )
+      const childPropsSelector = useMemo(() => {
+        return createChildSelector(store)
+      }, [store])
 
-      const [subscription, notifyNestedSubs] = useMemo(
-        () => {
-          if (!shouldHandleStateChanges) return []
+      const [subscription, notifyNestedSubs] = useMemo(() => {
+        if (!shouldHandleStateChanges) return []
 
-          // parentSub's source should match where store came from: props vs. context. A component
-          // connected to the store via props shouldn't use subscription from context, or vice versa.
-          //const parentSub = //(this.propsMode ? this.props : this.context)[subscriptionKey]
-          const subscription = new Subscription(
-            store,
-            contextValue.subscription
-          )
+        // parentSub's source should match where store came from: props vs. context. A component
+        // connected to the store via props shouldn't use subscription from context, or vice versa.
+        //const parentSub = //(this.propsMode ? this.props : this.context)[subscriptionKey]
+        const subscription = new Subscription(store, contextValue.subscription)
 
-          // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
-          // the middle of the notification loop, where `this.subscription` will then be null. An
-          // extra null check every change can be avoided by copying the method onto `this` and then
-          // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
-          // listeners logic is changed to not call listeners that have been unsubscribed in the
-          // middle of the notification loop.
-          const notifyNestedSubs = subscription.notifyNestedSubs.bind(
-            subscription
-          )
+        // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
+        // the middle of the notification loop, where `this.subscription` will then be null. An
+        // extra null check every change can be avoided by copying the method onto `this` and then
+        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
+        // listeners logic is changed to not call listeners that have been unsubscribed in the
+        // middle of the notification loop.
+        const notifyNestedSubs = subscription.notifyNestedSubs.bind(
+          subscription
+        )
 
-          return [subscription, notifyNestedSubs]
-        },
-        [store, contextValue.subscription]
-      )
+        return [subscription, notifyNestedSubs]
+      }, [store, contextValue.subscription])
 
-      const overriddenContextValue = useMemo(
-        () => {
-          return {
-            ...contextValue,
-            subscription
-          }
-        },
-        [contextValue, subscription]
-      )
+      const overriddenContextValue = useMemo(() => {
+        return {
+          ...contextValue,
+          subscription
+        }
+      }, [contextValue, subscription])
 
       const [[previousStateUpdateResult], dispatch] = useReducer(
         storeStateUpdatesReducer,
@@ -226,20 +208,17 @@ export default function connectAdvanced(
       const lastWrapperProps = useRef(wrapperProps)
       const childPropsFromStoreUpdate = useRef()
 
-      const actualChildProps = usePureOnlyMemo(
-        () => {
-          if (
-            childPropsFromStoreUpdate.current &&
-            wrapperProps === lastWrapperProps.current
-          ) {
-            return childPropsFromStoreUpdate.current
-          }
+      const actualChildProps = usePureOnlyMemo(() => {
+        if (
+          childPropsFromStoreUpdate.current &&
+          wrapperProps === lastWrapperProps.current
+        ) {
+          return childPropsFromStoreUpdate.current
+        }
 
-          // TODO We're reading the store directly in render() here. Bad idea?
-          return childPropsSelector(store.getState(), wrapperProps)
-        },
-        [store, previousStateUpdateResult, wrapperProps]
-      )
+        // TODO We're reading the store directly in render() here. Bad idea?
+        return childPropsSelector(store.getState(), wrapperProps)
+      }, [store, previousStateUpdateResult, wrapperProps])
 
       useEffect(() => {
         lastWrapperProps.current = wrapperProps
@@ -251,88 +230,82 @@ export default function connectAdvanced(
         }
       })
 
-      useEffect(
-        () => {
-          if (!shouldHandleStateChanges) return
+      useEffect(() => {
+        if (!shouldHandleStateChanges) return
 
-          let didUnsubscribe = false
+        let didUnsubscribe = false
 
-          const checkForUpdates = () => {
-            if (didUnsubscribe) {
-              // Don't run stale listeners.
-              // Redux doesn't guarantee unsubscriptions happen until next dispatch.
-              return
-            }
-
-            const latestStoreState = store.getState()
-
-            let newChildProps, error
-            try {
-              newChildProps = childPropsSelector(
-                latestStoreState,
-                lastWrapperProps.current
-              )
-            } catch (e) {
-              error = e
-            }
-
-            if (newChildProps === lastChildProps.current) {
-              notifyNestedSubs()
-            } else {
-              dispatch({
-                type: 'STORE_UPDATED',
-                payload: {
-                  latestStoreState,
-                  error
-                }
-              })
-              lastChildProps.current = newChildProps
-              childPropsFromStoreUpdate.current = newChildProps
-            }
+        const checkForUpdates = () => {
+          if (didUnsubscribe) {
+            // Don't run stale listeners.
+            // Redux doesn't guarantee unsubscriptions happen until next dispatch.
+            return
           }
 
-          // Pull data from the store after first render in case the store has
-          // changed since we began.
+          const latestStoreState = store.getState()
 
-          subscription.onStateChange = checkForUpdates
-          subscription.trySubscribe()
-
-          checkForUpdates()
-
-          const unsubscribeWrapper = () => {
-            didUnsubscribe = true
-            subscription.tryUnsubscribe()
-          }
-
-          return unsubscribeWrapper
-        },
-        [store, subscription, childPropsSelector]
-      )
-
-      const renderedChild = useMemo(
-        () => {
-          const renderedWrappedComponent = (
-            <WrappedComponent {...actualChildProps} ref={forwardedRef} />
-          )
-
-          if (shouldHandleStateChanges) {
-            return (
-              <ContextToUse.Provider value={overriddenContextValue}>
-                {renderedWrappedComponent}
-              </ContextToUse.Provider>
+          let newChildProps, error
+          try {
+            newChildProps = childPropsSelector(
+              latestStoreState,
+              lastWrapperProps.current
             )
+          } catch (e) {
+            error = e
           }
 
-          return renderedWrappedComponent
-        },
-        [
-          ContextToUse,
-          WrappedComponent,
-          actualChildProps,
-          forwardedRef,
-          overriddenContextValue
-        ]
-      )
+          if (newChildProps === lastChildProps.current) {
+            notifyNestedSubs()
+          } else {
+            dispatch({
+              type: 'STORE_UPDATED',
+              payload: {
+                latestStoreState,
+                error
+              }
+            })
+            lastChildProps.current = newChildProps
+            childPropsFromStoreUpdate.current = newChildProps
+          }
+        }
+
+        // Pull data from the store after first render in case the store has
+        // changed since we began.
+
+        subscription.onStateChange = checkForUpdates
+        subscription.trySubscribe()
+
+        checkForUpdates()
+
+        const unsubscribeWrapper = () => {
+          didUnsubscribe = true
+          subscription.tryUnsubscribe()
+        }
+
+        return unsubscribeWrapper
+      }, [store, subscription, childPropsSelector])
+
+      const renderedChild = useMemo(() => {
+        const renderedWrappedComponent = (
+          <WrappedComponent {...actualChildProps} ref={forwardedRef} />
+        )
+
+        if (shouldHandleStateChanges) {
+          return (
+            <ContextToUse.Provider value={overriddenContextValue}>
+              {renderedWrappedComponent}
+            </ContextToUse.Provider>
+          )
+        }
+
+        return renderedWrappedComponent
+      }, [
+        ContextToUse,
+        WrappedComponent,
+        actualChildProps,
+        forwardedRef,
+        overriddenContextValue
+      ])
 
       return renderedChild
     }

@@ -49,12 +49,9 @@ describe('React', () => {
 
         component1StateList = state.list
 
-        React.useEffect(
-          () => {
-            setState(prevState => ({ ...prevState, list: props.list }))
-          },
-          [props.list]
-        )
+        React.useEffect(() => {
+          setState(prevState => ({ ...prevState, list: props.list }))
+        }, [props.list])
 
         renderSpy1()
 
