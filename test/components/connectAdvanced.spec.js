@@ -6,7 +6,7 @@ import 'jest-dom/extend-expect'
 
 describe('React', () => {
   describe('connectAdvanced', () => {
-    it('should map state and render once on mount', () => {
+    it('should map state and render twice on mount if pure', () => {
       const initialState = {
         foo: 'bar'
       }
@@ -21,12 +21,15 @@ describe('React', () => {
         return <div data-testid="foo">{JSON.stringify(props)}</div>
       }
 
-      const Container = connectAdvanced(() => {
-        return state => {
-          mapCount++
-          return state
-        }
-      })(Inner)
+      const Container = connectAdvanced(
+        () => {
+          return state => {
+            mapCount++
+            return state
+          }
+        },
+        { pure: true }
+      )(Inner)
 
       const tester = rtl.render(
         <ProviderMock store={store}>
@@ -36,7 +39,7 @@ describe('React', () => {
 
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
 
-      expect(mapCount).toEqual(1)
+      expect(mapCount).toEqual(2)
       expect(renderCount).toEqual(1)
     })
 
@@ -54,12 +57,15 @@ describe('React', () => {
         return <div data-testid="foo">{JSON.stringify(props)}</div>
       }
 
-      const Container = connectAdvanced(() => {
-        return state => {
-          mapCount++
-          return state
-        }
-      })(Inner)
+      const Container = connectAdvanced(
+        () => {
+          return state => {
+            mapCount++
+            return state
+          }
+        },
+        { pure: true }
+      )(Inner)
 
       rtl.render(
         <ProviderMock store={store}>
@@ -67,10 +73,12 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'NEW_REFERENCE' })
+      rtl.act(() => {
+        store.dispatch({ type: 'NEW_REFERENCE' })
+      })
 
-      // Should have mapped the state on mount and on the dispatch
-      expect(mapCount).toEqual(2)
+      // Should have mapped the state on init, mount, and on the dispatch
+      expect(mapCount).toEqual(3)
 
       // Should have rendered on mount and after the dispatch bacause the map
       // state returned new reference
@@ -95,13 +103,16 @@ describe('React', () => {
         return <div data-testid="foo">{JSON.stringify(props)}</div>
       }
 
-      const Container = connectAdvanced(() => {
-        return () => {
-          mapCount++
-          // but return static reference
-          return staticReference
-        }
-      })(Inner)
+      const Container = connectAdvanced(
+        () => {
+          return () => {
+            mapCount++
+            // but return static reference
+            return staticReference
+          }
+        },
+        { pure: true }
+      )(Inner)
 
       const tester = rtl.render(
         <ProviderMock store={store}>
@@ -109,12 +120,14 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'NEW_REFERENCE' })
+      rtl.act(() => {
+        store.dispatch({ type: 'NEW_REFERENCE' })
+      })
 
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
 
       // The state should have been mapped twice: on mount and on the dispatch
-      expect(mapCount).toEqual(2)
+      expect(mapCount).toEqual(3)
 
       // But the render should have been called only on mount since the map state
       // did not return a new reference
@@ -136,13 +149,16 @@ describe('React', () => {
         return <div data-testid="foo">{JSON.stringify(props)}</div>
       }
 
-      const Container = connectAdvanced(() => {
-        return () => {
-          mapCount++
-          // return the static reference
-          return staticReference
-        }
-      })(Inner)
+      const Container = connectAdvanced(
+        () => {
+          return () => {
+            mapCount++
+            // return the static reference
+            return staticReference
+          }
+        },
+        { pure: true }
+      )(Inner)
 
       class OuterComponent extends Component {
         constructor() {
@@ -170,10 +186,12 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      outerComponent.setFoo('BAR')
+      rtl.act(() => {
+        outerComponent.setFoo('BAR')
+      })
 
       // map on mount and on prop change
-      expect(mapCount).toEqual(2)
+      expect(mapCount).toEqual(3)
 
       // render only on mount but skip on prop change because no new
       // reference was returned
