@@ -2,6 +2,8 @@
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
 
+import {unstable_batchedUpdates} from "react-dom";
+
 const CLEARED = null
 const nullListeners = { notify() {} }
 
@@ -19,9 +21,11 @@ function createListenerCollection() {
 
     notify() {
       const listeners = current = next
-      for (let i = 0; i < listeners.length; i++) {
-        listeners[i]()
-      }
+      unstable_batchedUpdates(() => {
+        for (let i = 0; i < listeners.length; i++) {
+          listeners[i]()
+        }
+      })
     },
 
     get() {
