@@ -162,11 +162,6 @@ export default function connectAdvanced(
 
       shouldComponentUpdate(nextProps) {
         if (nextProps!==this.props)  this.selector.run(nextProps)
-
-        if (process.env.NODE_ENV !== 'production') {
-          this.selector.shouldComponentUpdate && this.devCheckHotReload();
-        }
-
         return this.selector.shouldComponentUpdate
       }
 
@@ -253,6 +248,9 @@ export default function connectAdvanced(
       }
 
       render() {
+        if (process.env.NODE_ENV !== 'production') {
+          this.devCheckHotReload();
+        }
         const selector = this.selector
         //forceUpdate from external
         if (selector.lastProcessedProps!==this.props) selector.run(this.props);
