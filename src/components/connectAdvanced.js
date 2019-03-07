@@ -88,11 +88,13 @@ export default function connectAdvanced(
   }
 
   return function wrapWithConnect(WrappedComponent) {
-    invariant(
-      isValidElementType(WrappedComponent),
-      `You must pass a component to the function returned by ` +
-      `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
-    )
+    if (process.env.NODE_ENV !== 'production') {
+      invariant(
+          isValidElementType(WrappedComponent),
+          `You must pass a component to the function returned by ` +
+          `${methodName}. Instead received ${JSON.stringify(WrappedComponent)}`
+      )
+    }
 
     const wrappedComponentName = WrappedComponent.displayName
       || WrappedComponent.name
