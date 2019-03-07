@@ -1,11 +1,12 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
 import React, { Component } from 'react'
-import { isValidElementType } from 'react-is'
+import { isValidElementType, isContextConsumer } from 'react-is'
 
 import { ReactReduxContext } from './Context'
 import Subscription from '../utils/Subscription'
 import PropTypes from 'prop-types'
+import { unstable_readContext } from '../utils/readContext'
 
 const stringifyComponent = Comp => {
   try {
@@ -88,6 +89,8 @@ export default function connectAdvanced(
     // the context consumer to use
     context = ReactReduxContext,
 
+    unstable_enableReadContextFromProps = false,
+
     // additional options are passed through to the selectorFactory
     ...connectOptions
   } = {}
@@ -157,6 +160,8 @@ export default function connectAdvanced(
 
         this.contextValueToUse = context //TODO add this.context Refresh from Provider
 
+        this.updateContextFromProps(props) //TODO refresh props.context || props.store
+
         this.contextSubscription = this.contextValueToUse.subscription
         this.store = props.store || this.contextValueToUse.store
         this.propsMode = Boolean(props.store)
@@ -170,6 +175,18 @@ export default function connectAdvanced(
 
         this.initSelector()
         this.initSubscription()
+      }
+
+      updateContextFromProps(props) {
+        if (
+          unstable_enableReadContextFromProps &&
+          props.context &&
+          props.context.Consumer &&
+          isContextConsumer(<props.context.Consumer />)
+        ) {
+          ContextToUse = props.context
+          this.contextValueToUse = unstable_readContext(props.context)
+        }
       }
 
       componentDidMount() {
