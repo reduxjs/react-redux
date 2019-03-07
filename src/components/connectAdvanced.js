@@ -157,7 +157,7 @@ export default function connectAdvanced(
     class Connect extends Component {
       constructor(props, context) {
         super(props)
-        this.version = version // TODO add HOT reload
+        this.version = version
 
         this.contextValueToUse = context //TODO add this.context Refresh from Provider
 
@@ -286,6 +286,10 @@ export default function connectAdvanced(
       }
 
       render() {
+        if (process.env.NODE_ENV !== 'production') {
+          this.devCheckHotReload()
+        }
+
         const selector = this.selector
         //forceUpdate from external
         if (selector.lastProcessedProps !== this.props) selector.run(this.props)
@@ -305,6 +309,35 @@ export default function connectAdvanced(
           ) : (
             <WrappedComponent {...wrapperProps} />
           )
+        }
+      }
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      Connect.prototype.devCheckHotReload = function devCheckHotReload() {
+        // We are hot reloading!
+        if (this.version !== version) {
+          this.version = version
+          this.initSelector()
+
+          // If any connected descendants don't hot reload (and resubscribe in the process), their
+          // listeners will be lost when we unsubscribe. Unfortunately, by copying over all
+          // listeners, this does mean that the old versions of connected descendants will still be
+          // notified of state changes; however, their onStateChange function is a no-op so this
+          // isn't a huge deal.
+          let oldListeners = []
+
+          if (this.subscription) {
+            oldListeners = this.subscription.listeners.get()
+            this.subscription.tryUnsubscribe()
+          }
+          this.initSubscription()
+          if (shouldHandleStateChanges) {
+            this.subscription.trySubscribe()
+            oldListeners.forEach(listener =>
+              this.subscription.listeners.subscribe(listener)
+            )
+          }
         }
       }
     }
