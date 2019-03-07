@@ -17,7 +17,10 @@ React Redux requires **React 16.4 or later.**
 npm install --save react-redux
 ```
 
-This assumes that you’re using [npm](http://npmjs.com/) package manager with a module bundler like [Webpack](https://webpack.js.org/) or [Browserify](http://browserify.org/) to consume [CommonJS modules](http://webpack.github.io/docs/commonjs.html).
+This assumes that you’re using [npm](http://npmjs.com/) package manager 
+with a module bundler like [Webpack](https://webpack.js.org/) or 
+[Browserify](http://browserify.org/) to consume [CommonJS 
+modules](https://webpack.js.org/api/module-methods/#commonjs).
 
 If you don’t yet use [npm](http://npmjs.com/) or a modern module bundler, and would rather prefer a single-file [UMD](https://github.com/umdjs/umd) build that makes `ReactRedux` available as a global object, you can grab a pre-built version from [cdnjs](https://cdnjs.com/libraries/react-redux). We *don’t* recommend this approach for any serious application, as most of the libraries complementary to Redux are only available on [npm](http://npmjs.com/).
 
