@@ -115,9 +115,6 @@ export default function connectAdvanced(
       WrappedComponent
     }
 
-    // TODO Actually fix our use of componentWillReceiveProps
-    /* eslint-disable react/no-deprecated */
-
     class Connect extends Component {
       constructor(props, context) {
         super(props, context)
@@ -162,11 +159,13 @@ export default function connectAdvanced(
         if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
 
-      componentWillReceiveProps(nextProps) {
-        this.selector.run(nextProps)
-      }
+      shouldComponentUpdate(nextProps) {
+        if (nextProps!==this.props)  this.selector.run(nextProps)
 
-      shouldComponentUpdate() {
+        if (process.env.NODE_ENV !== 'production') {
+          this.selector.shouldComponentUpdate && this.devCheckHotReload();
+        }
+
         return this.selector.shouldComponentUpdate
       }
 
@@ -273,7 +272,7 @@ export default function connectAdvanced(
     Connect.propTypes = contextTypes
 
     if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
+      Connect.prototype.devCheckHotReload = function devCheckHotReload() {
         // We are hot reloading!
         if (this.version !== version) {
           this.version = version
