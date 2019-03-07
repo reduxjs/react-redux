@@ -27,4 +27,7 @@ if (version.toLowerCase() === 'all') {
   }
 }
 
-npmRun.execSync(`jest -c '${JSON.stringify(jestConfig)}'`, { stdio: 'inherit' })
+var fs = require('fs');
+fs.writeFileSync('./test/jest.config.json',  JSON.stringify(jestConfig), 'utf8');
+
+npmRun.execSync(`jest -c test/jest.config.json`, { stdio: 'inherit' })
