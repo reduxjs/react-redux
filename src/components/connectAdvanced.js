@@ -14,6 +14,7 @@ function makeSelectorStateful(sourceSelector, store) {
   const selector = {
     run: function runComponentSelector(props) {
       try {
+        selector.lastProcessedProps=props
         const nextProps = sourceSelector(store.getState(), props)
         if (nextProps !== selector.props || selector.error) {
           selector.shouldComponentUpdate = true
@@ -253,6 +254,8 @@ export default function connectAdvanced(
 
       render() {
         const selector = this.selector
+        //forceUpdate from external
+        if (selector.lastProcessedProps!==this.props) selector.run(this.props);
         selector.shouldComponentUpdate = false
 
         if (selector.error) {
