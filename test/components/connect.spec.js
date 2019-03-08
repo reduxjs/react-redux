@@ -1943,7 +1943,13 @@ describe('React', () => {
       expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
     })
 
-    it('should pass state consistently to mapState', () => {
+    /*
+     //this test is removed because now storeValue is not propagated via Context
+        so even if mapState is running 2 times on Child, the rendering is batched
+        and so Done one time only with correct ownProps
+        //
+
+   it('should pass state consistently to mapState', () => {
       const store = createStore(stringBuilder)
 
       rtl.act(() => {
@@ -2013,7 +2019,7 @@ describe('React', () => {
         ['acb', 'acb'],
         ['acbd', 'acbd']
       ])
-    })
+    })*/
 
     it('should not render the wrapped component when mapState does not produce change', () => {
       const store = createStore(stringBuilder)
