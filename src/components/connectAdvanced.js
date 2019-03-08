@@ -90,8 +90,6 @@ export default function connectAdvanced(
     // the context consumer to use
     context = ReactReduxContext,
 
-    unstable_enableReadContextFromProps = false,
-
     // additional options are passed through to the selectorFactory
     ...connectOptions
   } = {}
@@ -159,14 +157,47 @@ export default function connectAdvanced(
         super(props)
         this.version = version
 
-        this.contextValueToUse = context //TODO add this.context Refresh from Provider
+        this.firstContextRead = true
+        this.prevContextValue = null
 
-        this.updateContextFromProps(props) //TODO refresh props.context || props.store
+        this.readContext(props, context)
+        this.initStore(props)
+        this.initSelector()
+        this.initSubscription()
+      }
 
-        this.contextSubscription = this.contextValueToUse.subscription
-        this.store = props.store || this.contextValueToUse.store
+      readContext(props, context) {
+        if (
+          props.context &&
+          props.context.Consumer &&
+          isContextConsumer(<props.context.Consumer />)
+        ) {
+          ContextToUse = props.context
+          this.contextValueToUse = unstable_readContext(ContextToUse)
+        } else {
+          //static classContext
+          this.contextValueToUse = context
+        }
+
+        if (this.firstContextRead) {
+          this.firstContextRead = false
+          this.prevContextValue = this.contextValueToUse
+          return
+        }
+
+        if (this.prevContextValue !== this.contextValueToUse) {
+          this.prevContextValue = this.contextValueToUse
+          //store or subscription changed from provider
+          this.scheduleRefreshContextFromProvider = true
+        }
+      }
+
+      initStore(props) {
+        this.store =
+          props.store ||
+          (this.contextValueToUse && this.contextValueToUse.store) //No props.store and No context
+
         this.propsMode = Boolean(props.store)
-
         invariant(
           this.store,
           `Could not find "${storeKey}" in either the context or props of ` +
@@ -174,20 +205,9 @@ export default function connectAdvanced(
             `or explicitly pass "${storeKey}" as a prop to "${displayName}".`
         )
 
-        this.initSelector()
-        this.initSubscription()
-      }
-
-      updateContextFromProps(props) {
-        if (
-          unstable_enableReadContextFromProps &&
-          props.context &&
-          props.context.Consumer &&
-          isContextConsumer(<props.context.Consumer />)
-        ) {
-          ContextToUse = props.context
-          this.contextValueToUse = unstable_readContext(props.context)
-        }
+        this.contextSubscription = this.contextValueToUse
+          ? this.contextValueToUse.subscription
+          : undefined
       }
 
       componentDidMount() {
@@ -200,12 +220,21 @@ export default function connectAdvanced(
         // To handle the case where a child component may have triggered a state change by
         // dispatching an action in its componentWillMount, we have to re-run the select and maybe
         // re-render.
-        this.subscription.trySubscribe()
-        this.selector.run(this.props)
-        if (this.selector.shouldComponentUpdate) this.forceUpdate()
+
+        if (this.scheduleRefreshContextFromProvider) {
+          this.refreshContextFromProvider()
+        } else {
+          this.subscription.trySubscribe()
+          this.selector.run(this.props)
+          if (this.selector.shouldComponentUpdate) this.forceUpdate()
+        }
       }
 
       componentWillUnmount() {
+        this.cleanStoreSubscription()
+      }
+
+      cleanStoreSubscription() {
         if (this.subscription) this.subscription.tryUnsubscribe()
         this.subscription = null
         this.notifyNestedSubs = noop
@@ -270,25 +299,38 @@ export default function connectAdvanced(
         if (!this.selector.shouldComponentUpdate) {
           this.notifyNestedSubs()
         } else {
-          this.componentDidUpdate = this.notifyNestedSubsOnComponentDidUpdate
+          this.notifyNestedSubsOnComponentDidUpdate = true
           this.setState(dummyState)
         }
       }
 
-      notifyNestedSubsOnComponentDidUpdate() {
-        // `componentDidUpdate` is conditionally implemented when `onStateChange` determines it
-        // needs to notify nested subs. Once called, it unimplements itself until further state
-        // changes occur. Doing it this way vs having a permanent `componentDidUpdate` that does
-        // a boolean check every time avoids an extra method call most of the time, resulting
-        // in some perf boost.
-        this.componentDidUpdate = undefined
-        this.notifyNestedSubs()
+      refreshContextFromProvider() {
+        this.scheduleRefreshContextFromProvider = false
+        this.cleanStoreSubscription()
+        this.initStore(this.props)
+        this.initSelector()
+        this.initSubscription()
+        this.subscription.trySubscribe()
+        this.selector.run(this.props)
+        if (this.selector.shouldComponentUpdate) this.forceUpdate()
+      }
+
+      componentDidUpdate() {
+        if (this.notifyNestedSubsOnComponentDidUpdate) {
+          this.notifyNestedSubsOnComponentDidUpdate = false
+          this.notifyNestedSubs()
+        }
+
+        if (this.scheduleRefreshContextFromProvider) {
+          this.refreshContextFromProvider()
+        }
       }
 
       render() {
         if (process.env.NODE_ENV !== 'production') {
           this.devCheckHotReload()
         }
+        this.readContext(this.props, this.context)
 
         const selector = this.selector
         //forceUpdate from external
