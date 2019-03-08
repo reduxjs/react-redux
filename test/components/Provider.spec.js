@@ -4,7 +4,6 @@ import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
 import { Provider, connect } from '../../src/index.js'
-import { ReactReduxContext } from '../../src/components/Context'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
@@ -18,26 +17,14 @@ describe('React', () => {
       class Child extends Component {
         render() {
           return (
-            <ReactReduxContext.Consumer>
-              {({ store }) => {
-                let text = ''
-
-                if (store) {
-                  text = store.getState().toString()
-                }
-
-                return (
-                  <div data-testid="store">
-                    {storeKey} - {text}
-                  </div>
-                )
-              }}
-            </ReactReduxContext.Consumer>
+            <div data-testid="store">
+              {storeKey} - {this.props.text}
+            </div>
           )
         }
       }
 
-      return Child
+      return connect(s => ({ text: s }))(Child)
     }
     const Child = createChild()
 
