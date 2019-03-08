@@ -81,7 +81,7 @@ describe('React', () => {
         </Provider>
       )
 
-      expect(markup).toContain('Hello world')
+      expect(markup).toContain('<div>Hi world</div>')
       expect(store.getState().greeting).toContain('Hi')
     })
 
