@@ -1,7 +1,7 @@
 const npmRun = require('npm-run')
 const fs = require('fs')
 const path = require('path')
-const LATEST_VERSION = '16.6'
+const LATEST_VERSION = '16.8'
 const version = process.env.REACT || LATEST_VERSION
 
 let jestConfig = {
