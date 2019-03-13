@@ -3,8 +3,7 @@
 import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
-import { Provider, connect } from '../../src/index.js'
-import { ReactReduxContext } from '../../src/components/Context'
+import { Provider, connect, ReactReduxContext } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
@@ -221,7 +220,10 @@ describe('React', () => {
       )
       expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
 
-      innerStore.dispatch({ type: 'INC' })
+      rtl.act(() => {
+        innerStore.dispatch({ type: 'INC' })
+      })
+
       expect(innerMapStateToProps).toHaveBeenCalledTimes(2)
     })
 
