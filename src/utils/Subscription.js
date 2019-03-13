@@ -1,4 +1,4 @@
-import { unstable_batchedUpdates } from 'react-dom'
+import { getBatch } from './batch'
 
 // encapsulates the subscription logic for connecting a component to the redux store, as
 // well as nesting subscriptions of descendant components, so that we can ensure the
@@ -7,7 +7,7 @@ import { unstable_batchedUpdates } from 'react-dom'
 const CLEARED = null
 const nullListeners = { notify() {} }
 
-function createListenerCollection() {
+function createListenerCollection(batch) {
   // the current/next pattern is copied from redux's createStore code.
   // TODO: refactor+expose that code to be reusable here?
   let current = []
@@ -21,7 +21,7 @@ function createListenerCollection() {
 
     notify() {
       const listeners = (current = next)
-      unstable_batchedUpdates(() => {
+      batch(() => {
         for (let i = 0; i < listeners.length; i++) {
           listeners[i]()
         }
@@ -83,7 +83,7 @@ export default class Subscription {
         ? this.parentSub.addNestedSub(this.handleChangeWrapper)
         : this.store.subscribe(this.handleChangeWrapper)
 
-      this.listeners = createListenerCollection()
+      this.listeners = createListenerCollection(getBatch())
     }
   }
 
