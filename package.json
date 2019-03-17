@@ -1,6 +1,6 @@
 {
   "name": "@acemarke/react-redux",
-  "version": "7.0.0-alpha.4",
+  "version": "7.0.0-alpha.5",
   "description": "(un)Official React bindings for Redux",
   "keywords": [
     "react",
