@@ -7,7 +7,8 @@ import { getBatch } from './batch'
 const CLEARED = null
 const nullListeners = { notify() {} }
 
-function createListenerCollection(batch) {
+function createListenerCollection() {
+  const batch = getBatch()
   // the current/next pattern is copied from redux's createStore code.
   // TODO: refactor+expose that code to be reusable here?
   let current = []
@@ -83,7 +84,7 @@ export default class Subscription {
         ? this.parentSub.addNestedSub(this.handleChangeWrapper)
         : this.store.subscribe(this.handleChangeWrapper)
 
-      this.listeners = createListenerCollection(getBatch())
+      this.listeners = createListenerCollection()
     }
   }
 
