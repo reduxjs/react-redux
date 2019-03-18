@@ -47,13 +47,19 @@ describe('React', () => {
       expect(store.getState().greeting).toContain('Hi')
     })
 
-    it('should render children with original state even if actions are dispatched in ancestor', () => {
+    it.skip('should render children with original state even if actions are dispatched in ancestor', () => {
       /*
           Dispatching during construct, render or willMount is
           almost always a bug with SSR (or otherwise)
 
           This behaviour is undocumented and is likely to change between
           implementations, this test only verifies current behaviour
+
+          Note: this test passes in v6, because we use context to propagate the store state, and the entire
+          tree will see the same state during the render pass.
+
+          In all other versions, including v7, the store state may change as actions are dispatched
+          during lifecycle methods, and components will see that new state immediately as they read it.
       */
       const store = createStore(greetingReducer)
 
