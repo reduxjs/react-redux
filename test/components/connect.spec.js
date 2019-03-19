@@ -1796,6 +1796,48 @@ describe('React', () => {
       done()
     })
 
+
+
+    it('should correctly separate and pass through props to the wrapped component with a forwarded ref', async done => {
+      const store = createStore(() => ({}))
+
+      class Container extends Component {
+        render() {
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      const decorator = connect(
+        state => state,
+        null,
+        null,
+        { forwardRef: true }
+      )
+      const Decorated = decorator(Container)
+
+      const ref = React.createRef()
+
+      class Wrapper extends Component {
+        render() {
+          // The 'a' prop should eventually be passed to the wrapped component individually,
+          // not sent through as `wrapperProps={ {a : 42} }`
+          return <Decorated ref={ref} a={42} />
+        }
+      }
+
+      const tester = rtl.render(
+        <ProviderMock store={store}>
+          <Wrapper />
+        </ProviderMock>
+      )
+
+      tester.debug()
+      await rtl.waitForElement(() => tester.getByTestId('a'))
+      expect(tester.getByTestId('a')).toHaveTextContent('42')
+
+      done()
+    })
+
     it('should return the instance of the wrapped component for use in calling child methods, impure component', async done => {
       const store = createStore(() => ({}))
 

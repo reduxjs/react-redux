@@ -390,7 +390,7 @@ export default function connectAdvanced(
         props,
         ref
       ) {
-        return <Connect wrapperProps={props} forwardedRef={ref} />
+        return <Connect {...props} forwardedRef={ref} />
       })
 
       forwarded.displayName = displayName
