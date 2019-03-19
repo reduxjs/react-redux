@@ -12,8 +12,8 @@ import Subscription from '../utils/Subscription'
 
 import { ReactReduxContext } from './Context'
 
+// Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY = []
-
 const NO_SUBSCRIPTION_ARRAY = [null, null]
 
 const stringifyComponent = Comp => {
@@ -85,7 +85,7 @@ export default function connectAdvanced(
 ) {
   invariant(
     renderCountProp === undefined,
-    `renderCountProp is removed. render counting is built into the latest React dev tools profiling extension`
+    `renderCountProp is removed. render counting is built into the latest React Dev Tools profiling extension`
   )
 
   invariant(
@@ -141,15 +141,23 @@ export default function connectAdvanced(
       return selectorFactory(store.dispatch, selectorFactoryOptions)
     }
 
-    const usePureOnlyMemo = pure ? useMemo : x => x()
+    // If we aren't running in "pure" mode, we don't want to memoize values.
+    // To avoid conditionally calling hooks, we fall back to a tiny wrapper
+    // that just executes the given callback immediately.
+    const usePureOnlyMemo = pure ? useMemo : callback => callback()
 
     function ConnectFunction(props) {
       const [propsContext, forwardedRef, wrapperProps] = useMemo(() => {
+        // Distinguish between actual "data" props that were passed to the wrapper component,
+        // and values needed to control behavior (forwarded refs, alternate context instances).
+        // To maintain the wrapperProps object reference, memoize this destructuring.
         const { context, forwardedRef, ...wrapperProps } = props
         return [context, forwardedRef, wrapperProps]
       }, [props])
 
       const ContextToUse = useMemo(() => {
+        // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
+        // Memoize the check that determines which context instance we should use.
         return propsContext &&
           propsContext.Consumer &&
           isContextConsumer(<propsContext.Consumer />)
@@ -157,8 +165,11 @@ export default function connectAdvanced(
           : Context
       }, [propsContext, Context])
 
+      // Retrieve the store and ancestor subscription via context, if available
       const contextValue = useContext(ContextToUse)
 
+
+      // The store _must_ exist as either a prop or in context
       invariant(
         props.store || contextValue,
         `Could not find "store" in the context of ` +
@@ -168,8 +179,11 @@ export default function connectAdvanced(
       )
 
       const store = props.store || contextValue.store
+      const propsMode = Boolean(props.store)
 
       const childPropsSelector = useMemo(() => {
+        // The child props selector needs the store reference as an input.
+        // Re-create this selector whenever the store changes.
         return createChildSelector(store)
       }, [store])
 
@@ -178,15 +192,12 @@ export default function connectAdvanced(
 
         // parentSub's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
-        //const parentSub = //(this.propsMode ? this.props : this.context)[subscriptionKey]
         const subscription = new Subscription(store, contextValue.subscription)
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
-        // the middle of the notification loop, where `this.subscription` will then be null. An
-        // extra null check every change can be avoided by copying the method onto `this` and then
-        // replacing it with a no-op on unmount. This can probably be avoided if Subscription's
-        // listeners logic is changed to not call listeners that have been unsubscribed in the
-        // middle of the notification loop.
+        // the middle of the notification loop, where `subscription` will then be null. This can
+        // probably be avoided if Subscription's listeners logic is changed to not call listeners
+        // that have been unsubscribed in the  middle of the notification loop.
         const notifyNestedSubs = subscription.notifyNestedSubs.bind(
           subscription
         )
@@ -194,28 +205,42 @@ export default function connectAdvanced(
         return [subscription, notifyNestedSubs]
       }, [store, contextValue.subscription])
 
+      // Determine what {store, subscription} value should be put into nested context, if necessary
       const overriddenContextValue = useMemo(() => {
+
+        // Otherwise, put this component's subscription instance into context, so that
+        // connected descendants won't update until after this component is done
         return {
           ...contextValue,
           subscription
         }
       }, [contextValue, subscription])
 
-      const [[previousStateUpdateResult], dispatch] = useReducer(
+      // We need to force this wrapper component to re-render whenever a Redux store update
+      // causes a change to the calculated child component props (or we caught an error in mapState)
+      const [[previousStateUpdateResult], forceComponentUpdateDispatch] = useReducer(
         storeStateUpdatesReducer,
         EMPTY_ARRAY,
         initStateUpdates
       )
 
+      // Propagate any mapState/mapDispatch errors upwards
       if (previousStateUpdateResult && previousStateUpdateResult.error) {
         throw previousStateUpdateResult.error
       }
 
+      // Set up refs to coordinate values between the subscription effect and the render logic
       const lastChildProps = useRef()
       const lastWrapperProps = useRef(wrapperProps)
       const childPropsFromStoreUpdate = useRef()
 
       const actualChildProps = usePureOnlyMemo(() => {
+        // Tricky logic here:
+        // - This render may have been triggered by a Redux store update that produced new child props
+        // - However, we may have gotten new wrapper props after that
+        // If we have new child props, and the same wrapper props, we know we should use the new child props as-is.
+        // But, if we have new wrapper props, those might change the child props, so we have to recalculate things.
+        // So, we'll use the child props from store update only if the wrapper props are the same as last time.
         if (
           childPropsFromStoreUpdate.current &&
           wrapperProps === lastWrapperProps.current
@@ -224,24 +249,33 @@ export default function connectAdvanced(
         }
 
         // TODO We're reading the store directly in render() here. Bad idea?
+        // This will likely cause Bad Things (TM) to happen in Concurrent Mode.
+        // Note that we do this because on renders _not_ caused by store updates, we need the latest store state
+        // to determine what the child props should be.
         return childPropsSelector(store.getState(), wrapperProps)
       }, [store, previousStateUpdateResult, wrapperProps])
 
+      // Every time we do re-render:
       useEffect(() => {
+        // We want to capture the wrapper props and child props we used for later comparisons
         lastWrapperProps.current = wrapperProps
         lastChildProps.current = actualChildProps
 
+        // If the render was from a store update, clear out that reference and cascade the subscriber update
         if (childPropsFromStoreUpdate.current) {
           childPropsFromStoreUpdate.current = null
           notifyNestedSubs()
         }
       })
 
+      // Our re-subscribe logic only runs when the store/subscription setup changes
       useEffect(() => {
+        // If we're not subscribed to the store, nothing to do here
         if (!shouldHandleStateChanges) return
 
         let didUnsubscribe = false
 
+        // We'll run this callback every time a store subscription update propagates to this component
         const checkForUpdates = () => {
           if (didUnsubscribe) {
             // Don't run stale listeners.
@@ -253,6 +287,8 @@ export default function connectAdvanced(
 
           let newChildProps, error
           try {
+            // Actually run the selector with the most recent store state and wrapper props
+            // to determine what the child props should be
             newChildProps = childPropsSelector(
               latestStoreState,
               lastWrapperProps.current
@@ -261,16 +297,23 @@ export default function connectAdvanced(
             error = e
           }
 
+          // If the child props haven't changed, nothing to do here - cascade the subscription update
           if (newChildProps === lastChildProps.current) {
             notifyNestedSubs()
           } else {
-            dispatch({
+            // If the child props _did_ change (or we caught an error), this wrapper component needs to re-render
+            forceComponentUpdateDispatch({
               type: 'STORE_UPDATED',
               payload: {
                 latestStoreState,
                 error
               }
             })
+
+            // Save references to the new child props.  Note that we track the "child props from store update"
+            // as a ref instead of a useState/useReducer because we need a way to determine if that value has
+            // been processed.  If this went into useState/useReducer, we couldn't clear out the value without
+            // forcing another re-render, which we don't want.
             lastChildProps.current = newChildProps
             childPropsFromStoreUpdate.current = newChildProps
           }
@@ -292,12 +335,20 @@ export default function connectAdvanced(
         return unsubscribeWrapper
       }, [store, subscription, childPropsSelector])
 
+      // Now that all that's done, we can finally try to actually render the child component.
+      // We memoize the elements for the rendered child component as an optimization.
+      // If React sees the exact same element reference as last time, it bails out of re-rendering
+      // that child, same as if it was wrapped in React.memo() or returned false from shouldComponentUpdate.
       const renderedChild = useMemo(() => {
+        // Render the actual child component
         const renderedWrappedComponent = (
           <WrappedComponent {...actualChildProps} ref={forwardedRef} />
         )
 
         if (shouldHandleStateChanges) {
+          // If this component is subscribed to store updates, we need to pass its own
+          // subscription instance down to our descendants. That means rendering the same
+          // Context instance, and putting a different value into the context.
           return (
             <ContextToUse.Provider value={overriddenContextValue}>
               {renderedWrappedComponent}
@@ -317,6 +368,7 @@ export default function connectAdvanced(
       return renderedChild
     }
 
+    // If we're in "pure" mode, ensure our wrapper component only re-renders when incoming props have changed.
     const Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
 
     Connect.WrappedComponent = WrappedComponent
