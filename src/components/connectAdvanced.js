@@ -168,10 +168,13 @@ export default function connectAdvanced(
       // Retrieve the store and ancestor subscription via context, if available
       const contextValue = useContext(ContextToUse)
 
-
       // The store _must_ exist as either a prop or in context
+      const didStoreComeFromProps = Boolean(props.store)
+      const didStoreComeFromContext =
+        Boolean(contextValue) && Boolean(contextValue.store)
+
       invariant(
-        props.store || contextValue,
+        didStoreComeFromProps || didStoreComeFromContext,
         `Could not find "store" in the context of ` +
           `"${displayName}". Either wrap the root component in a <Provider>, ` +
           `or pass a custom React context provider to <Provider> and the corresponding ` +
@@ -179,7 +182,6 @@ export default function connectAdvanced(
       )
 
       const store = props.store || contextValue.store
-      const propsMode = Boolean(props.store)
 
       const childPropsSelector = useMemo(() => {
         // The child props selector needs the store reference as an input.
@@ -190,9 +192,12 @@ export default function connectAdvanced(
       const [subscription, notifyNestedSubs] = useMemo(() => {
         if (!shouldHandleStateChanges) return NO_SUBSCRIPTION_ARRAY
 
-        // parentSub's source should match where store came from: props vs. context. A component
+        // This Subscription's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const subscription = new Subscription(store, contextValue.subscription)
+        const subscription = new Subscription(
+          store,
+          didStoreComeFromProps ? null : contextValue.subscription
+        )
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
         // the middle of the notification loop, where `subscription` will then be null. This can
@@ -203,10 +208,17 @@ export default function connectAdvanced(
         )
 
         return [subscription, notifyNestedSubs]
-      }, [store, contextValue.subscription])
+      }, [store, didStoreComeFromProps, contextValue])
 
-      // Determine what {store, subscription} value should be put into nested context, if necessary
+      // Determine what {store, subscription} value should be put into nested context, if necessary,
+      // and memoize that value to avoid unnecessary context updates.
       const overriddenContextValue = useMemo(() => {
+        if (didStoreComeFromProps) {
+          // This component is directly subscribed to a store from props.
+          // We don't want descendants reading from this store - pass down whatever
+          // the existing context value is from the nearest connected ancestor.
+          return contextValue
+        }
 
         // Otherwise, put this component's subscription instance into context, so that
         // connected descendants won't update until after this component is done
@@ -214,15 +226,14 @@ export default function connectAdvanced(
           ...contextValue,
           subscription
         }
-      }, [contextValue, subscription])
+      }, [didStoreComeFromProps, contextValue, subscription])
 
       // We need to force this wrapper component to re-render whenever a Redux store update
       // causes a change to the calculated child component props (or we caught an error in mapState)
-      const [[previousStateUpdateResult], forceComponentUpdateDispatch] = useReducer(
-        storeStateUpdatesReducer,
-        EMPTY_ARRAY,
-        initStateUpdates
-      )
+      const [
+        [previousStateUpdateResult],
+        forceComponentUpdateDispatch
+      ] = useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates)
 
       // Propagate any mapState/mapDispatch errors upwards
       if (previousStateUpdateResult && previousStateUpdateResult.error) {
