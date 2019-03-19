@@ -103,6 +103,7 @@ describe('React', () => {
         const store = createStore(() => ({ hi: 'there' }))
 
         const Container = React.memo(props => <Passthrough {...props} />) // eslint-disable-line
+        Container.displayName = 'Container'
         const WrappedContainer = connect(state => state)(Container)
 
         const tester = rtl.render(
@@ -137,6 +138,7 @@ describe('React', () => {
           <Container pass="through" baz={50} />
         </ProviderMock>
       )
+
       expect(tester.getByTestId('pass')).toHaveTextContent('through')
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
       expect(tester.getByTestId('baz')).toHaveTextContent('42')
@@ -1606,6 +1608,32 @@ describe('React', () => {
           </ProviderMock>
         </ProviderMock>
       )
+
+      expect(actualState).toEqual(expectedState)
+    })
+
+    it('should use the store from the props instead of from the context if present', () => {
+      class Container extends Component {
+        render() {
+          return <Passthrough />
+        }
+      }
+
+      let actualState
+
+      const expectedState = { foos: {} }
+      const decorator = connect(state => {
+        actualState = state
+        return {}
+      })
+      const Decorated = decorator(Container)
+      const mockStore = {
+        dispatch: () => {},
+        subscribe: () => {},
+        getState: () => expectedState
+      }
+
+      rtl.render(<Decorated store={mockStore} />)
 
       expect(actualState).toEqual(expectedState)
     })
