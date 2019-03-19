@@ -1638,6 +1638,104 @@ describe('React', () => {
       expect(actualState).toEqual(expectedState)
     })
 
+    it('should pass through ancestor subscription when store is given as a prop', () => {
+      const c3Spy = jest.fn()
+      const c2Spy = jest.fn()
+      const c1Spy = jest.fn()
+
+      const Comp3 = ({ first }) => {
+        c3Spy()
+        return <Passthrough c={first} />
+      }
+      const ConnectedComp3 = connect(state => state)(Comp3)
+
+      const Comp2 = ({ second }) => {
+        c2Spy()
+        return (
+          <div>
+            <Passthrough b={second} />
+            <ConnectedComp3 />
+          </div>
+        )
+      }
+      const ConnectedComp2 = connect(state => state)(Comp2)
+
+      const Comp1 = ({ children, first }) => {
+        c1Spy()
+        return (
+          <div>
+            <Passthrough a={first} />
+            {children}
+          </div>
+        )
+      }
+      const ConnectedComp1 = connect(state => state)(Comp1)
+
+      const reducer1 = (state = { first: '1' }, action) => {
+        switch (action.type) {
+          case 'CHANGE':
+            return { first: '2' }
+          default:
+            return state
+        }
+      }
+
+      const reducer2 = (state = { second: '3' }, action) => {
+        switch (action.type) {
+          case 'CHANGE':
+            return { second: '4' }
+          default:
+            return state
+        }
+      }
+
+      const store1 = createStore(reducer1)
+      const store2 = createStore(reducer2)
+
+      const tester = rtl.render(
+        <ProviderMock store={store1}>
+          <ConnectedComp1>
+            <ConnectedComp2 store={store2} />
+          </ConnectedComp1>
+        </ProviderMock>
+      )
+
+      // Initial render: C1/C3 read from store 1, C2 reads from store 2, one render each
+      expect(tester.getByTestId('a')).toHaveTextContent('1')
+      expect(tester.getByTestId('b')).toHaveTextContent('3')
+      expect(tester.getByTestId('c')).toHaveTextContent('1')
+
+      expect(c3Spy).toHaveBeenCalledTimes(1)
+      expect(c2Spy).toHaveBeenCalledTimes(1)
+      expect(c1Spy).toHaveBeenCalledTimes(1)
+
+      rtl.act(() => {
+        store1.dispatch({ type: 'CHANGE' })
+      })
+
+      // Store 1 update: C1 and C3 should re-render, no updates for C2
+      expect(tester.getByTestId('a')).toHaveTextContent('2')
+      expect(tester.getByTestId('b')).toHaveTextContent('3')
+      expect(tester.getByTestId('c')).toHaveTextContent('2')
+
+      expect(c3Spy).toHaveBeenCalledTimes(2)
+      expect(c2Spy).toHaveBeenCalledTimes(1)
+      expect(c1Spy).toHaveBeenCalledTimes(2)
+
+      rtl.act(() => {
+        store2.dispatch({ type: 'CHANGE' })
+      })
+
+      // Store 2 update: C2 should re-render, no updates for C1 or C3
+      expect(tester.getByTestId('a')).toHaveTextContent('2')
+      expect(tester.getByTestId('b')).toHaveTextContent('4')
+      expect(tester.getByTestId('c')).toHaveTextContent('2')
+
+      expect(c3Spy).toHaveBeenCalledTimes(2)
+      expect(c2Spy).toHaveBeenCalledTimes(2)
+      expect(c1Spy).toHaveBeenCalledTimes(2)
+    })
+
     it('should use a custom context provider and consumer if passed as a prop to the component', () => {
       class Container extends Component {
         render() {
@@ -1795,8 +1893,6 @@ describe('React', () => {
       expect(ref.current.someInstanceMethod()).toBe(someData)
       done()
     })
-
-
 
     it('should correctly separate and pass through props to the wrapped component with a forwarded ref', async done => {
       const store = createStore(() => ({}))
