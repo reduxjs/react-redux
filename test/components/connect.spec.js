@@ -4,7 +4,7 @@ import React, { Component } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import { createStore } from 'redux'
+import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index.js'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
@@ -2953,6 +2953,107 @@ describe('React', () => {
       expect(() => {
         connect()(createComp('div'))
       }).not.toThrow()
+    })
+
+    it('should invoke mapState always with latest props', () => {
+      const store = createStore((state = 0) => state + 1)
+
+      let propsPassedIn
+
+      @connect(reduxCount => {
+        return { reduxCount }
+      })
+      class InnerComponent extends Component {
+        render() {
+          propsPassedIn = this.props
+          return <Passthrough {...this.props} />
+        }
+      }
+
+      class OuterComponent extends Component {
+        constructor() {
+          super()
+          this.state = { count: 0 }
+        }
+
+        render() {
+          return <InnerComponent {...this.state} />
+        }
+      }
+
+      let outerComponent
+      rtl.render(
+        <ProviderMock store={store}>
+          <OuterComponent ref={c => (outerComponent = c)} />
+        </ProviderMock>
+      )
+      outerComponent.setState(({ count }) => ({ count: count + 1 }))
+      store.dispatch({ type: '' })
+
+      expect(propsPassedIn.count).toEqual(1)
+      expect(propsPassedIn.reduxCount).toEqual(2)
+    })
+
+    it('should use the latest props when updated between actions', () => {
+      const store = applyMiddleware(store => {
+        let callback
+        return next => action => {
+          if (action.type === 'SET_COMPONENT_CALLBACK') {
+            callback = action.payload
+          }
+          if (callback && action.type === 'INC1') {
+            next(action)
+            callback()
+            store.dispatch({ type: 'INC2' })
+            return
+          }
+          next(action)
+        }
+      })(createStore)((state = 0, action) => {
+        if (action.type === 'INC1') {
+          return state + 1
+        } else if (action.type === 'INC2') {
+          return state + 2
+        }
+        return state
+      })
+      const Child = connect(count => ({ count }))(function(props) {
+        return (
+          <div
+            data-testid="child"
+            data-prop={props.prop}
+            data-count={props.count}
+          />
+        )
+      })
+      class Parent extends Component {
+        constructor() {
+          super()
+          this.state = {
+            prop: 'a'
+          }
+          this.inc1 = () => store.dispatch({ type: 'INC1' })
+          store.dispatch({
+            type: 'SET_COMPONENT_CALLBACK',
+            payload: () => this.setState({ prop: 'b' })
+          })
+        }
+
+        render() {
+          return (
+            <ProviderMock store={store}>
+              <Child prop={this.state.prop} />
+            </ProviderMock>
+          )
+        }
+      }
+      let parent
+      const rendered = rtl.render(<Parent ref={ref => (parent = ref)} />)
+      expect(rendered.getByTestId('child').dataset.count).toEqual('0')
+      expect(rendered.getByTestId('child').dataset.prop).toEqual('a')
+      parent.inc1()
+      expect(rendered.getByTestId('child').dataset.count).toEqual('3')
+      expect(rendered.getByTestId('child').dataset.prop).toEqual('b')
     })
   })
 })
