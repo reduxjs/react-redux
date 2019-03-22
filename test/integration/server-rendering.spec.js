@@ -40,6 +40,22 @@ describe('React', () => {
       expect(markup).toContain('Hello world')
     })
 
+    it('should run in an SSR environment without logging warnings about useLayoutEffect', () => {
+      const store = createStore(greetingReducer)
+
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+      const markup = renderToString(
+        <Provider store={store}>
+          <Greeter greeted="world" />
+        </Provider>
+      )
+
+      expect(spy).toHaveBeenCalledTimes(0)
+
+      spy.mockRestore()
+    })
+
     it('should render with updated state if actions are dispatched before render', () => {
       const store = createStore(greetingReducer)
 
