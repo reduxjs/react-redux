@@ -4,6 +4,7 @@ import React, {
   useContext,
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
   useReducer
 } from 'react'
@@ -30,6 +31,14 @@ function storeStateUpdatesReducer(state, action) {
 }
 
 const initStateUpdates = () => [null, 0]
+
+// React currently throws a warning when using useLayoutEffect on the server.
+// To get around it, we can conditionally useEffect on the server (no-op) and
+// useLayoutEffect in the browser. We need useLayoutEffect because we want
+// `connect` to perform sync updates to a ref to save the latest props after
+// a render is actually committed to the DOM.
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 export default function connectAdvanced(
   /*
@@ -266,8 +275,10 @@ export default function connectAdvanced(
         return childPropsSelector(store.getState(), wrapperProps)
       }, [store, previousStateUpdateResult, wrapperProps])
 
-      // Every time we do re-render:
-      useEffect(() => {
+      // We need this to execute synchronously every time we re-render. However, React warns
+      // about useLayoutEffect in SSR, so we try to detect environment and fall back to
+      // just useEffect instead to avoid the warning, since neither will run anyway.
+      useIsomorphicLayoutEffect(() => {
         // We want to capture the wrapper props and child props we used for later comparisons
         lastWrapperProps.current = wrapperProps
         lastChildProps.current = actualChildProps
@@ -284,7 +295,9 @@ export default function connectAdvanced(
         // If we're not subscribed to the store, nothing to do here
         if (!shouldHandleStateChanges) return
 
+        // Capture values for checking if and when this component unmounts
         let didUnsubscribe = false
+        let lastThrownError = null
 
         // We'll run this callback every time a store subscription update propagates to this component
         const checkForUpdates = () => {
@@ -306,6 +319,11 @@ export default function connectAdvanced(
             )
           } catch (e) {
             error = e
+            lastThrownError = e
+          }
+
+          if (!error) {
+            lastThrownError = null
           }
 
           // If the child props haven't changed, nothing to do here - cascade the subscription update
@@ -330,17 +348,26 @@ export default function connectAdvanced(
           }
         }
 
-        // Pull data from the store after first render in case the store has
-        // changed since we began.
-
+        // Actually subscribe to the nearest connected ancestor (or store)
         subscription.onStateChange = checkForUpdates
         subscription.trySubscribe()
 
+        // Pull data from the store after first render in case the store has
+        // changed since we began.
         checkForUpdates()
 
         const unsubscribeWrapper = () => {
           didUnsubscribe = true
           subscription.tryUnsubscribe()
+
+          if (lastThrownError) {
+            // It's possible that we caught an error due to a bad mapState function, but the
+            // parent re-rendered without this component and we're about to unmount.
+            // This shouldn't happen as long as we do top-down subscriptions correctly, but
+            // if we ever do those wrong, this throw will surface the error in our tests.
+            // In that case, throw the error from here so it doesn't get lost.
+            throw lastThrownError
+          }
         }
 
         return unsubscribeWrapper
