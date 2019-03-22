@@ -3,6 +3,7 @@
 import React from 'react'
 import { createStore } from 'redux'
 import { Provider as ProviderMock, batch, connect } from '../../src/index.js'
+import { batch as defaultBatch } from '../../src/alternate-renderers'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
@@ -11,30 +12,19 @@ describe('React', () => {
     afterEach(() => rtl.cleanup())
 
     it('should render only once for batched dispatches', () => {
-      const store = createStore((state, action) => {
-        let newState =
-          state !== undefined
-            ? state
-            : {
-                foo: '',
-                bar: ''
-              }
+      const initialState = { foo: '', bar: '' }
+      const reducer = (state = initialState, action) => {
         switch (action.type) {
           case 'FOO':
-            newState = {
-              ...newState,
-              foo: action.payload
-            }
+            state = { ...state, foo: action.payload }
             break
           case 'BAR':
-            newState = {
-              ...newState,
-              bar: action.payload
-            }
+            state = { ...state, bar: action.payload }
             break
         }
-        return newState
-      })
+        return state
+      }
+      const store = createStore(reducer)
 
       const mapStateSpy = jest.fn()
       const renderSpy = jest.fn()
