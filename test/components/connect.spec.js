@@ -1697,7 +1697,7 @@ describe('React', () => {
       it('should not error on valid component with circular structure', () => {
         const createComp = Tag => {
           const Comp = React.forwardRef(function Comp(props, ref) {
-            return <Tag>{props.count}</Tag>
+            return <Tag ref={ref}>{props.count}</Tag>
           })
           Comp.__real = Comp
           return Comp
@@ -3157,7 +3157,7 @@ describe('React', () => {
         return { itemIds }
       }
 
-      function App({ itemIds, deleteB }) {
+      function App({ itemIds }) {
         const items = itemIds.map(id => <ConnectedListItem key={id} id={id} />)
 
         return (
@@ -3170,7 +3170,7 @@ describe('React', () => {
 
       const ConnectedApp = connect(appMapState)(App)
 
-      const tester = rtl.render(
+      rtl.render(
         <ProviderMock store={store}>
           <ConnectedApp />
         </ProviderMock>
@@ -3201,7 +3201,7 @@ describe('React', () => {
       const App = ({ counter }) => <div>Count: {counter}</div>
       const ConnectedApp = connect(appMapState)(App)
 
-      const tester = rtl.render(
+      rtl.render(
         <ProviderMock store={store}>
           <ConnectedApp />
         </ProviderMock>
