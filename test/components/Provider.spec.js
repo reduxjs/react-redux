@@ -14,24 +14,8 @@ describe('React', () => {
     afterEach(() => rtl.cleanup())
 
     const createChild = (storeKey = 'store') => {
-      /*
       class Child extends Component {
         render() {
-          return (
-            <ReactReduxContext.Consumer>
-              {({ storeState }) => {
-                return (
-                  <div data-testid="store">{`${storeKey} - ${storeState}`}</div>
-                )
-              }}
-            </ReactReduxContext.Consumer>
-          )
-        }
-      }
-      */
-      class Child extends Component {
-        render() {
-          //const store = this.context[storeKey];
           return (
             <ReactReduxContext.Consumer>
               {({ store }) => {
@@ -49,20 +33,6 @@ describe('React', () => {
               }}
             </ReactReduxContext.Consumer>
           )
-
-          /*
-          let text = '';
-
-          if(store) {
-            text = store.getState().toString()
-          }
-
-          return (
-            <div data-testid="store">
-              {storeKey} - {text}
-            </div>
-          )
-          */
         }
       }
 
@@ -103,7 +73,7 @@ describe('React', () => {
       Provider.propTypes = propTypes
     })
 
-    it('should add the store state to context', () => {
+    it('should add the store to context', () => {
       const store = createStore(createExampleTextReducer())
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -145,12 +115,6 @@ describe('React', () => {
       const tester = rtl.render(<ProviderContainer />)
       expect(tester.getByTestId('store')).toHaveTextContent('store - 11')
 
-      /*
-      rtl.act(() => {
-        store1.dispatch({ type: 'hi' })
-      })
-      expect(tester.getByTestId('store')).toHaveTextContent('store - 12')
-*/
       rtl.act(() => {
         externalSetState({ store: store2 })
       })
