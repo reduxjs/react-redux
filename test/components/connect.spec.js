@@ -1696,7 +1696,7 @@ describe('React', () => {
 
       it('should not error on valid component with circular structure', () => {
         const createComp = Tag => {
-          const Comp = React.forwardRef(function Comp(props) {
+          const Comp = React.forwardRef(function Comp(props, ref) {
             return <Tag>{props.count}</Tag>
           })
           Comp.__real = Comp
@@ -3110,6 +3110,113 @@ describe('React', () => {
         expect(rendered.getByTestId('child').dataset.count).toEqual('3')
         expect(rendered.getByTestId('child').dataset.prop).toEqual('b')
       })
+    })
+
+    it("should enforce top-down updates to ensure a deleted child's mapState doesn't throw errors", () => {
+      const initialState = {
+        a: { id: 'a', name: 'Item A' },
+        b: { id: 'b', name: 'Item B' },
+        c: { id: 'c', name: 'Item C' }
+      }
+
+      const reducer = (state = initialState, action) => {
+        switch (action.type) {
+          case 'DELETE_B': {
+            const newState = { ...state }
+            delete newState.b
+            return newState
+          }
+          default:
+            return state
+        }
+      }
+
+      const store = createStore(reducer)
+
+      const ListItem = ({ name }) => <div>Name: {name}</div>
+
+      let thrownError = null
+
+      const listItemMapState = (state, ownProps) => {
+        try {
+          const item = state[ownProps.id]
+          // If this line executes when item B has been deleted, it will throw an error.
+          // For this test to succeed, we should never execute mapState for item B after the item
+          // has been deleted, because the parent should re-render the component out of existence.
+          const { name } = item
+          return { name }
+        } catch (e) {
+          thrownError = e
+        }
+      }
+
+      const ConnectedListItem = connect(listItemMapState)(ListItem)
+
+      const appMapState = state => {
+        const itemIds = Object.keys(state)
+        return { itemIds }
+      }
+
+      function App({ itemIds, deleteB }) {
+        const items = itemIds.map(id => <ConnectedListItem key={id} id={id} />)
+
+        return (
+          <div className="App">
+            {items}
+            <button data-testid="deleteB">Delete B</button>
+          </div>
+        )
+      }
+
+      const ConnectedApp = connect(appMapState)(App)
+
+      const tester = rtl.render(
+        <ProviderMock store={store}>
+          <ConnectedApp />
+        </ProviderMock>
+      )
+
+      // This should execute without throwing an error by itself
+      rtl.act(() => {
+        store.dispatch({ type: 'DELETE_B' })
+      })
+
+      expect(thrownError).toBe(null)
+    })
+
+    it('should re-throw errors that occurred in a mapState/mapDispatch function', () => {
+      const counter = (state = 0, action) =>
+        action.type === 'INCREMENT' ? state + 1 : state
+
+      const store = createStore(counter)
+
+      const appMapState = state => {
+        if (state >= 1) {
+          throw new Error('KABOOM!')
+        }
+
+        return { counter: state }
+      }
+
+      const App = ({ counter }) => <div>Count: {counter}</div>
+      const ConnectedApp = connect(appMapState)(App)
+
+      const tester = rtl.render(
+        <ProviderMock store={store}>
+          <ConnectedApp />
+        </ProviderMock>
+      )
+
+      // Turn off extra console logging
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+      expect(() => {
+        rtl.act(() => {
+          store.dispatch({ type: 'INCREMENT' })
+        })
+      }).toThrow('KABOOM!')
+
+      spy.mockRestore()
     })
   })
 })
