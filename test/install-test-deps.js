@@ -78,6 +78,13 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
         if (e) console.log(e)
       }
     )
+    copyFile(
+      join(__dirname, '..', 'src', 'alternate-renderers.js'),
+      join(__dirname, 'react', version, 'src', 'alternate-renderers.js'),
+      e => {
+        if (e) console.log(e)
+      }
+    )
   })
   const cwd = join(__dirname, 'react', version)
   if (
