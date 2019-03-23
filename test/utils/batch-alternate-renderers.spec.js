@@ -2,16 +2,20 @@
 
 import React from 'react'
 import { createStore } from 'redux'
-import { Provider as ProviderMock, batch, connect } from '../../src/index.js'
+import {
+  Provider as ProviderMock,
+  batch,
+  connect
+} from '../../src/alternate-renderers.js'
 
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
 describe('React', () => {
-  describe('batch', () => {
+  describe('defaultNoopBatch', () => {
     afterEach(() => rtl.cleanup())
 
-    it('should render only once for batched dispatches', () => {
+    it('should call the dispatch callback', () => {
       const initialState = { foo: '', bar: '' }
       const reducer = (state = initialState, action) => {
         switch (action.type) {
@@ -78,7 +82,7 @@ describe('React', () => {
 
       // 2. Batched store dispatches
       expect(mapStateSpy).toHaveBeenCalledTimes(5)
-      expect(renderSpy).toHaveBeenCalledTimes(4)
+      expect(renderSpy).toHaveBeenCalledTimes(5)
     })
   })
 })
