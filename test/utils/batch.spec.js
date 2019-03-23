@@ -25,26 +25,9 @@ describe('React', () => {
         return state
       }
       const store = createStore(reducer)
-
-      const mapStateSpy = jest.fn()
-      const renderSpy = jest.fn()
-
-      const componentDecorator = connect(state => {
-        mapStateSpy()
-
-        return {
-          foo: state.foo,
-          bar: state.bar,
-          baz: state.baz
-        }
-      })
-
-      const component = () => {
-        renderSpy()
-        return <div>Hello</div>
-      }
-
-      const Component = componentDecorator(component)
+      const mapStateSpy = jest.fn(state => ({ foo: state.foo, bar: state.bar }))
+      const componentSpy = jest.fn(() => <div>Hello</div>)
+      const Component = connect(mapStateSpy)(componentSpy)
 
       rtl.render(
         <ProviderMock store={store}>
@@ -54,7 +37,7 @@ describe('React', () => {
 
       // 1. Initial render
       expect(mapStateSpy).toHaveBeenCalledTimes(1)
-      expect(renderSpy).toHaveBeenCalledTimes(1)
+      expect(componentSpy).toHaveBeenCalledTimes(1)
 
       rtl.act(() => {
         store.dispatch({ type: 'FOO', payload: 1 })
@@ -65,7 +48,7 @@ describe('React', () => {
 
       // 2. Separate store dispatches (sanity check)
       expect(mapStateSpy).toHaveBeenCalledTimes(3)
-      expect(renderSpy).toHaveBeenCalledTimes(3)
+      expect(componentSpy).toHaveBeenCalledTimes(3)
 
       batch(() => {
         rtl.act(() => {
@@ -78,7 +61,15 @@ describe('React', () => {
 
       // 2. Batched store dispatches
       expect(mapStateSpy).toHaveBeenCalledTimes(5)
-      expect(renderSpy).toHaveBeenCalledTimes(4)
+      expect(componentSpy).toHaveBeenCalledTimes(4)
+      expect(componentSpy).toHaveBeenLastCalledWith(
+        {
+          bar: 2,
+          dispatch: store.dispatch,
+          foo: 2
+        },
+        {}
+      )
     })
   })
 })
