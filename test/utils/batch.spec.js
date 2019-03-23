@@ -3,7 +3,6 @@
 import React from 'react'
 import { createStore } from 'redux'
 import { Provider as ProviderMock, batch, connect } from '../../src/index.js'
-import { batch as defaultBatch } from '../../src/alternate-renderers'
 import * as rtl from 'react-testing-library'
 import 'jest-dom/extend-expect'
 
