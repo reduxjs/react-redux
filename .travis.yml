@@ -1,10 +1,8 @@
 language: node_js
-node_js:
-  - "10"
+node_js: node
+cache: npm
 env:
-  matrix:
   - REACT=16.8
-sudo: false
 script:
   - npm test
 after_success:
