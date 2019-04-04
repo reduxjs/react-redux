@@ -3110,6 +3110,46 @@ describe('React', () => {
         expect(rendered.getByTestId('child').dataset.count).toEqual('3')
         expect(rendered.getByTestId('child').dataset.prop).toEqual('b')
       })
+
+      it('should invoke mapState always with latest store state', () => {
+        const store = createStore((state = 0) => state + 1)
+
+        let reduxCountPassedToMapState
+
+        @connect(reduxCount => {
+          reduxCountPassedToMapState = reduxCount
+          return reduxCount < 2 ? { a: 'a' } : { a: 'b' }
+        })
+        class InnerComponent extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+
+        class OuterComponent extends Component {
+          constructor() {
+            super()
+            this.state = { count: 0 }
+          }
+
+          render() {
+            return <InnerComponent {...this.state} />
+          }
+        }
+
+        let outerComponent
+        rtl.render(
+          <ProviderMock store={store}>
+            <OuterComponent ref={c => (outerComponent = c)} />
+          </ProviderMock>
+        )
+
+        store.dispatch({ type: '' })
+        store.dispatch({ type: '' })
+        outerComponent.setState(({ count }) => ({ count: count + 1 }))
+
+        expect(reduxCountPassedToMapState).toEqual(3)
+      })
     })
 
     it("should enforce top-down updates to ensure a deleted child's mapState doesn't throw errors", () => {
