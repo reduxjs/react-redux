@@ -12,6 +12,7 @@ test/react/*/test/**/*.spec.js
 test/react/**/src
 test/jest-config.json
 lcov.info
+.idea/
 
 lib/core/metadata.js
 lib/core/MetadataBlog.js
