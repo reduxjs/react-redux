@@ -330,6 +330,13 @@ export default function connectAdvanced(
           if (newChildProps === lastChildProps.current) {
             notifyNestedSubs()
           } else {
+            // Save references to the new child props.  Note that we track the "child props from store update"
+            // as a ref instead of a useState/useReducer because we need a way to determine if that value has
+            // been processed.  If this went into useState/useReducer, we couldn't clear out the value without
+            // forcing another re-render, which we don't want.
+            lastChildProps.current = newChildProps
+            childPropsFromStoreUpdate.current = newChildProps
+
             // If the child props _did_ change (or we caught an error), this wrapper component needs to re-render
             forceComponentUpdateDispatch({
               type: 'STORE_UPDATED',
@@ -338,13 +345,6 @@ export default function connectAdvanced(
                 error
               }
             })
-
-            // Save references to the new child props.  Note that we track the "child props from store update"
-            // as a ref instead of a useState/useReducer because we need a way to determine if that value has
-            // been processed.  If this went into useState/useReducer, we couldn't clear out the value without
-            // forcing another re-render, which we don't want.
-            lastChildProps.current = newChildProps
-            childPropsFromStoreUpdate.current = newChildProps
           }
         }
 
