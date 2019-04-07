@@ -1,5 +1,5 @@
 ---
-id: version-5.1.1-troubleshooting
+id: version-5.x-troubleshooting
 title: Troubleshooting
 sidebar_label: Troubleshooting
 hide_title: true

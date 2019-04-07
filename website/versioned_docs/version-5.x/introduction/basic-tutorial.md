@@ -1,5 +1,5 @@
 ---
-id: version-5.1.1-basic-tutorial
+id: version-5.x-basic-tutorial
 title: Basic Tutorial
 hide_title: true
 sidebar_label: Basic Tutorial

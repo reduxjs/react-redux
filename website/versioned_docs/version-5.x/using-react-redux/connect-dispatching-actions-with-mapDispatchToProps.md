@@ -1,5 +1,5 @@
 ---
-id: version-5.1.1-connect-mapdispatch
+id: version-5.x-connect-mapdispatch
 title: Connect: Dispatching Actions with mapDispatchToProps
 hide_title: true
 sidebar_label: Connect: Dispatching Actions with mapDispatchToProps

@@ -98,7 +98,7 @@ const siteConfig = {
   // template. For example, if you need your repo's URL...
   repoUrl: "https://github.com/reduxjs/react-redux",
   
-  nextVersion: "6.0.0",
+  // nextVersion: "6.0.0",
   
   gaTrackingId : "UA-130598673-2",
 };

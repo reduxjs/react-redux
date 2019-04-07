@@ -1,5 +1,5 @@
 ---
-id: version-5.1.1-connect-mapstate
+id: version-5.x-connect-mapstate
 title: Connect: Extracting Data with mapStateToProps
 hide_title: true
 sidebar_label: Connect: Extracting Data with mapStateToProps

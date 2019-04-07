@@ -1,5 +1,5 @@
 ---
-id: version-5.1.1-quick-start
+id: version-5.x-quick-start
 title: Quick Start
 hide_title: true
 sidebar_label: Quick Start
