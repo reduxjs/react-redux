@@ -16,12 +16,18 @@
  const siteConfig = require(`${CWD}/siteConfig.js`);
  const versions = require(`${CWD}/versions.json`);
 
+ const versionToReleaseTags = {
+   '5.x': '5.0.0',
+   '6.x': '6.0.0',
+   '7.x': '7.0.0-beta.0'
+ }
+
  function Versions() {
    const latestVersion = versions[0];
    const repoUrl = `https://github.com/${siteConfig.organizationName}/${
      siteConfig.projectName
    }`;
-   const releaseTagUrl = version => `${repoUrl}/releases/tag/v${version}`
+   const releaseTagUrl = version => versionToReleaseTags.hasOwnProperty(version) ? `${repoUrl}/releases/tag/v${versionToReleaseTags[version]}` : `${repoUrl}/releases/tag/v${version}`
    return (
      <div className="docMainWrapper wrapper">
        <Container className="mainContainer versionsContainer">
@@ -48,8 +54,9 @@
              This is the version that is configured automatically when you first
              install this project.
            </p>
-           {/* uncomment here if we have pre-release notes
-           <h3 id="rc">Pre-release versions</h3>
+           {
+             !!siteConfig.nextVersion && (<React.Fragment>
+<h3 id="rc">Pre-release versions</h3>
            <table className="versions">
              <tbody>
                <tr>
@@ -62,14 +69,16 @@
                  </td>
                </tr>
              </tbody>
-           </table> */}
+           </table>
+             </React.Fragment>)
+           }
            <h3 id="archive">Past Versions</h3>
            <table className="versions">
              <tbody>
                {versions.map(
                  version =>
                    version !== latestVersion && (
-                     <tr>
+                     <tr key={`version-${version}`}>
                        <th>{version}</th>
                        <td>
                          <a href={`${version}/introduction/quick-start`}>Documentation</a>

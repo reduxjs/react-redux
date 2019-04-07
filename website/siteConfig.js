@@ -98,7 +98,14 @@ const siteConfig = {
   // template. For example, if you need your repo's URL...
   repoUrl: "https://github.com/reduxjs/react-redux",
   
-  // nextVersion: "6.0.0",
+  /**
+   * Note:
+   * This will generate a link on the versioned docs page for "pre-release versions"
+   * Once next version is released, run "yarn run version 7.x", and docusaurus will add 7.x to stable version
+   * After that, 7.x will no longer appear in "pre-release" versions and we should remove this line
+   * More info: https://docusaurus.io/docs/en/versioning
+   */
+  nextVersion: "7.x",
   
   gaTrackingId : "UA-130598673-2",
 };
