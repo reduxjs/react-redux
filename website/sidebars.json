@@ -5,13 +5,15 @@
       "introduction/basic-tutorial",
       "introduction/why-use-react-redux"
     ],
-    "Using React-Redux": [
+    "Using React Redux": [
       "using-react-redux/connect-mapstate",
-      "using-react-redux/connect-mapdispatch"
+      "using-react-redux/connect-mapdispatch",
+      "using-react-redux/accessing-store"
     ],
     "API Reference": [
-      "api",
-      "api/provider"
+      "api/connect",
+      "api/provider",
+      "api/connect-advanced"
     ],
     "Guides": [
       "troubleshooting"

@@ -102,7 +102,7 @@ describe('React', () => {
       if (React.memo) {
         const store = createStore(() => ({ hi: 'there' }))
 
-        const Container = React.memo(props => <Passthrough {...props} />)
+        const Container = React.memo(props => <Passthrough {...props} />) // eslint-disable-line
         const WrappedContainer = connect(state => state)(Container)
 
         const tester = rtl.render(
@@ -1564,6 +1564,36 @@ describe('React', () => {
       expect(actualState).toEqual(expectedState)
     })
 
+    it('should ignore non-react-context values that are passed as a prop to the component', () => {
+      class Container extends Component {
+        render() {
+          return <Passthrough />
+        }
+      }
+
+      const nonContext = { someProperty: {} }
+
+      let actualState
+
+      const expectedState = { foos: {} }
+
+      const decorator = connect(state => {
+        actualState = state
+        return {}
+      })
+      const Decorated = decorator(Container)
+
+      const store = createStore(() => expectedState)
+
+      rtl.render(
+        <ProviderMock store={store}>
+          <Decorated context={nonContext} />
+        </ProviderMock>
+      )
+
+      expect(actualState).toEqual(expectedState)
+    })
+
     it('should throw an error if the store is not in the props or context', () => {
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -2603,6 +2633,20 @@ describe('React', () => {
           { renderCountProp: 'count' }
         )(Comp)
       }).toThrow(/renderCountProp is removed/)
+    })
+
+    it('should not error on valid component with circular structure', () => {
+      const createComp = Tag => {
+        const Comp = React.forwardRef(function Comp(props) {
+          return <Tag>{props.count}</Tag>
+        })
+        Comp.__real = Comp
+        return Comp
+      }
+
+      expect(() => {
+        connect()(createComp('div'))
+      }).not.toThrow()
     })
   })
 })

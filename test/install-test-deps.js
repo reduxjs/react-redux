@@ -5,14 +5,18 @@ const { readdirSync, existsSync, copyFile, mkdirSync } = require('fs')
 const rimraf = require('rimraf')
 const { join } = require('path')
 const spawn = require('cross-spawn')
-const reactVersion = process.env.REACT || '16.6'
+const reactVersion = process.env.REACT || '16.8'
 
 readdirSync(join(__dirname, 'react')).forEach(version => {
   if (reactVersion.toLowerCase() !== 'all' && version !== reactVersion) {
     console.log(`skipping ${version}, ${reactVersion} was specified`)
     return
   }
-  const tests = [join(__dirname, 'components'), join(__dirname, 'utils')]
+  const tests = [
+    join(__dirname, 'components'),
+    join(__dirname, 'integration'),
+    join(__dirname, 'utils')
+  ]
   const srcs = [
     join(__dirname, '..', 'src', 'components'),
     join(__dirname, '..', 'src', 'connect'),
@@ -20,6 +24,7 @@ readdirSync(join(__dirname, 'react')).forEach(version => {
   ]
   const dest = [
     join(__dirname, 'react', version, 'test', 'components'),
+    join(__dirname, 'react', version, 'test', 'integration'),
     join(__dirname, 'react', version, 'test', 'utils')
   ]
   const srcDest = [

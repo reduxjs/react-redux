@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "devDependencies": {
+    "create-react-class": "^15.6.3",
+    "react": "16.8",
+    "react-dom": "16.8"
+  },
+  "dependencies": {
+    "jest-dom": "^3.1.2",
+    "react-testing-library": "^5.9.0"
+  }
+}
