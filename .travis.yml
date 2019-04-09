@@ -2,9 +2,6 @@ language: node_js
 node_js: node
 cache: npm
 env:
-  - REACT=16.4
-  - REACT=16.5
-  - REACT=16.6
   - REACT=16.8
 script:
   - npm test

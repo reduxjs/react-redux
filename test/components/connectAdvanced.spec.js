@@ -6,7 +6,7 @@ import 'jest-dom/extend-expect'
 
 describe('React', () => {
   describe('connectAdvanced', () => {
-    it('should map state and render once on mount', () => {
+    it('should map state and render on mount', () => {
       const initialState = {
         foo: 'bar'
       }
@@ -36,7 +36,10 @@ describe('React', () => {
 
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
 
-      expect(mapCount).toEqual(1)
+      // Implementation detail:
+      // 1) Initial render
+      // 2) Post-mount subscription and update check
+      expect(mapCount).toEqual(2)
       expect(renderCount).toEqual(1)
     })
 
@@ -67,10 +70,12 @@ describe('React', () => {
         </ProviderMock>
       )
 
-      store.dispatch({ type: 'NEW_REFERENCE' })
+      rtl.act(() => {
+        store.dispatch({ type: 'NEW_REFERENCE' })
+      })
 
       // Should have mapped the state on mount and on the dispatch
-      expect(mapCount).toEqual(2)
+      expect(mapCount).toEqual(3)
 
       // Should have rendered on mount and after the dispatch bacause the map
       // state returned new reference
@@ -113,8 +118,11 @@ describe('React', () => {
 
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
 
-      // The state should have been mapped twice: on mount and on the dispatch
-      expect(mapCount).toEqual(2)
+      // The state should have been mapped 3 times:
+      // 1) Initial render
+      // 2) Post-mount update check
+      // 3) Dispatch
+      expect(mapCount).toEqual(3)
 
       // But the render should have been called only on mount since the map state
       // did not return a new reference
@@ -172,8 +180,11 @@ describe('React', () => {
 
       outerComponent.setFoo('BAR')
 
-      // map on mount and on prop change
-      expect(mapCount).toEqual(2)
+      // The state should have been mapped 3 times:
+      // 1) Initial render
+      // 2) Post-mount update check
+      // 3) Prop change
+      expect(mapCount).toEqual(3)
 
       // render only on mount but skip on prop change because no new
       // reference was returned

@@ -3,9 +3,9 @@ import connectAdvanced from './components/connectAdvanced'
 import { ReactReduxContext } from './components/Context'
 import connect from './connect/connect'
 
-import { setBatch } from './utils/batch'
-import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
+import { getBatch } from './utils/batch'
 
-setBatch(batch)
+// For other renderers besides ReactDOM and React Native, use the default noop batch function
+const batch = getBatch()
 
 export { Provider, connectAdvanced, ReactReduxContext, connect, batch }

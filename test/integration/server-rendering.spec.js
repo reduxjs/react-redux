@@ -1,3 +1,11 @@
+/**
+ * @jest-environment node
+ *
+ * Set this so that `window` is undefined to correctly mimic a Node SSR scenario.
+ * That allows connectAdvanced to fall back to `useEffect` instead of `useLayoutEffect`
+ * to avoid ugly console warnings when used with SSR.
+ */
+
 /*eslint-disable react/prop-types*/
 
 import React from 'react'
@@ -20,6 +28,28 @@ describe('React', () => {
       </div>
     )
 
+    class Dispatcher extends React.Component {
+      constructor(props) {
+        super(props)
+        if (props.constructAction) {
+          props.dispatch(props.constructAction)
+        }
+      }
+      UNSAFE_componentWillMount() {
+        if (this.props.willMountAction) {
+          this.props.dispatch(this.props.willMountAction)
+        }
+      }
+      render() {
+        if (this.props.renderAction) {
+          this.props.dispatch(this.props.renderAction)
+        }
+
+        return <Greeter greeted={this.props.greeted} />
+      }
+    }
+    const ConnectedDispatcher = connect()(Dispatcher)
+
     it('should be able to render connected component with props and state from store', () => {
       const store = createStore(greetingReducer)
 
@@ -30,6 +60,22 @@ describe('React', () => {
       )
 
       expect(markup).toContain('Hello world')
+    })
+
+    it('should run in an SSR environment without logging warnings about useLayoutEffect', () => {
+      const store = createStore(greetingReducer)
+
+      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+      const markup = renderToString(
+        <Provider store={store}>
+          <Greeter greeted="world" />
+        </Provider>
+      )
+
+      expect(spy).toHaveBeenCalledTimes(0)
+
+      spy.mockRestore()
     })
 
     it('should render with updated state if actions are dispatched before render', () => {
@@ -47,42 +93,43 @@ describe('React', () => {
       expect(store.getState().greeting).toContain('Hi')
     })
 
-    it('should render children with original state even if actions are dispatched in ancestor', () => {
+    it('should render children with updated state if actions are dispatched in ancestor', () => {
       /*
           Dispatching during construct, render or willMount is
           almost always a bug with SSR (or otherwise)
 
           This behaviour is undocumented and is likely to change between
           implementations, this test only verifies current behaviour
+
+          Note: this test fails in v6, because we use context to propagate the store state, and the entire
+          tree will see the same state during the render pass.
+          In all other versions, including v7, the store state may change as actions are dispatched
+          during lifecycle methods, and components will see that new state immediately as they read it.
       */
       const store = createStore(greetingReducer)
 
-      class Dispatcher extends React.Component {
-        constructor(props) {
-          super(props)
-          props.dispatch(props.action)
-        }
-        UNSAFE_componentWillMount() {
-          this.props.dispatch(this.props.action)
-        }
-        render() {
-          this.props.dispatch(this.props.action)
-
-          return <Greeter greeted={this.props.greeted} />
-        }
-      }
-      const ConnectedDispatcher = connect()(Dispatcher)
-
-      const action = { type: 'Update', payload: { greeting: 'Hi' } }
+      const constructAction = { type: 'Update', payload: { greeting: 'Hi' } }
+      const willMountAction = { type: 'Update', payload: { greeting: 'Hiya' } }
+      const renderAction = { type: 'Update', payload: { greeting: 'Hey' } }
 
       const markup = renderToString(
         <Provider store={store}>
-          <ConnectedDispatcher action={action} greeted="world" />
+          <ConnectedDispatcher
+            constructAction={constructAction}
+            greeted="world"
+          />
+          <ConnectedDispatcher
+            willMountAction={willMountAction}
+            greeted="world"
+          />
+          <ConnectedDispatcher renderAction={renderAction} greeted="world" />
         </Provider>
       )
 
-      expect(markup).toContain('Hello world')
-      expect(store.getState().greeting).toContain('Hi')
+      expect(markup).toContain('Hi world')
+      expect(markup).toContain('Hiya world')
+      expect(markup).toContain('Hey world')
+      expect(store.getState().greeting).toContain('Hey')
     })
 
     it('should render children with changed state if actions are dispatched in ancestor and new Provider wraps children', () => {
@@ -92,34 +139,11 @@ describe('React', () => {
 
           This behaviour is undocumented and is likely to change between
           implementations, this test only verifies current behaviour
+
+          This test works both when state is fetched directly in connected
+          components and when it is fetched in a Provider and placed on context
       */
       const store = createStore(greetingReducer)
-
-      class Dispatcher extends React.Component {
-        constructor(props) {
-          super(props)
-          if (props.constructAction) {
-            props.dispatch(props.constructAction)
-          }
-        }
-        UNSAFE_componentWillMount() {
-          if (this.props.willMountAction) {
-            this.props.dispatch(this.props.willMountAction)
-          }
-        }
-        render() {
-          if (this.props.renderAction) {
-            this.props.dispatch(this.props.renderAction)
-          }
-
-          return (
-            <Provider store={store}>
-              <Greeter greeted={this.props.greeted} />
-            </Provider>
-          )
-        }
-      }
-      const ConnectedDispatcher = connect()(Dispatcher)
 
       const constructAction = { type: 'Update', payload: { greeting: 'Hi' } }
       const willMountAction = { type: 'Update', payload: { greeting: 'Hiya' } }
