@@ -105,7 +105,7 @@ const siteConfig = {
    * After that, 7.x will no longer appear in "pre-release" versions and we should remove this line
    * More info: https://docusaurus.io/docs/en/versioning
    */
-  nextVersion: "7.x",
+  // nextVersion: "7.x",
   
   gaTrackingId : "UA-130598673-2",
 };
