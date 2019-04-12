@@ -35,99 +35,19 @@ npm run build:umd:min
 
 ### Testing and Linting
 
-To run the tests in the latest React version:
+To run the tests:
 ```
 npm run test
 ```
 
-To run in explicit React versions (the number is the version, so `test:16.3` will run in React version `16.3`):
-```
-REACT=16.4 npm run test
-```
-
-To run tests in all supported React versions, `16.4`, 16.5`,
-```
-REACT=all npm run test
-```
-
 To continuously watch and run tests, run the following:
 ```
-npm run test -- --watch
+npm test -- --watch
 ```
 
 To perform linting with `eslint`, run the following:
 ```
 npm run lint
-```
-
-#### Adding a new React version for testing
-
-To add a new version of React to test react-redux against, create a directory structure
-in this format for React version `XX`:
-
-```
-test/
- react/
-  XX/
-   package.json
-   test/
-```
-
-So, for example, to test against React 15.4:
-
-
-```
-test/
- react/
-  15.4/
-   package.json
-   test/
-```
-
-The package.json must include the correct versions of `react` & `react-dom`
-as well as the needed `create-react-class` like this:
-
-```json
-{
-  "private": true,
-  "devDependencies": {
-    "create-react-class": "^15.6.3",
-    "react": "15.4",
-    "react-dom": "15.4"
-  }
-}
-```
-
-Then you can run tests against this version with:
-
-```
-REACT=15.4 npm run test
-```
-
-and the new version will also be automatically included in
-
-```
-REACT=all npm run test
-```
-
-In addition, the new version should be added to the .travis.yml matrix list:
-
-```yaml
-language: node_js
-node_js:
-  - "8"
-before_install:
-  - 'nvm install-latest-npm'
-env:
-  matrix:
-  - REACT=16.4
-  - REACT=16.5
-sudo: false
-script:
-  - npm run lint
-  - npm run test
-after_success:
-  - npm run coverage
 ```
 
 ### New Features

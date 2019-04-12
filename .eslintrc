@@ -6,6 +6,11 @@
     "plugin:react/recommended",
     "plugin:prettier/recommended"
   ],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
   "parserOptions": {
     "ecmaVersion": 6,
     "sourceType": "module",

@@ -1,8 +1,6 @@
 language: node_js
 node_js: node
 cache: npm
-env:
-  - REACT=16.8
 script:
   - npm test
 after_success:
