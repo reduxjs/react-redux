@@ -375,14 +375,14 @@ export default function connectAdvanced(
 
       // Now that all that's done, we can finally try to actually render the child component.
       // We memoize the elements for the rendered child component as an optimization.
+      const renderedWrappedComponent = useMemo(
+        () => <WrappedComponent {...actualChildProps} ref={forwardedRef} />,
+        [forwardedRef, WrappedComponent, actualChildProps]
+      )
+
       // If React sees the exact same element reference as last time, it bails out of re-rendering
       // that child, same as if it was wrapped in React.memo() or returned false from shouldComponentUpdate.
       const renderedChild = useMemo(() => {
-        // Render the actual child component
-        const renderedWrappedComponent = (
-          <WrappedComponent {...actualChildProps} ref={forwardedRef} />
-        )
-
         if (shouldHandleStateChanges) {
           // If this component is subscribed to store updates, we need to pass its own
           // subscription instance down to our descendants. That means rendering the same
@@ -395,13 +395,7 @@ export default function connectAdvanced(
         }
 
         return renderedWrappedComponent
-      }, [
-        ContextToUse,
-        WrappedComponent,
-        actualChildProps,
-        forwardedRef,
-        overriddenContextValue
-      ])
+      }, [ContextToUse, renderedWrappedComponent, overriddenContextValue])
 
       return renderedChild
     }
