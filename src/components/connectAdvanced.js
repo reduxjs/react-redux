@@ -291,7 +291,7 @@ export default function connectAdvanced(
       })
 
       // Our re-subscribe logic only runs when the store/subscription setup changes
-      useEffect(() => {
+      useIsomorphicLayoutEffect(() => {
         // If we're not subscribed to the store, nothing to do here
         if (!shouldHandleStateChanges) return
 

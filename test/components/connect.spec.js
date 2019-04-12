@@ -1926,6 +1926,38 @@ describe('React', () => {
 
         expect(mapStateToProps).toHaveBeenCalledTimes(2)
       })
+
+      it('should not notify nested components after they are unmounted', () => {
+        @connect(state => ({ count: state }))
+        class Parent extends Component {
+          render() {
+            return this.props.count === 1 ? <Child /> : null
+          }
+        }
+
+        const mapStateToProps = jest.fn(state => ({ count: state }))
+        @connect(mapStateToProps)
+        class Child extends Component {
+          render() {
+            return <div>{this.props.count}</div>
+          }
+        }
+
+        const store = createStore((state = 0, action) =>
+          action.type === 'INC' ? state + 1 : state
+        )
+        rtl.render(
+          <ProviderMock store={store}>
+            <Parent />
+          </ProviderMock>
+        )
+
+        expect(mapStateToProps).toHaveBeenCalledTimes(0)
+        store.dispatch({ type: 'INC' })
+        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+        store.dispatch({ type: 'INC' })
+        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+      })
     })
 
     describe('Custom context and store-as-prop', () => {
