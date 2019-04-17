@@ -12,7 +12,7 @@ original_id: quick-start
 
 ## Installation
 
-React Redux 7.x requires **React 16.8.4 or later.**
+React Redux 7.x requires **React 16.8.3 or later.**
 
 To use React Redux with your React app:
 
