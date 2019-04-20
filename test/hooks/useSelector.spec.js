@@ -3,11 +3,8 @@
 import React from 'react'
 import { createStore } from 'redux'
 import * as rtl from 'react-testing-library'
-import {
-  Provider as ProviderMock,
-  useSelector,
-  useReduxContext
-} from '../../src/index.js'
+import { Provider as ProviderMock, useSelector } from '../../src/index.js'
+import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {
   describe('hooks', () => {

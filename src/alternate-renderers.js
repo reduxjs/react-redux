@@ -5,7 +5,6 @@ import connect from './connect/connect'
 
 import { useActions } from './hooks/useActions'
 import { useDispatch } from './hooks/useDispatch'
-import { useReduxContext } from './hooks/useReduxContext'
 import { useSelector } from './hooks/useSelector'
 import { useStore } from './hooks/useStore'
 
@@ -22,7 +21,6 @@ export {
   batch,
   useActions,
   useDispatch,
-  useReduxContext,
   useSelector,
   useStore
 }

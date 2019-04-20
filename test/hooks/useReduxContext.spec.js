@@ -1,6 +1,6 @@
 import React from 'react'
 import * as rtl from 'react-testing-library'
-import { useReduxContext } from '../../src/index.js'
+import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {
   describe('hooks', () => {
