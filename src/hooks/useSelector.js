@@ -46,13 +46,33 @@ export function useSelector(selector) {
     contextSub
   ])
 
+  const latestSubscriptionCallbackError = useRef()
   const latestSelector = useRef(selector)
-  const selectedState = selector(store.getState())
+
+  let selectedState = undefined
+
+  try {
+    selectedState = latestSelector.current(store.getState())
+  } catch (err) {
+    let errorMessage = `An error occured while selecting the store state: ${
+      err.message
+    }.`
+
+    if (latestSubscriptionCallbackError.current) {
+      errorMessage += `\nThe error may be correlated with this previous error:\n${
+        latestSubscriptionCallbackError.current.stack
+      }\n\nOriginal stack trace:`
+    }
+
+    throw new Error(errorMessage)
+  }
+
   const latestSelectedState = useRef(selectedState)
 
   useIsomorphicLayoutEffect(() => {
     latestSelector.current = selector
     latestSelectedState.current = selectedState
+    latestSubscriptionCallbackError.current = undefined
   })
 
   useIsomorphicLayoutEffect(() => {
@@ -65,11 +85,12 @@ export function useSelector(selector) {
         }
 
         latestSelectedState.current = newSelectedState
-      } catch {
+      } catch (err) {
         // we ignore all errors here, since when the component
         // is re-rendered, the selectors are called again, and
         // will throw again, if neither props nor store state
         // changed
+        latestSubscriptionCallbackError.current = err
       }
 
       forceRender({})
