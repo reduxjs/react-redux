@@ -192,7 +192,7 @@ This hook returns a reference to the `dispatch` function from the Redux store. Y
 
 ```jsx
 import React, { useCallback } from 'react'
-import { useReduxDispatch } from 'react-redux'
+import { useDispatch } from 'react-redux'
 
 export const CounterComponent = ({ value }) => {
   const dispatch = useDispatch()
