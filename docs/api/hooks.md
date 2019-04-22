@@ -33,7 +33,7 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 ## `useSelector()`
 
 ```js
-const result : any = useSelector(selector : Function)
+const result : any = useSelector(selector : Function, deps : any[])
 ```
 
 Allows you to extract data from the Redux store state, using a selector function.
@@ -43,6 +43,7 @@ The selector is approximately equivalent to the [`mapStateToProps` argument to `
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
 - The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
+- The selector function used will be based on the `deps` array. If no deps array is provided, the latest passed-in selector function will be used when the component renders, and also when any actions are dispatched before the next render. If a deps array is provided, the last saved selector will be used, and that selector will be overwritten whenever the deps array contents have changed.
 - When an action is dispatched, `useSelector()` will do a shallow comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, they component will not re-render.
 - The selector function does _not_ receive an `ownProps` argument. If you wish to use props within the selector function to determine what values to extract, you should call the React [`useMemo()`](https://reactjs.org/docs/hooks-reference.html#usememo) or [`useCallback()`](https://reactjs.org/docs/hooks-reference.html#usecallback) hooks yourself to create a version of the selector that will be re-created whenever the props it depends on change.
 
@@ -70,10 +71,10 @@ Using props to determine what to extract:
 import React, { useCallback } from 'react'
 import { useSelector } from 'react-redux'
 
-export const TodoListItem = props => {
-  const todoSelector = useCallback(() => {
-    return state => state.todos[props.id]
-  }, [props.id])
+export const TodoListItem = props => (
+ state => state.todos[props.id],
+ [props.id]
+ )
 
   const todo = useSelector(todoSelector)
 
@@ -301,3 +302,40 @@ Some options for avoiding this problem:
 - Try using the single function or array forms of `useActions()`
 
 > **Note**: for more details on this problem, see [this comment and following in issue #1179](https://github.com/reduxjs/react-redux/issues/1179#issuecomment-482473235), as well as [this codesandbox that demonstrates the issue](https://codesandbox.io/s/7yjn3m9n96).
+
+### Performance
+
+As mentioned earlier, `useSelector()` will do basic shallow comparisons of return values when running the selector function after an action is dispatched. However, unlike `connect()`, `useSelector()` does not do anything to prevent your own function component from completing a re-render if the derived state has changed.
+
+If further performance optimizations are necessary, you may consider either wrapping your function component in `React.memo(MyFunctionComponent)`, or using `useMemo()` to memoize the render output of your component:
+
+```jsx
+// Option 1: use React.memo() to keep the component from re-rendering
+
+const CounterComponent = props => {
+  const counter = useSelector(state => state.counter)
+  return (
+    <div>
+      {props.name}: {counter}
+    </div>
+  )
+}
+
+export const MemoizedCounterComponent = React.memo(CounterComponent)
+
+// Option 2: let the component re-render, but memoize output
+
+export const CounterComponent = props => {
+  const counter = useSelector(state => state.counter)
+
+  const renderedChildren = useMemo(() => {
+    return (
+      <div>
+        {props.name}: {counter}
+      </div>
+    )
+  }, [props.name, counter])
+
+  return renderedChildren
+}
+```
