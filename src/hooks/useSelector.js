@@ -22,24 +22,23 @@ const useIsomorphicLayoutEffect =
  * This hook takes a dependencies array as an optional second argument,
  * which when passed ensures referential stability of the selector (this is primarily
  * useful if you provide a selector that memoizes values).
- * 
+ *
  * @param {Function} selector the selector function
  * @param {any[]} deps (optional) dependencies array to control referential stability
  * of the selector
- * 
+ *
  * @returns {any} the selected state
  *
- * Usage:
+ * @example
  *
-```jsx
-import React from 'react'
-import { useSelector } from 'react-redux'
-
-export const CounterComponent = () => {
-  const counter = useSelector(state => state.counter)
-  return <div>{counter}</div>
-}
-```
+ * import React from 'react'
+ * import { useSelector } from 'react-redux'
+ * import { RootState } from './store'
+ *
+ * export const CounterComponent = () => {
+ *   const counter = useSelector((state: RootState) => state.counter, [])
+ *   return <div>{counter}</div>
+ * }
  */
 export function useSelector(selector, deps) {
   invariant(selector, `You must pass a selector to useSelectors`)
