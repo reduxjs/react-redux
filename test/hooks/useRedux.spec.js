@@ -7,7 +7,7 @@ import { Provider as ProviderMock, useRedux } from '../../src/index.js'
 
 describe('React', () => {
   describe('hooks', () => {
-    describe(useRedux.name, () => {
+    describe('useRedux', () => {
       let store
       let renderedItems = []
 

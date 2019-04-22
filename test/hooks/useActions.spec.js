@@ -5,7 +5,7 @@ import { Provider as ProviderMock, useActions } from '../../src/index.js'
 
 describe('React', () => {
   describe('hooks', () => {
-    describe(useActions.name, () => {
+    describe('useActions', () => {
       let store
       let dispatchedActions = []
 

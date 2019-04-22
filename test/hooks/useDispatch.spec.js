@@ -7,7 +7,7 @@ const store = createStore(c => c + 1)
 
 describe('React', () => {
   describe('hooks', () => {
-    describe(useDispatch.name, () => {
+    describe('useDispatch', () => {
       afterEach(() => rtl.cleanup())
 
       it("returns the store's dispatch function", () => {

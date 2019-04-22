@@ -4,7 +4,7 @@ import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {
   describe('hooks', () => {
-    describe(useReduxContext.name, () => {
+    describe('useReduxContext', () => {
       afterEach(() => rtl.cleanup())
 
       it('throws if component is not wrapped in provider', () => {

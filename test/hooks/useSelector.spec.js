@@ -8,7 +8,7 @@ import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {
   describe('hooks', () => {
-    describe(useSelector.name, () => {
+    describe('useSelector', () => {
       let store
       let renderedItems = []
 
