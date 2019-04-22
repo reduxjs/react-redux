@@ -44,7 +44,7 @@ However, there are some differences between the selectors passed to `useSelector
 
 - The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
 - When an action is dispatched, `useSelector()` will do a shallow comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, they component will not re-render.
-- The selector function does _not_ receive an `ownProps` argument. If you wish to use props within the selector function to determine what values to extract, you should call the React [`useMemo()`]() or [`useCallback()`]() hooks yourself to create a version of the selector that will be re-created whenever the props it depends on change.
+- The selector function does _not_ receive an `ownProps` argument. If you wish to use props within the selector function to determine what values to extract, you should call the React [`useMemo()`](https://reactjs.org/docs/hooks-reference.html#usememo) or [`useCallback()`](https://reactjs.org/docs/hooks-reference.html#usecallback) hooks yourself to create a version of the selector that will be re-created whenever the props it depends on change.
 
 > **Note**: There are potential edge cases with using props in selectors that may cause errors. See the [Usage Warnings](#usage-warnings) section of this page for further details.
 
