@@ -169,11 +169,8 @@ describe('React', () => {
 
       describe('edge cases', () => {
         it('ignores transient errors in selector (e.g. due to stale props)', () => {
-          // TODO Not sure this test is really testing what we want.
-          // TODO The parent re-renders, which causes the child to re-run the selector anyway and throw the error.
-          // TODO Had to flip the assertion for now. Probably needs to be rethought.
-
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
           const Parent = () => {
             const count = useSelector(s => s.count)
             return <Child parentCount={count} />
@@ -197,9 +194,7 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(() => store.dispatch({ type: '' })).toThrowError(
-            /while selecting the store state/
-          )
+          expect(() => store.dispatch({ type: '' })).not.toThrowError()
 
           spy.mockRestore()
         })

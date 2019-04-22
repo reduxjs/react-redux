@@ -52,7 +52,7 @@ export function useSelector(selector) {
   let selectedState = undefined
 
   try {
-    selectedState = latestSelector.current(store.getState())
+    selectedState = selector(store.getState())
   } catch (err) {
     let errorMessage = `An error occured while selecting the store state: ${
       err.message
