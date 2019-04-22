@@ -18,8 +18,14 @@ const useIsomorphicLayoutEffect =
 /**
  * A hook to access the redux store's state. This hook takes a selector function
  * as an argument. The selector is called with the store state.
+ *
+ * This hook takes a dependencies array as an optional second argument,
+ * which when passed ensures referential stability of the selector (this is primarily
+ * useful if you provide a selector that memoizes values).
  * 
  * @param {Function} selector the selector function
+ * @param {any[]} deps (optional) dependencies array to control referential stability
+ * of the selector
  * 
  * @returns {any} the selected state
  *
@@ -35,7 +41,7 @@ export const CounterComponent = () => {
 }
 ```
  */
-export function useSelector(selector) {
+export function useSelector(selector, deps) {
   invariant(selector, `You must pass a selector to useSelectors`)
 
   const { store, subscription: contextSub } = useReduxContext()
@@ -46,13 +52,15 @@ export function useSelector(selector) {
     contextSub
   ])
 
+  const memoizedSelector = useMemo(() => selector, deps)
+
   const latestSubscriptionCallbackError = useRef()
-  const latestSelector = useRef(selector)
+  const latestSelector = useRef(memoizedSelector)
 
   let selectedState = undefined
 
   try {
-    selectedState = latestSelector.current(store.getState())
+    selectedState = memoizedSelector(store.getState())
   } catch (err) {
     let errorMessage = `An error occured while selecting the store state: ${
       err.message
@@ -70,7 +78,7 @@ export function useSelector(selector) {
   const latestSelectedState = useRef(selectedState)
 
   useIsomorphicLayoutEffect(() => {
-    latestSelector.current = selector
+    latestSelector.current = memoizedSelector
     latestSelectedState.current = selectedState
     latestSubscriptionCallbackError.current = undefined
   })

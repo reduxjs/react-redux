@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React from 'react'
+import React, { useReducer } from 'react'
 import { createStore } from 'redux'
 import * as rtl from 'react-testing-library'
 import { Provider as ProviderMock, useSelector } from '../../src/index.js'
@@ -165,15 +165,40 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
         })
+
+        it('re-uses the selector if deps do not change', () => {
+          let selectorId = 0
+          let forceRender
+
+          const Comp = () => {
+            const [, f] = useReducer(c => c + 1, 0)
+            forceRender = f
+            const renderedSelectorId = selectorId++
+            const value = useSelector(() => renderedSelectorId, [])
+            renderedItems.push(value)
+            return <div />
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          rtl.act(forceRender)
+
+          // this line verifies the susbcription callback uses the same memoized selector and therefore
+          // does not cause a re-render
+          store.dispatch({ type: '' })
+
+          expect(renderedItems).toEqual([0, 0])
+        })
       })
 
       describe('edge cases', () => {
         it('ignores transient errors in selector (e.g. due to stale props)', () => {
-          // TODO Not sure this test is really testing what we want.
-          // TODO The parent re-renders, which causes the child to re-run the selector anyway and throw the error.
-          // TODO Had to flip the assertion for now. Probably needs to be rethought.
-
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
           const Parent = () => {
             const count = useSelector(s => s.count)
             return <Child parentCount={count} />
@@ -197,9 +222,7 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(() => store.dispatch({ type: '' })).toThrowError(
-            /while selecting the store state/
-          )
+          expect(() => store.dispatch({ type: '' })).not.toThrowError()
 
           spy.mockRestore()
         })
