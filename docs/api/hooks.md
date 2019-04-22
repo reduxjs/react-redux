@@ -1,7 +1,7 @@
 ---
-id: provider
-title: Provider
-sidebar_label: Provider
+id: hooks
+title: Hooks
+sidebar_label: Hooks
 hide_title: true
 ---
 
