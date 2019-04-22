@@ -72,11 +72,7 @@ import React, { useCallback } from 'react'
 import { useSelector } from 'react-redux'
 
 export const TodoListItem = props => (
- state => state.todos[props.id],
- [props.id]
- )
-
-  const todo = useSelector(todoSelector)
+  const todo = useSelector(state => state.todos[props.id], [props.id])
 
   return <div>{todo.text}</div>
 }
