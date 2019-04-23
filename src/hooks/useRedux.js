@@ -22,7 +22,7 @@ import { useActions } from './useActions'
  * import { RootState } from './store'
  *
  * export const CounterComponent = () => {
- *   const [counter, { inc1, inc }] = useRedux((state: RootState) => state.counter, {
+ *   const [counter, { inc1, inc }] = useRedux(state => state.counter, {
  *     inc1: () => ({ type: 'inc1' }),
  *     inc: amount => ({ type: 'inc', amount }),
  *   })

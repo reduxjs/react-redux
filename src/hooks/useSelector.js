@@ -36,7 +36,7 @@ const useIsomorphicLayoutEffect =
  * import { RootState } from './store'
  *
  * export const CounterComponent = () => {
- *   const counter = useSelector((state: RootState) => state.counter, [])
+ *   const counter = useSelector(state => state.counter, [])
  *   return <div>{counter}</div>
  * }
  */
