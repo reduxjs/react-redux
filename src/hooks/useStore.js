@@ -2,20 +2,18 @@ import { useReduxContext } from './useReduxContext'
 
 /**
  * A hook to access the redux store.
- * 
+ *
  * @returns {any} the redux store
  *
- * Usage:
+ * @example
  *
-```jsx
-import React from 'react'
-import { useStore } from 'react-redux'
-
-export const CounterComponent = ({ value }) => {
-  const store = useStore()
-  return <div>{store.getState()}</div>
-}
-```
+ * import React from 'react'
+ * import { useStore } from 'react-redux'
+ *
+ * export const ExampleComponent = () => {
+ *   const store = useStore()
+ *   return <div>{store.getState()}</div>
+ * }
  */
 export function useStore() {
   const { store } = useReduxContext()
