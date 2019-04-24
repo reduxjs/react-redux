@@ -68,7 +68,7 @@ export const CounterComponent = () => {
 Using props to determine what to extract:
 
 ```jsx
-import React, { useCallback } from 'react'
+import React from 'react'
 import { useSelector } from 'react-redux'
 
 export const TodoListItem = props => (
