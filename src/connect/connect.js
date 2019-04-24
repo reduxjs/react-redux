@@ -1,4 +1,4 @@
-import connectAdvanced from '../components/connectAdvanced'
+import connectAdvanced from '../components/connectAdvanced.js'
 import shallowEqual from '../utils/shallowEqual'
 import defaultMapDispatchToPropsFactories from './mapDispatchToProps'
 import defaultMapStateToPropsFactories from './mapStateToProps'
@@ -10,7 +10,7 @@ import defaultSelectorFactory from './selectorFactory'
   selectorFactory, which has the signature:
 
     (dispatch, options) => (nextState, nextOwnProps) => nextFinalProps
-  
+
   connect passes its args to connectAdvanced as options, which will in turn pass them to
   selectorFactory each time a Connect component instance is instantiated or hot reloaded.
 
