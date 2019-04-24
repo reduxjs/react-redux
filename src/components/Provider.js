@@ -1,62 +1,60 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { isContextProvider } from 'react-is'
 import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
-import Subscription from '../utils/Subscription'
 
-class Provider extends Component {
-  constructor(props) {
-    super(props)
+// React currently throws a warning when using useLayoutEffect on the server.
+// To get around it, we can conditionally useEffect on the server (no-op) and
+// useLayoutEffect in the browser. We need useLayoutEffect to ensure the store
+// subscription callback always has the selector from the latest render commit
+// available, otherwise a store update may happen between render and the effect,
+// which may cause missed updates; we also must ensure the store subscription
+// is created synchronously, otherwise a store update may occur before the
+// subscription is created and an inconsistent state may be observed
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' &&
+  typeof window.document !== 'undefined' &&
+  typeof window.document.createElement !== 'undefined'
+    ? useLayoutEffect
+    : useEffect
 
-    const { store } = props
+export function Provider({ context, store, children }) {
+  // construct a new updater and assign it to a ref on initial render
 
-    this.notifySubscribers = this.notifySubscribers.bind(this)
-    const subscription = new Subscription(store)
-    subscription.onStateChange = this.notifySubscribers
+  let [contextValue, setContextValue] = useState(() => ({
+    state: store.getState(),
+    store
+  }))
 
-    this.state = {
-      store,
-      subscription
+  let mountedRef = useRef(false)
+  useIsomorphicLayoutEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
     }
+  }, [])
 
-    this.previousState = store.getState()
-  }
-
-  componentDidMount() {
-    this.state.subscription.trySubscribe()
-
-    if (this.previousState !== this.props.store.getState()) {
-      this.state.subscription.notifyNestedSubs()
+  useIsomorphicLayoutEffect(() => {
+    let unsubscribe = store.subscribe(() => {
+      if (mountedRef.current) {
+        setContextValue({ state: store.getState(), store })
+      }
+    })
+    if (contextValue.state !== store.getState()) {
+      setContextValue({ state: store.getState(), store })
     }
-  }
-
-  componentWillUnmount() {
-    if (this.unsubscribe) this.unsubscribe()
-
-    this.state.subscription.tryUnsubscribe()
-  }
-
-  componentDidUpdate(prevProps) {
-    if (this.props.store !== prevProps.store) {
-      this.state.subscription.tryUnsubscribe()
-      const subscription = new Subscription(this.props.store)
-      subscription.onStateChange = this.notifySubscribers
-      this.setState({ store: this.props.store, subscription })
+    return () => {
+      unsubscribe()
     }
-  }
+  }, [store])
 
-  notifySubscribers() {
-    this.state.subscription.notifyNestedSubs()
-  }
+  // use context from props if one was provided
+  const Context =
+    context && context.Provider && isContextProvider(<context.Provider />)
+      ? context
+      : ReactReduxContext
 
-  render() {
-    const Context = this.props.context || ReactReduxContext
-
-    return (
-      <Context.Provider value={this.state}>
-        {this.props.children}
-      </Context.Provider>
-    )
-  }
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
 
 Provider.propTypes = {
@@ -68,5 +66,3 @@ Provider.propTypes = {
   context: PropTypes.object,
   children: PropTypes.any
 }
-
-export default Provider

@@ -1,21 +1,13 @@
-import { useReduxContext } from './useReduxContext'
+import { useContextSelector } from 'react'
 
-/**
- * A hook to access the redux store.
- *
- * @returns {any} the redux store
- *
- * @example
- *
- * import React from 'react'
- * import { useStore } from 'react-redux'
- *
- * export const ExampleComponent = () => {
- *   const store = useStore()
- *   return <div>{store.getState()}</div>
- * }
- */
-export function useStore() {
-  const { store } = useReduxContext()
-  return store
+import { ReactReduxContext } from '../components/Context'
+
+const storeSelector = c => c.store
+
+export function makeUseStore(Context) {
+  return function useStore() {
+    return useContextSelector(Context, storeSelector)
+  }
 }
+
+export const useStore = makeUseStore(ReactReduxContext)

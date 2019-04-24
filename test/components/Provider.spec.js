@@ -286,7 +286,7 @@ describe('React', () => {
       expect(spy).not.toHaveBeenCalled()
     })
 
-    it.skip('should unsubscribe before unmounting', () => {
+    it('should unsubscribe before unmounting', () => {
       const store = createStore(createExampleTextReducer())
       const subscribe = store.subscribe
 

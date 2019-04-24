@@ -1,5 +1,5 @@
 import React from 'react'
 
-export const ReactReduxContext = React.createContext(null)
+export const ReactReduxContext = React.createContext({})
 
 export default ReactReduxContext
