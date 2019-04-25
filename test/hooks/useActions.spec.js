@@ -1,5 +1,3 @@
-/*eslint-disable react/display-name*/
-
 import React from 'react'
 import { createStore } from 'redux'
 import { renderHook } from 'react-hooks-testing-library'
