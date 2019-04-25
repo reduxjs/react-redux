@@ -1,21 +1,15 @@
-import React from 'react'
-import * as rtl from 'react-testing-library'
+import { renderHook } from 'react-hooks-testing-library'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {
   describe('hooks', () => {
     describe('useReduxContext', () => {
-      afterEach(() => rtl.cleanup())
-
       it('throws if component is not wrapped in provider', () => {
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-        const Comp = () => {
-          useReduxContext()
-          return <div />
-        }
+        const { result } = renderHook(() => useReduxContext())
 
-        expect(() => rtl.render(<Comp />)).toThrow(
+        expect(result.error.message).toMatch(
           /could not find react-redux context value/
         )
 
