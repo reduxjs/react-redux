@@ -1,6 +1,6 @@
 import React from 'react'
 import { createStore } from 'redux'
-import * as rtl from 'react-testing-library'
+import { renderHook } from 'react-hooks-testing-library'
 import { Provider as ProviderMock, useDispatch } from '../../src/index.js'
 
 const store = createStore(c => c + 1)
@@ -8,23 +8,12 @@ const store = createStore(c => c + 1)
 describe('React', () => {
   describe('hooks', () => {
     describe('useDispatch', () => {
-      afterEach(() => rtl.cleanup())
-
       it("returns the store's dispatch function", () => {
-        let dispatch
+        const { result } = renderHook(() => useDispatch(), {
+          wrapper: props => <ProviderMock {...props} store={store} />
+        })
 
-        const Comp = () => {
-          dispatch = useDispatch()
-          return <div />
-        }
-
-        rtl.render(
-          <ProviderMock store={store}>
-            <Comp />
-          </ProviderMock>
-        )
-
-        expect(dispatch).toBe(store.dispatch)
+        expect(result.current).toBe(store.dispatch)
       })
     })
   })

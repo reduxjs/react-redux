@@ -2,6 +2,7 @@
 
 import React, { useReducer } from 'react'
 import { createStore } from 'redux'
+import { renderHook, act } from 'react-hooks-testing-library'
 import * as rtl from 'react-testing-library'
 import { Provider as ProviderMock, useSelector } from '../../src/index.js'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
@@ -23,37 +24,25 @@ describe('React', () => {
 
       describe('core subscription behavior', () => {
         it('selects the state on initial render', () => {
-          const Comp = () => {
-            const count = useSelector(s => s.count)
-            renderedItems.push(count)
-            return <div>{count}</div>
-          }
+          const { result } = renderHook(() => useSelector(s => s.count), {
+            wrapper: props => <ProviderMock {...props} store={store} />
+          })
 
-          rtl.render(
-            <ProviderMock store={store}>
-              <Comp />
-            </ProviderMock>
-          )
-
-          expect(renderedItems).toEqual([0])
+          expect(result.current).toEqual(0)
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const Comp = () => {
-            const count = useSelector(s => s.count)
-            renderedItems.push(count)
-            return <div>{count}</div>
-          }
+          const { result } = renderHook(() => useSelector(s => s.count), {
+            wrapper: props => <ProviderMock {...props} store={store} />
+          })
 
-          rtl.render(
-            <ProviderMock store={store}>
-              <Comp />
-            </ProviderMock>
-          )
+          expect(result.current).toEqual(0)
 
-          store.dispatch({ type: '' })
+          act(() => {
+            store.dispatch({ type: '' })
+          })
 
-          expect(renderedItems).toEqual([0, 1])
+          expect(result.current).toEqual(1)
         })
       })
 
