@@ -25,7 +25,7 @@ describe('React', () => {
     Because the tradeoffs in 1 and 2 are quite hefty and also
     because it's the popular approach, this test targets nr 3.
   */
-  describe('dynamic reducers', () => {
+  describe.skip('dynamic reducers', () => {
     const InjectReducersContext = React.createContext(null)
 
     function ExtraReducersProvider({ children, reducers }) {
