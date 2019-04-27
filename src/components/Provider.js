@@ -1,18 +1,21 @@
-import React from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
 import { createUpdater } from '../updater/updater'
 
 export function Provider({ context, store, children }) {
-  let [updater] = React.useState(createUpdater)
+  let [updater] = useState(createUpdater)
   updater.setStore(store)
-  React.useEffect(() => {
+  useEffect(() => {
     updater.setStore(store)
     updater.newState(store.getState())
     return store.subscribe(() => updater.newState(store.getState()))
   }, [updater, store])
+  let contextValue = useMemo(() => {
+    return { ...updater, store }
+  }, [updater, store])
   const Context = context || ReactReduxContext
-  return <Context.Provider value={updater}>{children}</Context.Provider>
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
 
 Provider.propTypes = {
