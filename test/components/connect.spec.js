@@ -2065,7 +2065,7 @@ describe('React', () => {
         expect(actualState).toEqual(expectedState)
       })
 
-      it('should use the store from the props instead of from the context if present', () => {
+      xit('should use the store from the props instead of from the context if present', () => {
         class Container extends Component {
           render() {
             return <Passthrough />
@@ -2091,7 +2091,7 @@ describe('React', () => {
         expect(actualState).toEqual(expectedState)
       })
 
-      it('should pass through ancestor subscription when store is given as a prop', () => {
+      xit('should pass through ancestor subscription when store is given as a prop', () => {
         const c3Spy = jest.fn()
         const c2Spy = jest.fn()
         const c1Spy = jest.fn()
