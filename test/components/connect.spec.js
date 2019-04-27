@@ -227,7 +227,7 @@ describe('React', () => {
         const Decorated = decorator(Container)
 
         expect(() => rtl.render(<Decorated />)).toThrow(
-          /Could not find "store"/
+          /Could not find "dispatch"/
         )
 
         spy.mockRestore()
