@@ -2539,26 +2539,23 @@ describe('React', () => {
         )
 
         // 1) Initial render
-        // 2) Post-mount check
-        // 3) After "wasted" re-render
-        expect(mapStateSpy).toHaveBeenCalledTimes(2)
-        expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
+        expect(mapStateSpy).toHaveBeenCalledTimes(1)
+        expect(mapDispatchSpy).toHaveBeenCalledTimes(1)
 
         // 1) Initial render
-        // 2) Triggered by post-mount check with impure results
-        expect(impureRenderSpy).toHaveBeenCalledTimes(2)
+        expect(impureRenderSpy).toHaveBeenCalledTimes(1)
         expect(tester.getByTestId('statefulValue')).toHaveTextContent('foo')
 
         // Impure update
         storeGetter.storeKey = 'bar'
         externalSetState({ storeGetter })
 
-        // 4) After the the impure update
-        expect(mapStateSpy).toHaveBeenCalledTimes(3)
-        expect(mapDispatchSpy).toHaveBeenCalledTimes(3)
+        // 2) After the the impure update
+        expect(mapStateSpy).toHaveBeenCalledTimes(2)
+        expect(mapDispatchSpy).toHaveBeenCalledTimes(2)
 
-        // 3) Triggered by impure update
-        expect(impureRenderSpy).toHaveBeenCalledTimes(3)
+        // 2) Triggered by impure update
+        expect(impureRenderSpy).toHaveBeenCalledTimes(2)
         expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
       })
 
