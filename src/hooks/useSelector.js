@@ -1,6 +1,13 @@
-import React from 'react'
+import React, { useLayoutEffect, useEffect } from 'react'
 
 import { ReactReduxContext } from '../components/Context'
+
+// React currently throws a warning when using useLayoutEffect on the server.
+// To get around it, we can conditionally useEffect on the server (no-op) and
+// useLayoutEffect in the browser. We need useLayoutEffect to ensure we can
+// run effects before the node is updated in our queue
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 export function makeUseSelector(Context) {
   return function useSelector(select, label) {
@@ -23,7 +30,7 @@ export function makeUseSelector(Context) {
     let queue = node.queue
 
     // if this render commits ensure node captures state it rendered with
-    React.useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
       node.state = queue.state
     }, [queue.state])
 
@@ -50,7 +57,7 @@ export function makeUseSelector(Context) {
     // expose a ref to last slice for listener to bail out from
     let lastSliceRef = React.useRef(null)
     // if this render commits ensure the latest slice is updated
-    React.useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
       lastSliceRef.current = slice
     }, [slice])
 
@@ -71,14 +78,14 @@ export function makeUseSelector(Context) {
     }, [select, queue, context])
 
     // update listener for next update and nullify on unmount
-    React.useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
       updaterRef.current = updater
       return () => (updaterRef.current = null)
     }, [updater])
 
     // resume updates after render finishes
     // this needs to be the last layout effect
-    React.useLayoutEffect(() => {
+    useIsomorphicLayoutEffect(() => {
       context.continueUpdate(node)
     })
 

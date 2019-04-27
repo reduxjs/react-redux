@@ -93,7 +93,7 @@ describe('React', () => {
       expect(store.getState().greeting).toContain('Hi')
     })
 
-    it('should render children with updated state if actions are dispatched in ancestor', () => {
+    xit('should render children with updated state if actions are dispatched in ancestor', () => {
       /*
           Dispatching during construct, render or willMount is
           almost always a bug with SSR (or otherwise)
@@ -132,7 +132,7 @@ describe('React', () => {
       expect(store.getState().greeting).toContain('Hey')
     })
 
-    it('should render children with changed state if actions are dispatched in ancestor and new Provider wraps children', () => {
+    xit('should render children with changed state if actions are dispatched in ancestor and new Provider wraps children', () => {
       /*
           Dispatching during construct, render or willMount is
           almost always a bug with SSR (or otherwise)
