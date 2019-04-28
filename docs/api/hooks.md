@@ -13,6 +13,8 @@ React Redux now offers a set of hook APIs as an alternative to the existing `con
 
 > **Note**: The hook APIs listed in this page are **still experimental and in alpha!** We encourage you to try them out in your applications and give feedback, but be aware that they may be changed before a final release, including potential renaming or removal.
 
+This page reflects the latest alpha, which is currently **v7.1.0-alpha.3**.
+
 ## Using Hooks in a React Redux App
 
 As with `connect()`, you should start by wrapping your entire application in a `<Provider>` component to make the store available throughout the component tree:
@@ -143,39 +145,12 @@ export const CounterComponent = ({ value }) => {
 }
 ```
 
-## `useRedux()`
+## Removed: `useRedux()`
 
-```js
-const [selectedValue, boundACs] = useRedux(selector, actionCreators)
-```
+This hook was removed in `v7.1.0-alpha.3`, on the grounds that it didn't provide any real benefit.
 
-This hook allows you to both extract values from the Redux store state and bind action creators in a single call. This is conceptually equivalent to the [`connect()` function](./connect.md) accepting both a `mapState` and a `mapDispatch` argument.
+If you were using it in your own code, please replace that with separate calls to `useSelector()` and `useActions()`.
 
-`useRedux()` is simply a wrapper for `useSelector()` and `useActions()`, and `useRedux()` passes its arguments directly to them. The return value is an array containing the results of `useSelector()` and `useActions()`, respectively.
-
-Note that `useRedux()` currently does _not_ allow you to specify a dependency array for the `actionCreators` parameter, so they will be re-created every time the component renders. If you need consistent function references, consider using `useActions()` with a dependency array instead.
-
-#### Examples
-
-```jsx
-import React from 'react'
-import { useRedux } from 'react-redux'
-
-export const CounterComponent = () => {
-  const [counter, { inc1, inc }] = useRedux(state => state.counter, {
-    inc1: () => ({ type: 'inc1' }),
-    inc: amount => ({ type: 'inc', amount })
-  })
-
-  return (
-    <>
-      <div>{counter}</div>
-      <button onClick={inc1}>Increment by 1</button>
-      <button onClick={() => inc(5)}>Increment by 5</button>
-    </>
-  )
-}
-```
 
 ## `useDispatch()`
 
