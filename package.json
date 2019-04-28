@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "7.1.0-alpha.1",
+  "version": "7.1.0-alpha.3",
   "description": "Official React bindings for Redux",
   "keywords": [
     "react",
