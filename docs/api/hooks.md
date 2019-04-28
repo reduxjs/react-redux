@@ -73,7 +73,7 @@ Using props to determine what to extract:
 import React from 'react'
 import { useSelector } from 'react-redux'
 
-export const TodoListItem = props => (
+export const TodoListItem = props => {
   const todo = useSelector(state => state.todos[props.id], [props.id])
 
   return <div>{todo.text}</div>
