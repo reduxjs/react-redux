@@ -3182,54 +3182,6 @@ describe('React', () => {
 
         expect(reduxCountPassedToMapState).toEqual(3)
       })
-
-      it('should ensure top-down updates for consecutive batched updates', () => {
-        const INC = 'INC'
-        const reducer = (c = 0, { type }) => (type === INC ? c + 1 : c)
-        const store = createStore(reducer)
-
-        let executionOrder = []
-        let expectedExecutionOrder = [
-          'parent map',
-          'parent render',
-          'child map',
-          'child render'
-        ]
-
-        const ChildImpl = () => {
-          executionOrder.push('child render')
-          return <div>child</div>
-        }
-
-        const Child = connect(state => {
-          executionOrder.push('child map')
-          return { state }
-        })(ChildImpl)
-
-        const ParentImpl = () => {
-          executionOrder.push('parent render')
-          return <Child />
-        }
-
-        const Parent = connect(state => {
-          executionOrder.push('parent map')
-          return { state }
-        })(ParentImpl)
-
-        rtl.render(
-          <ProviderMock store={store}>
-            <Parent />
-          </ProviderMock>
-        )
-
-        executionOrder = []
-        rtl.act(() => {
-          store.dispatch({ type: INC })
-          store.dispatch({ type: '' })
-        })
-
-        expect(executionOrder).toEqual(expectedExecutionOrder)
-      })
     })
 
     it("should enforce top-down updates to ensure a deleted child's mapState doesn't throw errors", () => {

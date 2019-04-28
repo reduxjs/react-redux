@@ -253,7 +253,6 @@ export default function connectAdvanced(
       const lastChildProps = useRef()
       const lastWrapperProps = useRef(wrapperProps)
       const childPropsFromStoreUpdate = useRef()
-      const renderIsScheduled = useRef(false)
 
       const actualChildProps = usePureOnlyMemo(() => {
         // Tricky logic here:
@@ -283,7 +282,6 @@ export default function connectAdvanced(
         // We want to capture the wrapper props and child props we used for later comparisons
         lastWrapperProps.current = wrapperProps
         lastChildProps.current = actualChildProps
-        renderIsScheduled.current = false
 
         // If the render was from a store update, clear out that reference and cascade the subscriber update
         if (childPropsFromStoreUpdate.current) {
@@ -330,9 +328,7 @@ export default function connectAdvanced(
 
           // If the child props haven't changed, nothing to do here - cascade the subscription update
           if (newChildProps === lastChildProps.current) {
-            if (!renderIsScheduled.current) {
-              notifyNestedSubs()
-            }
+            notifyNestedSubs()
           } else {
             // Save references to the new child props.  Note that we track the "child props from store update"
             // as a ref instead of a useState/useReducer because we need a way to determine if that value has
@@ -340,7 +336,6 @@ export default function connectAdvanced(
             // forcing another re-render, which we don't want.
             lastChildProps.current = newChildProps
             childPropsFromStoreUpdate.current = newChildProps
-            renderIsScheduled.current = true
 
             // If the child props _did_ change (or we caught an error), this wrapper component needs to re-render
             forceComponentUpdateDispatch({
