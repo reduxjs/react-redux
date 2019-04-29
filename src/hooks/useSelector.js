@@ -40,15 +40,12 @@ export function makeUseSelector(Context) {
     }, [queue.state])
 
     // establishh trigger for re-renders when selected state changes
-    let [memoSelection, setMemoSelection] = React.useState(false)
+    let [[memoSlice, memoSelect, memoState], setMemoSelection] = React.useState(
+      false
+    )
 
     // compute slice if necessary
     let slice = React.useMemo(() => {
-      let {
-        state: memoState,
-        select: memoSelect,
-        slice: memoSlice
-      } = memoSelection
       if (queue.state === memoState && select === memoSelect) {
         // console.log(
         //   'skipping slice computation and using listeners captured result',
@@ -57,7 +54,7 @@ export function makeUseSelector(Context) {
         return memoSlice
       }
       return select(queue.state)
-    }, [node, memoSelection, select, queue.state])
+    }, [node, memoSlice, memoSelect, memoState, select, queue.state])
 
     // expose a ref to last slice for listener to bail out from
     let lastSliceRef = React.useRef(null)
@@ -73,11 +70,7 @@ export function makeUseSelector(Context) {
       if (lastSliceRef.current !== slice) {
         // console.log('slice is different so we will update things', node.tag)
         context.updating(node)
-        setMemoSelection({
-          slice,
-          select,
-          state: queue.state
-        })
+        setMemoSelection([slice, select, queue.state])
       } else {
         // since this node won't update we can set the node.state now
         node.state = queue.state
