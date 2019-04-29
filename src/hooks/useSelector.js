@@ -52,7 +52,7 @@ export function makeUseSelector(Context) {
         return memoSlice
       }
       return select(queue.state)
-    }, [select, queue.state])
+    }, [node, memoSelection, select, queue.state])
 
     // expose a ref to last slice for listener to bail out from
     let lastSliceRef = React.useRef(null)
@@ -67,15 +67,17 @@ export function makeUseSelector(Context) {
       let slice = select(queue.state)
       if (lastSliceRef.current !== slice) {
         // console.log('slice is different so we will update things', node.tag)
-        // console.log('setStateCount', ++setStateCount)
         context.updating(node)
         setMemoSelection({
           slice,
           select,
           state: queue.state
         })
+      } else {
+        // since this node won't update we can set the node.state now
+        node.state = queue.state
       }
-    }, [select, queue, context])
+    }, [node, select, queue, context])
 
     // update listener for next update and nullify on unmount
     useIsomorphicLayoutEffect(() => {

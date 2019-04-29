@@ -128,7 +128,7 @@ describe('React', () => {
         expect(tester.queryByTestId('hello')).toBe(null)
       })
 
-      it('should subscribe class components to the store changes', () => {
+      it('should subscribe class components to the store changes', async () => {
         const store = createStore(stringBuilder)
 
         @connect(state => ({ string: state }))
