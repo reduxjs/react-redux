@@ -239,8 +239,6 @@ export function createUpdater() {
         if (_TRACE_WORK_) {
           console.log(`doWork, process node ${node.index}`)
         }
-        // console.log('doWork, process', node.tag)
-        node.state = queue.state
         node.updater.current()
       }
       queue.cursorNode = node
