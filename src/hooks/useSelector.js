@@ -9,15 +9,20 @@ import { ReactReduxContext } from '../components/Context'
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
+const NOOP_FN = () => {}
+
 export function makeUseSelector(Context) {
-  return function useSelector(select) {
+  return function useSelector(selector, deps) {
     // use react-redux context
     let context = React.useContext(Context)
 
-    // expose a ref to work node to execute latest updater
-    let updaterRef = React.useRef(() => {})
+    // memoize the selector with the provided deps
+    let select = React.useCallback(selector, deps)
 
-    // on mount construct a node with a ref to listener
+    // expose a ref to work node to execute latest updater
+    let updaterRef = React.useRef(NOOP_FN)
+
+    // on mount construct a node with a ref to the updater
     let nodeRef = React.useRef(null)
     if (nodeRef.current === null) {
       nodeRef.current = context.create(updaterRef)
