@@ -276,9 +276,8 @@ export function createUpdater() {
 
   let nodeCount = 0
 
-  let create = (updater, label) => {
+  let create = updater => {
     let node = {
-      tag: label,
       index: nodeCount++,
       updater: updater,
       queue: queue,

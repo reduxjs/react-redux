@@ -10,7 +10,7 @@ const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 export function makeUseSelector(Context) {
-  return function useSelector(select, label) {
+  return function useSelector(select) {
     // use react-redux context
     let context = React.useContext(Context)
 
@@ -20,7 +20,7 @@ export function makeUseSelector(Context) {
     // on mount construct a node with a ref to listener
     let nodeRef = React.useRef(null)
     if (nodeRef.current === null) {
-      nodeRef.current = context.create(updaterRef, label)
+      nodeRef.current = context.create(updaterRef)
     }
 
     // this node identity will be stable across re-renders

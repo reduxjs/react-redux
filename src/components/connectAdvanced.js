@@ -173,7 +173,7 @@ export default function connectAdvanced(
         state => childPropsSelector(state, wrapperProps),
         [childPropsSelector, wrapperProps]
       )
-      let actualChildProps = useSelect(select, displayName)
+      let actualChildProps = useSelect(select)
 
       // Now that all that's done, we can finally try to actually render the child component.
       // We memoize the elements for the rendered child component as an optimization.
