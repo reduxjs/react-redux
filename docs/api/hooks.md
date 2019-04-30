@@ -42,14 +42,16 @@ const result : any = useSelector(selector : Function, deps : any[])
 
 Allows you to extract data from the Redux store state, using a selector function.
 
+> **Note**: The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
+
 The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-extracting-data-with-mapStateToProps.md) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders. `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
 
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
 - The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
-- The selector function used will be based on the `deps` array. If no deps array is provided, the latest passed-in selector function will be used when the component renders, and also when any actions are dispatched before the next render. If a deps array is provided, the last saved selector will be used, and that selector will be overwritten whenever the deps array contents have changed.
+- The selector function used will be based on the `deps` array. If no deps array is provided, the latest passed-in selector function will be used when the component renders, and also when any actions are dispatched before the next render. If a deps array is provided, the last saved selector will be used, and that selector will be overwritten whenever the deps array contents have changed. Therefore, the deps are only required if the selector needs to be referentially stable, e.g. if you are using memoizing selectors.
 - When an action is dispatched, `useSelector()` will do a shallow comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, they component will not re-render.
-- The selector function does _not_ receive an `ownProps` argument. If you wish to use props within the selector function to determine what values to extract, you should call the React [`useMemo()`](https://reactjs.org/docs/hooks-reference.html#usememo) or [`useCallback()`](https://reactjs.org/docs/hooks-reference.html#usecallback) hooks yourself to create a version of the selector that will be re-created whenever the props it depends on change.
+- The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector. If you are providing `deps` to `useSelector()` make sure they contain all the props you are using.
 
 > **Note**: There are potential edge cases with using props in selectors that may cause errors. See the [Usage Warnings](#usage-warnings) section of this page for further details.
 
@@ -69,16 +71,34 @@ export const CounterComponent = () => {
 }
 ```
 
-Using props to determine what to extract:
+Using props via closure to determine what to extract:
 
 ```jsx
 import React from 'react'
 import { useSelector } from 'react-redux'
 
 export const TodoListItem = props => {
-  const todo = useSelector(state => state.todos[props.id], [props.id])
-
+  const todo = useSelector(state => state.todos[props.id])
   return <div>{todo.text}</div>
+}
+```
+
+Using `deps` to ensure the same selector is used in each render:
+
+```jsx
+import React from 'react'
+import { useSelector } from 'react-redux'
+import { createSelector } from 'reselect'
+
+const allOtherTodos = createSelector(
+  state => state.todos,
+  (_, id) => id,
+  (todos, id) => todos.filter(todo => todo.id !== id)
+)
+
+export const OtherTodoListItems = ({ id }) => {
+  const otherTodos = useSelector(s => allOtherTodos(s, id), [id])
+  return <div>{otherTodos.length}</div>
 }
 ```
 
@@ -198,11 +218,13 @@ Depending on what props were used and what the current store state is, this _may
 - The parent component _would_ stop rendering that child as a result
 - However, because the child subscribed first, its subscription runs before the parent stops rendering it. When it reads a value from the store based on props, that data no longer exists, and if the extraction logic is not careful, this may result in an error being thrown.
 
-Some possible options for avoiding these problems with `useSelector()`:
+`useSelector()` tries to deal with this by catching all errors that are thrown when the selector is executed due to a store update (but not when it is executed during rendering). When an error occurs, the component will be forced to render, at which point the selector is executed again. This works as long as the selector is a pure function and you do not depend on the selector throwing errors.
+
+If you prefer to deal with this issue yourself, here are some possible options for avoiding these problems altogether with `useSelector()`:
 
 - Don't rely on props in your selector function for extracting data
 - In cases where you do rely on props in your selector function _and_ those props may change over time, _or_ the data you're extracting may be based on items that can be deleted, try writing the selector functions defensively. Don't just reach straight into `state.todos[props.id].name` - read `state.todos[props.id]` first, and verify that it exists before trying to read `todo.name`.
-- Because connected components add the necessary `Subscription` to the context provider, putting a connected component in the tree just above the components with potential data issues may keep those issues from occurring.
+- Because `connect` adds the necessary `Subscription` to the context provider, wrapping the component with `connect` (without any arguments, i.e. `connect()(MyComponent)` will keep those issues from occurring.
 
 > **Note**: For a longer description of this issue, see [this chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec), as well as [issue #1179](https://github.com/reduxjs/react-redux/issues/1179).
 
