@@ -14,13 +14,13 @@ const stringifyComponent = Comp => {
   }
 }
 
-let MockPerformance = {
-  mark: () => {},
-  measure: () => {}
-}
-
-let performance = MockPerformance
-
+// let MockPerformance = {
+//   mark: () => {},
+//   measure: () => {}
+// }
+//
+// let performance = MockPerformance
+//
 let renderCount = 0
 performance.mark('render')
 
@@ -178,10 +178,11 @@ export default function connectAdvanced(
       // Now that all that's done, we can finally try to actually render the child component.
       // We memoize the elements for the rendered child component as an optimization.
       const renderedWrappedComponent = useMemo(() => {
-        performance.measure(`render ${++renderCount}`, 'render')
-        performance.mark('render')
         return <WrappedComponent {...actualChildProps} ref={forwardedRef} />
       }, [forwardedRef, WrappedComponent, actualChildProps])
+
+      performance.measure(`render ${++renderCount}`, 'render')
+      performance.mark('render')
 
       return renderedWrappedComponent
     }

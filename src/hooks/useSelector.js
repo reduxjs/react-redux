@@ -83,12 +83,6 @@ export function makeUseSelector(Context) {
       return () => (updaterRef.current = null)
     }, [updater])
 
-    // resume updates after render finishes
-    // this needs to be the last layout effect
-    useIsomorphicLayoutEffect(() => {
-      context.continueUpdate(node)
-    })
-
     return slice
   }
 }

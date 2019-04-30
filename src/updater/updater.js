@@ -1,11 +1,11 @@
 import { unstable_batchedUpdates } from 'react-dom'
 
-let MockPerformance = {
-  mark: () => {},
-  measure: () => {}
-}
-
-let performance = MockPerformance
+// let MockPerformance = {
+//   mark: () => {},
+//   measure: () => {}
+// }
+//
+// let performance = MockPerformance
 
 /*
  @TODO remove hack to detect if we are running in jsdom. the current
@@ -35,13 +35,15 @@ let performance = MockPerformance
  eliminate the need for the dummy promise. in the meantime the sync update workaround
  seems sufficient to allow investigation of this libraries updater technique
  */
-let _IS_TEST_ = !global.navigator || navigator.userAgent.includes('jsdom')
+let _IS_TEST_ = false //!global.navigator || navigator.userAgent.includes('jsdom')
 
 let _DEV_ = false
 let _TRACE_WORK_ = _DEV_ && true
+let _TRACE_UPDATE_ = true
 
 export function createUpdater() {
   // define circular node queue to hold updating nodes
+  console.log('createUpdater')
   let queue = {
     state: null,
     lastNode: null,
@@ -132,8 +134,12 @@ export function createUpdater() {
     return store.dispatch(...args)
   }
 
+  let stateCt = 0
   function newState(state) {
     if (queue.state !== state) {
+      if (_TRACE_UPDATE_) {
+        stateCt++
+      }
       if (_TRACE_WORK_) {
         console.log(`newState, starting update with new state`, state)
       }
@@ -146,8 +152,8 @@ export function createUpdater() {
     }
   }
 
-  let hasMark = false
-
+  let updates = 0
+  let stateOnUpdate = 0
   function startUpdateWork() {
     if (isWorking) {
       if (_TRACE_WORK_) {
@@ -192,10 +198,10 @@ export function createUpdater() {
       )
     }
 
-    if (_TRACE_WORK_) {
-      if (hasMark) performance.measure('time to update', 'startUpdate')
+    if (_TRACE_UPDATE_) {
+      stateOnUpdate = stateCt
+      updates++
       performance.mark('startUpdate')
-      hasMark = true
     }
     unstable_batchedUpdates(doWork)
   }
@@ -204,56 +210,79 @@ export function createUpdater() {
   let workNode = null
 
   function doWork() {
-    if (isWorking) {
-      if (_TRACE_WORK_) {
-        console.log(`doWork, already working, wait for work to finish`)
+    try {
+      if (_TRACE_UPDATE_) {
+        performance.mark('workStep')
       }
-      return
-    }
-
-    // return early if no nodes to process
-    if (queue.lastNode === null) {
-      if (_TRACE_WORK_) {
-        console.log(`doWork, nothing left to do work on, checkForWork`)
-      }
-      return checkForWork()
-    }
-
-    workLoop: do {
-      let node = queue.cursorNode.nextNode
-
-      while (node.updater.current === null) {
-        if (_TRACE_WORK_) {
-          console.log(`doWork, remove current node`)
-        }
-        removeCurrentNode()
-        if (queue.lastNode === null) break workLoop
-        node = queue.cursorNode.nextNode
-      }
-
-      if (node.state === queue.state) {
-        if (_TRACE_WORK_) {
-          console.log(`doWork, node ${node.index} already updated, skip`)
-        }
-      } else {
-        if (_TRACE_WORK_) {
-          console.log(`doWork, process node ${node.index}`)
-        }
-        node.updater.current()
-      }
-      queue.cursorNode = node
-
       if (isWorking) {
         if (_TRACE_WORK_) {
-          console.log(
-            `doWork, node ${node.index} is now updating, defer to React`
-          )
+          console.log(`doWork, already working, wait for work to finish`)
         }
         return
       }
-    } while (queue.cursorNode !== queue.lastNode)
 
-    checkForWork()
+      // return early if no nodes to process
+      if (queue.lastNode === null) {
+        if (_TRACE_WORK_) {
+          console.log(`doWork, nothing left to do work on, checkForWork`)
+        }
+        return checkForWork()
+      }
+
+      workLoop: do {
+        let node = queue.cursorNode.nextNode
+
+        while (node.updater.current === null) {
+          if (_TRACE_WORK_) {
+            console.log(`doWork, remove current node`)
+          }
+          removeCurrentNode()
+          if (queue.lastNode === null) break workLoop
+          node = queue.cursorNode.nextNode
+        }
+
+        if (node.state === queue.state) {
+          if (_TRACE_WORK_) {
+            console.log(`doWork, node ${node.index} already updated, skip`)
+          }
+        } else {
+          if (_TRACE_WORK_) {
+            console.log(`doWork, process node ${node.index}`)
+          }
+          try {
+            node.updater.current()
+          } catch (e) {
+            console.error(e)
+          }
+        }
+        queue.cursorNode = node
+
+        if (isWorking) {
+          if (_TRACE_WORK_) {
+            console.log(
+              `doWork, node ${node.index} is now updating, defer to React`
+            )
+          }
+          if (_TRACE_WORK_) {
+            console.warn(`doWork, scheduling next work loop on microtask`)
+          }
+          scheduleAsMicrotask(restartWork)
+          return
+        }
+      } while (queue.cursorNode !== queue.lastNode)
+
+      if (_TRACE_UPDATE_) {
+        performance.measure(
+          `update ${updates}, state ${stateOnUpdate}`,
+          'startUpdate'
+        )
+      }
+      checkForWork()
+    } finally {
+      if (_TRACE_UPDATE_) {
+        performance.measure(`workStep `, 'workStep')
+      }
+    }
   }
 
   function checkForWork() {
@@ -270,7 +299,7 @@ export function createUpdater() {
       }
       // schedule a new update async
       // @TODO
-      setTimeout(startUpdateWork, 0)
+      scheduleAsTask(startUpdateWork)
     }
   }
 
@@ -298,49 +327,37 @@ export function createUpdater() {
     }
   }
 
-  let continueUpdate = node => {
-    if (workNode === node) {
-      if (_TRACE_WORK_) {
-        console.log(
-          `continueUpdate, node ${node.index} is workNode, restartWork`
-        )
-      }
-      micro(restartWork)
-    } else {
-      if (_TRACE_WORK_) {
-        console.log(
-          `continueUpdate, node ${node.index} not workNode, do nothing`
-        )
-      }
-    }
-  }
-
   function restartWork() {
     workNode = null
     isWorking = false
     unstable_batchedUpdates(doWork)
   }
 
+  window.PRINT_QUEUE = () => printQueue(queue)
+
   return {
     create,
     updating,
-    continueUpdate,
     newState,
     setStore,
     dispatch
   }
 }
 
-function micro(fn) {
+function scheduleAsMicrotask(fn) {
   if (_IS_TEST_) {
     fn()
     return
   }
-  performance.mark('micro')
+  // performance.mark('micro')
   Promise.resolve().then(() => {
-    performance.measure('micro to now', 'micro')
+    // performance.measure('micro to now', 'micro')
     fn()
   })
+}
+
+function scheduleAsTask(fn) {
+  setTimeout(fn, 0)
 }
 
 function printQueue(queue) {
