@@ -13,7 +13,9 @@ React Redux now offers a set of hook APIs as an alternative to the existing `con
 
 > **Note**: The hook APIs listed in this page are **still experimental and in alpha!** We encourage you to try them out in your applications and give feedback, but be aware that they may be changed before a final release, including potential renaming or removal.
 
-This page reflects the latest alpha, which is currently **v7.1.0-alpha.3**.
+These hooks were first added in v7.1.0.
+
+This page reflects the latest alpha, which is currently **v7.1.0-alpha.4**.
 
 ## Using Hooks in a React Redux App
 
@@ -80,68 +82,33 @@ export const TodoListItem = props => {
 }
 ```
 
-## `useActions()`
+## Removed: `useActions()`
+
+This hook was removed in `v7.1.0-alpha.4`, based on [Dan Abramov's suggestion](https://github.com/reduxjs/react-redux/issues/1252#issuecomment-488160930).
+That suggestion was based on "binding action creators" not being as useful in a hooks-based use case, and causing too
+much conceptual overhead and syntactic complexity.
+
+Instead, you should call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
+and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
+[`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
+or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
+
+If you still wish to use the `useActions()` hook, you may copy and paste this implementation into your own app:
 
 ```js
-const boundAC = useActions(actionCreator : Function, deps : any[])
+import { bindActionCreators } from 'redux'
+import { useDispatch } from 'react-redux'
+import { useMemo } from 'react'
 
-const boundACsObject = useActions(actionCreators : Object<string, Function>, deps : any[])
+export function useActions(actions, deps) {
+  const dispatch = useDispatch()
+  return useMemo(() => {
+    if (Array.isArray(actions)) {
+      return actions.map(a => bindActionCreators(a, dispatch))
+    }
 
-const boundACsArray = useActions(actionCreators : Function[], deps : any[])
-```
-
-Allows you to prepare bound action creators that will dispatch actions to the Redux store when called.
-
-This is conceptually similar to the [`mapDispatchToProps` argument to `connect`](../using-react-redux/connect-dispatching-actions-with-mapDispatchToProps.md). The action creators that are passed in will be bound using the Redux [`bindActionCreators()` utility](https://redux.js.org/api/bindactioncreators), and the bound functions will be returned.
-
-However, there are some differences between the arguments passed to `useActions()` and the `mapDispatch` argument to `connect()`:
-
-- `mapDispatch` may be either a function or an object. `useActions()` accepts a single action creator, an object full of action creators, or an array of action creators, and the return value will be the same form.
-- `mapDispatch` is normally used once when the component is instantiated, unless it is a function with the `(dispatch, ownProps)` signature, which causes it to be called any time the props have changed. The action creators passed to `useActions()` will be re-bound (and thus have new function references) whenever the values passed in the `deps` array change. If no `deps` array is provided, the functions will be re-bound every time the component re-renders.
-
-> **Note**: There are potential edge cases with using the object argument form and declaring the object inline. See the [Usage Warnings](#usage-warnings) section of this page for further details.
-
-You may call `useActions()` multiple times in a single component.
-
-#### Examples
-
-```jsx
-import React from 'react'
-import { useActions } from 'react-redux'
-
-const increaseCounter = amount => ({
-  type: 'increase-counter',
-  amount
-})
-
-export const CounterComponent = ({ value }) => {
-  // supports passing an object of action creators
-  const { increaseCounterByOne, increaseCounterByTwo } = useActions(
-    {
-      increaseCounterByOne: () => increaseCounter(1),
-      increaseCounterByTwo: () => increaseCounter(2)
-    },
-    []
-  )
-
-  // supports passing an array/tuple of action creators
-  const [increaseCounterByThree, increaseCounterByFour] = useActions(
-    [() => increaseCounter(3), () => increaseCounter(4)],
-    []
-  )
-
-  // supports passing a single action creator
-  const increaseCounterBy5 = useActions(() => increaseCounter(5), [])
-
-  // passes through any arguments to the callback
-  const increaseCounterByX = useActions(x => increaseCounter(x), [])
-
-  return (
-    <div>
-      <span>{value}</span>
-      <button onClick={increaseCounterByOne}>Increase counter by 1</button>
-    </div>
-  )
+    return bindActionCreators(actions, dispatch)
+  }, deps)
 }
 ```
 
@@ -150,7 +117,6 @@ export const CounterComponent = ({ value }) => {
 This hook was removed in `v7.1.0-alpha.3`, on the grounds that it didn't provide any real benefit.
 
 If you were using it in your own code, please replace that with separate calls to `useSelector()` and `useActions()`.
-
 
 ## `useDispatch()`
 
