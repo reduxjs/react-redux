@@ -1,4 +1,11 @@
-import React, { useLayoutEffect, useEffect } from 'react'
+import React, {
+  useContext,
+  useRef,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
+  useEffect
+} from 'react'
 
 import { ReactReduxContext } from '../components/Context'
 
@@ -9,23 +16,21 @@ import { ReactReduxContext } from '../components/Context'
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
-const NOOP_FN = () => {}
-
 export function makeUseSelector(Context) {
   return function useSelector(selector, deps) {
     // use react-redux context
-    let context = React.useContext(Context)
+    let context = useContext(Context)
 
     // memoize the selector with the provided deps
-    let select = React.useCallback(selector, deps)
+    let select = useCallback(selector, deps)
 
-    // expose a ref to work node to execute latest updater
-    let updaterRef = React.useRef(NOOP_FN)
+    // expose a ref to updater so the node can access the latest updater
+    let updateRef = useRef(null)
 
     // on mount construct a node with a ref to the updater
-    let nodeRef = React.useRef(null)
+    let nodeRef = useRef(null)
     if (nodeRef.current === null) {
-      nodeRef.current = context.create(updaterRef)
+      nodeRef.current = context.create(updateRef)
     }
 
     // this node identity will be stable across re-renders
@@ -34,54 +39,63 @@ export function makeUseSelector(Context) {
     // this queue identity will be stable across re-renders
     let queue = node.queue
 
+    // this queueState is the latest state the queue knows about
+    let queueState = queue.state
+
     // if this render commits ensure node captures state it rendered with
     useIsomorphicLayoutEffect(() => {
-      node.state = queue.state
-    }, [queue.state])
+      node.state = queueState
+    }, [queueState])
 
-    // establishh trigger for re-renders when selected state changes
+    // establish trigger for re-renders when selected state changes
+    // capture memoized values if updater produces new state
     let [[memoSlice, memoSelect, memoState], setMemoSelection] = React.useState(
       false
     )
 
     // compute slice if necessary
-    let slice = React.useMemo(() => {
-      if (queue.state === memoState && select === memoSelect) {
-        // console.log(
-        //   'skipping slice computation and using listeners captured result',
-        //   node.tag
-        // )
+    let slice = useMemo(() => {
+      if (queueState === memoState && select === memoSelect) {
         return memoSlice
       }
-      return select(queue.state)
-    }, [node, memoSlice, memoSelect, memoState, select, queue.state])
+      return select(queueState)
+    }, [node, select, queueState, memoSlice, memoSelect, memoState])
 
     // expose a ref to last slice for listener to bail out from
-    let lastSliceRef = React.useRef(null)
+    let lastSliceRef = useRef(null)
     // if this render commits ensure the latest slice is updated
+    // @TODO does useEffect work here. does react guarantee tha that effects
+    // flush before the next update to this component is processed?
     useIsomorphicLayoutEffect(() => {
       lastSliceRef.current = slice
     }, [slice])
 
-    // ref stable updater
-    let updater = React.useCallback(() => {
-      // console.log('updater', queue.state)
+    /*
+      the update function is called by the updater to potentially trigger an
+      update when the selected state changes. it dereferences the update state
+      from the queue directly because we want to capture new states the component
+      has not yet seen.
+
+      @TODO this function can easily be memoized with useCallback. however if
+      there is no overhead to refreshing it on every render we can decrease
+      complexity and load on hooks by recreating it on every render
+    */
+    let update = () => {
       let slice = select(queue.state)
       if (lastSliceRef.current !== slice) {
-        // console.log('slice is different so we will update things', node.tag)
         context.updating(node)
         setMemoSelection([slice, select, queue.state])
       } else {
         // since this node won't update we can set the node.state now
         node.state = queue.state
       }
-    }, [node, select, queue, context])
+    }
 
     // update listener for next update and nullify on unmount
     useIsomorphicLayoutEffect(() => {
-      updaterRef.current = updater
-      return () => (updaterRef.current = null)
-    }, [updater])
+      updateRef.current = update
+      return () => (updateRef.current = null)
+    })
 
     return slice
   }
