@@ -291,9 +291,15 @@ export function createUpdater() {
   function completeUpdate() {
     let e
     while ((e = caughtErrors.pop())) {
+      if (_TRACE_WORK_) {
+        console.error(`completeUpdate, throwing caught error`, e)
+      }
       scheduleAsTask(() => {
         throw e
       })
+    }
+    if (_TRACE_WORK_) {
+      console.log(`completeUpdate, checkForNextUpdate`)
     }
     checkForNextUpdate()
   }
