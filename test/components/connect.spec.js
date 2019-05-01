@@ -145,18 +145,19 @@ describe('React', () => {
         )
         expect(tester.getByTestId('string')).toHaveTextContent('')
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
+        // await Promise.resolve().then(() => console.warn('awaited promise'))
         expect(tester.getByTestId('string')).toHaveTextContent('a')
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'b' })
         })
         expect(tester.getByTestId('string')).toHaveTextContent('ab')
       })
 
-      it('should subscribe pure function components to the store changes', () => {
+      it('should subscribe pure function components to the store changes', async () => {
         const store = createStore(stringBuilder)
 
         const Container = connect(state => ({ string: state }))(
@@ -176,19 +177,19 @@ describe('React', () => {
         spy.mockRestore()
 
         expect(tester.getByTestId('string')).toHaveTextContent('')
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
         expect(tester.getByTestId('string')).toHaveTextContent('a')
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'b' })
         })
 
         expect(tester.getByTestId('string')).toHaveTextContent('ab')
       })
 
-      it("should retain the store's context", () => {
+      it("should retain the store's context", async () => {
         const store = new ContextBoundStore(stringBuilder)
 
         let Container = connect(state => ({ string: state }))(
@@ -207,7 +208,7 @@ describe('React', () => {
         spy.mockRestore()
 
         expect(tester.getByTestId('string')).toHaveTextContent('')
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
@@ -432,7 +433,7 @@ describe('React', () => {
         expect(tester.getByTestId('pass')).toHaveTextContent('')
       })
 
-      it('should allow for merge to incorporate state and prop changes', () => {
+      it('should allow for merge to incorporate state and prop changes', async () => {
         const store = createStore(stringBuilder)
 
         function doSomething(thing) {
@@ -486,21 +487,21 @@ describe('React', () => {
         const tester = rtl.render(<OuterContainer />)
 
         expect(tester.getByTestId('stateThing')).toHaveTextContent('')
-        rtl.act(() => {
+        await rtl.act(async () => {
           merged('a')
         })
 
         expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO az')
-        rtl.act(() => {
+        await rtl.act(async () => {
           merged('b')
         })
 
         expect(tester.getByTestId('stateThing')).toHaveTextContent('HELLO azbz')
-        rtl.act(() => {
+        await rtl.act(async () => {
           externalSetState({ extra: 'Z' })
         })
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           merged('c')
         })
 
@@ -1003,7 +1004,7 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('a')
       })
 
-      it('should not attempt to notify unmounted child of state change', () => {
+      it('should not attempt to notify unmounted child of state change', async () => {
         const store = createStore(stringBuilder)
 
         @connect(state => ({ hide: state === 'AB' }))
@@ -1041,7 +1042,7 @@ describe('React', () => {
         )
 
         try {
-          rtl.act(() => {
+          await rtl.act(async () => {
             store.dispatch({ type: 'APPEND', body: 'A' })
           })
         } finally {
@@ -1189,7 +1190,7 @@ describe('React', () => {
         spy.mockRestore()
       })
 
-      it('should not attempt to set state after unmounting', () => {
+      it('should not attempt to set state after unmounting', async () => {
         const store = createStore(stringBuilder)
         let mapStateToPropsCalls = 0
 
@@ -1219,7 +1220,7 @@ describe('React', () => {
 
         expect(mapStateToPropsCalls).toBe(1)
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
@@ -1228,7 +1229,7 @@ describe('React', () => {
         spy.mockRestore()
       })
 
-      it('should allow to clean up child state in parent componentWillUnmount', () => {
+      it('should allow to clean up child state in parent componentWillUnmount', async () => {
         function reducer(state = { data: null }, action) {
           switch (action.type) {
             case 'fetch':
@@ -1265,7 +1266,7 @@ describe('React', () => {
         }
 
         const store = createStore(reducer)
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'fetch' })
         })
 
@@ -1282,7 +1283,7 @@ describe('React', () => {
     })
 
     describe('Performance optimizations and bail-outs', () => {
-      it('should shallowly compare the selected state to prevent unnecessary updates', () => {
+      it('should shallowly compare the selected state to prevent unnecessary updates', async () => {
         const store = createStore(stringBuilder)
         const spy = jest.fn(() => ({}))
         function render({ string }) {
@@ -1307,24 +1308,24 @@ describe('React', () => {
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(tester.getByTestId('string')).toHaveTextContent('')
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
         expect(spy).toHaveBeenCalledTimes(2)
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'b' })
         })
 
         expect(spy).toHaveBeenCalledTimes(3)
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: '' })
         })
 
         expect(spy).toHaveBeenCalledTimes(3)
       })
 
-      it('should shallowly compare the merged state to prevent unnecessary updates', () => {
+      it('should shallowly compare the merged state to prevent unnecessary updates', async () => {
         const store = createStore(stringBuilder)
         const spy = jest.fn(() => ({}))
         const tree = {}
@@ -1369,7 +1370,7 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('')
         expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
@@ -1377,7 +1378,7 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('a')
         expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           tree.setState({ pass: '' })
         })
 
@@ -1385,7 +1386,7 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('a')
         expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           tree.setState({ pass: 'through' })
         })
 
@@ -1393,7 +1394,7 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('a')
         expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           tree.setState({ pass: 'through' })
         })
 
@@ -1402,7 +1403,7 @@ describe('React', () => {
         expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
         const obj = { prop: 'val' }
-        rtl.act(() => {
+        await rtl.act(async () => {
           tree.setState({ pass: obj })
         })
 
@@ -1410,7 +1411,7 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('a')
         expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           tree.setState({ pass: obj })
         })
 
@@ -1419,7 +1420,7 @@ describe('React', () => {
         expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
         const obj2 = Object.assign({}, obj, { val: 'otherval' })
-        rtl.act(() => {
+        await rtl.act(async () => {
           tree.setState({ pass: obj2 })
         })
 
@@ -1430,7 +1431,7 @@ describe('React', () => {
         )
 
         obj2.val = 'mutation'
-        rtl.act(() => {
+        await rtl.act(async () => {
           tree.setState({ pass: obj2 })
         })
 
@@ -1441,7 +1442,7 @@ describe('React', () => {
         )
       })
 
-      it('should not render the wrapped component when mapState does not produce change', () => {
+      it('should not render the wrapped component when mapState does not produce change', async () => {
         const store = createStore(stringBuilder)
         let renderCalls = 0
         let mapStateCalls = 0
@@ -1466,7 +1467,7 @@ describe('React', () => {
         expect(renderCalls).toBe(1)
         expect(mapStateCalls).toBe(1)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
@@ -1476,7 +1477,7 @@ describe('React', () => {
         expect(renderCalls).toBe(1)
       })
 
-      it('should bail out early if mapState does not depend on props', () => {
+      it('should bail out early if mapState does not depend on props', async () => {
         const store = createStore(stringBuilder)
         let renderCalls = 0
         let mapStateCalls = 0
@@ -1501,21 +1502,21 @@ describe('React', () => {
         expect(renderCalls).toBe(1)
         expect(mapStateCalls).toBe(1)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
         expect(mapStateCalls).toBe(2)
         expect(renderCalls).toBe(1)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
         expect(mapStateCalls).toBe(3)
         expect(renderCalls).toBe(1)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
@@ -1523,7 +1524,7 @@ describe('React', () => {
         expect(renderCalls).toBe(2)
       })
 
-      it('should not call update if mergeProps return value has not changed', () => {
+      it('should not call update if mergeProps return value has not changed', async () => {
         let mapStateCalls = 0
         let renderCalls = 0
         const store = createStore(stringBuilder)
@@ -1549,7 +1550,7 @@ describe('React', () => {
         expect(renderCalls).toBe(1)
         expect(mapStateCalls).toBe(1)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
 
@@ -1638,7 +1639,7 @@ describe('React', () => {
         expect(tester.getByTestId('scooby')).toHaveTextContent('boo')
       })
 
-      it.skip('should persist listeners through hot update', () => {
+      it.skip('should persist listeners through hot update', async () => {
         const ACTION_TYPE = 'ACTION'
         const store = createStore((state = { actions: 0 }, action) => {
           switch (action.type) {
@@ -1682,7 +1683,7 @@ describe('React', () => {
 
         imitateHotReloading(ParentBefore, ParentAfter, container)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: ACTION_TYPE })
         })
 
@@ -1843,7 +1844,7 @@ describe('React', () => {
         runCheck(false, false, false)
       })
 
-      it('should subscribe properly when a middle connected component does not subscribe', () => {
+      it('should subscribe properly when a middle connected component does not subscribe', async () => {
         @connect(state => ({ count: state }))
         class A extends React.Component {
           render() {
@@ -1877,12 +1878,12 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'INC' })
         })
       })
 
-      it('should notify nested components through a blocking component', () => {
+      it('should notify nested components through a blocking component', async () => {
         @connect(state => ({ count: state }))
         class Parent extends Component {
           render() {
@@ -1921,7 +1922,7 @@ describe('React', () => {
         )
 
         expect(mapStateToProps).toHaveBeenCalledTimes(1)
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'INC' })
         })
 
@@ -2091,7 +2092,7 @@ describe('React', () => {
         expect(actualState).toEqual(expectedState)
       })
 
-      xit('should pass through ancestor subscription when store is given as a prop', () => {
+      xit('should pass through ancestor subscription when store is given as a prop', async () => {
         const c3Spy = jest.fn()
         const c2Spy = jest.fn()
         const c1Spy = jest.fn()
@@ -2162,7 +2163,7 @@ describe('React', () => {
         expect(c2Spy).toHaveBeenCalledTimes(1)
         expect(c1Spy).toHaveBeenCalledTimes(1)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store1.dispatch({ type: 'CHANGE' })
         })
 
@@ -2175,7 +2176,7 @@ describe('React', () => {
         expect(c2Spy).toHaveBeenCalledTimes(1)
         expect(c1Spy).toHaveBeenCalledTimes(2)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store2.dispatch({ type: 'CHANGE' })
         })
 
@@ -2189,7 +2190,7 @@ describe('React', () => {
         expect(c1Spy).toHaveBeenCalledTimes(2)
       })
 
-      it('should subscribe properly when a new store is provided via props', () => {
+      it('should subscribe properly when a new store is provided via props', async () => {
         const store1 = createStore((state = 0, action) =>
           action.type === 'INC' ? state + 1 : state
         )
@@ -2255,7 +2256,7 @@ describe('React', () => {
         expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
         expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store1.dispatch({ type: 'INC' })
         })
 
@@ -2263,7 +2264,7 @@ describe('React', () => {
         expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
         expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store2.dispatch({ type: 'INC' })
         })
         expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
@@ -2559,7 +2560,7 @@ describe('React', () => {
         expect(tester.getByTestId('statefulValue')).toHaveTextContent('bar')
       })
 
-      it('should update impure components whenever the state of the store changes', () => {
+      it('should update impure components whenever the state of the store changes', async () => {
         const store = createStore(() => ({}))
         let renderCount = 0
 
@@ -2583,7 +2584,7 @@ describe('React', () => {
         )
 
         const rendersBeforeStateChange = renderCount
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'ACTION' })
         })
 
@@ -2629,7 +2630,7 @@ describe('React', () => {
     })
 
     describe('Factory functions for mapState/mapDispatch', () => {
-      it('should allow providing a factory function to mapStateToProps', () => {
+      it('should allow providing a factory function to mapStateToProps', async () => {
         let updatedCount = 0
         let memoizedReturnCount = 0
         const store = createStore(() => ({ value: 1 }))
@@ -2668,7 +2669,7 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'test' })
         })
 
@@ -2676,7 +2677,7 @@ describe('React', () => {
         expect(memoizedReturnCount).toBe(2)
       })
 
-      it('should allow a mapStateToProps factory consuming just state to return a function that gets ownProps', () => {
+      it('should allow a mapStateToProps factory consuming just state to return a function that gets ownProps', async () => {
         const store = createStore(() => ({ value: 1 }))
 
         let initialState
@@ -2706,7 +2707,7 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'test' })
         })
 
@@ -2716,7 +2717,7 @@ describe('React', () => {
         expect(secondaryOwnProps.name).toBe('a')
       })
 
-      it('should allow providing a factory function to mapDispatchToProps', () => {
+      it('should allow providing a factory function to mapDispatchToProps', async () => {
         let updatedCount = 0
         let memoizedReturnCount = 0
         const store = createStore(() => ({ value: 1 }))
@@ -2775,7 +2776,7 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'test' })
         })
 
@@ -2943,7 +2944,7 @@ describe('React', () => {
     })
 
     describe('Subscription and update timing correctness', () => {
-      it('should pass state consistently to mapState', () => {
+      it('should pass state consistently to mapState', async () => {
         const store = createStore(stringBuilder)
 
         rtl.act(() => {
@@ -2991,7 +2992,7 @@ describe('React', () => {
         expect(childMapStateInvokes).toBe(1)
         expect(childCalls).toEqual([['a', 'a']])
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'c' })
         })
         expect(childMapStateInvokes).toBe(2)
@@ -3002,7 +3003,7 @@ describe('React', () => {
         rtl.fireEvent.click(button)
         expect(childMapStateInvokes).toBe(3)
 
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: 'APPEND', body: 'd' })
         })
 
@@ -3181,7 +3182,7 @@ describe('React', () => {
         expect(reduxCountPassedToMapState).toEqual(3)
       })
 
-      it('should ensure top-down updates for consecutive batched updates', () => {
+      it('should ensure top-down updates for consecutive batched updates', async () => {
         const INC = 'INC'
         const reducer = (c = 0, { type }) => (type === INC ? c + 1 : c)
         const store = createStore(reducer)
@@ -3221,7 +3222,7 @@ describe('React', () => {
         )
 
         executionOrder = []
-        rtl.act(() => {
+        await rtl.act(async () => {
           store.dispatch({ type: INC })
           store.dispatch({ type: '' })
         })
@@ -3230,7 +3231,7 @@ describe('React', () => {
       })
     })
 
-    it("should enforce top-down updates to ensure a deleted child's mapState doesn't throw errors", () => {
+    it("should enforce top-down updates to ensure a deleted child's mapState doesn't throw errors", async () => {
       const initialState = {
         a: { id: 'a', name: 'Item A' },
         b: { id: 'b', name: 'Item B' },
@@ -3295,7 +3296,7 @@ describe('React', () => {
       )
 
       // This should execute without throwing an error by itself
-      rtl.act(() => {
+      await rtl.act(async () => {
         store.dispatch({ type: 'DELETE_B' })
       })
 

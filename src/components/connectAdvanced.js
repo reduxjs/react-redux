@@ -14,13 +14,13 @@ const stringifyComponent = Comp => {
   }
 }
 
-// let MockPerformance = {
-//   mark: () => {},
-//   measure: () => {}
-// }
-//
-// let performance = MockPerformance
-//
+let MockPerformance = {
+  mark: () => {},
+  measure: () => {}
+}
+
+let performance = MockPerformance
+
 let renderCount = 0
 performance.mark('render')
 

@@ -1,11 +1,11 @@
 import { unstable_batchedUpdates } from 'react-dom'
 
-// let MockPerformance = {
-//   mark: () => {},
-//   measure: () => {}
-// }
-//
-// let performance = MockPerformance
+let MockPerformance = {
+  mark: () => {},
+  measure: () => {}
+}
+
+let performance = MockPerformance
 
 /*
  @TODO remove hack to detect if we are running in jsdom. the current
@@ -43,7 +43,7 @@ let _TRACE_UPDATE_ = true
 
 export function createUpdater() {
   // define circular node queue to hold updating nodes
-  console.log('createUpdater')
+  // console.log('createUpdater')
   let queue = {
     state: null,
     lastNode: null,
@@ -144,7 +144,7 @@ export function createUpdater() {
         console.log(`newState, starting update with new state`, state)
       }
       states.push(state)
-      startUpdateWork()
+      startUpdate()
     } else {
       if (_TRACE_WORK_) {
         console.log(`newState, state has already been processed`, state)
@@ -154,23 +154,23 @@ export function createUpdater() {
 
   let updates = 0
   let stateOnUpdate = 0
-  function startUpdateWork() {
+  function startUpdate() {
     if (isWorking) {
       if (_TRACE_WORK_) {
         console.log(
-          `startUpdateWork, already working, new work will begin when current update finishes`
+          `startUpdate, already working, new work will begin when current update finishes`
         )
       }
       return
     } else if (states.length === 0) {
       if (_TRACE_WORK_) {
-        console.log(`startUpdateWork, no actions available to process`)
+        console.log(`startUpdate, no actions available to process`)
       }
       return
     }
 
     if (_TRACE_WORK_) {
-      console.log(`startUpdateWork, new update to start`)
+      console.log(`startUpdate, new update to start`)
     }
 
     // assign latest states clear out intermediate states
@@ -181,7 +181,7 @@ export function createUpdater() {
 
     if (queue.lastNode === null) {
       if (_TRACE_WORK_) {
-        console.log(`startUpdateWork, queue is empty`)
+        console.log(`startUpdate, queue is empty`)
       }
       return
     }
@@ -190,11 +190,11 @@ export function createUpdater() {
     if (queue.cursorNode !== queue.lastNode) {
       if (_TRACE_WORK_) {
         console.error(
-          `startUpdateWork, called when not working but there is an unfinished update`
+          `startUpdate, called when not working but there is an unfinished update`
         )
       }
       throw new Error(
-        'startUpdateWork, called when not working but there is an unfinished update'
+        'startUpdate, called when not working but there is an unfinished update'
       )
     }
 
@@ -203,20 +203,21 @@ export function createUpdater() {
       updates++
       performance.mark('startUpdate')
     }
-    unstable_batchedUpdates(doWork)
+    unstable_batchedUpdates(doUpdateWork)
   }
 
   let isWorking = false
   let workNode = null
+  let caughtErrors = []
 
-  function doWork() {
+  function doUpdateWork() {
     try {
       if (_TRACE_UPDATE_) {
         performance.mark('workStep')
       }
       if (isWorking) {
         if (_TRACE_WORK_) {
-          console.log(`doWork, already working, wait for work to finish`)
+          console.log(`doUpdateWork, already working, wait for work to finish`)
         }
         return
       }
@@ -224,9 +225,9 @@ export function createUpdater() {
       // return early if no nodes to process
       if (queue.lastNode === null) {
         if (_TRACE_WORK_) {
-          console.log(`doWork, nothing left to do work on, checkForWork`)
+          console.log(`doUpdateWork, nothing left to do work on, checkForWork`)
         }
-        return checkForWork()
+        return completeUpdate()
       }
 
       workLoop: do {
@@ -234,7 +235,7 @@ export function createUpdater() {
 
         while (node.updater.current === null) {
           if (_TRACE_WORK_) {
-            console.log(`doWork, remove current node`)
+            console.log(`doUpdateWork, remove current node`)
           }
           removeCurrentNode()
           if (queue.lastNode === null) break workLoop
@@ -243,16 +244,18 @@ export function createUpdater() {
 
         if (node.state === queue.state) {
           if (_TRACE_WORK_) {
-            console.log(`doWork, node ${node.index} already updated, skip`)
+            console.log(
+              `doUpdateWork, node ${node.index} already updated, skip`
+            )
           }
         } else {
           if (_TRACE_WORK_) {
-            console.log(`doWork, process node ${node.index}`)
+            console.log(`doUpdateWork, process node ${node.index}`)
           }
           try {
             node.updater.current()
           } catch (e) {
-            console.error(e)
+            caughtErrors.push(e)
           }
         }
         queue.cursorNode = node
@@ -260,13 +263,13 @@ export function createUpdater() {
         if (isWorking) {
           if (_TRACE_WORK_) {
             console.log(
-              `doWork, node ${node.index} is now updating, defer to React`
+              `doUpdateWork, node ${node.index} is now updating, defer to React`
             )
           }
           if (_TRACE_WORK_) {
-            console.warn(`doWork, scheduling next work loop on microtask`)
+            console.warn(`doUpdateWork, scheduling next work loop on microtask`)
           }
-          scheduleAsMicrotask(restartWork)
+          scheduleAsMicrotask(continueUpdate)
           return
         }
       } while (queue.cursorNode !== queue.lastNode)
@@ -277,7 +280,7 @@ export function createUpdater() {
           'startUpdate'
         )
       }
-      checkForWork()
+      completeUpdate()
     } finally {
       if (_TRACE_UPDATE_) {
         performance.measure(`workStep `, 'workStep')
@@ -285,21 +288,31 @@ export function createUpdater() {
     }
   }
 
-  function checkForWork() {
+  function completeUpdate() {
+    let e
+    while ((e = caughtErrors.pop())) {
+      scheduleAsTask(() => {
+        throw e
+      })
+    }
+    checkForNextUpdate()
+  }
+
+  function checkForNextUpdate() {
     if (isWorking) {
       if (_TRACE_WORK_) {
         console.log(
-          `checkForWork, already working on ${workNode.index}, do nothing`
+          `checkForNextUpdate, already working on ${workNode.index}, do nothing`
         )
       }
       return
     } else {
       if (_TRACE_WORK_) {
-        console.log(`checkForWork, not working, startUpdateWork`)
+        console.log(`checkForNextUpdate, not working, startUpdate`)
       }
       // schedule a new update async
       // @TODO
-      scheduleAsTask(startUpdateWork)
+      scheduleAsTask(startUpdate)
     }
   }
 
@@ -327,13 +340,13 @@ export function createUpdater() {
     }
   }
 
-  function restartWork() {
+  function continueUpdate() {
     workNode = null
     isWorking = false
-    unstable_batchedUpdates(doWork)
+    unstable_batchedUpdates(doUpdateWork)
   }
 
-  window.PRINT_QUEUE = () => printQueue(queue)
+  // window.PRINT_QUEUE = () => printQueue(queue)
 
   return {
     create,
