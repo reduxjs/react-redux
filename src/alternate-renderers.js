@@ -3,7 +3,6 @@ import connectAdvanced from './components/connectAdvanced'
 import { ReactReduxContext } from './components/Context'
 import connect from './connect/connect'
 
-import { useActions } from './hooks/useActions'
 import { useDispatch } from './hooks/useDispatch'
 import { useSelector } from './hooks/useSelector'
 import { useStore } from './hooks/useStore'
@@ -19,7 +18,6 @@ export {
   ReactReduxContext,
   connect,
   batch,
-  useActions,
   useDispatch,
   useSelector,
   useStore
