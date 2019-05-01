@@ -4,7 +4,7 @@ import { ReactReduxContext } from './Context'
 import { createUpdater } from '../updater/updater'
 
 export function Provider({ context, store, children }) {
-  let [updater] = useState(createUpdater)
+  let [[updater, methods]] = useState(createUpdater)
   updater.setStore(store)
   useEffect(() => {
     updater.setStore(store)
@@ -12,8 +12,8 @@ export function Provider({ context, store, children }) {
     return store.subscribe(() => updater.newState(store.getState()))
   }, [updater, store])
   let contextValue = useMemo(() => {
-    return { ...updater, store }
-  }, [updater, store])
+    return { ...methods, store }
+  }, [methods, store])
   const Context = context || ReactReduxContext
   return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }

@@ -354,13 +354,17 @@ export function createUpdater() {
 
   // window.PRINT_QUEUE = () => printQueue(queue)
 
-  return {
-    create,
-    updating,
-    newState,
-    setStore,
-    dispatch
-  }
+  return [
+    {
+      newState,
+      setStore
+    },
+    {
+      create,
+      updating,
+      dispatch
+    }
+  ]
 }
 
 function scheduleAsMicrotask(fn) {
