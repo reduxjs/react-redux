@@ -206,40 +206,6 @@ Some possible options for avoiding these problems with `useSelector()`:
 
 > **Note**: For a longer description of this issue, see [this chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec), as well as [issue #1179](https://github.com/reduxjs/react-redux/issues/1179).
 
-### Action Object Hoisting
-
-Many developers are used to [using the "object shorthand" form of `mapDispatch`](../using-react-redux/connect-dispatching-actions-with-mapDispatchToProps.md#defining-mapdispatchtoprops-as-an-object) by passing multiple action creators as an inline object argument to `connect()`:
-
-```js
-export default connect(
-  mapState,
-  { addTodo, toggleTodo }
-)(TodoList)
-```
-
-However, this pattern can be problematic when calling `useActions()`. Specifically, the combination of importing action creators by name individually, defining the actions object as an inline argument, _and_ attempting to destructure the results, can lead to hoisting problems that cause errors.
-
-This example shows the problematic pattern:
-
-```js
-import { addTodo, toggleTodo } from './todos'
-
-const { addTodo, toggleTodo } = useActions({
-  addTodo,
-  toggleTodo
-})
-```
-
-Due to hoisting, the `addTodo` and `toggleTodo` imports are not used, but instead the declared variables from the const are used in the actions object.
-
-Some options for avoiding this problem:
-
-- Don't destructure the result of `useActions()`. Instead, keep it as a single object (`const actions = useActions()`) and reference them like `actions.addTodo`
-- Define the action creators object outside the function component, either by hand (`const actionCreators = {addTodo, toggleTodo}`), or by using the "named imports as an object" syntax (`import * as todoActions from "./todoActions"`).
-- Try using the single function or array forms of `useActions()`
-
-> **Note**: for more details on this problem, see [this comment and following in issue #1179](https://github.com/reduxjs/react-redux/issues/1179#issuecomment-482473235), as well as [this codesandbox that demonstrates the issue](https://codesandbox.io/s/7yjn3m9n96).
-
 ### Performance
 
 As mentioned earlier, `useSelector()` will do basic shallow comparisons of return values when running the selector function after an action is dispatched. However, unlike `connect()`, `useSelector()` does not do anything to prevent your own function component from completing a re-render if the derived state has changed.
