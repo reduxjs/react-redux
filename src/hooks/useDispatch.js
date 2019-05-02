@@ -1,8 +1,12 @@
-import React from 'react'
+import { useContext } from 'react'
 
 import { ReactReduxContext } from '../components/Context'
 
-export function useDispatch() {
-  let context = React.useContext(ReactReduxContext)
-  return context.dispatch
+export function makeUseDispatch(Context) {
+  return function useDispatch() {
+    let context = useContext(Context)
+    return context.dispatch
+  }
 }
+
+export const useDispatch = makeUseDispatch(ReactReduxContext)

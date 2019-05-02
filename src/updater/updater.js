@@ -143,12 +143,14 @@ export function createUpdater() {
   /*
     when a new store should be used setStore will capture it and force the
     new store state to propogate (if different from previous state)
+
+    regardless of whether the store is new, capture the latest state
   */
   function setStore(storeToSet) {
     if (store !== storeToSet) {
       store = storeToSet
-      newState(store.getState())
     }
+    newState(store.getState())
   }
 
   /*
@@ -497,12 +499,12 @@ export function createUpdater() {
   let nodeCount = 0
 
   /*
-    create, creates a node and appends it to the node queue. The update function comes
+    createNode, creates a node and appends it to the node queue. The update function comes
     from useSelect. create needs to be called in the render body once and only
     once and exactly on the very first execution to guarante ordering.
     if the render never commits the node will get cleaned up in a later update
   */
-  let create = update => {
+  let createNode = update => {
     let node = {
       index: nodeCount++,
       update: update,
@@ -543,7 +545,7 @@ export function createUpdater() {
     },
     // the context value that we will consume in useSelector and useDispatch
     {
-      create,
+      createNode,
       updating,
       dispatch
     }
