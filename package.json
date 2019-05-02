@@ -31,7 +31,7 @@
     "format": "prettier --write \"{src,test}/**/*.{js,ts}\" index.d.ts \"docs/**/*.md\"",
     "lint": "eslint src test/utils test/components",
     "prepare": "npm run clean && npm run build",
-    "pretest": "",
+    "pretest": "npm run lint",
     "test": "jest",
     "coverage": "codecov"
   },

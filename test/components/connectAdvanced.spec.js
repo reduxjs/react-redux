@@ -117,7 +117,7 @@ describe('React', () => {
 
       expect(tester.getByTestId('foo')).toHaveTextContent('bar')
 
-      // The state should have been mapped 3 times:
+      // The state should have been mapped 2 times:
       // 1) Initial render
       // 2) Dispatch
       expect(mapCount).toEqual(2)
@@ -178,7 +178,7 @@ describe('React', () => {
 
       outerComponent.setFoo('BAR')
 
-      // The state should have been mapped 3 times:
+      // The state should have been mapped 2 times:
       // 1) Initial render
       // 2) Prop change
       expect(mapCount).toEqual(2)

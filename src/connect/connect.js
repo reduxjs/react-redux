@@ -1,4 +1,4 @@
-import connectAdvanced from '../components/connectAdvanced.js'
+import connectAdvanced from '../components/connectAdvanced'
 import shallowEqual from '../utils/shallowEqual'
 import defaultMapDispatchToPropsFactories from './mapDispatchToProps'
 import defaultMapStateToPropsFactories from './mapStateToProps'

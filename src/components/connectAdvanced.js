@@ -14,16 +14,6 @@ const stringifyComponent = Comp => {
   }
 }
 
-let MockPerformance = {
-  mark: () => {},
-  measure: () => {}
-}
-
-let performance = MockPerformance
-
-let renderCount = 0
-performance.mark('render')
-
 export default function connectAdvanced(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -180,9 +170,6 @@ export default function connectAdvanced(
       const renderedWrappedComponent = useMemo(() => {
         return <WrappedComponent {...actualChildProps} ref={forwardedRef} />
       }, [forwardedRef, WrappedComponent, actualChildProps])
-
-      performance.measure(`render ${++renderCount}`, 'render')
-      performance.mark('render')
 
       return renderedWrappedComponent
     }

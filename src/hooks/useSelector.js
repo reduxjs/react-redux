@@ -47,10 +47,6 @@ export function makeUseSelector(Context) {
     (the component calling useSelector) to rerender then the node will appear to
     already be on the latest state by the time the updater gets around to
     deciding whether to call the update function (it will skip it)
-
-
-
-
   */
   return function useSelector(selector, deps) {
     // use react-redux context
@@ -121,7 +117,7 @@ export function makeUseSelector(Context) {
     let update = () => {
       let slice = select(queue.state)
       if (lastSliceRef.current !== slice) {
-        context.updating(node)
+        context.updating()
         setMemoSelection([slice, select, queue.state])
       } else {
         // since this node won't update we can set the node.state now
