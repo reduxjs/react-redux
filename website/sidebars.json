@@ -14,10 +14,9 @@
       "api/connect",
       "api/provider",
       "api/connect-advanced",
+      "api/batch",
       "api/hooks"
     ],
-    "Guides": [
-      "troubleshooting"
-    ]
+    "Guides": ["troubleshooting"]
   }
 }
