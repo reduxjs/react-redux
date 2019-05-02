@@ -156,7 +156,7 @@ const store = useStore()
 
 This hook returns a reference to the same Redux store that was passed in to the `<Provider>` component.
 
-This hook should probably not be used frequently. Prefer `useSelector()` and `useActions()` as your primary choices. However, this may be useful for less common scenarios that do require access to the store, such as replacing reducers.
+This hook should probably not be used frequently. Prefer `useSelector()` as your primary choices. However, this may be useful for less common scenarios that do require access to the store, such as replacing reducers.
 
 #### Examples
 
