@@ -1,4 +1,4 @@
-import { unstable_batchedUpdates } from 'react-dom'
+import { getBatch } from '../utils/batch'
 
 let MockPerformance = {
   mark: () => {},
@@ -193,6 +193,7 @@ export function createUpdater() {
 
   let updates = 0
   let stateOnUpdate = 0
+  let batch = getBatch()
   /*
     startUpdate will attempt to start a new update if possible
   */
@@ -258,7 +259,7 @@ export function createUpdater() {
     // synchronously. we won't actually ever have more than one update per batch
     // so if there is another way to make sure we allow react update effects to
     // flush after asynchronously we should investigate using that
-    unstable_batchedUpdates(doUpdateWork)
+    batch(doUpdateWork)
   }
 
   // track whether we are in the middle of update work or not
@@ -444,7 +445,7 @@ export function createUpdater() {
   function continueUpdate() {
     workNode = null
     isWorking = false
-    unstable_batchedUpdates(doUpdateWork)
+    batch(doUpdateWork)
   }
 
   /*
