@@ -160,8 +160,8 @@ export default function connectAdvanced(
         // Distinguish between actual "data" props that were passed to the wrapper component,
         // and values needed to control behavior (forwarded refs, alternate context instances).
         // To maintain the wrapperProps object reference, memoize this destructuring.
-        const { context, forwardedRef, ...wrapperProps } = props
-        return [context, forwardedRef, wrapperProps]
+        const { forwardedRef, ...wrapperProps } = props
+        return [props.context, forwardedRef, wrapperProps]
       }, [props])
 
       const ContextToUse = useMemo(() => {
