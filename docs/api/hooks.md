@@ -116,7 +116,7 @@ export function useActions(actions, deps) {
 
 This hook was removed in `v7.1.0-alpha.3`, on the grounds that it didn't provide any real benefit.
 
-If you were using it in your own code, please replace that with separate calls to `useSelector()` and `useActions()`.
+If you were using it in your own code, please replace that with separate calls to `useSelector()` and `useDispatch()`.
 
 ## `useDispatch()`
 
