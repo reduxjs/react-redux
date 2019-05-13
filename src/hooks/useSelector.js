@@ -24,8 +24,6 @@ const useIsomorphicLayoutEffect =
  * useful if you provide a selector that memoizes values).
  *
  * @param {Function} selector the selector function
- * @param {any[]} deps (optional) dependencies array to control referential stability
- * of the selector
  *
  * @returns {any} the selected state
  *
@@ -36,11 +34,11 @@ const useIsomorphicLayoutEffect =
  * import { RootState } from './store'
  *
  * export const CounterComponent = () => {
- *   const counter = useSelector(state => state.counter, [])
+ *   const counter = useSelector(state => state.counter)
  *   return <div>{counter}</div>
  * }
  */
-export function useSelector(selector, deps) {
+export function useSelector(selector) {
   invariant(selector, `You must pass a selector to useSelectors`)
 
   const { store, subscription: contextSub } = useReduxContext()
@@ -51,15 +49,13 @@ export function useSelector(selector, deps) {
     contextSub
   ])
 
-  const memoizedSelector = useMemo(() => selector, deps)
-
   const latestSubscriptionCallbackError = useRef()
-  const latestSelector = useRef(memoizedSelector)
+  const latestSelector = useRef(selector)
 
   let selectedState = undefined
 
   try {
-    selectedState = memoizedSelector(store.getState())
+    selectedState = selector(store.getState())
   } catch (err) {
     let errorMessage = `An error occured while selecting the store state: ${
       err.message
@@ -77,7 +73,7 @@ export function useSelector(selector, deps) {
   const latestSelectedState = useRef(selectedState)
 
   useIsomorphicLayoutEffect(() => {
-    latestSelector.current = memoizedSelector
+    latestSelector.current = selector
     latestSelectedState.current = selectedState
     latestSubscriptionCallbackError.current = undefined
   })
