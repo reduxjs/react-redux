@@ -128,16 +128,12 @@ describe('React', () => {
       })
 
       describe('performance optimizations and bail-outs', () => {
-        it('should shallowly compare the selected state to prevent unnecessary updates', () => {
-          store = createStore(
-            ({ count, stable } = { count: -1, stable: {} }) => ({
-              count: count + 1,
-              stable
-            })
-          )
+        it('should compare the selected state by reference to prevent unnecessary updates', () => {
+          const state = {}
+          store = createStore(() => state)
 
           const Comp = () => {
-            const value = useSelector(s => Object.keys(s))
+            const value = useSelector(s => s)
             renderedItems.push(value)
             return <div />
           }

@@ -1,7 +1,6 @@
 import { useReducer, useRef, useEffect, useMemo, useLayoutEffect } from 'react'
 import invariant from 'invariant'
 import { useReduxContext } from './useReduxContext'
-import shallowEqual from '../utils/shallowEqual'
 import Subscription from '../utils/Subscription'
 
 // React currently throws a warning when using useLayoutEffect on the server.
@@ -83,7 +82,7 @@ export function useSelector(selector) {
       try {
         const newSelectedState = latestSelector.current(store.getState())
 
-        if (shallowEqual(newSelectedState, latestSelectedState.current)) {
+        if (newSelectedState === latestSelectedState.current) {
           return
         }
 
