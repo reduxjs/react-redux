@@ -37,7 +37,7 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 ## `useSelector()`
 
 ```js
-const result : any = useSelector(selector : Function, deps : any[])
+const result : any = useSelector(selector : Function)
 ```
 
 Allows you to extract data from the Redux store state, using a selector function.
@@ -49,9 +49,9 @@ The selector is approximately equivalent to the [`mapStateToProps` argument to `
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
 - The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
-- The selector function used will be based on the `deps` array. If no deps array is provided, the latest passed-in selector function will be used when the component renders, and also when any actions are dispatched before the next render. If a deps array is provided, the last saved selector will be used, and that selector will be overwritten whenever the deps array contents have changed. Therefore, the deps are only required if the selector needs to be referentially stable, e.g. if you are using memoizing selectors.
 - When an action is dispatched, `useSelector()` will do a shallow comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, they component will not re-render.
-- The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector. If you are providing `deps` to `useSelector()` make sure they contain all the props you are using.
+- The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector.
+- Extra care must be taken when using memoizing selectors (see examples below for more details).
 
 > **Note**: There are potential edge cases with using props in selectors that may cause errors. See the [Usage Warnings](#usage-warnings) section of this page for further details.
 
@@ -83,22 +83,101 @@ export const TodoListItem = props => {
 }
 ```
 
-Using `deps` to ensure the same selector is used in each render:
+##### Using memoizing selectors
+
+When using `useSelector` with an inline selector as shown above, a new instance of the selector is created whenever the component is rendered. This works as long as the selector does not maintain any state. However, memoizing selectors (e.g. created via `createSelector` from `reselect`) do have internal state, and therefore care must be taken when using them. Below you can find typical usage scenarios for memoizing selectors.
+
+When the selector does only depend on the state, simply ensure that it is declared outside of the component so that the same selector instance is used for each render:
 
 ```jsx
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
-const allOtherTodos = createSelector(
+const selectNrOfDoneTodos = createSelector(
   state => state.todos,
-  (_, id) => id,
-  (todos, id) => todos.filter(todo => todo.id !== id)
+  todos => todos.filter(todo => todo.isDone).length
 )
 
-export const OtherTodoListItems = ({ id }) => {
-  const otherTodos = useSelector(s => allOtherTodos(s, id), [id])
-  return <div>{otherTodos.length}</div>
+export const DoneTodosCounter = () => {
+  const nrOfDoneTodos = useSelector(selectNrOfDoneTodos)
+  return <div>{nrOfDoneTodos}</div>
+}
+
+export const App = () => {
+  return (
+    <>
+      <span>Nr of done todos:</span>
+      <DoneTodosCounter />
+    </>
+  )
+}
+```
+
+The same is true if the selector depends on the component's props, but will only ever be used in a single instance of a single component:
+
+```jsx
+import React from 'react'
+import { useSelector } from 'react-redux'
+import { createSelector } from 'reselect'
+
+const selectNrOfTodosWithIsDoneValue = createSelector(
+  state => state.todos,
+  (_, isDone) => isDone,
+  (todos, isDone) => todos.filter(todo => todo.isDone === isDone).length
+)
+
+export const TodoCounterForIsDoneValue = ({ isDone }) => {
+  const nrOfTodosWithIsDoneValue = useSelector(state =>
+    selectNrOfTodosWithIsDoneValue(state, isDone)
+  )
+
+  return <div>{nrOfTodosWithIsDoneValue}</div>
+}
+
+export const App = () => {
+  return (
+    <>
+      <span>Nr of done todos:</span>
+      <TodoCounterForIsDoneValue isDone={true} />
+    </>
+  )
+}
+```
+
+However, when the selector is used in multiple components and depends on the component's props, you need to ensure that each component instance gets its own selector instance (see [here](https://github.com/reduxjs/reselect#accessing-react-props-in-selectors) for a more thourough explanation of why this is necessary):
+
+```jsx
+import React, { useMemo } from 'react'
+import { useSelector } from 'react-redux'
+import { createSelector } from 'reselect'
+
+const makeNrOfTodosWithIsDoneSelector = () =>
+  createSelector(
+    state => state.todos,
+    (_, isDone) => isDone,
+    (todos, isDone) => todos.filter(todo => todo.isDone === isDone).length
+  )
+
+export const TodoCounterForIsDoneValue = ({ isDone }) => {
+  const selectNrOfTodosWithIsDone = useMemo(makeNrOfTodosWithIsDoneSelector, [])
+
+  const nrOfTodosWithIsDoneValue = useSelector(state =>
+    selectNrOfTodosWithIsDoneValue(state, isDone)
+  )
+
+  return <div>{nrOfTodosWithIsDoneValue}</div>
+}
+
+export const App = () => {
+  return (
+    <>
+      <span>Nr of done todos:</span>
+      <TodoCounterForIsDoneValue isDone={true} />
+      <span>Nr of unfinished todos:</span>
+      <TodoCounterForIsDoneValue isDone={false} />
+    </>
+  )
 }
 ```
 
@@ -112,25 +191,6 @@ Instead, you should call the [`useDispatch`](#usedispatch) hook in your componen
 and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
 [`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
 or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
-
-If you still wish to use the `useActions()` hook, you may copy and paste this implementation into your own app:
-
-```js
-import { bindActionCreators } from 'redux'
-import { useDispatch } from 'react-redux'
-import { useMemo } from 'react'
-
-export function useActions(actions, deps) {
-  const dispatch = useDispatch()
-  return useMemo(() => {
-    if (Array.isArray(actions)) {
-      return actions.map(a => bindActionCreators(a, dispatch))
-    }
-
-    return bindActionCreators(actions, dispatch)
-  }, deps)
-}
-```
 
 ## Removed: `useRedux()`
 
@@ -149,23 +209,47 @@ This hook returns a reference to the `dispatch` function from the Redux store. Y
 #### Examples
 
 ```jsx
+import React from 'react'
+import { useDispatch } from 'react-redux'
+
+export const CounterComponent = ({ value }) => {
+  const dispatch = useDispatch()
+
+  return (
+    <div>
+      <span>{value}</span>
+      <button onClick={() => dispatch({ type: 'increment-counter' })}>
+        Increment counter
+      </button>
+    </div>
+  )
+}
+```
+
+When passing a callback using `dispatch` to a child component, it is recommended to memoize it with `useCallback`, since otherwise child components may render unnecessarily due to the changed reference.
+
+```jsx
 import React, { useCallback } from 'react'
 import { useDispatch } from 'react-redux'
 
 export const CounterComponent = ({ value }) => {
   const dispatch = useDispatch()
-  const increaseCounter = useCallback(
-    () => dispatch({ type: 'increase-counter' }),
+  const incrementCounter = useCallback(
+    () => dispatch({ type: 'increment-counter' }),
     []
   )
 
   return (
     <div>
       <span>{value}</span>
-      <button onClick={increaseCounter}>Increase counter</button>
+      <MyIncrementButton onIncrement={incrementCounter} />
     </div>
   )
 }
+
+export const MyIncrementButton = React.memo(({ onIncrement }) => (
+  <button onClick={onIncrement}>Increment counter</button>
+))
 ```
 
 ## `useStore()`
