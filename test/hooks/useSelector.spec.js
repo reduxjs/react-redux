@@ -4,7 +4,11 @@ import React from 'react'
 import { createStore } from 'redux'
 import { renderHook, act } from 'react-hooks-testing-library'
 import * as rtl from 'react-testing-library'
-import { Provider as ProviderMock, useSelector } from '../../src/index.js'
+import {
+  Provider as ProviderMock,
+  useSelector,
+  shallowEqual
+} from '../../src/index.js'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {
@@ -128,12 +132,39 @@ describe('React', () => {
       })
 
       describe('performance optimizations and bail-outs', () => {
-        it('should compare the selected state by reference to prevent unnecessary updates', () => {
+        it('defaults to ref-equality to prevent unnecessary updates', () => {
           const state = {}
           store = createStore(() => state)
 
           const Comp = () => {
             const value = useSelector(s => s)
+            renderedItems.push(value)
+            return <div />
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(renderedItems.length).toBe(1)
+
+          store.dispatch({ type: '' })
+
+          expect(renderedItems.length).toBe(1)
+        })
+
+        it('allows other equality functions to prevent unnecessary updates', () => {
+          store = createStore(
+            ({ count, stable } = { count: -1, stable: {} }) => ({
+              count: count + 1,
+              stable
+            })
+          )
+
+          const Comp = () => {
+            const value = useSelector(s => Object.keys(s), shallowEqual)
             renderedItems.push(value)
             return <div />
           }

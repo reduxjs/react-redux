@@ -14,6 +14,8 @@ import Subscription from '../utils/Subscription'
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
+const refEquality = (a, b) => a === b
+
 /**
  * A hook to access the redux store's state. This hook takes a selector function
  * as an argument. The selector is called with the store state.
@@ -23,6 +25,7 @@ const useIsomorphicLayoutEffect =
  * useful if you provide a selector that memoizes values).
  *
  * @param {Function} selector the selector function
+ * @param {Function} equalityFn the function that will be used to determine equality
  *
  * @returns {any} the selected state
  *
@@ -37,7 +40,7 @@ const useIsomorphicLayoutEffect =
  *   return <div>{counter}</div>
  * }
  */
-export function useSelector(selector) {
+export function useSelector(selector, equalityFn = refEquality) {
   invariant(selector, `You must pass a selector to useSelectors`)
 
   const { store, subscription: contextSub } = useReduxContext()
@@ -82,7 +85,7 @@ export function useSelector(selector) {
       try {
         const newSelectedState = latestSelector.current(store.getState())
 
-        if (newSelectedState === latestSelectedState.current) {
+        if (equalityFn(newSelectedState, latestSelectedState.current)) {
           return
         }
 
