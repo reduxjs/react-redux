@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React from 'react'
+import React, { useCallback, useReducer } from 'react'
 import { createStore } from 'redux'
 import { renderHook, act } from 'react-hooks-testing-library'
 import * as rtl from 'react-testing-library'
@@ -51,6 +51,29 @@ describe('React', () => {
       })
 
       describe('lifeycle interactions', () => {
+        it('always uses the latest state', () => {
+          store = createStore(c => c + 1, -1)
+
+          const Comp = () => {
+            const selector = useCallback(c => c + 1, [])
+            const value = useSelector(selector)
+            renderedItems.push(value)
+            return <div />
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(renderedItems).toEqual([1])
+
+          store.dispatch({ type: '' })
+
+          expect(renderedItems).toEqual([1, 2])
+        })
+
         it('subscribes to the store synchronously', () => {
           let rootSubscription
 
@@ -181,6 +204,39 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
         })
+      })
+
+      it('uses the latest selector', () => {
+        let selectorId = 0
+        let forceRender
+
+        const Comp = () => {
+          const [, f] = useReducer(c => c + 1, 0)
+          forceRender = f
+          const renderedSelectorId = selectorId++
+          const value = useSelector(() => renderedSelectorId)
+          renderedItems.push(value)
+          return <div />
+        }
+
+        rtl.render(
+          <ProviderMock store={store}>
+            <Comp />
+          </ProviderMock>
+        )
+
+        expect(renderedItems).toEqual([0])
+
+        rtl.act(forceRender)
+        expect(renderedItems).toEqual([0, 1])
+
+        rtl.act(() => {
+          store.dispatch({ type: '' })
+        })
+        expect(renderedItems).toEqual([0, 1])
+
+        rtl.act(forceRender)
+        expect(renderedItems).toEqual([0, 1, 2])
       })
 
       describe('edge cases', () => {

@@ -52,12 +52,20 @@ export function useSelector(selector, equalityFn = refEquality) {
   ])
 
   const latestSubscriptionCallbackError = useRef()
-  const latestSelector = useRef(selector)
+  const latestSelector = useRef()
+  const latestSelectedState = useRef()
 
-  let selectedState = undefined
+  let selectedState
 
   try {
-    selectedState = selector(store.getState())
+    if (
+      selector !== latestSelector.current ||
+      latestSubscriptionCallbackError.current
+    ) {
+      selectedState = selector(store.getState())
+    } else {
+      selectedState = latestSelectedState.current
+    }
   } catch (err) {
     let errorMessage = `An error occured while selecting the store state: ${
       err.message
@@ -71,8 +79,6 @@ export function useSelector(selector, equalityFn = refEquality) {
 
     throw new Error(errorMessage)
   }
-
-  const latestSelectedState = useRef(selectedState)
 
   useIsomorphicLayoutEffect(() => {
     latestSelector.current = selector
