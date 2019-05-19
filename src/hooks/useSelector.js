@@ -56,11 +56,14 @@ export function useSelector(selector) {
   let selectedState
 
   try {
-    selectedState =
+    if (
       selector !== latestSelector.current ||
       latestSubscriptionCallbackError.current
-        ? selector(store.getState())
-        : latestSelectedState.current
+    ) {
+      selectedState = selector(store.getState())
+    } else {
+      selectedState = latestSelectedState.current
+    }
   } catch (err) {
     let errorMessage = `An error occured while selecting the store state: ${
       err.message
