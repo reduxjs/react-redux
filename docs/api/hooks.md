@@ -94,20 +94,20 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
-const selectNrOfDoneTodos = createSelector(
+const selectNumOfDoneTodos = createSelector(
   state => state.todos,
   todos => todos.filter(todo => todo.isDone).length
 )
 
 export const DoneTodosCounter = () => {
-  const nrOfDoneTodos = useSelector(selectNrOfDoneTodos)
-  return <div>{nrOfDoneTodos}</div>
+  const NumOfDoneTodos = useSelector(selectNumOfDoneTodos)
+  return <div>{NumOfDoneTodos}</div>
 }
 
 export const App = () => {
   return (
     <>
-      <span>Nr of done todos:</span>
+      <span>Number of done todos:</span>
       <DoneTodosCounter />
     </>
   )
@@ -121,38 +121,38 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
-const selectNrOfTodosWithIsDoneValue = createSelector(
+const selectNumOfTodosWithIsDoneValue = createSelector(
   state => state.todos,
   (_, isDone) => isDone,
   (todos, isDone) => todos.filter(todo => todo.isDone === isDone).length
 )
 
 export const TodoCounterForIsDoneValue = ({ isDone }) => {
-  const nrOfTodosWithIsDoneValue = useSelector(state =>
-    selectNrOfTodosWithIsDoneValue(state, isDone)
+  const NumOfTodosWithIsDoneValue = useSelector(state =>
+    selectNumOfTodosWithIsDoneValue(state, isDone)
   )
 
-  return <div>{nrOfTodosWithIsDoneValue}</div>
+  return <div>{NumOfTodosWithIsDoneValue}</div>
 }
 
 export const App = () => {
   return (
     <>
-      <span>Nr of done todos:</span>
+      <span>Number of done todos:</span>
       <TodoCounterForIsDoneValue isDone={true} />
     </>
   )
 }
 ```
 
-However, when the selector is used in multiple components and depends on the component's props, you need to ensure that each component instance gets its own selector instance (see [here](https://github.com/reduxjs/reselect#accessing-react-props-in-selectors) for a more thourough explanation of why this is necessary):
+However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that each component instance gets its own selector instance (see [here](https://github.com/reduxjs/reselect#accessing-react-props-in-selectors) for a more thourough explanation of why this is necessary):
 
 ```jsx
 import React, { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
-const makeNrOfTodosWithIsDoneSelector = () =>
+const makeNumOfTodosWithIsDoneSelector = () =>
   createSelector(
     state => state.todos,
     (_, isDone) => isDone,
@@ -160,21 +160,24 @@ const makeNrOfTodosWithIsDoneSelector = () =>
   )
 
 export const TodoCounterForIsDoneValue = ({ isDone }) => {
-  const selectNrOfTodosWithIsDone = useMemo(makeNrOfTodosWithIsDoneSelector, [])
-
-  const nrOfTodosWithIsDoneValue = useSelector(state =>
-    selectNrOfTodosWithIsDoneValue(state, isDone)
+  const selectNumOfTodosWithIsDone = useMemo(
+    makeNumOfTodosWithIsDoneSelector,
+    []
   )
 
-  return <div>{nrOfTodosWithIsDoneValue}</div>
+  const NumOfTodosWithIsDoneValue = useSelector(state =>
+    selectNumOfTodosWithIsDoneValue(state, isDone)
+  )
+
+  return <div>{NumOfTodosWithIsDoneValue}</div>
 }
 
 export const App = () => {
   return (
     <>
-      <span>Nr of done todos:</span>
+      <span>Number of done todos:</span>
       <TodoCounterForIsDoneValue isDone={true} />
-      <span>Nr of unfinished todos:</span>
+      <span>Number of unfinished todos:</span>
       <TodoCounterForIsDoneValue isDone={false} />
     </>
   )
