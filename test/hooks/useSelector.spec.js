@@ -4,11 +4,8 @@ import React, { useCallback, useReducer } from 'react'
 import { createStore } from 'redux'
 import { renderHook, act } from 'react-hooks-testing-library'
 import * as rtl from 'react-testing-library'
-import {
-  Provider as ProviderMock,
-  useSelector,
-  shallowEqual
-} from '../../src/index.js'
+import { Provider as ProviderMock, useSelector } from '../../src/index.js'
+import shallowEqual from '../../src/utils/shallowEqual.js'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {

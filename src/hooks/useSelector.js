@@ -20,10 +20,6 @@ const refEquality = (a, b) => a === b
  * A hook to access the redux store's state. This hook takes a selector function
  * as an argument. The selector is called with the store state.
  *
- * This hook takes a dependencies array as an optional second argument,
- * which when passed ensures referential stability of the selector (this is primarily
- * useful if you provide a selector that memoizes values).
- *
  * @param {Function} selector the selector function
  * @param {Function} equalityFn the function that will be used to determine equality
  *

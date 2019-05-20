@@ -5,11 +5,11 @@ import connect from './connect/connect'
 
 import { useDispatch } from './hooks/useDispatch'
 import { useSelector } from './hooks/useSelector'
+import { useShallowEqualSelector } from './hooks/useShallowEqualSelector'
 import { useStore } from './hooks/useStore'
 
 import { setBatch } from './utils/batch'
 import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
-import shallowEqual from './utils/shallowEqual'
 
 setBatch(batch)
 
@@ -22,5 +22,5 @@ export {
   useDispatch,
   useSelector,
   useStore,
-  shallowEqual
+  useShallowEqualSelector
 }
