@@ -15,7 +15,7 @@ React Redux now offers a set of hook APIs as an alternative to the existing `con
 
 These hooks were first added in v7.1.0.
 
-This page reflects the latest alpha, which is currently **v7.1.0-alpha.4**.
+This page reflects the latest alpha, which is currently **v7.1.0-alpha.5**.
 
 ## Using Hooks in a React Redux App
 
@@ -37,7 +37,7 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 ## `useSelector()`
 
 ```js
-const result : any = useSelector(selector : Function)
+const result : any = useSelector(selector : Function, equalityFn? : Function)
 ```
 
 Allows you to extract data from the Redux store state, using a selector function.
@@ -52,12 +52,41 @@ However, there are some differences between the selectors passed to `useSelector
 - When an action is dispatched, `useSelector()` will do a shallow comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, they component will not re-render.
 - The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector.
 - Extra care must be taken when using memoizing selectors (see examples below for more details).
+- `useSelector()` uses strict `===` reference equality checks by default, not shallow equality (see the following section for more details).
 
 > **Note**: There are potential edge cases with using props in selectors that may cause errors. See the [Usage Warnings](#usage-warnings) section of this page for further details.
 
 You may call `useSelector()` multiple times within a single function component. Each call to `useSelector()` creates an individual subscription to the Redux store. Because of the React update batching behavior used in React Redux v7, a dispatched action that causes multiple `useSelector()`s in the same component to return new values _should_ only result in a single re-render.
 
-#### Examples
+### Equality Comparisons and Updates
+
+When the function component renders, the provided selector function will be called and its result will be returned
+from the `useSelector()` hook. (A cached result may be returned if the selector has been run and hasn't changed.)
+
+However, when an action is dispatched to the Redux store, `useSelector()` only forces a re-render if the selector result
+appears to be different than the last result. As of v7.1.0-alpha.5, the default comparison is a strict `===` reference
+comparison. This is different than `connect()`, which uses shallow equality checks on the results of `mapState` calls
+to determine if re-rendering is needed. This has several implications on how you should use `useSelector()`.
+
+With `mapState`, all individual fields were returned in a combined object. It didn't matter if the return object was
+a new reference or not - `connect()` just compared the individual fields. With `useSelector()`, returning a new object
+every time will _always_ force a re-render by default. If you want to retrieve multiple values from the store, you can:
+
+- Call `useSelector()` multiple times, with each call returning a single field value
+- Use Reselect or a similar library to create a memoized selector that returns multiple values in one object, but
+  only returns a new object when one of the values has changed.
+- Use the `shallowEqual` function from React-Redux as the `equalityFn` argument to `useSelector()`, like:
+
+```js
+import { shallowEqual, useSelector } from 'react-redux'
+
+// later
+const selectedData = useSelector(selectorReturningObject, shallowEqual)
+```
+
+The optional comparison function also enables using something like Lodash's `_.isEqual()` or Immutable.js's comparison capabilities.
+
+### `useSelector` Examples
 
 Basic usage:
 
@@ -83,7 +112,7 @@ export const TodoListItem = props => {
 }
 ```
 
-##### Using memoizing selectors
+#### Using memoizing selectors
 
 When using `useSelector` with an inline selector as shown above, a new instance of the selector is created whenever the component is rendered. This works as long as the selector does not maintain any state. However, memoizing selectors (e.g. created via `createSelector` from `reselect`) do have internal state, and therefore care must be taken when using them. Below you can find typical usage scenarios for memoizing selectors.
 
@@ -349,5 +378,39 @@ export const CounterComponent = props => {
   }, [props.name, counter])
 
   return renderedChildren
+}
+```
+
+## Hooks Recipes
+
+We've pared down our hooks API from the original alpha release, focusing on a more minimal set of API primitives.
+However, you may still wish to use some of the approaches we tried in your own apps. These examples should be ready
+to copy and paste into your own codebase.
+
+### Recipe: `useActions()`
+
+```js
+import { bindActionCreators } from 'redux'
+import { useDispatch } from 'react-redux'
+import { useMemo } from 'react'
+
+export function useActions(actions, deps) {
+  const dispatch = useDispatch()
+  return useMemo(() => {
+    if (Array.isArray(actions)) {
+      return actions.map(a => bindActionCreators(a, dispatch))
+    }
+    return bindActionCreators(actions, dispatch)
+  }, deps)
+}
+```
+
+### Recipe: `useShallowEqualSelector()`
+
+```js
+import { shallowEqual } from 'react-redux'
+
+export function useShallowEqualSelector(selector) {
+  return useSelector(selector, shallowEqual)
 }
 ```
