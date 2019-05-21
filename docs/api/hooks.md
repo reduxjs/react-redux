@@ -268,7 +268,7 @@ export const CounterComponent = ({ value }) => {
   const dispatch = useDispatch()
   const incrementCounter = useCallback(
     () => dispatch({ type: 'increment-counter' }),
-    []
+    [dispatch]
   )
 
   return (
