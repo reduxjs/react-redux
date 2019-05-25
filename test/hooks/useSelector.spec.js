@@ -7,7 +7,8 @@ import * as rtl from 'react-testing-library'
 import {
   Provider as ProviderMock,
   useSelector,
-  shallowEqual
+  shallowEqual,
+  connect
 } from '../../src/index.js'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
@@ -330,6 +331,47 @@ describe('React', () => {
           )
 
           expect(() => store.dispatch({ type: '' })).toThrowError()
+
+          spy.mockRestore()
+        })
+
+        it('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
+          const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+          const Parent = () => {
+            const count = useSelector(s => s.count)
+            return <ConnectedWrapper parentCount={count} />
+          }
+
+          const ConnectedWrapper = connect(({ count }) => ({ count }))(
+            ({ parentCount }) => {
+              return <Child parentCount={parentCount} />
+            }
+          )
+
+          let sawInconsistentState = false
+
+          const Child = ({ parentCount }) => {
+            const result = useSelector(({ count }) => {
+              if (count !== parentCount) {
+                sawInconsistentState = true
+              }
+
+              return count + parentCount
+            })
+
+            return <div>{result}</div>
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Parent />
+            </ProviderMock>
+          )
+
+          store.dispatch({ type: '' })
+
+          expect(sawInconsistentState).toBe(false)
 
           spy.mockRestore()
         })
