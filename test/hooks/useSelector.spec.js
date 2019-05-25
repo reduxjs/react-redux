@@ -302,6 +302,37 @@ describe('React', () => {
 
           spy.mockRestore()
         })
+
+        it('re-throws errors from the selector that only occur during rendering', () => {
+          const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+
+          const Parent = () => {
+            const count = useSelector(s => s.count)
+            return <Child parentCount={count} />
+          }
+
+          const Child = ({ parentCount }) => {
+            const result = useSelector(({ count }) => {
+              if (parentCount > 0) {
+                throw new Error()
+              }
+
+              return count + parentCount
+            })
+
+            return <div>{result}</div>
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Parent />
+            </ProviderMock>
+          )
+
+          expect(() => store.dispatch({ type: '' })).toThrowError()
+
+          spy.mockRestore()
+        })
       })
 
       describe('error handling for invalid arguments', () => {
