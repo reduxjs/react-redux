@@ -340,7 +340,7 @@ If you prefer to deal with this issue yourself, here are some possible options f
 
 - Don't rely on props in your selector function for extracting data
 - In cases where you do rely on props in your selector function _and_ those props may change over time, _or_ the data you're extracting may be based on items that can be deleted, try writing the selector functions defensively. Don't just reach straight into `state.todos[props.id].name` - read `state.todos[props.id]` first, and verify that it exists before trying to read `todo.name`.
-- Because `connect` adds the necessary `Subscription` to the context provider, wrapping the component with `connect` (without any arguments, i.e. `connect()(MyComponent)`) will keep those issues from occurring.
+- Because `connect` adds the necessary `Subscription` to the context provider and delays evaluating child subscriptions until the connected component has re-rendered, putting a connected component in the component tree just above the component using `useSelector` will prevent these issues as long as the connected component gets re-rendered due to the same store update as the hooks component.
 
 > **Note**: For a longer description of this issue, see [this chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec), as well as [issue #1179](https://github.com/reduxjs/react-redux/issues/1179).
 
