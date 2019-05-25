@@ -194,11 +194,11 @@ export const TodoCounterForIsDoneValue = ({ isDone }) => {
     []
   )
 
-  const NumOfTodosWithIsDoneValue = useSelector(state =>
+  const numOfTodosWithIsDoneValue = useSelector(state =>
     selectNumOfTodosWithIsDoneValue(state, isDone)
   )
 
-  return <div>{NumOfTodosWithIsDoneValue}</div>
+  return <div>{numOfTodosWithIsDoneValue}</div>
 }
 
 export const App = () => {
@@ -340,45 +340,27 @@ If you prefer to deal with this issue yourself, here are some possible options f
 
 - Don't rely on props in your selector function for extracting data
 - In cases where you do rely on props in your selector function _and_ those props may change over time, _or_ the data you're extracting may be based on items that can be deleted, try writing the selector functions defensively. Don't just reach straight into `state.todos[props.id].name` - read `state.todos[props.id]` first, and verify that it exists before trying to read `todo.name`.
-- Because `connect` adds the necessary `Subscription` to the context provider, wrapping the component with `connect` (without any arguments, i.e. `connect()(MyComponent)` will keep those issues from occurring.
+- Because `connect` adds the necessary `Subscription` to the context provider and delays evaluating child subscriptions until the connected component has re-rendered, putting a connected component in the component tree just above the component using `useSelector` will prevent these issues as long as the connected component gets re-rendered due to the same store update as the hooks component.
 
 > **Note**: For a longer description of this issue, see [this chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec), as well as [issue #1179](https://github.com/reduxjs/react-redux/issues/1179).
 
 ### Performance
 
-As mentioned earlier, `useSelector()` will do basic shallow comparisons of return values when running the selector function after an action is dispatched. However, unlike `connect()`, `useSelector()` does not do anything to prevent your own function component from completing a re-render if the derived state has changed.
+As mentioned earlier, by default `useSelector()` will do a reference equality comparison of the selected value when running the selector function after an action is dispatched, and will only cause the component to re-render if the selected value changed. However, unlike `connect()`, `useSelector()` does not prevent the component from re-rendering due to its parent re-rendering, even if the component's props did not change.
 
-If further performance optimizations are necessary, you may consider either wrapping your function component in `React.memo(MyFunctionComponent)`, or using `useMemo()` to memoize the render output of your component:
+If further performance optimizations are necessary, you may consider wrapping your function component in `React.memo()`:
 
 ```jsx
-// Option 1: use React.memo() to keep the component from re-rendering
-
-const CounterComponent = props => {
+const CounterComponent = ({ name }) => {
   const counter = useSelector(state => state.counter)
   return (
     <div>
-      {props.name}: {counter}
+      {name}: {counter}
     </div>
   )
 }
 
 export const MemoizedCounterComponent = React.memo(CounterComponent)
-
-// Option 2: let the component re-render, but memoize output
-
-export const CounterComponent = props => {
-  const counter = useSelector(state => state.counter)
-
-  const renderedChildren = useMemo(() => {
-    return (
-      <div>
-        {props.name}: {counter}
-      </div>
-    )
-  }, [props.name, counter])
-
-  return renderedChildren
-}
 ```
 
 ## Hooks Recipes
@@ -401,7 +383,7 @@ export function useActions(actions, deps) {
       return actions.map(a => bindActionCreators(a, dispatch))
     }
     return bindActionCreators(actions, dispatch)
-  }, deps)
+  }, deps ? [dispatch, ...deps] : deps)
 }
 ```
 
