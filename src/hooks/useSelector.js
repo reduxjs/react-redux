@@ -20,9 +20,9 @@ const refEquality = (a, b) => a === b
  * A hook to access the redux store's state. This hook takes a selector function
  * as an argument. The selector is called with the store state.
  *
- * This hook takes a dependencies array as an optional second argument,
- * which when passed ensures referential stability of the selector (this is primarily
- * useful if you provide a selector that memoizes values).
+ * This hook takes an optional equality comparison function as the second parameter
+ * that allows you to customize the way the selected state is compared to determine
+ * whether the component needs to be re-rendered.
  *
  * @param {Function} selector the selector function
  * @param {Function} equalityFn the function that will be used to determine equality
@@ -33,7 +33,6 @@ const refEquality = (a, b) => a === b
  *
  * import React from 'react'
  * import { useSelector } from 'react-redux'
- * import { RootState } from './store'
  *
  * export const CounterComponent = () => {
  *   const counter = useSelector(state => state.counter)
