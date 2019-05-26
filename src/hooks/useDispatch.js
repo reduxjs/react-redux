@@ -5,7 +5,7 @@ import { useStore } from './useStore'
  * might want to use this hook it is recommended to use `useActions` instead to bind
  * action creators to the `dispatch` function.
  *
- * @returns {any} redux store's `dispatch` function
+ * @returns {any|function} redux store's `dispatch` function
  *
  * @example
  *

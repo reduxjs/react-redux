@@ -25,7 +25,7 @@ const refEquality = (a, b) => a === b
  * whether the component needs to be re-rendered.
  *
  * @param {Function} selector the selector function
- * @param {Function} equalityFn the function that will be used to determine equality
+ * @param {Function=} equalityFn the function that will be used to determine equality
  *
  * @returns {any} the selected state
  *
