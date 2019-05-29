@@ -87,4 +87,4 @@ As the official binding library for React and Redux, React Redux has a large com
 - Stack Overflow topics: [Redux](https://stackoverflow.com/questions/tagged/redux), [React Redux](https://stackoverflow.com/questions/tagged/redux)
 - Reddit: [/r/reactjs](https://www.reddit.com/r/reactjs/), [/r/reduxjs](https://www.reddit.com/r/reduxjs/)
 - Github issues (bug reports and feature requests): https://github.com/reduxjs/react-redux/issues
-- Tutorials, articles, and further resources: [React/Redux Links](https://www.reddit.com/r/reduxjs/)
+- Tutorials, articles, and further resources: [React/Redux Links](https://github.com/markerikson/react-redux-links)
