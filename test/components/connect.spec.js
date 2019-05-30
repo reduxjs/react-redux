@@ -1830,11 +1830,11 @@ describe('React', () => {
               <Container pass="through" />
             </ProviderMock>
           )
-          expect(tester.getByTestId('dispatch')).toHaveTextContent(
+          expect(tester.getAllByTestId('dispatch')[0]).toHaveTextContent(
             '[function dispatch]'
           )
           expect(tester.queryByTestId('foo')).toBe(null)
-          expect(tester.getByTestId('pass')).toHaveTextContent('through')
+          expect(tester.getAllByTestId('pass')[0]).toHaveTextContent('through')
         }
 
         runCheck()

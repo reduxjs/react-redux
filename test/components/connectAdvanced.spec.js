@@ -116,7 +116,7 @@ describe('React', () => {
 
       store.dispatch({ type: 'NEW_REFERENCE' })
 
-      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getAllByTestId('foo')[0]).toHaveTextContent('bar')
 
       // The state should have been mapped 3 times:
       // 1) Initial render
