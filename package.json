@@ -33,6 +33,7 @@
     "prepare": "npm run clean && npm run build",
     "pretest": "npm run lint",
     "test": "jest",
+    "test-debug": "node --inspect-brk node_modules/.bin/jest --runInBand --verbose false",
     "coverage": "codecov"
   },
   "peerDependencies": {

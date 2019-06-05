@@ -1,33 +1,37 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { isContextProvider } from 'react-is'
 import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
-import { createUpdater } from '../updater/updater'
 
 export function Provider({ context, store, children }) {
   // construct a new updater and assign it to a ref on initial render
-  let updaterRef = useRef(null)
-  if (updaterRef.current === null) {
-    updaterRef.current = createUpdater()
-  }
 
-  // access updater and methods
-  let [updater, methods] = updaterRef.current
+  let [contextValue, setContextValue] = useState(() => ({
+    state: store.getState(),
+    store
+  }))
 
-  // synchronously set the store
-  updater.setStore(store)
-
-  // when store changes set the store, and subscribe
-  // to additional store updates
+  let mountedRef = useRef(false)
   useEffect(() => {
-    updater.setStore(store)
-    return store.subscribe(() => updater.newState(store.getState()))
-  }, [updater, store])
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
-  // merge the store with updater methods in a ref stable way
-  let contextValue = useMemo(() => {
-    return { ...methods, store }
-  }, [methods, store])
+  useEffect(() => {
+    let unsubscribe = store.subscribe(() => {
+      if (mountedRef.current) {
+        setContextValue({ state: store.getState(), store })
+      }
+    })
+    if (contextValue.state !== store.getState()) {
+      setContextValue({ state: store.getState(), store })
+    }
+    return () => {
+      unsubscribe()
+    }
+  }, [store])
 
   // use context from props if one was provided
   const Context =

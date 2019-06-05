@@ -1,11 +1,12 @@
-import { useContext } from 'react'
+import { useContextSelector } from 'react'
 
 import { ReactReduxContext } from '../components/Context'
 
+let storeSelector = c => c.store
+
 export function makeUseStore(Context) {
   return function useStore() {
-    let context = useContext(Context)
-    return context.store
+    return useContextSelector(Context, storeSelector)
   }
 }
 

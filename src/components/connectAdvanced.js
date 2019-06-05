@@ -1,6 +1,6 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, { useContext, useMemo, useCallback } from 'react'
+import React, { useContextSelector, useMemo, useCallback } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 import { makeUseSelector } from '../hooks/useSelector'
 
@@ -125,16 +125,17 @@ export default function connectAdvanced(
     }
 
     let useSelect = makeUseSelector(context)
+    let storeSelector = context => context.store
 
     function ConnectFunction(props) {
-      const context = useContext(Context)
+      const store = useContextSelector(Context, storeSelector)
 
       invariant(
-        context !== null,
-        `Could not find "dispatch" on the context provided. Please check that you have mounted a Provider above this component`
+        store != null,
+        `Could not find "store" on the context provided. Please check that you have mounted a Provider above this component`
       )
 
-      let dispatch = context.dispatch
+      let dispatch = store.dispatch
 
       const [propsContext, forwardedRef, wrapperProps] = useMemo(() => {
         // Distinguish between actual "data" props that were passed to the wrapper component,
@@ -163,7 +164,7 @@ export default function connectAdvanced(
         state => childPropsSelector(state, wrapperProps),
         [childPropsSelector, wrapperProps]
       )
-      let actualChildProps = useSelect(select)
+      let actualChildProps = useSelect(select, [select])
 
       // Now that all that's done, we can finally try to actually render the child component.
       // We memoize the elements for the rendered child component as an optimization.

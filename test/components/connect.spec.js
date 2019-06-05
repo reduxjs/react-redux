@@ -228,7 +228,7 @@ describe('React', () => {
         const Decorated = decorator(Container)
 
         expect(() => rtl.render(<Decorated />)).toThrow(
-          /Could not find "dispatch"/
+          /Could not find "store"/
         )
 
         spy.mockRestore()
@@ -1050,7 +1050,7 @@ describe('React', () => {
         }
       })
 
-      it('should not attempt to set state after unmounting nested components', async () => {
+      it('should not attempt to set state after unmounting nested components', () => {
         const store = createStore(() => ({}))
         let mapStateToPropsCalls = 0
 
@@ -1141,23 +1141,23 @@ describe('React', () => {
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-        await rtl.act(async () => {
+        rtl.act(() => {
           linkA.click()
         })
-        await rtl.act(async () => {
+        rtl.act(() => {
           linkB.click()
         })
-        await rtl.act(async () => {
+        rtl.act(() => {
           linkB.click()
         })
 
         document.body.removeChild(div)
-        // Called 3 times:
-        // - Initial mount
-        // - After first linkA click, still mounted
-        // - After second linkA click, the updater function is called which
-        //   enqueues an update even though A will be unmounted when App re-renders
-        expect(mapStateToPropsCalls).toBe(3)
+        // Called 2 times:
+        // - Initial mount (called)
+        // - After first linkA click
+        // Not Called...
+        // - After first linkB click, (not called because A is unmounted)
+        expect(mapStateToPropsCalls).toBe(2)
         expect(spy).toHaveBeenCalledTimes(0)
         spy.mockRestore()
       })
@@ -1890,7 +1890,7 @@ describe('React', () => {
         })
       })
 
-      it('should notify nested components through a blocking component', async () => {
+      it('should notify nested components through a blocking component', () => {
         @connect(state => ({ count: state }))
         class Parent extends Component {
           render() {
@@ -1929,7 +1929,7 @@ describe('React', () => {
         )
 
         expect(mapStateToProps).toHaveBeenCalledTimes(1)
-        await rtl.act(async () => {
+        rtl.act(() => {
           store.dispatch({ type: 'INC' })
         })
 
@@ -3198,7 +3198,63 @@ describe('React', () => {
         expect(reduxCountPassedToMapState).toEqual(3)
       })
 
-      it('should ensure top-down updates for consecutive batched updates', async () => {
+      xit('TODO remove: memo + context', () => {
+        let Context = React.createContext(0)
+        let Connect = message => Wrapped => {
+          return React.memo(function ConnectFunction(props) {
+            executionOrder.push(message)
+            let val = React.useContext(Context)
+            return <Wrapped {...props} />
+          })
+        }
+        let executionOrder = []
+        let expectedExecutionOrder = [
+          'parent map',
+          'parent render',
+          'child map',
+          'child render'
+        ]
+        let ParentImpl = () => {
+          executionOrder.push('parent render')
+          return <Child />
+        }
+        let Parent = Connect('parent map')(ParentImpl)
+
+        let ChildImpl = () => {
+          executionOrder.push('child render')
+          return <div>child</div>
+        }
+        let Child = Connect('child map')(ChildImpl)
+
+        let outsideSetState
+
+        let Provider = ({ children }) => {
+          let [state, setState] = React.useState(1)
+          outsideSetState = setState
+
+          return <Context.Provider value={state}>{children}</Context.Provider>
+        }
+
+        rtl.render(
+          <Provider>
+            <Parent />
+          </Provider>
+        )
+        console.log('executionOrder', executionOrder)
+
+        console.log('***********')
+        executionOrder = []
+        rtl.act(() => {
+          outsideSetState(2)
+          outsideSetState(3)
+        })
+        console.log('executionOrder', executionOrder)
+        console.log('***********')
+
+        expect(executionOrder).toEqual(expectedExecutionOrder)
+      })
+
+      it('REVIEW NEEDED - should ensure top-down updates for consecutive batched updates', () => {
         const INC = 'INC'
         const reducer = (c = 0, { type }) => (type === INC ? c + 1 : c)
         const store = createStore(reducer)
@@ -3238,7 +3294,7 @@ describe('React', () => {
         )
 
         executionOrder = []
-        await rtl.act(async () => {
+        rtl.act(() => {
           store.dispatch({ type: INC })
           store.dispatch({ type: '' })
         })
