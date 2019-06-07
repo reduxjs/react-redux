@@ -11,11 +11,11 @@ React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give funct
 
 React Redux now offers a set of hook APIs as an alternative to the existing `connect()` Higher Order Component. These APIs allow you to subscribe to the Redux store and dispatch actions, without having to wrap your components in `connect()`.
 
-> **Note**: The hook APIs listed in this page are **still experimental and in alpha!** We encourage you to try them out in your applications and give feedback, but be aware that they may be changed before a final release, including potential renaming or removal.
+> **Note**: The hook APIs listed in this page are **currently a release candidate!** We encourage you to try them out in your applications and give feedback.  We hope that the APIs are stable at this point, but be aware that there may still be changes before final release.
 
 These hooks were first added in v7.1.0.
 
-This page reflects the latest alpha, which is currently **v7.1.0-alpha.5**.
+This page reflects the latest release candidate, which is currently **v7.1.0-rc.1**.
 
 ## Using Hooks in a React Redux App
 
