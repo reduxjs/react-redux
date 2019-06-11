@@ -6,7 +6,7 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index.js'
-import * as rtl from 'react-testing-library'
+import * as rtl from '@testing-library/react'
 import 'jest-dom/extend-expect'
 
 describe('React', () => {

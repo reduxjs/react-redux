@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import * as rtl from 'react-testing-library'
+import * as rtl from '@testing-library/react'
 import { Provider as ProviderMock, connectAdvanced } from '../../src/index.js'
 import { createStore } from 'redux'
 import 'jest-dom/extend-expect'

@@ -3,7 +3,7 @@
 import React, { useCallback, useReducer } from 'react'
 import { createStore } from 'redux'
 import { renderHook, act } from 'react-hooks-testing-library'
-import * as rtl from 'react-testing-library'
+import * as rtl from '@testing-library/react'
 import {
   Provider as ProviderMock,
   useSelector,

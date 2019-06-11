@@ -66,14 +66,10 @@ export function useSelector(selector, equalityFn = refEquality) {
       selectedState = latestSelectedState.current
     }
   } catch (err) {
-    let errorMessage = `An error occured while selecting the store state: ${
-      err.message
-    }.`
+    let errorMessage = `An error occured while selecting the store state: ${err.message}.`
 
     if (latestSubscriptionCallbackError.current) {
-      errorMessage += `\nThe error may be correlated with this previous error:\n${
-        latestSubscriptionCallbackError.current.stack
-      }\n\nOriginal stack trace:`
+      errorMessage += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\nOriginal stack trace:`
     }
 
     throw new Error(errorMessage)
