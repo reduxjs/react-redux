@@ -388,7 +388,7 @@ export function useActions(actions, deps) {
 ### Recipe: `useShallowEqualSelector()`
 
 ```js
-import { shallowEqual } from 'react-redux'
+import { useSelector, shallowEqual } from 'react-redux'
 
 export function useShallowEqualSelector(selector) {
   return useSelector(selector, shallowEqual)
