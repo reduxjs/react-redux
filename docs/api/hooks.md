@@ -11,11 +11,8 @@ React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give funct
 
 React Redux now offers a set of hook APIs as an alternative to the existing `connect()` Higher Order Component. These APIs allow you to subscribe to the Redux store and dispatch actions, without having to wrap your components in `connect()`.
 
-> **Note**: The hook APIs listed in this page are **currently a release candidate!** We encourage you to try them out in your applications and give feedback.  We hope that the APIs are stable at this point, but be aware that there may still be changes before final release.
-
 These hooks were first added in v7.1.0.
 
-This page reflects the latest release candidate, which is currently **v7.1.0-rc.1**.
 
 ## Using Hooks in a React Redux App
 
@@ -215,20 +212,9 @@ export const App = () => {
 
 ## Removed: `useActions()`
 
-This hook was removed in `v7.1.0-alpha.4`, based on [Dan Abramov's suggestion](https://github.com/reduxjs/react-redux/issues/1252#issuecomment-488160930).
-That suggestion was based on "binding action creators" not being as useful in a hooks-based use case, and causing too
-much conceptual overhead and syntactic complexity.
 
-Instead, you should call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
-and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
-[`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
-or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
 
-## Removed: `useRedux()`
 
-This hook was removed in `v7.1.0-alpha.3`, on the grounds that it didn't provide any real benefit.
-
-If you were using it in your own code, please replace that with separate calls to `useSelector()` and `useDispatch()`.
 
 ## `useDispatch()`
 
@@ -370,6 +356,18 @@ However, you may still wish to use some of the approaches we tried in your own a
 to copy and paste into your own codebase.
 
 ### Recipe: `useActions()`
+
+This hook was in our original alpha release, but removed in `v7.1.0-alpha.4`, based on [Dan Abramov's suggestion](https://github.com/reduxjs/react-redux/issues/1252#issuecomment-488160930).
+That suggestion was based on "binding action creators" not being as useful in a hooks-based use case, and causing too
+much conceptual overhead and syntactic complexity.
+
+You should probably prefer to  call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
+and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
+[`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
+or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
+
+However, if you'd like to still use this hook yourself, here's a copy-pastable version that supports passing in action
+creators as a single function, an array, or an object.
 
 ```js
 import { bindActionCreators } from 'redux'
