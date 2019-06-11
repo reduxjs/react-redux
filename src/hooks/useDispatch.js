@@ -1,4 +1,20 @@
-import { useStore } from './useStore'
+import { useStore as useDefaultStore, createStoreHook } from './useStore'
+
+/**
+ * Hook factory, which creates a `useDispatch` hook bound to a given context.
+ *
+ * @param {Function} [useReduxContext] Hook which returns the Redux context.
+ * @returns {Function} A `useDispatch` hook bound to the specified context.
+ */
+export function createDispatchHook(useReduxContext = null) {
+  const useStore = useReduxContext
+    ? createStoreHook(useReduxContext)
+    : useDefaultStore
+  return function useDispatch() {
+    const store = useStore()
+    return store.dispatch
+  }
+}
 
 /**
  * A hook to access the redux `dispatch` function. Note that in most cases where you
@@ -23,7 +39,4 @@ import { useStore } from './useStore'
  *   )
  * }
  */
-export function useDispatch() {
-  const store = useStore()
-  return store.dispatch
-}
+export const useDispatch = createDispatchHook()

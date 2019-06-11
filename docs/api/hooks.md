@@ -295,6 +295,42 @@ export const CounterComponent = ({ value }) => {
 }
 ```
 
+
+## Custom context
+
+The `<Provider>` component allows you to specify an alternate context via the `context` prop. This is useful if you're building a complex reusable component, and you don't want your store to collide with any Redux store your consumers' applications might use.
+
+To access an alternate context via the hooks API, use the hook creator functions:
+
+```js
+import React from 'react'
+import {
+  Provider,
+  createReduxContextHook,
+  createStoreHook,
+  createDispatchHook,
+  createSelectorHook
+} from 'react-redux'
+
+const MyContext = React.createContext(null)
+const useMyReduxContext = createReduxContextHook(MyContext)
+
+// Export your custom hooks if you wish to use them in other files.
+export const useStore = createStoreHook(useMyReduxContext)
+export const useDispatch = createDispatchHook(useMyReduxContext)
+export const useSelector = createSelectorHook(useMyReduxContext)
+
+const myStore = createStore(rootReducer)
+
+export function MyProvider({ children }) {
+  return (
+    <Provider context={MyContext} store={myStore}>
+      {children}
+    </Provider>
+  )
+}
+```
+
 ## Usage Warnings
 
 ### Stale Props and "Zombie Children"
