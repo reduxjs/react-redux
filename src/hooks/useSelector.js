@@ -75,11 +75,9 @@ export function useSelector(selector, equalityFn = refEquality) {
     throw new Error(errorMessage)
   }
 
-  useIsomorphicLayoutEffect(() => {
-    latestSelector.current = selector
-    latestSelectedState.current = selectedState
-    latestSubscriptionCallbackError.current = undefined
-  })
+  latestSelector.current = selector
+  latestSelectedState.current = selectedState
+  latestSubscriptionCallbackError.current = undefined
 
   useIsomorphicLayoutEffect(() => {
     function checkForUpdates() {
