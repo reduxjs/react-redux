@@ -4,8 +4,7 @@ import { renderHook } from 'react-hooks-testing-library'
 import {
   Provider as ProviderMock,
   useDispatch,
-  createDispatchHook,
-  createReduxContextHook
+  createDispatchHook
 } from '../../src/index.js'
 
 const store = createStore(c => c + 1)
@@ -25,9 +24,7 @@ describe('React', () => {
     describe('createDispatchHook', () => {
       it("returns the correct store's dispatch function", () => {
         const nestedContext = React.createContext(null)
-        const useCustomDispatch = createDispatchHook(
-          createReduxContextHook(nestedContext)
-        )
+        const useCustomDispatch = createDispatchHook(nestedContext)
         const { result } = renderHook(() => useDispatch(), {
           // eslint-disable-next-line react/prop-types
           wrapper: ({ children, ...props }) => (

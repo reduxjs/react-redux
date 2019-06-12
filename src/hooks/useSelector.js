@@ -1,7 +1,8 @@
 import { useReducer, useRef, useEffect, useMemo, useLayoutEffect } from 'react'
 import invariant from 'invariant'
-import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
+import { useReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
+import { ReactReduxContext } from '../components/Context'
 
 // React currently throws a warning when using useLayoutEffect on the server.
 // To get around it, we can conditionally useEffect on the server (no-op) and
@@ -95,14 +96,14 @@ function useSelectorWithStoreAndSubscription(
 /**
  * Hook factory, which creates a `useSelector` hook bound to a given context.
  *
- * @param {Function} [useReduxContext] Hook which returns the Redux context.
+ * @param {Function} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(useReduxContext = useDefaultReduxContext) {
+export function createSelectorHook(context = ReactReduxContext) {
   return function useSelector(selector, equalityFn = refEquality) {
     invariant(selector, `You must pass a selector to useSelectors`)
 
-    const { store, subscription: contextSub } = useReduxContext()
+    const { store, subscription: contextSub } = useReduxContext(context)
 
     return useSelectorWithStoreAndSubscription(
       selector,

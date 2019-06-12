@@ -9,8 +9,7 @@ import {
   useSelector,
   shallowEqual,
   connect,
-  createSelectorHook,
-  createReduxContextHook
+  createSelectorHook
 } from '../../src/index.js'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
@@ -403,9 +402,7 @@ describe('React', () => {
 
       it('subscribes to the correct store', () => {
         const nestedContext = React.createContext(null)
-        const useCustomSelector = createSelectorHook(
-          createReduxContextHook(nestedContext)
-        )
+        const useCustomSelector = createSelectorHook(nestedContext)
         let defaultCount = null
         let customCount = null
 

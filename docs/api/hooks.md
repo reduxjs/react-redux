@@ -306,19 +306,17 @@ To access an alternate context via the hooks API, use the hook creator functions
 import React from 'react'
 import {
   Provider,
-  createReduxContextHook,
   createStoreHook,
   createDispatchHook,
   createSelectorHook
 } from 'react-redux'
 
 const MyContext = React.createContext(null)
-const useMyReduxContext = createReduxContextHook(MyContext)
 
 // Export your custom hooks if you wish to use them in other files.
-export const useStore = createStoreHook(useMyReduxContext)
-export const useDispatch = createDispatchHook(useMyReduxContext)
-export const useSelector = createSelectorHook(useMyReduxContext)
+export const useStore = createStoreHook(MyContext)
+export const useDispatch = createDispatchHook(MyContext)
+export const useSelector = createSelectorHook(MyContext)
 
 const myStore = createStore(rootReducer)
 
