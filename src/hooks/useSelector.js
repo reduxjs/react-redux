@@ -1,6 +1,13 @@
-import { useReducer, useRef, useEffect, useMemo, useLayoutEffect } from 'react'
+import {
+  useReducer,
+  useRef,
+  useEffect,
+  useMemo,
+  useLayoutEffect,
+  useContext
+} from 'react'
 import invariant from 'invariant'
-import { useReduxContext } from './useReduxContext'
+import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { ReactReduxContext } from '../components/Context'
 
@@ -100,10 +107,14 @@ function useSelectorWithStoreAndSubscription(
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
 export function createSelectorHook(context = ReactReduxContext) {
+  const useReduxContext =
+    context === ReactReduxContext
+      ? useDefaultReduxContext
+      : () => useContext(context)
   return function useSelector(selector, equalityFn = refEquality) {
     invariant(selector, `You must pass a selector to useSelectors`)
 
-    const { store, subscription: contextSub } = useReduxContext(context)
+    const { store, subscription: contextSub } = useReduxContext()
 
     return useSelectorWithStoreAndSubscription(
       selector,
