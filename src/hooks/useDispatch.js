@@ -1,9 +1,7 @@
 import { useStore } from './useStore'
 
 /**
- * A hook to access the redux `dispatch` function. Note that in most cases where you
- * might want to use this hook it is recommended to use `useActions` instead to bind
- * action creators to the `dispatch` function.
+ * A hook to access the redux `dispatch` function.
  *
  * @returns {any|function} redux store's `dispatch` function
  *
