@@ -8,7 +8,7 @@ import { useStore } from './useStore'
  * @example
  *
  * import React, { useCallback } from 'react'
- * import { useReduxDispatch } from 'react-redux'
+ * import { useDispatch } from 'react-redux'
  *
  * export const CounterComponent = ({ value }) => {
  *   const dispatch = useDispatch()
