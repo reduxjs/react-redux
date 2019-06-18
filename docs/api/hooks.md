@@ -46,7 +46,7 @@ The selector is approximately equivalent to the [`mapStateToProps` argument to `
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
 - The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
-- When an action is dispatched, `useSelector()` will do a reference comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, they component will not re-render.
+- When an action is dispatched, `useSelector()` will do a reference comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, the component will not re-render.
 - The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector.
 - Extra care must be taken when using memoizing selectors (see examples below for more details).
 - `useSelector()` uses strict `===` reference equality checks by default, not shallow equality (see the following section for more details).
