@@ -6,7 +6,7 @@ import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index.js'
-import * as rtl from 'react-testing-library'
+import * as rtl from '@testing-library/react'
 import 'jest-dom/extend-expect'
 
 describe('React', () => {
@@ -1830,11 +1830,11 @@ describe('React', () => {
               <Container pass="through" />
             </ProviderMock>
           )
-          expect(tester.getByTestId('dispatch')).toHaveTextContent(
+          expect(tester.getAllByTestId('dispatch')[0]).toHaveTextContent(
             '[function dispatch]'
           )
           expect(tester.queryByTestId('foo')).toBe(null)
-          expect(tester.getByTestId('pass')).toHaveTextContent('through')
+          expect(tester.getAllByTestId('pass')[0]).toHaveTextContent('through')
         }
 
         runCheck()

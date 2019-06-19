@@ -19,7 +19,8 @@ const versions = require(`${CWD}/versions.json`)
 const versionToReleaseTags = {
   '5.x': '5.0.0',
   '6.x': '6.0.0',
-  '7.x': '7.0.1'
+  '7.0': '7.0.0',
+  '7.1': '7.1.0'
 }
 
 function Versions() {

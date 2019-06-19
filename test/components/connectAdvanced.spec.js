@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import * as rtl from 'react-testing-library'
+import * as rtl from '@testing-library/react'
 import { Provider as ProviderMock, connectAdvanced } from '../../src/index.js'
 import { createStore } from 'redux'
 import 'jest-dom/extend-expect'
@@ -116,7 +116,7 @@ describe('React', () => {
 
       store.dispatch({ type: 'NEW_REFERENCE' })
 
-      expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+      expect(tester.getAllByTestId('foo')[0]).toHaveTextContent('bar')
 
       // The state should have been mapped 3 times:
       // 1) Initial render

@@ -1,8 +1,9 @@
 ---
-id: hooks
+id: version-7.1-hooks
 title: Hooks
 sidebar_label: Hooks
 hide_title: true
+original_id: hooks
 ---
 
 # Hooks
@@ -12,7 +13,6 @@ React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give funct
 React Redux now offers a set of hook APIs as an alternative to the existing `connect()` Higher Order Component. These APIs allow you to subscribe to the Redux store and dispatch actions, without having to wrap your components in `connect()`.
 
 These hooks were first added in v7.1.0.
-
 
 ## Using Hooks in a React Redux App
 
@@ -46,7 +46,7 @@ The selector is approximately equivalent to the [`mapStateToProps` argument to `
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
 - The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
-- When an action is dispatched, `useSelector()` will do a reference comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, the component will not re-render.
+- When an action is dispatched, `useSelector()` will do a shallow comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, they component will not re-render.
 - The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector.
 - Extra care must be taken when using memoizing selectors (see examples below for more details).
 - `useSelector()` uses strict `===` reference equality checks by default, not shallow equality (see the following section for more details).
@@ -209,12 +209,6 @@ export const App = () => {
   )
 }
 ```
-
-## Removed: `useActions()`
-
-
-
-
 
 ## `useDispatch()`
 
@@ -381,14 +375,14 @@ export function useActions(actions, deps) {
       return actions.map(a => bindActionCreators(a, dispatch))
     }
     return bindActionCreators(actions, dispatch)
-  }, deps ? [dispatch, ...deps] : [dispatch])
+  }, deps ? [dispatch, ...deps] : deps)
 }
 ```
 
 ### Recipe: `useShallowEqualSelector()`
 
 ```js
-import { useSelector, shallowEqual } from 'react-redux'
+import { shallowEqual } from 'react-redux'
 
 export function useShallowEqualSelector(selector) {
   return useSelector(selector, shallowEqual)

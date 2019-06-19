@@ -4,7 +4,7 @@ import React from 'react'
 import ReactDOMServer from 'react-dom/server'
 import { createStore, combineReducers } from 'redux'
 import { connect, Provider, ReactReduxContext } from '../../src/index.js'
-import * as rtl from 'react-testing-library'
+import * as rtl from '@testing-library/react'
 
 describe('React', () => {
   /*
