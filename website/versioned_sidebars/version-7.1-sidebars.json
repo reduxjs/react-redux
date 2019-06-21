@@ -8,7 +8,8 @@
     "Using React Redux": [
       "version-7.1-using-react-redux/connect-mapstate",
       "version-7.1-using-react-redux/connect-mapdispatch",
-      "version-7.1-using-react-redux/accessing-store"
+      "version-7.1-using-react-redux/accessing-store",
+      "version-7.1-using-react-redux/annotating-connected-components-with-flow"
     ],
     "API Reference": [
       "version-7.1-api/connect",
@@ -17,8 +18,6 @@
       "version-7.1-api/batch",
       "version-7.1-api/hooks"
     ],
-    "Guides": [
-      "version-7.1-troubleshooting"
-    ]
+    "Guides": ["version-7.1-troubleshooting"]
   }
 }

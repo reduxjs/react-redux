@@ -7,7 +7,8 @@
     ],
     "Using React-Redux": [
       "version-5.x-using-react-redux/connect-mapstate",
-      "version-5.x-using-react-redux/connect-mapdispatch"
+      "version-5.x-using-react-redux/connect-mapdispatch",
+      "version-5.x-using-react-redux/annotating-connected-components-with-flow"
     ],
     "API Reference": [
       "version-5.x-api",
@@ -15,8 +16,6 @@
       "version-5.x-api/connect-advanced",
       "version-5.x-api/provider"
     ],
-    "Guides": [
-      "version-5.x-troubleshooting"
-    ]
+    "Guides": ["version-5.x-troubleshooting"]
   }
 }

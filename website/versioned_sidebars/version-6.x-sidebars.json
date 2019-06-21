@@ -8,15 +8,14 @@
     "Using React Redux": [
       "version-6.x-using-react-redux/connect-mapstate",
       "version-6.x-using-react-redux/connect-mapdispatch",
-      "version-6.x-using-react-redux/accessing-store"
+      "version-6.x-using-react-redux/accessing-store",
+      "version-6.x-using-react-redux/annotating-connected-components-with-flow"
     ],
     "API Reference": [
       "version-6.x-api/connect",
       "version-6.x-api/provider",
       "version-6.x-api/connect-advanced"
     ],
-    "Guides": [
-      "version-6.x-troubleshooting"
-    ]
+    "Guides": ["version-6.x-troubleshooting"]
   }
 }
