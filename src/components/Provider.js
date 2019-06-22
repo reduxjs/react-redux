@@ -22,8 +22,6 @@ class Provider extends Component {
   }
 
   componentDidMount() {
-    this._isMounted = true
-
     this.state.subscription.trySubscribe()
 
     if (this.previousState !== this.props.store.getState()) {
@@ -35,8 +33,6 @@ class Provider extends Component {
     if (this.unsubscribe) this.unsubscribe()
 
     this.state.subscription.tryUnsubscribe()
-
-    this._isMounted = false
   }
 
   componentDidUpdate(prevProps) {
