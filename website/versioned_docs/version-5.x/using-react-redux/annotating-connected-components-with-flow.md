@@ -120,10 +120,7 @@ type Props = {|
 const Com = (props: Props) => <div>{props.passthrough} {props.fromStateToProps}</div>
 
 type State = {a: number};
-type InputProps = {
-  forMapStateToProps: string
-};
-const mapStateToProps = (state: State, props: InputProps) => {
+const mapStateToProps = (state: State, props: OwnProps) => {
   return {
     fromStateToProps: 'str' + state.a
   }
