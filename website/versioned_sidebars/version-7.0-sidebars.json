@@ -9,7 +9,13 @@
       "version-7.0-using-react-redux/connect-mapstate",
       "version-7.0-using-react-redux/connect-mapdispatch",
       "version-7.0-using-react-redux/accessing-store",
-      "version-7.0-using-react-redux/annotating-connected-components-with-flow"
+      {
+        "type": "subcategory",
+        "label": "Static Typing",
+        "ids": [
+          "version-7.0-using-react-redux/annotating-connected-components-with-flow"
+        ]
+      }
     ],
     "API Reference": [
       "version-7.0-api/connect",

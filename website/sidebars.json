@@ -8,7 +8,12 @@
     "Using React Redux": [
       "using-react-redux/connect-mapstate",
       "using-react-redux/connect-mapdispatch",
-      "using-react-redux/accessing-store"
+      "using-react-redux/accessing-store",
+      {
+        "type": "subcategory",
+        "label": "Static Typing",
+        "ids": ["using-react-redux/annotating-connected-components-with-flow"]
+      }
     ],
     "API Reference": [
       "api/connect",

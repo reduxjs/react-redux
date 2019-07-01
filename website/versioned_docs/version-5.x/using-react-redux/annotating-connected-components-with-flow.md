@@ -2,7 +2,7 @@
 id: version-5.x-annotating-connected-components-with-flow
 title: Annotating Connected Components with Flow
 hide_title: true
-sidebar_label: Annotating Connected Components with Flow
+sidebar_label: Flow
 original_id: annotating-connected-components-with-flow
 ---
 
