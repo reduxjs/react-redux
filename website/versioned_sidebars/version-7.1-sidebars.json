@@ -12,7 +12,10 @@
       {
         "type": "subcategory",
         "label": "Static Typing",
-        "ids": ["version-7.1-using-react-redux/static-typing-with-flow"]
+        "ids": [
+          "version-7.1-using-react-redux/static-typing-with-flow",
+          "version-7.1-using-react-redux/static-typing-with-typescript"
+        ]
       }
     ],
     "API Reference": [
