@@ -12,7 +12,7 @@
       {
         "type": "subcategory",
         "label": "Static Typing",
-        "ids": ["using-react-redux/annotating-connected-components-with-flow"]
+        "ids": ["using-react-redux/static-typing-with-flow"]
       }
     ],
     "API Reference": [

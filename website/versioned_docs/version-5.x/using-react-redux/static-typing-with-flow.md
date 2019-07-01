@@ -1,11 +1,12 @@
 ---
-id: annotating-connected-components-with-flow
-title: Annotating Connected Components with Flow
+id: version-5.x-static-typing-with-flow
+title: Static Typing with Flow
 hide_title: true
 sidebar_label: Flow
+original_id: static-typing-with-flow
 ---
 
-# Annotating Connected Components with Flow
+# Static Typing with Flow
 
 After Flow 0.85, Flow starts [Asking for Required Annotations](https://medium.com/flow-type/asking-for-required-annotations-64d4f9c1edf8) on implicit calls of higher order components within each file import — export cycle. This facilitates Flow to merge type information from file dependencies _before_ it walks the type structure and conducts type inference.
 
