@@ -2960,7 +2960,9 @@ describe('React', () => {
 
         let childMapStateInvokes = 0
 
-        @connect(state => ({ state }))
+        @connect(state => {
+          return { state }
+        })
         class Container extends Component {
           emitChange() {
             store.dispatch({ type: 'APPEND', body: 'b' })
@@ -3141,7 +3143,7 @@ describe('React', () => {
         expect(rendered.getByTestId('child').dataset.prop).toEqual('a')
 
         // Force the multi-update sequence by running this bound action creator
-        parent.inc1()
+        rtl.act(() => parent.inc1())
 
         // The connected child component _should_ have rendered with the latest Redux
         // store value (3) _and_ the latest wrapper prop ('b').
@@ -3240,17 +3242,11 @@ describe('React', () => {
             <Parent />
           </Provider>
         )
-        console.log('executionOrder', executionOrder)
-
-        console.log('***********')
         executionOrder = []
         rtl.act(() => {
           outsideSetState(2)
           outsideSetState(3)
         })
-        console.log('executionOrder', executionOrder)
-        console.log('***********')
-
         expect(executionOrder).toEqual(expectedExecutionOrder)
       })
 

@@ -1,4 +1,4 @@
-import { useContextSelector, useCallback, useContext } from 'react'
+import { useContextSelector, useCallback } from 'react'
 
 import { ReactReduxContext } from '../components/Context'
 
@@ -16,7 +16,6 @@ export function makeUseSelector(Context) {
   return function useSelector(selector, deps) {
     // memoize the selector with the provided deps
     let select = useCallback(context => selector(context.state), deps)
-    let context = useContext(Context)
 
     return useContextSelector(Context, select)
   }
