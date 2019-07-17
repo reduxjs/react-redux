@@ -17,16 +17,14 @@ export function createDispatchHook(context = ReactReduxContext) {
 }
 
 /**
- * A hook to access the redux `dispatch` function. Note that in most cases where you
- * might want to use this hook it is recommended to use `useActions` instead to bind
- * action creators to the `dispatch` function.
+ * A hook to access the redux `dispatch` function.
  *
  * @returns {any|function} redux store's `dispatch` function
  *
  * @example
  *
  * import React, { useCallback } from 'react'
- * import { useReduxDispatch } from 'react-redux'
+ * import { useDispatch } from 'react-redux'
  *
  * export const CounterComponent = ({ value }) => {
  *   const dispatch = useDispatch()
