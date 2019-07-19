@@ -192,7 +192,7 @@ export const TodoCounterForIsDoneValue = ({ isDone }) => {
   )
 
   const numOfTodosWithIsDoneValue = useSelector(state =>
-    selectNumOfTodosWithIsDoneValue(state, isDone)
+    selectNumOfTodosWithIsDone(state, isDone)
   )
 
   return <div>{numOfTodosWithIsDoneValue}</div>
