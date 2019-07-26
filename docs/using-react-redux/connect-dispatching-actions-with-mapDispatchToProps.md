@@ -254,22 +254,6 @@ connect(
 )(Counter)
 ```
 
-### Manually Injecting `dispatch`
-
-If the `mapDispatchToProps` argument is supplied, the component will no longer receive the default `dispatch`. You may bring it back by adding it manually to the return of your `mapDispatchToProps`, although most of the time you shouldn’t need to do this:
-
-```js
-import { bindActionCreators } from 'redux'
-// ...
-
-function mapDispatchToProps(dispatch) {
-  return {
-    dispatch,
-    ...bindActionCreators({ increment, decrement, reset }, dispatch)
-  }
-}
-```
-
 ## Defining `mapDispatchToProps` As An Object
 
 You’ve seen that the setup for dispatching Redux actions in a React component follows a very similar process: define an action creator, wrap it in another function that looks like `(…args) => dispatch(actionCreator(…args))`, and pass that wrapper function as a prop to your component.
