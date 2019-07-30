@@ -45,6 +45,7 @@
     "invariant": "^2.2.4",
     "loose-envify": "^1.4.0",
     "prop-types": "^15.7.2",
+    "react-dom": "^16.8.6",
     "react-is": "^16.8.6"
   },
   "devDependencies": {
@@ -74,7 +75,6 @@
     "jest-dom": "^3.5.0",
     "prettier": "^1.18.2",
     "react": "^16.8.6",
-    "react-dom": "^16.8.6",
     "react-test-renderer": "^16.8.6",
     "redux": "^4.0.1",
     "rimraf": "^2.6.3",
