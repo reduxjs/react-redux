@@ -3,9 +3,9 @@ import connectAdvanced from './components/connectAdvanced'
 import { ReactReduxContext } from './components/Context'
 import connect from './connect/connect'
 
-import { useDispatch } from './hooks/useDispatch'
-import { useSelector } from './hooks/useSelector'
-import { useStore } from './hooks/useStore'
+import { useDispatch, createDispatchHook } from './hooks/useDispatch'
+import { useSelector, createSelectorHook } from './hooks/useSelector'
+import { useStore, createStoreHook } from './hooks/useStore'
 
 import { setBatch } from './utils/batch'
 import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
@@ -20,7 +20,10 @@ export {
   connect,
   batch,
   useDispatch,
+  createDispatchHook,
   useSelector,
+  createSelectorHook,
   useStore,
+  createStoreHook,
   shallowEqual
 }

@@ -1,4 +1,23 @@
-import { useReduxContext } from './useReduxContext'
+import { useContext } from 'react'
+import { ReactReduxContext } from '../components/Context'
+import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
+
+/**
+ * Hook factory, which creates a `useStore` hook bound to a given context.
+ *
+ * @param {Function} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @returns {Function} A `useStore` hook bound to the specified context.
+ */
+export function createStoreHook(context = ReactReduxContext) {
+  const useReduxContext =
+    context === ReactReduxContext
+      ? useDefaultReduxContext
+      : () => useContext(context)
+  return function useStore() {
+    const { store } = useReduxContext()
+    return store
+  }
+}
 
 /**
  * A hook to access the redux store.
@@ -15,7 +34,4 @@ import { useReduxContext } from './useReduxContext'
  *   return <div>{store.getState()}</div>
  * }
  */
-export function useStore() {
-  const { store } = useReduxContext()
-  return store
-}
+export const useStore = createStoreHook()

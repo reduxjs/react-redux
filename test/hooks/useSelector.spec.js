@@ -8,7 +8,8 @@ import {
   Provider as ProviderMock,
   useSelector,
   shallowEqual,
-  connect
+  connect,
+  createSelectorHook
 } from '../../src/index.js'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
@@ -381,6 +382,55 @@ describe('React', () => {
         it('throws if no selector is passed', () => {
           expect(() => useSelector()).toThrow()
         })
+      })
+    })
+
+    describe('createSelectorHook', () => {
+      let defaultStore
+      let customStore
+
+      beforeEach(() => {
+        defaultStore = createStore(({ count } = { count: -1 }) => ({
+          count: count + 1
+        }))
+        customStore = createStore(({ count } = { count: 10 }) => ({
+          count: count + 2
+        }))
+      })
+
+      afterEach(() => rtl.cleanup())
+
+      it('subscribes to the correct store', () => {
+        const nestedContext = React.createContext(null)
+        const useCustomSelector = createSelectorHook(nestedContext)
+        let defaultCount = null
+        let customCount = null
+
+        const getCount = s => s.count
+
+        const DisplayDefaultCount = ({ children = null }) => {
+          const count = useSelector(getCount)
+          defaultCount = count
+          return <>{children}</>
+        }
+        const DisplayCustomCount = ({ children = null }) => {
+          const count = useCustomSelector(getCount)
+          customCount = count
+          return <>{children}</>
+        }
+
+        rtl.render(
+          <ProviderMock store={defaultStore}>
+            <ProviderMock context={nestedContext} store={customStore}>
+              <DisplayCustomCount>
+                <DisplayDefaultCount />
+              </DisplayCustomCount>
+            </ProviderMock>
+          </ProviderMock>
+        )
+
+        expect(defaultCount).toBe(0)
+        expect(customCount).toBe(12)
       })
     })
   })
