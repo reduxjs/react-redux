@@ -46,4 +46,4 @@ Enjoy!
 
 ## License
 
-MIT
+[MIT](LICENSE.md)
