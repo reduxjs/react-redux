@@ -368,6 +368,8 @@ export default function connectAdvanced(
         const unsubscribeWrapper = () => {
           didUnsubscribe = true
           subscription.tryUnsubscribe()
+          // free resources
+          subscription.onStateChange = null 
 
           if (lastThrownError) {
             // It's possible that we caught an error due to a bad mapState function, but the
