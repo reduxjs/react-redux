@@ -369,8 +369,8 @@ export default function connectAdvanced(
           didUnsubscribe = true
           subscription.tryUnsubscribe()
           // free resources
-          subscription.onStateChange = null 
-
+          subscription.onStateChange = null
+          
           if (lastThrownError) {
             // It's possible that we caught an error due to a bad mapState function, but the
             // parent re-rendered without this component and we're about to unmount.
