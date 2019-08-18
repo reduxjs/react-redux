@@ -368,7 +368,6 @@ export default function connectAdvanced(
         const unsubscribeWrapper = () => {
           didUnsubscribe = true
           subscription.tryUnsubscribe()
-          // free resources
           subscription.onStateChange = null
 
           if (lastThrownError) {
