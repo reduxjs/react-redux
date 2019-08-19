@@ -24,6 +24,7 @@ function Provider({ store, context, children }) {
     }
     return () => {
       subscription.tryUnsubscribe()
+      subscription.onStateChange = null
     }
   }, [contextValue, previousState])
 
