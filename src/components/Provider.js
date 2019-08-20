@@ -1,62 +1,36 @@
-import React, { Component } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
 import Subscription from '../utils/Subscription'
 
-class Provider extends Component {
-  constructor(props) {
-    super(props)
-
-    const { store } = props
-
-    this.notifySubscribers = this.notifySubscribers.bind(this)
+function Provider({ store, context, children }) {
+  const contextValue = useMemo(() => {
     const subscription = new Subscription(store)
-    subscription.onStateChange = this.notifySubscribers
-
-    this.state = {
+    subscription.onStateChange = subscription.notifyNestedSubs
+    return {
       store,
       subscription
     }
+  }, [store])
 
-    this.previousState = store.getState()
-  }
+  const previousState = useMemo(() => store.getState(), [store])
 
-  componentDidMount() {
-    this.state.subscription.trySubscribe()
+  useEffect(() => {
+    const { subscription } = contextValue
+    subscription.trySubscribe()
 
-    if (this.previousState !== this.props.store.getState()) {
-      this.state.subscription.notifyNestedSubs()
+    if (previousState !== store.getState()) {
+      subscription.notifyNestedSubs()
     }
-  }
-
-  componentWillUnmount() {
-    if (this.unsubscribe) this.unsubscribe()
-
-    this.state.subscription.tryUnsubscribe()
-  }
-
-  componentDidUpdate(prevProps) {
-    if (this.props.store !== prevProps.store) {
-      this.state.subscription.tryUnsubscribe()
-      const subscription = new Subscription(this.props.store)
-      subscription.onStateChange = this.notifySubscribers
-      this.setState({ store: this.props.store, subscription })
+    return () => {
+      subscription.tryUnsubscribe()
+      subscription.onStateChange = null
     }
-  }
+  }, [contextValue, previousState])
 
-  notifySubscribers() {
-    this.state.subscription.notifyNestedSubs()
-  }
+  const Context = context || ReactReduxContext
 
-  render() {
-    const Context = this.props.context || ReactReduxContext
-
-    return (
-      <Context.Provider value={this.state}>
-        {this.props.children}
-      </Context.Provider>
-    )
-  }
+  return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
 
 Provider.propTypes = {
