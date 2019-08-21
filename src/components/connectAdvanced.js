@@ -1,10 +1,12 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import { Component, createElement } from 'react'
+import React, { Component, createElement } from 'react'
 import { isValidElementType } from 'react-is'
 
 import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
+
+const prefixUnsafeLifecycleMethods = parseFloat(React.version) >= 16.3
 
 let hotReloadingVersion = 0
 const dummyState = {}
@@ -160,6 +162,7 @@ export default function connectAdvanced(
         if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
 
+      // Note: this is renamed below to the UNSAFE_ version in React >=16.3.0
       componentWillReceiveProps(nextProps) {
         this.selector.run(nextProps)
       }
@@ -260,6 +263,12 @@ export default function connectAdvanced(
           return createElement(WrappedComponent, this.addExtraProps(selector.props))
         }
       }
+    }
+
+    if (prefixUnsafeLifecycleMethods) {
+      // Use UNSAFE_ event name where supported
+      Connect.UNSAFE_componentWillReceiveProps = Connect.componentWillReceiveProps
+      delete Connect.componentWillReceiveProps
     }
 
     /* eslint-enable react/no-deprecated */
