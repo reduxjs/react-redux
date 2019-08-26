@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
 import { Provider, connect, ReactReduxContext } from '../../src/index.js'
 import * as rtl from '@testing-library/react'
-import 'jest-dom/extend-expect'
+import '@testing-library/jest-dom/extend-expect'
 
 const createExampleTextReducer = () => (state = 'example text') => state
 

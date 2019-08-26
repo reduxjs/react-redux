@@ -7,7 +7,7 @@ import ReactDOM from 'react-dom'
 import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index.js'
 import * as rtl from '@testing-library/react'
-import 'jest-dom/extend-expect'
+import '@testing-library/jest-dom/extend-expect'
 
 describe('React', () => {
   describe('connect', () => {
@@ -3302,41 +3302,6 @@ describe('React', () => {
       })
 
       expect(thrownError).toBe(null)
-    })
-
-    it('should re-throw errors that occurred in a mapState/mapDispatch function', () => {
-      const counter = (state = 0, action) =>
-        action.type === 'INCREMENT' ? state + 1 : state
-
-      const store = createStore(counter)
-
-      const appMapState = state => {
-        if (state >= 1) {
-          throw new Error('KABOOM!')
-        }
-
-        return { counter: state }
-      }
-
-      const App = ({ counter }) => <div>Count: {counter}</div>
-      const ConnectedApp = connect(appMapState)(App)
-
-      rtl.render(
-        <ProviderMock store={store}>
-          <ConnectedApp />
-        </ProviderMock>
-      )
-
-      // Turn off extra console logging
-      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-
-      expect(() => {
-        rtl.act(() => {
-          store.dispatch({ type: 'INCREMENT' })
-        })
-      }).toThrow('KABOOM!')
-
-      spy.mockRestore()
     })
   })
 })
