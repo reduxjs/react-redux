@@ -7,7 +7,7 @@ function verify(selector, methodName, displayName) {
     methodName === 'mapStateToProps' ||
     methodName === 'mapDispatchToProps'
   ) {
-    if (!selector.hasOwnProperty('dependsOnOwnProps')) {
+    if (!Object.prototype.hasOwnProperty.call(selector, 'dependsOnOwnProps')) {
       warning(
         `The selector for ${methodName} of ${displayName} did not specify a value for dependsOnOwnProps.`
       )
