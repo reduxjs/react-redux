@@ -151,26 +151,23 @@ If your `mapDispatchToProps` function is declared as taking two parameters, it w
 
 This means, instead of re-binding new `props` to action dispatchers upon component re-rendering, you may do so when your component's `props` change.
 
-
 **Binds on component re-rendering**
+
 ```js
-render(){
-return(
-  <button onClick={() => this.props.toggleTodo(this.props.todoId)} />
-);
+render() {
+  return <button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 }
 
-const mapDispatchToProps = (dispatch) => {
-  toggleTodo: (todoId) => dispatch(toggleTodo(todoId))
+const mapDispatchToProps = dispatch => {
+  toggleTodo: todoId => dispatch(toggleTodo(todoId))
 }
 ```
 
 **Binds on `props` change**
+
 ```js
-render(){
-return(
-  <button onClick={() => this.props.toggleTodo()} />
-);
+render() {
+  return <button onClick={() => this.props.toggleTodo()} />
 }
 
 const mapDispatchToProps = (dispatch, ownProps) => {
