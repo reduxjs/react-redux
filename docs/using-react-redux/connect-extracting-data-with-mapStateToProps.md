@@ -112,7 +112,7 @@ As part of the "re-shaping data" idea, `mapStateToProps` functions frequently ne
 
 ### `mapStateToProps` Functions Should Be Pure and Synchronous
 
-Much like a Redux reducer, a `mapStateToProps` function should always be 100% pure and synchronous. It should simply take `state` (and `ownProps`) as arguments, and return the data the component needs as props. It should _not_ be used to trigger asynchronous behavior like AJAX calls for data fetching, and the functions should not be declared as `async`.
+Much like a Redux reducer, a `mapStateToProps` function should always be 100% pure and synchronous. It should only take `state` (and `ownProps`) as arguments, and return the data the component needs as props without mutating those arguments. It should _not_ be used to trigger asynchronous behavior like AJAX calls for data fetching, and the functions should not be declared as `async`.
 
 ## `mapStateToProps` and Performance
 
