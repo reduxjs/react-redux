@@ -1,7 +1,9 @@
-import { Component, Children } from 'react'
+import React, { Component, Children } from 'react'
 import PropTypes from 'prop-types'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
+
+const prefixUnsafeLifecycleMethods = parseFloat(React.version) >= 16.3
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
@@ -38,7 +40,11 @@ export function createProvider(storeKey = 'store') {
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      Provider.prototype.componentWillReceiveProps = function (nextProps) {
+      // Use UNSAFE_ event name where supported
+      const eventName = prefixUnsafeLifecycleMethods
+        ? 'UNSAFE_componentWillReceiveProps'
+        : 'componentWillReceiveProps'
+      Provider.prototype[eventName] = function (nextProps) {
         if (this[storeKey] !== nextProps.store) {
           warnAboutReceivingStore()
         }
