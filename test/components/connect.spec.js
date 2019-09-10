@@ -99,6 +99,43 @@ describe('React', () => {
         expect(tester.getByTestId('hi')).toHaveTextContent('there')
       })
 
+      it('should receive the store state in the store prop', () => {
+        const store = createStore(() => ({ hi: 'there' }))
+
+        @connect(state => state)
+        class Container extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+
+        const tester = rtl.render(<Container pass="through" store={store} />)
+
+        expect(tester.getByTestId('hi')).toHaveTextContent('there')
+      })
+
+      it('should allow overriding the store prop with storeKey', () => {
+        const store = createStore(() => ({ hi: 'there' }))
+
+        @connect(
+          state => state,
+          undefined,
+          undefined,
+          { storeKey: 'reduxStore' }
+        )
+        class Container extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+
+        const tester = rtl.render(
+          <Container pass="through" reduxStore={store} />
+        )
+
+        expect(tester.getByTestId('hi')).toHaveTextContent('there')
+      })
+
       it('should pass state and props to the given component', () => {
         const store = createStore(() => ({
           foo: 'bar',
@@ -2870,25 +2907,6 @@ describe('React', () => {
             { withRef: true }
           )(Container)
         ).toThrow(/withRef is removed/)
-      })
-
-      it('should error on receiving a custom store key', () => {
-        const connectOptions = { storeKey: 'customStoreKey' }
-
-        expect(() => {
-          @connect(
-            undefined,
-            undefined,
-            undefined,
-            connectOptions
-          )
-          class Container extends Component {
-            render() {
-              return <Passthrough {...this.props} />
-            }
-          }
-          new Container()
-        }).toThrow(/storeKey has been removed/)
       })
 
       it.skip('should error on custom store', () => {

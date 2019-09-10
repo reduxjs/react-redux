@@ -80,7 +80,6 @@ export default function connectAdvanced(
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
-    // REMOVED: the key of props/context to get the store
     storeKey = 'store',
 
     // REMOVED: expose the wrapped component via refs
@@ -104,18 +103,6 @@ export default function connectAdvanced(
   invariant(
     !withRef,
     'withRef is removed. To access the wrapped instance, use a ref on the connected component'
-  )
-
-  const customStoreWarningMessage =
-    'To use a custom Redux store for specific components, create a custom React context with ' +
-    "React.createContext(), and pass the context object to React Redux's Provider and specific components" +
-    ' like: <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' +
-    'You may also pass a {context : MyContext} option to connect'
-
-  invariant(
-    storeKey === 'store',
-    'storeKey has been removed and does not do anything. ' +
-      customStoreWarningMessage
   )
 
   const Context = context
@@ -182,7 +169,7 @@ export default function connectAdvanced(
       const contextValue = useContext(ContextToUse)
 
       // The store _must_ exist as either a prop or in context
-      const didStoreComeFromProps = Boolean(props.store)
+      const didStoreComeFromProps = Boolean(props[storeKey])
       const didStoreComeFromContext =
         Boolean(contextValue) && Boolean(contextValue.store)
 
@@ -194,7 +181,7 @@ export default function connectAdvanced(
           `React context consumer to ${displayName} in connect options.`
       )
 
-      const store = props.store || contextValue.store
+      const store = props[storeKey] || contextValue.store
 
       const childPropsSelector = useMemo(() => {
         // The child props selector needs the store reference as an input.
