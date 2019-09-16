@@ -1960,6 +1960,52 @@ describe('React', () => {
       })
     })
 
+    it('should not notify nested components after they are unmounted from componentDidUpdate called dispatch', () => {
+      @connect(state => state)
+      class Parent extends Component {
+        componentDidUpdate() {
+          const { removed } = this.props
+          if (!removed) {
+            store.dispatch({
+              type: 'remove'
+            })
+          }
+        }
+        render() {
+          const { removed } = this.props
+          return <div>{!removed && <Child />}</div>
+        }
+      }
+
+      const mapStateToProps = jest.fn(state => state)
+      @connect(mapStateToProps)
+      class Child extends Component {
+        render() {
+          return <div>{this.props.count}</div>
+        }
+      }
+
+      const reducers = (state = { removed: false, actionCount: 0 }, action) => {
+        if (action.type === 'remove') {
+          return {
+            removed: true
+          }
+        }
+        return { ...state, actionCount: state.actionCount + 1 }
+      }
+
+      const store = createStore(reducers)
+      rtl.render(
+        <ProviderMock store={store}>
+          <Parent />
+        </ProviderMock>
+      )
+
+      expect(mapStateToProps).toHaveBeenCalledTimes(1)
+      store.dispatch({ type: 'update' })
+      expect(mapStateToProps).toHaveBeenCalledTimes(1)
+    })
+
     describe('Custom context and store-as-prop', () => {
       it('should use a custom context provider and consumer if given as an option to connect', () => {
         class Container extends Component {
