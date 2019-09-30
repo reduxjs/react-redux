@@ -6,7 +6,7 @@ import { isValidElementType } from 'react-is'
 import Subscription from '../utils/Subscription'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 
-const prefixUnsafeLifecycleMethods = parseFloat(React.version) >= 16.3
+const prefixUnsafeLifecycleMethods = typeof React.forwardRef !== "undefined"
 
 let hotReloadingVersion = 0
 const dummyState = {}
