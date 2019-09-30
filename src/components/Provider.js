@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { storeShape, subscriptionShape } from '../utils/PropTypes'
 import warning from '../utils/warning'
 
-const prefixUnsafeLifecycleMethods = parseFloat(React.version) >= 16.3
+const prefixUnsafeLifecycleMethods = typeof React.forwardRef !== "undefined"
 
 let didWarnAboutReceivingStore = false
 function warnAboutReceivingStore() {
