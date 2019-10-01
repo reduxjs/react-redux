@@ -267,8 +267,8 @@ export default function connectAdvanced(
 
     if (prefixUnsafeLifecycleMethods) {
       // Use UNSAFE_ event name where supported
-      Connect.UNSAFE_componentWillReceiveProps = Connect.componentWillReceiveProps
-      delete Connect.componentWillReceiveProps
+      Connect.prototype.UNSAFE_componentWillReceiveProps = Connect.prototype.componentWillReceiveProps
+      delete Connect.prototype.componentWillReceiveProps
     }
 
     /* eslint-enable react/no-deprecated */
@@ -280,7 +280,9 @@ export default function connectAdvanced(
     Connect.propTypes = contextTypes
 
     if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
+      // Use UNSAFE_ event name where supported
+      const eventName = prefixUnsafeLifecycleMethods ? 'UNSAFE_componentWillUpdate' : 'componentWillUpdate';
+      Connect.prototype[eventName] = function componentWillUpdate() {
         // We are hot reloading!
         if (this.version !== version) {
           this.version = version
