@@ -50,7 +50,7 @@ function useSelectorWithStoreAndSubscription(
     ) {
       selectedState = selector(store.getState())
       if (equalityFn(selectedState, latestSelectedState.current)) {
-        selectedState = latestSelectedState.current;
+        selectedState = latestSelectedState.current
       }
     } else {
       selectedState = latestSelectedState.current
