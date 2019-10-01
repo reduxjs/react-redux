@@ -92,3 +92,30 @@ If you have context issues,
 ### Invariant Violation: addComponentAsRefTo(...): Only a ReactOwner can have refs. This usually means that you’re trying to add a ref to a component that doesn’t have an owner
 
 If you’re using React for web, this usually means you have a [duplicate React](https://medium.com/@dan_abramov/two-weird-tricks-that-fix-react-7cf9bbdef375). Follow the linked instructions to fix this.
+
+### I'm getting a warning about useLayoutEffect in my unit tests
+
+ReactDOM emits this warning if `useLayoutEffect` is used "on the server". React Redux tries to get around the issue by detecting whether it is running within a browser context. Jest, by default, defines enough of the browser environment that React Redux thinks it's running in a browser, causing these warnings.
+
+You can prevent the warning by setting the `@jest-environment` for a single test file:
+
+```jsx
+// my.test.jsx
+/**
+ * @jest-environment node
+ */
+```
+
+Or by setting it globally:
+
+```js
+// package.json
+{
+  "name": "my-project",
+  "jest": {
+    "testEnvironment": "node"
+  }
+}
+```
+
+See https://github.com/facebook/react/issues/14927#issuecomment-490426131
