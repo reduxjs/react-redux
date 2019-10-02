@@ -581,7 +581,7 @@ function mapStateToProps(state) {
 
 const mapStateToProps = (state, ownProps = {}) => {
   console.log(state) // state
-  console.log(ownProps) // undefined
+  console.log(ownProps) // {}
 }
 ```
 
