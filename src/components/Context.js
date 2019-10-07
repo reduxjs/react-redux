@@ -1,5 +1,5 @@
-import React from 'react'
+import { createContext } from 'react'
 
-export const ReactReduxContext = React.createContext(null)
+export const ReactReduxContext = createContext(null)
 
 export default ReactReduxContext
