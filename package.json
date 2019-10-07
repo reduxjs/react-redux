@@ -37,6 +37,7 @@
   },
   "peerDependencies": {
     "react": "^16.8.3",
+    "react-dom": "^16.8.3",
     "redux": "^2.0.0 || ^3.0.0 || ^4.0.0-0"
   },
   "dependencies": {
