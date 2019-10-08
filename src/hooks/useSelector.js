@@ -20,7 +20,11 @@ import { ReactReduxContext } from '../components/Context'
 // is created synchronously, otherwise a store update may occur before the
 // subscription is created and an inconsistent state may be observed
 const useIsomorphicLayoutEffect =
-  typeof window !== 'undefined' ? useLayoutEffect : useEffect
+  typeof window !== 'undefined' &&
+  typeof window.document !== 'undefined' &&
+  typeof window.document.createElement !== 'undefined'
+    ? useLayoutEffect
+    : useEffect
 
 const refEquality = (a, b) => a === b
 
