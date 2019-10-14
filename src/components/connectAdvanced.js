@@ -244,7 +244,7 @@ export default function connectAdvanced(
       // We need to force this wrapper component to re-render whenever a Redux store update
       // causes a change to the calculated child component props (or we caught an error in mapState)
       const [
-        [previousStateUpdateResult],
+        [previousStateUpdateResult, updateCount],
         forceComponentUpdateDispatch
       ] = useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates)
 
@@ -350,7 +350,6 @@ export default function connectAdvanced(
             forceComponentUpdateDispatch({
               type: 'STORE_UPDATED',
               payload: {
-                latestStoreState,
                 error
               }
             })
