@@ -350,7 +350,6 @@ export default function connectAdvanced(
             forceComponentUpdateDispatch({
               type: 'STORE_UPDATED',
               payload: {
-                latestStoreState,
                 error
               }
             })
