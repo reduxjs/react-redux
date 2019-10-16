@@ -3304,4 +3304,47 @@ describe('React', () => {
       expect(thrownError).toBe(null)
     })
   })
+  it('component should always be rendered with latest state', () => {
+    function counter(state = 0, action) {
+      return action.type === 'INCR' ? state + 1 : state
+    }
+    const store = createStore(counter)
+
+    // eslint-disable-next-line react/prop-types
+    function child({ state, dispatch }) {
+      expect(state).toBe(store.getState())
+
+      const [, setLocalState] = React.useState(0)
+      const incrHandler = () => {
+        setLocalState(localState => localState + 1)
+        dispatch({ type: 'INCR' })
+      }
+      return (
+        <div>
+          Child = {state}
+          <button onClick={incrHandler}>Incr</button>
+        </div>
+      )
+    }
+    const Child = connect(state => ({ state }))(child)
+
+    // eslint-disable-next-line react/prop-types
+    function container({ state }) {
+      return (
+        <div>
+          Container = {state}
+          <Child />
+        </div>
+      )
+    }
+    const Container = connect(state => ({ state }))(container)
+
+    const tester = rtl.render(
+      <ProviderMock store={store}>
+        <Container />
+      </ProviderMock>
+    )
+
+    rtl.fireEvent.click(tester.getByText(/incr/i))
+  })
 })
