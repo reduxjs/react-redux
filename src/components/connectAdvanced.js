@@ -1,15 +1,9 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, {
-  useContext,
-  useMemo,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useReducer
-} from 'react'
+import React, { useContext, useMemo, useRef, useReducer } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 import Subscription from '../utils/Subscription'
+import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 
 import { ReactReduxContext } from './Context'
 
@@ -31,18 +25,6 @@ function storeStateUpdatesReducer(state, action) {
 }
 
 const initStateUpdates = () => [null, 0]
-
-// React currently throws a warning when using useLayoutEffect on the server.
-// To get around it, we can conditionally useEffect on the server (no-op) and
-// useLayoutEffect in the browser. We need useLayoutEffect because we want
-// `connect` to perform sync updates to a ref to save the latest props after
-// a render is actually committed to the DOM.
-const useIsomorphicLayoutEffect =
-  typeof window !== 'undefined' &&
-  typeof window.document !== 'undefined' &&
-  typeof window.document.createElement !== 'undefined'
-    ? useLayoutEffect
-    : useEffect
 
 export default function connectAdvanced(
   /*
