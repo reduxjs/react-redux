@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { View, Button, Text, unstable_batchedUpdates } from 'react-native'
 import { createStore, applyMiddleware } from 'redux'
-import { Provider as ProviderMock, connect } from '../../src/index.js'
+import { Provider as ProviderMock, connect, batch } from '../../src/index.js'
 import * as rtl from '@testing-library/react-native'
 
 describe('React Native', () => {
@@ -35,6 +35,12 @@ describe('React Native', () => {
   }
 
   afterEach(() => rtl.cleanup())
+
+  describe('batch', () => {
+    it('batch should be RN unstable_batchedUpdates', () => {
+      expect(batch).toBe(unstable_batchedUpdates)
+    })
+  })
 
   describe('Subscription and update timing correctness', () => {
     it('should pass state consistently to mapState', () => {
