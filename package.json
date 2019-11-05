@@ -99,10 +99,5 @@
     "transform": [
       "loose-envify"
     ]
-  },
-  "jest": {
-    "coverageDirectory": "./coverage/",
-    "collectCoverage": true,
-    "testURL": "http://localhost"
   }
 }
