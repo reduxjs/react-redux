@@ -1,8 +1,16 @@
-import React, { Component } from 'react'
+import React, { Component, useLayoutEffect } from 'react'
 import { View, Button, Text, unstable_batchedUpdates } from 'react-native'
 import { createStore, applyMiddleware } from 'redux'
-import { Provider as ProviderMock, connect, batch } from '../../src/index.js'
+import {
+  Provider as ProviderMock,
+  connect,
+  batch,
+  useSelector,
+  useDispatch
+} from '../../src/index.js'
+import { useIsomorphicLayoutEffect } from '../../src/utils/useIsomorphicLayoutEffect'
 import * as rtl from '@testing-library/react-native'
+import '@testing-library/jest-native/extend-expect'
 
 describe('React Native', () => {
   const propMapper = prop => {
@@ -39,6 +47,12 @@ describe('React Native', () => {
   describe('batch', () => {
     it('batch should be RN unstable_batchedUpdates', () => {
       expect(batch).toBe(unstable_batchedUpdates)
+    })
+  })
+
+  describe('useIsomorphicLayoutEffect', () => {
+    it('useIsomorphicLayoutEffect should be useLayoutEffect', () => {
+      expect(useIsomorphicLayoutEffect).toBe(useLayoutEffect)
     })
   })
 
@@ -120,6 +134,10 @@ describe('React Native', () => {
     })
 
     it('should invoke mapState always with latest props', () => {
+      // Explicitly silence "not wrapped in act()" messages for this test
+      const spy = jest.spyOn(console, 'error')
+      spy.mockImplementation(() => {})
+
       const store = createStore((state = 0) => state + 1)
 
       let propsPassedIn
@@ -156,9 +174,15 @@ describe('React Native', () => {
 
       expect(propsPassedIn.count).toEqual(1)
       expect(propsPassedIn.reduxCount).toEqual(2)
+
+      spy.mockRestore()
     })
 
     it('should use the latest props when updated between actions', () => {
+      // Explicitly silence "not wrapped in act()" messages for this test
+      const spy = jest.spyOn(console, 'error')
+      spy.mockImplementation(() => {})
+
       const reactCallbackMiddleware = store => {
         let callback
 
@@ -240,11 +264,16 @@ describe('React Native', () => {
 
       // The connected child component _should_ have rendered with the latest Redux
       // store value (3) _and_ the latest wrapper prop ('b').
-      expect(rendered.getByTestId('child-count').children).toEqual(['3'])
-      expect(rendered.getByTestId('child-prop').children).toEqual(['b'])
+      expect(rendered.getByTestId('child-count')).toHaveTextContent('3')
+      expect(rendered.getByTestId('child-prop')).toHaveTextContent('b')
+
+      spy.mockRestore()
     })
 
     it('should invoke mapState always with latest store state', () => {
+      // Explicitly silence "not wrapped in act()" messages for this test
+      const spy = jest.spyOn(console, 'error')
+      spy.mockImplementation(() => {})
       const store = createStore((state = 0) => state + 1)
 
       let reduxCountPassedToMapState
@@ -282,6 +311,8 @@ describe('React Native', () => {
       outerComponent.setState(({ count }) => ({ count: count + 1 }))
 
       expect(reduxCountPassedToMapState).toEqual(3)
+
+      spy.mockRestore()
     })
 
     it('should ensure top-down updates for consecutive batched updates', () => {
@@ -330,6 +361,139 @@ describe('React Native', () => {
       })
 
       expect(executionOrder).toEqual(expectedExecutionOrder)
+    })
+  })
+
+  describe('useSelector', () => {
+    it('should stay in sync with the store', () => {
+      // https://github.com/reduxjs/react-redux/issues/1437
+
+      jest.useFakeTimers()
+
+      // Explicitly silence "not wrapped in act()" messages for this test
+      const spy = jest.spyOn(console, 'error')
+      spy.mockImplementation(() => {})
+
+      const INIT_STATE = { bool: false }
+
+      const reducer = (state = INIT_STATE, action) => {
+        switch (action.type) {
+          case 'TOGGLE':
+            return { bool: !state.bool }
+          default:
+            return state
+        }
+      }
+
+      const store = createStore(reducer, INIT_STATE)
+
+      const selector = state => ({
+        bool: state.bool
+      })
+
+      const ReduxBugParent = () => {
+        const dispatch = useDispatch()
+        const { bool } = useSelector(selector)
+        const boolFromStore = store.getState().bool
+
+        expect(boolFromStore).toBe(bool)
+
+        return (
+          <>
+            <Button
+              title="Click Me"
+              testID="standardBatching"
+              onPress={() => {
+                dispatch({ type: 'NOOP' })
+                dispatch({ type: 'TOGGLE' })
+              }}
+            />
+            <Button
+              title="[BUG] Click Me (setTimeout)"
+              testID="setTimeout"
+              onPress={() => {
+                setTimeout(() => {
+                  dispatch({ type: 'NOOP' })
+                  dispatch({ type: 'TOGGLE' })
+                }, 0)
+              }}
+            />
+            <Button
+              title="Click Me (setTimeout & batched from react-native)"
+              testID="unstableBatched"
+              onPress={() => {
+                setTimeout(() => {
+                  unstable_batchedUpdates(() => {
+                    dispatch({ type: 'NOOP' })
+                    dispatch({ type: 'TOGGLE' })
+                  })
+                }, 0)
+              }}
+            />
+            <Button
+              title="Click Me (setTimeout & batched from react-redux)"
+              testID="reactReduxBatch"
+              onPress={() => {
+                setTimeout(() => {
+                  batch(() => {
+                    dispatch({ type: 'NOOP' })
+                    dispatch({ type: 'TOGGLE' })
+                  })
+                }, 0)
+              }}
+            />
+            <Text testID="boolFromSelector">
+              bool from useSelector is {JSON.stringify(bool)}
+            </Text>
+            <Text testID="boolFromStore">
+              bool from store.getState is {JSON.stringify(boolFromStore)}
+            </Text>
+
+            {bool !== boolFromStore && <Text>They are not same!</Text>}
+          </>
+        )
+      }
+
+      const ReduxBugDemo = () => {
+        return (
+          <ProviderMock store={store}>
+            <ReduxBugParent />
+          </ProviderMock>
+        )
+      }
+
+      const rendered = rtl.render(<ReduxBugDemo />)
+
+      const assertValuesMatch = rendered => {
+        const [, boolFromSelector] = rendered.getByTestId(
+          'boolFromSelector'
+        ).children
+        const [, boolFromStore] = rendered.getByTestId('boolFromStore').children
+        expect(boolFromSelector).toBe(boolFromStore)
+      }
+
+      const clickButton = (rendered, testID) => {
+        const button = rendered.getByTestId(testID)
+        rtl.fireEvent.press(button)
+      }
+
+      const clickAndRender = (rendered, testID) => {
+        // Note: Normally we'd wrap this all in act(), but that automatically
+        // wraps your code in batchedUpdates(). The point of this bug is that it
+        // specifically occurs when you are _not_ batching updates!
+        clickButton(rendered, 'setTimeout')
+        jest.advanceTimersByTime(100)
+        assertValuesMatch(rendered, testID)
+      }
+
+      assertValuesMatch(rendered)
+
+      clickAndRender(rendered, 'setTimeout')
+      clickAndRender(rendered, 'standardBatching')
+      clickAndRender(rendered, 'unstableBatched')
+      clickAndRender(rendered, 'reactReduxBatch')
+
+      spy.mockRestore()
     })
   })
 })
