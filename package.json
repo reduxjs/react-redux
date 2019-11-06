@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "7.1.1",
+  "version": "7.1.2-alpha.0",
   "description": "Official React bindings for Redux",
   "keywords": [
     "react",
@@ -65,8 +65,10 @@
     "@babel/plugin-transform-runtime": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
     "@testing-library/jest-dom": "^4.1.0",
+    "@testing-library/jest-native": "^3.0.2",
     "@testing-library/react": "^8.0.8",
     "@testing-library/react-hooks": "^1.1.0",
+    "@testing-library/react-native": "^4.2.0",
     "babel-eslint": "^10.0.3",
     "babel-jest": "^24.9.0",
     "codecov": "^3.5.0",
@@ -83,6 +85,7 @@
     "prettier": "^1.18.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
+    "react-native": "^0.61.4",
     "react-test-renderer": "^16.8.6",
     "redux": "^4.0.4",
     "rimraf": "^3.0.0",
@@ -97,10 +100,5 @@
     "transform": [
       "loose-envify"
     ]
-  },
-  "jest": {
-    "coverageDirectory": "./coverage/",
-    "collectCoverage": true,
-    "testURL": "http://localhost"
   }
 }
