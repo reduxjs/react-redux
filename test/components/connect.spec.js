@@ -2090,6 +2090,21 @@ describe('React', () => {
         expect(actualState).toEqual(expectedState)
       })
 
+      it('should pass through a store prop that is not actually a Redux store', () => {
+        const notActuallyAStore = 42
+
+        const store = createStore(() => 123)
+        const Decorated = connect(state => ({ state }))(Passthrough)
+
+        const rendered = rtl.render(
+          <ProviderMock store={store}>
+            <Decorated store={notActuallyAStore} />
+          </ProviderMock>
+        )
+
+        expect(rendered.getByTestId('store')).toHaveTextContent('42')
+      })
+
       it('should pass through ancestor subscription when store is given as a prop', () => {
         const c3Spy = jest.fn()
         const c2Spy = jest.fn()
