@@ -7,18 +7,19 @@ import { getBatch } from './batch'
 const nullListeners = { notify() {} }
 
 function createListenerCollection() {
-  var batch = getBatch() // the current/next pattern is copied from redux's createStore code.
+  var batch = getBatch()
+  // the current/next pattern is copied from redux's createStore code.
   // TODO: refactor+expose that code to be reusable here?
 
   var current = {}
   var id = 0
   return {
-    clear: function clear() {
+    clear() {
       current = {}
     },
-    notify: function notify() {
+    notify() {
       var listeners = current
-      batch(function() {
+      batch(() => {
         for (const id in listeners) {
           listeners[id]()
         }
@@ -29,7 +30,7 @@ function createListenerCollection() {
       return current
     },
 
-    subscribe: function subscribe(listener) {
+    subscribe(listener) {
       var currentId = id++
       current[currentId] = listener
       return function unsubscribe() {
