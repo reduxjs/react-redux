@@ -571,7 +571,7 @@ export default connect(
 
 The number of declared function parameters of `mapStateToProps` and `mapDispatchToProps` determines whether they receive `ownProps`
 
-> Note: `ownProps` is not passed to `mapStateToProps` and `mapDispatchToProps` if the formal definition of the function contains one mandatory parameter (function has length 1). For example, functions defined like below won't receive `ownProps` as the second argument. If the incoming value of `ownProps` is `undefined`, the default argument value will be  used.
+> Note: `ownProps` is not passed to `mapStateToProps` and `mapDispatchToProps` if the formal definition of the function contains one mandatory parameter (function has length 1). For example, functions defined like below won't receive `ownProps` as the second argument. If the incoming value of `ownProps` is `undefined`, the default argument value will be used.
 
 ```js
 function mapStateToProps(state) {

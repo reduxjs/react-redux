@@ -13,7 +13,6 @@ React Redux now offers a set of hook APIs as an alternative to the existing `con
 
 These hooks were first added in v7.1.0.
 
-
 ## Using Hooks in a React Redux App
 
 As with `connect()`, you should start by wrapping your entire application in a `<Provider>` component to make the store available throughout the component tree:
@@ -212,10 +211,6 @@ export const App = () => {
 
 ## Removed: `useActions()`
 
-
-
-
-
 ## `useDispatch()`
 
 ```js
@@ -294,7 +289,6 @@ export const CounterComponent = ({ value }) => {
   return <div>{store.getState()}</div>
 }
 ```
-
 
 ## Custom context
 
@@ -395,7 +389,7 @@ This hook was in our original alpha release, but removed in `v7.1.0-alpha.4`, ba
 That suggestion was based on "binding action creators" not being as useful in a hooks-based use case, and causing too
 much conceptual overhead and syntactic complexity.
 
-You should probably prefer to  call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
+You should probably prefer to call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
 and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
 [`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
 or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
@@ -410,12 +404,15 @@ import { useMemo } from 'react'
 
 export function useActions(actions, deps) {
   const dispatch = useDispatch()
-  return useMemo(() => {
-    if (Array.isArray(actions)) {
-      return actions.map(a => bindActionCreators(a, dispatch))
-    }
-    return bindActionCreators(actions, dispatch)
-  }, deps ? [dispatch, ...deps] : [dispatch])
+  return useMemo(
+    () => {
+      if (Array.isArray(actions)) {
+        return actions.map(a => bindActionCreators(a, dispatch))
+      }
+      return bindActionCreators(actions, dispatch)
+    },
+    deps ? [dispatch, ...deps] : [dispatch]
+  )
 }
 ```
 
