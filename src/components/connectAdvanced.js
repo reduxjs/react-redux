@@ -166,7 +166,6 @@ export default function connectAdvanced(
       // The store _must_ exist as either a prop or in context.
       // We'll check to see if it _looks_ like a Redux store first.
       // This allows us to pass through a `store` prop that is just a plain value.
-      console.log('Store from props: ', props.store)
       const didStoreComeFromProps =
         Boolean(props.store) &&
         Boolean(props.store.getState) &&
