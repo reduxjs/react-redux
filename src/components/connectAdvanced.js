@@ -163,8 +163,14 @@ export default function connectAdvanced(
       // Retrieve the store and ancestor subscription via context, if available
       const contextValue = useContext(ContextToUse)
 
-      // The store _must_ exist as either a prop or in context
-      const didStoreComeFromProps = Boolean(props.store)
+      // The store _must_ exist as either a prop or in context.
+      // We'll check to see if it _looks_ like a Redux store first.
+      // This allows us to pass through a `store` prop that is just a plain value.
+      console.log('Store from props: ', props.store)
+      const didStoreComeFromProps =
+        Boolean(props.store) &&
+        Boolean(props.store.getState) &&
+        Boolean(props.store.dispatch)
       const didStoreComeFromContext =
         Boolean(contextValue) && Boolean(contextValue.store)
 
@@ -176,7 +182,8 @@ export default function connectAdvanced(
           `React context consumer to ${displayName} in connect options.`
       )
 
-      const store = props.store || contextValue.store
+      // Based on the previous check, one of these must be true
+      const store = didStoreComeFromProps ? props.store : contextValue.store
 
       const childPropsSelector = useMemo(() => {
         // The child props selector needs the store reference as an input.
