@@ -97,11 +97,11 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(rootSubscription.listeners.get().length).toBe(1)
+          expect(Object.keys(rootSubscription.listeners.get()).length).toBe(1)
 
           store.dispatch({ type: '' })
 
-          expect(rootSubscription.listeners.get().length).toBe(2)
+          expect(Object.keys(rootSubscription.listeners.get()).length).toBe(2)
         })
 
         it('unsubscribes when the component is unmounted', () => {
@@ -125,11 +125,11 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(rootSubscription.listeners.get().length).toBe(2)
+          expect(Object.keys(rootSubscription.listeners.get()).length).toBe(2)
 
           store.dispatch({ type: '' })
 
-          expect(rootSubscription.listeners.get().length).toBe(1)
+          expect(Object.keys(rootSubscription.listeners.get()).length).toBe(1)
         })
 
         it('notices store updates between render and store subscription effect', () => {
