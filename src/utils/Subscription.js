@@ -24,6 +24,11 @@ function createListenerCollection() {
         }
       })
     },
+
+    get() {
+      return current
+    },
+
     subscribe: function subscribe(listener) {
       var currentId = id++
       current[currentId] = listener
