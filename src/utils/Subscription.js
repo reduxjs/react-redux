@@ -4,36 +4,46 @@ import { getBatch } from './batch'
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
 
+const CLEARED = null
 const nullListeners = { notify() {} }
 
 function createListenerCollection() {
   const batch = getBatch()
-  let listeners = {}
-  let id = 0
+  // the current/next pattern is copied from redux's createStore code.
+  // TODO: refactor+expose that code to be reusable here?
+  let current = []
+  let next = []
 
   return {
     clear() {
-      listeners = {}
+      next = CLEARED
+      current = CLEARED
     },
 
     notify() {
+      const listeners = (current = next)
       batch(() => {
-        for (const id in listeners) {
-          listeners[id]()
+        for (let i = 0; i < listeners.length; i++) {
+          listeners[i]()
         }
       })
     },
 
     get() {
-      return listeners
+      return next
     },
 
     subscribe(listener) {
-      const currentId = id++
-      listeners[currentId] = listener
+      let isSubscribed = true
+      if (next === current) next = current.slice()
+      next.push(listener)
 
       return function unsubscribe() {
-        delete listeners[currentId]
+        if (!isSubscribed || current === CLEARED) return
+        isSubscribed = false
+
+        if (next === current) next = current.slice()
+        next.splice(next.indexOf(listener), 1)
       }
     }
   }
