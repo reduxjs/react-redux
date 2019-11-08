@@ -1,4 +1,4 @@
-import { useReducer, useRef, useMemo, useContext } from 'react'
+import { useRef, useMemo, useContext, useState } from 'react'
 import invariant from 'invariant'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
@@ -13,7 +13,7 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
-  const [, forceRender] = useReducer(s => s + 1, 0)
+  const [reduxState, forceRender] = useState(store.getState())
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
@@ -31,7 +31,7 @@ function useSelectorWithStoreAndSubscription(
       selector !== latestSelector.current ||
       latestSubscriptionCallbackError.current
     ) {
-      selectedState = selector(store.getState())
+      selectedState = selector(reduxState)
     } else {
       selectedState = latestSelectedState.current
     }
@@ -53,8 +53,9 @@ function useSelectorWithStoreAndSubscription(
 
   useIsomorphicLayoutEffect(() => {
     function checkForUpdates() {
+      const newReduxState = store.getState()
       try {
-        const newSelectedState = latestSelector.current(store.getState())
+        const newSelectedState = latestSelector.current(newReduxState)
 
         if (equalityFn(newSelectedState, latestSelectedState.current)) {
           return
@@ -69,7 +70,7 @@ function useSelectorWithStoreAndSubscription(
         latestSubscriptionCallbackError.current = err
       }
 
-      forceRender({})
+      forceRender(newReduxState)
     }
 
     subscription.onStateChange = checkForUpdates

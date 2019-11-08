@@ -350,13 +350,11 @@ describe('React', () => {
             }
           )
 
-          let sawInconsistentState = false
+          let lastRenderInconsistentState = false
 
           const Child = ({ parentCount }) => {
             const result = useSelector(({ count }) => {
-              if (count !== parentCount) {
-                sawInconsistentState = true
-              }
+              lastRenderInconsistentState = count !== parentCount
 
               return count + parentCount
             })
@@ -372,7 +370,7 @@ describe('React', () => {
 
           store.dispatch({ type: '' })
 
-          expect(sawInconsistentState).toBe(false)
+          expect(lastRenderInconsistentState).toBe(false)
 
           spy.mockRestore()
         })
