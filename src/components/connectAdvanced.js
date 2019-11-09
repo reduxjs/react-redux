@@ -1,6 +1,6 @@
 import hoistStatics from 'hoist-non-react-statics'
 import invariant from 'invariant'
-import React, { useContext, useMemo, useRef, useReducer } from 'react'
+import React, { useContext, useMemo, useRef, useState } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
@@ -8,7 +8,6 @@ import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from './Context'
 
 // Define some constant arrays just to avoid re-creating these
-const EMPTY_ARRAY = []
 const NO_SUBSCRIPTION_ARRAY = [null, null]
 
 const stringifyComponent = Comp => {
@@ -18,13 +17,6 @@ const stringifyComponent = Comp => {
     return String(Comp)
   }
 }
-
-function storeStateUpdatesReducer(state, action) {
-  const [, updateCount] = state
-  return [action.payload, updateCount + 1]
-}
-
-const initStateUpdates = () => [null, 0]
 
 export default function connectAdvanced(
   /*
@@ -232,9 +224,9 @@ export default function connectAdvanced(
       // We need to force this wrapper component to re-render whenever a Redux store update
       // causes a change to the calculated child component props (or we caught an error in mapState)
       const [
-        [previousStateUpdateResult],
+        previousStateUpdateResult,
         forceComponentUpdateDispatch
-      ] = useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates)
+      ] = useState({ reduxStore: store.getState() })
 
       // Propagate any mapState/mapDispatch errors upwards
       if (previousStateUpdateResult && previousStateUpdateResult.error) {
@@ -246,6 +238,8 @@ export default function connectAdvanced(
       const lastWrapperProps = useRef(wrapperProps)
       const childPropsFromStoreUpdate = useRef()
       const renderIsScheduled = useRef(false)
+
+      const latestReduxStore = useRef()
 
       const actualChildProps = usePureOnlyMemo(() => {
         // Tricky logic here:
@@ -265,8 +259,15 @@ export default function connectAdvanced(
         // This will likely cause Bad Things (TM) to happen in Concurrent Mode.
         // Note that we do this because on renders _not_ caused by store updates, we need the latest store state
         // to determine what the child props should be.
-        return childPropsSelector(store.getState(), wrapperProps)
-      }, [store, previousStateUpdateResult, wrapperProps])
+        return childPropsSelector(
+          latestReduxStore.current || previousStateUpdateResult.reduxStore,
+          wrapperProps
+        )
+      }, [
+        latestReduxStore.current,
+        previousStateUpdateResult.reduxStore,
+        wrapperProps
+      ])
 
       // We need this to execute synchronously every time we re-render. However, React warns
       // about useLayoutEffect in SSR, so we try to detect environment and fall back to
@@ -322,6 +323,8 @@ export default function connectAdvanced(
 
           // If the child props haven't changed, nothing to do here - cascade the subscription update
           if (newChildProps === lastChildProps.current) {
+            latestReduxStore.current = latestStoreState
+
             if (!renderIsScheduled.current) {
               notifyNestedSubs()
             }
@@ -335,11 +338,10 @@ export default function connectAdvanced(
             renderIsScheduled.current = true
 
             // If the child props _did_ change (or we caught an error), this wrapper component needs to re-render
+            latestReduxStore.current = undefined
             forceComponentUpdateDispatch({
-              type: 'STORE_UPDATED',
-              payload: {
-                error
-              }
+              error,
+              reduxStore: latestStoreState
             })
           }
         }
