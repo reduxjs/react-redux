@@ -1,5 +1,5 @@
 ---
-id: static-types
+id: static-typing
 title: Type safety and React-Redux
 hide_title: true
 sidebar_label: Type safety and React-Redux
@@ -7,24 +7,25 @@ sidebar_label: Type safety and React-Redux
 
 # Type safety and React-Redux
 
-The [`react-redux` type definitions](https://npm.im/@types/react-redux) export some helpers to make it easier to write typesafe interfaces between your redux store and your React components.
+React-redux doesn't ship with types. If you are using Typescript you should install the [`react-redux` type definitions](https://npm.im/@types/react-redux) from npm. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your redux store and your React components.
 
 ## Typing the useSelector hook
 
-If you manually type your selector functions, `useSelector` will return the same type as your selector
+If your selector functions has declared a return type, `useSelector` will return that same type
 
 ```ts
-// selectIsOn always returns a boolean, so isOn is typed as a boolean
+const selectIsOn = (state: MyStateType) => state.isOn
+
 const isOn = useSelector(selectIsOn)
 ```
 
-Otherwise `useSelector` requires you to manually type the state argument every time you use it.
+Passing an inline function to `useSelector` requires you to manually type the state argument.
 
 ```ts
 const isOn = useSelector((state: MyStateType) => state.isOn)
 ```
 
-If you'd like, you can define a typed `useSelect` hook using a helper type
+If you want to avoid repeating the `state` type declaration, you can define a typed `useSelect` hook using a helper type exported by `@types/react-redux`
 
 ```ts
 // reducer.ts
@@ -44,46 +45,11 @@ const isOn = useSelector(state => state.isOn)
 
 ## Typing the `connect` higher order component
 
-React-redux exposes a helper type, `ConnectedProps`, that can extract the return type of mapStateToProps and mapDispatchToProps.
+Traditionally typing components connected to the redux store using `connect` has been a bit laborious. Here's a full example.
 
 ```ts
-import { connect, ConnectedProps } from 'react-redux'
+import { connect } from 'react-redux'
 
-interface MyStateType {
-  isOn: boolean
-}
-
-const connector = connect(
-  (state: MyStateType) => ({
-    isOn: state.isOn
-  }),
-  (dispatch: any) => ({
-    toggleOn: () => dispatch({ type: 'TOGGLE_IS_ON' })
-  })
-)
-
-type PropsFromRedux = ConnectedProps<typeof connector>
-```
-
-The return type of `ConnectedProps` can then be used to type your props object.
-
-```tsx
-interface Props extends PropsFromRedux {
-  backgroundColor: string
-}
-
-export const MyComponent = connector((props: Props) => (
-  <div style={{ backgroundColor: props.backgroundColor }}>
-    <button onClick={props.toggleOn}>
-      Toggle is {props.isOn ? 'ON' : 'OFF'}
-    </button>
-  </div>
-))
-```
-
-If you are using untyped selectors or for some other reason would rather, you can also pass type arguments to `connect` and use those same types to create your own props type.
-
-```ts
 interface StateProps {
   isOn: boolean
 }
@@ -98,9 +64,75 @@ interface OwnProps {
 
 type Props = StateProps & DispatchProps & OwnProps
 
-const connector = connect<
-  StateProps,
-  DispatchProps,
-  OwnProps
->(/* arguments as above */)
+const MyComponent = (props: Props) => (
+  <div style={{ backgroundColor: props.backgroundColor }}>
+    <button onClick={props.toggleOn}>
+      Toggle is {props.isOn ? 'ON' : 'OFF'}
+    </button>
+  </div>
+)
+
+export default connect<StateProps, DispatchProps, OwnProps>(
+  (state: MyStateType) => ({
+    isOn: state.isOn
+  }),
+  {
+    toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  }
+)(MyComponent)
+```
+
+React-redux exposes a helper type, `ConnectedProps`, that can extract the return types of `mapStateToProp` and `mapDispatchToProps` from a `connector` function.
+
+```ts
+import { connect, ConnectedProps } from 'react-redux'
+
+interface MyStateType {
+  isOn: boolean
+}
+
+const connector = connect(
+  (state: MyStateType) => ({
+    isOn: state.isOn
+  }),
+  {
+    toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  }
+)
+
+type PropsFromRedux = ConnectedProps<typeof connector>
+```
+
+The return type of `ConnectedProps` can then be used to type your props object.
+
+```tsx
+interface Props extends PropsFromRedux {
+  backgroundColor: string
+}
+
+const MyComponent = (props: Props) => (
+  <div style={{ backgroundColor: props.backgroundColor }}>
+    <button onClick={props.toggleOn}>
+      Toggle is {props.isOn ? 'ON' : 'OFF'}
+    </button>
+  </div>
+)
+
+export default connector(MyComponent)
+```
+
+Because types can be defined in any order, you can still declare your component before declaring the connector if you want.
+
+```tsx
+interface Props extends PropsFromRedux {
+  backgroundColor: string;
+}
+
+const MyComponent = (props: Props) => /* same as above */
+
+const connector = connect(/* same as above*/)
+
+type PropsFromRedux = ConnectedProps<typeof connector>
+
+export default connector(MyComponent)
 ```
