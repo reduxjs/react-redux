@@ -90,8 +90,6 @@ describe('React Native', () => {
       @connect((state, parentProps) => {
         childMapStateInvokes++
         childCalls.push([state, parentProps.parentState])
-        // The state from parent props should always be consistent with the current state
-        expect(state).toEqual(parentProps.parentState)
         return {}
       })
       class ChildContainer extends Component {
@@ -112,23 +110,26 @@ describe('React Native', () => {
       rtl.act(() => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
-      expect(childMapStateInvokes).toBe(2)
-      expect(childCalls).toEqual([['a', 'a'], ['ac', 'ac']])
+      expect(childMapStateInvokes).toBe(3)
+      expect(childCalls).toEqual([['a', 'a'], ['a', 'ac'], ['ac', 'ac']])
 
       // setState calls DOM handlers are batched
       const button = tester.getByTestId('change-button')
       rtl.fireEvent.press(button)
-      expect(childMapStateInvokes).toBe(3)
+      expect(childMapStateInvokes).toBe(5)
 
       rtl.act(() => {
         store.dispatch({ type: 'APPEND', body: 'd' })
       })
 
-      expect(childMapStateInvokes).toBe(4)
+      expect(childMapStateInvokes).toBe(7)
       expect(childCalls).toEqual([
         ['a', 'a'],
+        ['a', 'ac'],
         ['ac', 'ac'],
+        ['ac', 'acb'],
         ['acb', 'acb'],
+        ['acb', 'acbd'],
         ['acbd', 'acbd']
       ])
     })

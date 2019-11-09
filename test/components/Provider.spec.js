@@ -246,13 +246,13 @@ describe('React', () => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
 
-      expect(childMapStateInvokes).toBe(2)
-      expect(childCalls).toEqual([['a', 'a'], ['ac', 'ac']])
+      expect(childMapStateInvokes).toBe(3)
+      expect(childCalls).toEqual([['a', 'a'], ['a', 'ac'], ['ac', 'ac']])
 
       // setState calls DOM handlers are batched
       const button = tester.getByText('change')
       rtl.fireEvent.click(button)
-      expect(childMapStateInvokes).toBe(3)
+      expect(childMapStateInvokes).toBe(5)
 
       // Provider uses unstable_batchedUpdates() under the hood
       rtl.act(() => {
@@ -261,11 +261,14 @@ describe('React', () => {
 
       expect(childCalls).toEqual([
         ['a', 'a'],
+        ['a', 'ac'],
         ['ac', 'ac'], // then store update is processed
+        ['ac', 'acb'],
         ['acb', 'acb'], // then store update is processed
+        ['acb', 'acbd'],
         ['acbd', 'acbd'] // then store update is processed
       ])
-      expect(childMapStateInvokes).toBe(4)
+      expect(childMapStateInvokes).toBe(7)
     })
 
     it('works in <StrictMode> without warnings (React 16.3+)', () => {
