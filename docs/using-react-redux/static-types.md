@@ -45,7 +45,7 @@ const isOn = useSelector(state => state.isOn)
 
 ## Typing the `connect` higher order component
 
-Traditionally typing components connected to the redux store using `connect` has been a bit laborious. Here's a full example.
+The `connect` higher-order function can be a bit laborious to type, because there are 3 sources of props: mapStateToProps, mapDispatchToProps, and props passed in from the parent component. Here's a full example of what it looks like to do that manually.
 
 ```ts
 import { connect } from 'react-redux'
@@ -82,7 +82,7 @@ export default connect<StateProps, DispatchProps, OwnProps>(
 )(MyComponent)
 ```
 
-React-redux exposes a helper type, `ConnectedProps`, that can extract the return types of `mapStateToProp` and `mapDispatchToProps` from a `connector` function.
+React-redux exposes a helper type, `ConnectedProps`, that can extract the return types of `mapStateToProp` and `mapDispatchToProps` from a `connector` function, although this means that creating the connector and exporting the connected component needs to be done in 2 separate steps.
 
 ```ts
 import { connect, ConnectedProps } from 'react-redux'
