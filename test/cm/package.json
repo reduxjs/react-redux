@@ -1,0 +1,73 @@
+{
+  "name": "will-this-react-global-state-work-in-concurrent-mode",
+  "description": "Checking tearing in React concurrent mode",
+  "private": true,
+  "version": "0.1.0",
+  "author": "Daishi Kato",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dai-shi/will-this-react-global-state-work-in-concurrent-mode.git"
+  },
+  "scripts": {
+    "test": "npm run eslint",
+    "eslint": "eslint --ignore-pattern dist .",
+    "jest": "cross-env PORT=8080 BABEL_ENV=jest jest",
+    "dev-server": "cross-env PORT=8080 webpack-dev-server",
+    "http-server": "cross-env PORT=8080 http-server dist",
+    "build:react-redux": "cross-env NAME=react-redux webpack"
+  },
+  "keywords": [
+    "react",
+    "context",
+    "hooks"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "react": "experimental",
+    "react-dom": "experimental",
+    "redux": "^4.0.4"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.6.4",
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
+    "@babel/preset-react": "^7.6.3",
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-eslint": "^10.0.3",
+    "babel-loader": "^8.0.6",
+    "cross-env": "^6.0.3",
+    "eslint": "^6.5.1",
+    "eslint-config-airbnb": "^18.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.16.0",
+    "eslint-plugin-react-hooks": "^2.2.0",
+    "html-webpack-plugin": "^3.2.0",
+    "http-server": "^0.11.1",
+    "jest": "^24.9.0",
+    "jest-puppeteer": "^4.3.0",
+    "puppeteer": "^2.0.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.9.0"
+  },
+  "babel": {
+    "env": {
+      "development": {
+        "presets": [
+          [
+            "@babel/preset-env",
+            {
+              "targets": "> 0.2%, not dead"
+            }
+          ],
+          "@babel/preset-react"
+        ]
+      },
+      "jest": {}
+    }
+  },
+  "jest": {
+    "preset": "jest-puppeteer"
+  }
+}
