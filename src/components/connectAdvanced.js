@@ -226,7 +226,7 @@ export default function connectAdvanced(
       const [
         previousStateUpdateResult,
         forceComponentUpdateDispatch
-      ] = useState({ reduxStore: store.getState() })
+      ] = useState({ reduxState: store.getState() })
 
       // Propagate any mapState/mapDispatch errors upwards
       if (previousStateUpdateResult && previousStateUpdateResult.error) {
@@ -239,7 +239,8 @@ export default function connectAdvanced(
       const childPropsFromStoreUpdate = useRef()
       const renderIsScheduled = useRef(false)
 
-      const latestReduxStore = useRef()
+      const latestReduxState = useRef()
+      const latestReduxStateIsValid = useRef(false)
 
       const actualChildProps = usePureOnlyMemo(() => {
         // Tricky logic here:
@@ -255,17 +256,15 @@ export default function connectAdvanced(
           return childPropsFromStoreUpdate.current
         }
 
-        // TODO We're reading the store directly in render() here. Bad idea?
-        // This will likely cause Bad Things (TM) to happen in Concurrent Mode.
-        // Note that we do this because on renders _not_ caused by store updates, we need the latest store state
-        // to determine what the child props should be.
         return childPropsSelector(
-          latestReduxStore.current || previousStateUpdateResult.reduxStore,
+          latestReduxStateIsValid.current
+            ? latestReduxState.current
+            : previousStateUpdateResult.reduxState,
           wrapperProps
         )
       }, [
-        latestReduxStore.current,
-        previousStateUpdateResult.reduxStore,
+        latestReduxStateIsValid.current,
+        previousStateUpdateResult.reduxState,
         wrapperProps
       ])
 
@@ -323,7 +322,8 @@ export default function connectAdvanced(
 
           // If the child props haven't changed, nothing to do here - cascade the subscription update
           if (newChildProps === lastChildProps.current) {
-            latestReduxStore.current = latestStoreState
+            latestReduxState.current = latestStoreState
+            latestReduxStateIsValid.current = true
 
             if (!renderIsScheduled.current) {
               notifyNestedSubs()
@@ -338,10 +338,11 @@ export default function connectAdvanced(
             renderIsScheduled.current = true
 
             // If the child props _did_ change (or we caught an error), this wrapper component needs to re-render
-            latestReduxStore.current = undefined
+            latestReduxStateIsValid.current = false
+            latestReduxState.current = undefined
             forceComponentUpdateDispatch({
               error,
-              reduxStore: latestStoreState
+              reduxState: latestStoreState
             })
           }
         }
