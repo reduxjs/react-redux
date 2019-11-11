@@ -8,7 +8,8 @@ const names = [
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 jest.setTimeout(15 * 1000);
-const REPEAT = 10;
+const REPEAT = 5;
+const DOUBLE = 2; // two clicks to increment one
 const NUM_COMPONENTS = 50; // defined in src/common.js
 
 names.forEach((name) => {
@@ -30,7 +31,7 @@ names.forEach((name) => {
 
     it('check1: updated properly', async () => {
       delays = [];
-      for (let loop = 0; loop < REPEAT; ++loop) {
+      for (let loop = 0; loop < REPEAT * DOUBLE; ++loop) {
         const start = Date.now();
         // click buttons three times
         await Promise.all([
@@ -41,7 +42,7 @@ names.forEach((name) => {
         delays.push(Date.now() - start);
       }
       console.log(name, delays);
-      // check if all counts become 15 = REPEAT * 3
+      // check if all counts become REPEAT * 3
       await Promise.all([...Array(NUM_COMPONENTS).keys()].map(async (i) => {
         await expect(page).toMatchElement(`.count:nth-of-type(${i + 1})`, {
           text: `${REPEAT * 3}`,
@@ -70,8 +71,11 @@ names.forEach((name) => {
         page.click('#remoteIncrement'),
         page.click('#remoteIncrement'),
         page.click('#localIncrement'),
+        page.click('#remoteIncrement'),
+        page.click('#remoteIncrement'),
+        page.click('#localIncrement'),
       ]);
-      // check if all counts become 18 = REPEAT * 3 + 3
+      // check if all counts become REPEAT * 3 + 2
       await Promise.all([...Array(NUM_COMPONENTS).keys()].map(async (i) => {
         await expect(page).toMatchElement(`.count:nth-of-type(${i + 1})`, {
           text: `${REPEAT * 3 + 2}`,

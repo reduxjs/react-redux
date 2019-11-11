@@ -8,20 +8,16 @@ import {
   reducer,
   ids,
   useCheckTearing,
+  shallowEqual,
 } from '../common';
 
 const store = createStore(reducer);
 
-const _Counter = () => {
+const Counter = React.memo(() => {
   const count = useSelector(state => state.count);
   syncBlock();
   return <div className="count">{count}</div>;
-};
-
-_Counter.defaultProps={};
-//https://github.com/facebook/react/issues/17318  currently 2019.11.10 SimpleMemoCompnent is buggy on CM
-
-const Counter=React.memo(_Counter);
+}, shallowEqual);
 
 const Main = () => {
   const dispatch = useDispatch();

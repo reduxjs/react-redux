@@ -18,12 +18,20 @@ export const useRegisterIncrementDispatcher = (listener) => {
   }, [listener]);
 };
 
-export const initialState = { count: 0 };
+export const initialState = {
+  count: 0,
+  dummy: 0,
+};
 
 export const reducer = (state = initialState, action) => {
   switch (action.type) {
     case 'increment':
-      return { ...state, count: state.count + 1 };
+      return {
+        ...state,
+        dummy: state.dummy + 1,
+        // only update once in two
+        count: state.dummy % 2 === 1 ? state.count + 1 : state.count,
+      };
     default:
       return state;
   }
@@ -44,4 +52,15 @@ export const useCheckTearing = () => {
       document.title = 'failed';
     }
   });
+};
+
+// naive shallowEqual for React.memo
+// a hack until the issue is resolved
+// https://github.com/facebook/react/issues/17314
+// https://github.com/facebook/react/issues/17318
+export const shallowEqual = (prevProps, nextProps) => {
+  const prevKeys = Object.keys(prevProps);
+  const nextKeys = Object.keys(nextProps);
+  return prevKeys.every(key => prevProps[key] === nextProps[key])
+    && nextKeys.every(key => prevProps[key] === nextProps[key]);
 };
