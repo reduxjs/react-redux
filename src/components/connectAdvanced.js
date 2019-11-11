@@ -239,9 +239,6 @@ export default function connectAdvanced(
       const childPropsFromStoreUpdate = useRef()
       const renderIsScheduled = useRef(false)
 
-      const latestReduxState = useRef()
-      const latestReduxStateIsValid = useRef(false)
-
       const actualChildProps = usePureOnlyMemo(() => {
         // Tricky logic here:
         // - This render may have been triggered by a Redux store update that produced new child props
@@ -257,16 +254,10 @@ export default function connectAdvanced(
         }
 
         return childPropsSelector(
-          latestReduxStateIsValid.current
-            ? latestReduxState.current
-            : previousStateUpdateResult.reduxState,
+          previousStateUpdateResult.reduxState,
           wrapperProps
         )
-      }, [
-        latestReduxStateIsValid.current,
-        previousStateUpdateResult.reduxState,
-        wrapperProps
-      ])
+      }, [previousStateUpdateResult.reduxState, wrapperProps])
 
       // We need this to execute synchronously every time we re-render. However, React warns
       // about useLayoutEffect in SSR, so we try to detect environment and fall back to
@@ -322,8 +313,11 @@ export default function connectAdvanced(
 
           // If the child props haven't changed, nothing to do here - cascade the subscription update
           if (newChildProps === lastChildProps.current) {
-            latestReduxState.current = latestStoreState
-            latestReduxStateIsValid.current = true
+            forceComponentUpdateDispatch(prev => {
+              prev.error = error
+              prev.reduxState = latestStoreState
+              return prev
+            })
 
             if (!renderIsScheduled.current) {
               notifyNestedSubs()
@@ -338,8 +332,6 @@ export default function connectAdvanced(
             renderIsScheduled.current = true
 
             // If the child props _did_ change (or we caught an error), this wrapper component needs to re-render
-            latestReduxStateIsValid.current = false
-            latestReduxState.current = undefined
             forceComponentUpdateDispatch({
               error,
               reduxState: latestStoreState
