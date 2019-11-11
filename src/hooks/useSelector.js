@@ -13,9 +13,7 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
-  const [reduxState, forceRender] = useState(store.getState())
-  const latestReduxState = useRef()
-  const latestReduxStateIsValid = useRef(false)
+  const [reduxState, setReduxState] = useState({ value: store.getState() })
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
@@ -33,9 +31,7 @@ function useSelectorWithStoreAndSubscription(
       selector !== latestSelector.current ||
       latestSubscriptionCallbackError.current
     ) {
-      selectedState = selector(
-        latestReduxStateIsValid.current ? latestReduxState.current : reduxState
-      )
+      selectedState = selector(reduxState.value)
     } else {
       selectedState = latestSelectedState.current
     }
@@ -62,8 +58,10 @@ function useSelectorWithStoreAndSubscription(
         const newSelectedState = latestSelector.current(newReduxState)
 
         if (equalityFn(newSelectedState, latestSelectedState.current)) {
-          latestReduxState.current = newReduxState
-          latestReduxStateIsValid.current = true
+          setReduxState(prev => {
+            prev.value = newReduxState
+            return prev
+          })
           return
         }
 
@@ -75,9 +73,7 @@ function useSelectorWithStoreAndSubscription(
         // changed
         latestSubscriptionCallbackError.current = err
       }
-      latestReduxStateIsValid.current = false
-      latestReduxState.current = undefined
-      forceRender(newReduxState)
+      setReduxState(() => ({ value: newReduxState }))
     }
 
     subscription.onStateChange = checkForUpdates

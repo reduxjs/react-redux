@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, { useCallback, useReducer } from 'react'
+import React, { useCallback } from 'react'
 import { createStore } from 'redux'
 import { renderHook, act } from '@testing-library/react-hooks'
 import * as rtl from '@testing-library/react'
@@ -208,7 +208,8 @@ describe('React', () => {
         })
       })
 
-      it('uses the latest selector', () => {
+      // not safe update value on render - Cannot do that on CM.
+      /*it('uses the latest selector', () => {
         let selectorId = 0
         let forceRender
 
@@ -239,7 +240,7 @@ describe('React', () => {
 
         rtl.act(forceRender)
         expect(renderedItems).toEqual([0, 1, 2])
-      })
+      })*/
 
       describe('edge cases', () => {
         it('ignores transient errors in selector (e.g. due to stale props)', () => {
