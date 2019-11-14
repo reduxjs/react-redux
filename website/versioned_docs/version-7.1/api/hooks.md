@@ -41,7 +41,7 @@ Allows you to extract data from the Redux store state, using a selector function
 
 > **Note**: The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
 
-The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](using-react-redux/connect-extracting-data-with-mapStateToProps.md) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders. `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
+The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-mapstate) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders. `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
 
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
@@ -355,7 +355,7 @@ This hook was in our original alpha release, but removed in `v7.1.0-alpha.4`, ba
 That suggestion was based on "binding action creators" not being as useful in a hooks-based use case, and causing too
 much conceptual overhead and syntactic complexity.
 
-You should probably prefer to  call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
+You should probably prefer to call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
 and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
 [`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
 or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
