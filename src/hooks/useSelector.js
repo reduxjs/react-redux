@@ -86,7 +86,7 @@ function useSelectorWithStoreAndSubscription(
 /**
  * Hook factory, which creates a `useSelector` hook bound to a given context.
  *
- * @param {Function} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
 export function createSelectorHook(context = ReactReduxContext) {

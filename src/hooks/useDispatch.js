@@ -4,12 +4,13 @@ import { useStore as useDefaultStore, createStoreHook } from './useStore'
 /**
  * Hook factory, which creates a `useDispatch` hook bound to a given context.
  *
- * @param {Function} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useDispatch` hook bound to the specified context.
  */
 export function createDispatchHook(context = ReactReduxContext) {
   const useStore =
     context === ReactReduxContext ? useDefaultStore : createStoreHook(context)
+
   return function useDispatch() {
     const store = useStore()
     return store.dispatch
