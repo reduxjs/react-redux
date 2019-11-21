@@ -92,7 +92,7 @@ function mapStateToProps(state) {
 // component will receive: props.a, props.todos, and props.filter
 ```
 
-> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage]() section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
+> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage: Factory Functions](https://react-redux.js.org/api/connect#factory-functions) section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
 
 ## Usage Guidelines
 
@@ -102,7 +102,7 @@ function mapStateToProps(state) {
 
 ### Use Selector Functions to Extract and Transform Data
 
-We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree. Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Performance]() page for more details on why and how to use selectors.)
+We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree. Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Computing Derived Data](https://redux.js.org/recipes/computing-derived-data) page for more details on why and how to use selectors.)
 
 ### `mapStateToProps` Functions Should Be Fast
 
