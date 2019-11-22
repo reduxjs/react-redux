@@ -9,11 +9,9 @@ import { useEffect, useLayoutEffect } from 'react'
 // is created synchronously, otherwise a store update may occur before the
 // subscription is created and an inconsistent state may be observed
 
-const isHopefullyDomEnvironment =
+export const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&
   typeof window.document.createElement !== 'undefined'
-
-export const useIsomorphicLayoutEffect = isHopefullyDomEnvironment
-  ? useLayoutEffect
-  : useEffect
+    ? useLayoutEffect
+    : useEffect
