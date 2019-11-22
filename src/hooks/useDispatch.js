@@ -38,4 +38,4 @@ export function createDispatchHook(context = ReactReduxContext) {
  *   )
  * }
  */
-export const useDispatch = createDispatchHook()
+export const useDispatch = /*#__PURE__*/ createDispatchHook()

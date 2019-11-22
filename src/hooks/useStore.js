@@ -34,4 +34,4 @@ export function createStoreHook(context = ReactReduxContext) {
  *   return <div>{store.getState()}</div>
  * }
  */
-export const useStore = createStoreHook()
+export const useStore = /*#__PURE__*/ createStoreHook()

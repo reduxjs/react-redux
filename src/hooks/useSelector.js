@@ -131,4 +131,4 @@ export function createSelectorHook(context = ReactReduxContext) {
  *   return <div>{counter}</div>
  * }
  */
-export const useSelector = createSelectorHook()
+export const useSelector = /*#__PURE__*/ createSelectorHook()

@@ -101,4 +101,4 @@ export function createConnect({
   }
 }
 
-export default createConnect()
+export default /*#__PURE__*/ createConnect()
