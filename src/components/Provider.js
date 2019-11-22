@@ -33,14 +33,16 @@ function Provider({ store, context, children }) {
   return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
 
-Provider.propTypes = {
-  store: PropTypes.shape({
-    subscribe: PropTypes.func.isRequired,
-    dispatch: PropTypes.func.isRequired,
-    getState: PropTypes.func.isRequired
-  }),
-  context: PropTypes.object,
-  children: PropTypes.any
+if (process.env.NODE_ENV !== 'production') {
+  Provider.propTypes = {
+    store: PropTypes.shape({
+      subscribe: PropTypes.func.isRequired,
+      dispatch: PropTypes.func.isRequired,
+      getState: PropTypes.func.isRequired
+    }),
+    context: PropTypes.object,
+    children: PropTypes.any
+  }
 }
 
 export default Provider
