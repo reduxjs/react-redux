@@ -92,7 +92,7 @@ function mapStateToProps(state) {
 // component will receive: props.a, props.todos, and props.filter
 ```
 
-> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage: Factory Functions](https://react-redux.js.org/api/connect#factory-functions) section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
+> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage: Factory Functions](../api/connect.md) section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
 
 ## Usage Guidelines
 
@@ -139,7 +139,7 @@ Many common operations result in new object or array references being created:
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
-Put these operations in [memoized selector functions]() to ensure that they only run if the input values have changed. This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
+Put these operations in [memoized selector functions](https://redux.js.org/recipes/computing-derived-data#creating-a-memoized-selector) to ensure that they only run if the input values have changed. This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
 
 ### Only Perform Expensive Operations When Data Changes
 
