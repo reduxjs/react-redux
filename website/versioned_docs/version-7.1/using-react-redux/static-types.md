@@ -1,5 +1,6 @@
 ---
-id: static-typing
+id: version-7.1-static-typing
+original_id: static-typing
 title: Static Typing
 hide_title: true
 sidebar_label: Static Typing
@@ -87,7 +88,7 @@ const dispatch: AppDispatch = useDispatch()
 
 The `connect` higher-order component is somewhat complex to type, because there are 3 sources of props: `mapStateToProps`, `mapDispatchToProps`, and props passed in from the parent component. Here's a full example of what it looks like to do that manually.
 
-```ts
+```tsx
 import { connect } from 'react-redux'
 
 interface StateProps {
