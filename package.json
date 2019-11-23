@@ -50,7 +50,6 @@
   "dependencies": {
     "@babel/runtime": "^7.5.5",
     "hoist-non-react-statics": "^3.3.0",
-    "invariant": "^2.2.4",
     "loose-envify": "^1.4.0",
     "prop-types": "^15.7.2",
     "react-is": "^16.9.0"
