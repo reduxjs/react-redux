@@ -1,5 +1,4 @@
 import hoistStatics from 'hoist-non-react-statics'
-import invariant from 'invariant'
 import React, { useContext, useMemo, useRef, useReducer } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 import Subscription from '../utils/Subscription'
@@ -78,34 +77,40 @@ export default function connectAdvanced(
     ...connectOptions
   } = {}
 ) {
-  invariant(
-    renderCountProp === undefined,
-    `renderCountProp is removed. render counting is built into the latest React Dev Tools profiling extension`
-  )
+  if (process.env.NODE_ENV !== 'production') {
+    if (renderCountProp !== undefined) {
+      throw new Error(
+        `renderCountProp is removed. render counting is built into the latest React Dev Tools profiling extension`
+      )
+    }
+    if (withRef) {
+      throw new Error(
+        'withRef is removed. To access the wrapped instance, use a ref on the connected component'
+      )
+    }
 
-  invariant(
-    !withRef,
-    'withRef is removed. To access the wrapped instance, use a ref on the connected component'
-  )
+    const customStoreWarningMessage =
+      'To use a custom Redux store for specific components, create a custom React context with ' +
+      "React.createContext(), and pass the context object to React Redux's Provider and specific components" +
+      ' like: <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' +
+      'You may also pass a {context : MyContext} option to connect'
 
-  const customStoreWarningMessage =
-    'To use a custom Redux store for specific components, create a custom React context with ' +
-    "React.createContext(), and pass the context object to React Redux's Provider and specific components" +
-    ' like: <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' +
-    'You may also pass a {context : MyContext} option to connect'
-
-  invariant(
-    storeKey === 'store',
-    'storeKey has been removed and does not do anything. ' +
-      customStoreWarningMessage
-  )
+    if (storeKey !== 'store') {
+      throw new Error(
+        'storeKey has been removed and does not do anything. ' +
+          customStoreWarningMessage
+      )
+    }
+  }
 
   const Context = context
 
   return function wrapWithConnect(WrappedComponent) {
-    if (process.env.NODE_ENV !== 'production') {
-      invariant(
-        isValidElementType(WrappedComponent),
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      !isValidElementType(WrappedComponent)
+    ) {
+      throw new Error(
         `You must pass a component to the function returned by ` +
           `${methodName}. Instead received ${stringifyComponent(
             WrappedComponent
@@ -173,13 +178,18 @@ export default function connectAdvanced(
       const didStoreComeFromContext =
         Boolean(contextValue) && Boolean(contextValue.store)
 
-      invariant(
-        didStoreComeFromProps || didStoreComeFromContext,
-        `Could not find "store" in the context of ` +
-          `"${displayName}". Either wrap the root component in a <Provider>, ` +
-          `or pass a custom React context provider to <Provider> and the corresponding ` +
-          `React context consumer to ${displayName} in connect options.`
-      )
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        !didStoreComeFromProps &&
+        !didStoreComeFromContext
+      ) {
+        throw new Error(
+          `Could not find "store" in the context of ` +
+            `"${displayName}". Either wrap the root component in a <Provider>, ` +
+            `or pass a custom React context provider to <Provider> and the corresponding ` +
+            `React context consumer to ${displayName} in connect options.`
+        )
+      }
 
       // Based on the previous check, one of these must be true
       const store = didStoreComeFromProps ? props.store : contextValue.store

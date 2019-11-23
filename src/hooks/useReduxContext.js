@@ -1,5 +1,4 @@
 import { useContext } from 'react'
-import invariant from 'invariant'
 import { ReactReduxContext } from '../components/Context'
 
 /**
@@ -21,10 +20,11 @@ import { ReactReduxContext } from '../components/Context'
 export function useReduxContext() {
   const contextValue = useContext(ReactReduxContext)
 
-  invariant(
-    contextValue,
-    'could not find react-redux context value; please ensure the component is wrapped in a <Provider>'
-  )
+  if (process.env.NODE_ENV !== 'production' && !contextValue) {
+    throw new Error(
+      'could not find react-redux context value; please ensure the component is wrapped in a <Provider>'
+    )
+  }
 
   return contextValue
 }

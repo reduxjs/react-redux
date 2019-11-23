@@ -1,5 +1,4 @@
 import { useReducer, useRef, useMemo, useContext } from 'react'
-import invariant from 'invariant'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
@@ -95,8 +94,9 @@ export function createSelectorHook(context = ReactReduxContext) {
       ? useDefaultReduxContext
       : () => useContext(context)
   return function useSelector(selector, equalityFn = refEquality) {
-    invariant(selector, `You must pass a selector to useSelectors`)
-
+    if (process.env.NODE_ENV !== 'production' && !selector) {
+      throw new Error(`You must pass a selector to useSelectors`)
+    }
     const { store, subscription: contextSub } = useReduxContext()
 
     return useSelectorWithStoreAndSubscription(
