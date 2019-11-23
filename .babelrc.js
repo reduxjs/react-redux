@@ -9,6 +9,14 @@ module.exports = {
     ['@babel/proposal-object-rest-spread', { loose }],
     '@babel/transform-react-jsx',
     cjs && ['@babel/transform-modules-commonjs', { loose }],
-    ['@babel/transform-runtime', { useESModules: !cjs }],
-  ].filter(Boolean),
+    [
+      '@babel/transform-runtime',
+      {
+        useESModules: !cjs,
+        version: require('./package.json').dependencies[
+          '@babel/runtime'
+        ].replace(/^[^0-9]*/, '')
+      }
+    ]
+  ].filter(Boolean)
 }
