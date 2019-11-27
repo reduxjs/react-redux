@@ -35,13 +35,11 @@ function useSelectorWithStoreAndSubscription(
       selectedState = latestSelectedState.current
     }
   } catch (err) {
-    let errorMessage = `An error occurred while selecting the store state: ${err.message}.`
-
     if (latestSubscriptionCallbackError.current) {
-      errorMessage += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\nOriginal stack trace:`
+      err.message += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\n`
     }
 
-    throw new Error(errorMessage)
+    throw err
   }
 
   useIsomorphicLayoutEffect(() => {
