@@ -61,7 +61,7 @@ export const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector
 // my-component.tsx
 import { useTypedSelector } from './reducer.ts'
 
-const isOn = useSelector(state => state.isOn)
+const isOn = useTypedSelector(state => state.isOn)
 ```
 
 ### Typing the `useDispatch` hook
