@@ -56,7 +56,7 @@ const ConnectedComponent = connect(
 )(MyComponent)
 
 // Later, pass the custom context as a prop to the connected component
-;<ConnectedComponent context={MyContext} />
+<ConnectedComponent context={MyContext} />
 ```
 
 The following runtime error occurs when React Redux does not find a store in the context it is looking. For example:
