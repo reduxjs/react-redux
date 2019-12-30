@@ -445,7 +445,6 @@ Now we've finished a very simple example of a todo app with React Redux. All our
 
 ## Links
 
-- [Usage with React](https://redux.js.org/basics/usagewithreact)
 - [Using the React Redux Bindings](https://blog.isquaredsoftware.com/presentations/workshops/redux-fundamentals/react-redux.html)
 - [Higher Order Components in Depth](https://medium.com/@franleplant/react-higher-order-components-in-depth-cf9032ee6c3e)
 - [Computing Derived Data](https://redux.js.org/recipes/computingderiveddata#sharing-selectors-across-multiple-components)
