@@ -1,5 +1,13 @@
 import { useEffect, useLayoutEffect } from 'react'
 
+const isBrowser = typeof window !== 'undefined' &&
+  typeof window.document !== 'undefined' &&
+  typeof window.document.createElement !== 'undefined'
+
+const isNode = typeof process !== 'undefined' &&
+  process.versions != null &&
+  process.versions.node != null
+
 // React currently throws a warning when using useLayoutEffect on the server.
 // To get around it, we can conditionally useEffect on the server (no-op) and
 // useLayoutEffect in the browser. We need useLayoutEffect to ensure the store
@@ -10,8 +18,6 @@ import { useEffect, useLayoutEffect } from 'react'
 // subscription is created and an inconsistent state may be observed
 
 export const useIsomorphicLayoutEffect =
-  typeof window !== 'undefined' &&
-  typeof window.document !== 'undefined' &&
-  typeof window.document.createElement !== 'undefined'
+  isBrowser && !isNode
     ? useLayoutEffect
     : useEffect
