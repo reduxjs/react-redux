@@ -1,10 +1,12 @@
 import { useEffect, useLayoutEffect } from 'react'
 
-const isBrowser = typeof window !== 'undefined' &&
+const isBrowser =
+  typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&
   typeof window.document.createElement !== 'undefined'
 
-const isNode = typeof process !== 'undefined' &&
+const isNode =
+  typeof process !== 'undefined' &&
   process.versions != null &&
   process.versions.node != null
 
@@ -18,6 +20,4 @@ const isNode = typeof process !== 'undefined' &&
 // subscription is created and an inconsistent state may be observed
 
 export const useIsomorphicLayoutEffect =
-  isBrowser && !isNode
-    ? useLayoutEffect
-    : useEffect
+  isBrowser && !isNode ? useLayoutEffect : useEffect
