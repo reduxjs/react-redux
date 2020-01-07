@@ -7,7 +7,7 @@ hide_title: true
 
 ## Troubleshooting
 
-Make sure to check out [Troubleshooting Redux](http://redux.js.org/docs/Troubleshooting.html) first.
+Make sure to check out [Troubleshooting Redux](https://redux.js.org/troubleshooting) first.
 
 ### I'm getting the following alert: Accessing PropTypes via the main React package is deprecated. Use the prop-types package from npm instead.
 
