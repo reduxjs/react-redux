@@ -2,13 +2,9 @@ import { useEffect, useLayoutEffect } from 'react'
 
 const isBrowser =
   typeof window !== 'undefined' &&
+  typeof window.innerWidth !== 'undefined' &&
   typeof window.document !== 'undefined' &&
   typeof window.document.createElement !== 'undefined'
-
-const isNode =
-  typeof process !== 'undefined' &&
-  process.versions != null &&
-  process.versions.node != null
 
 // React currently throws a warning when using useLayoutEffect on the server.
 // To get around it, we can conditionally useEffect on the server (no-op) and
@@ -19,5 +15,4 @@ const isNode =
 // is created synchronously, otherwise a store update may occur before the
 // subscription is created and an inconsistent state may be observed
 
-export const useIsomorphicLayoutEffect =
-  isBrowser && !isNode ? useLayoutEffect : useEffect
+export const useIsomorphicLayoutEffect = isBrowser ? useLayoutEffect : useEffect
