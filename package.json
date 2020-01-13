@@ -36,14 +36,19 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^16.8.3",
-    "redux": "^2.0.0 || ^3.0.0 || ^4.0.0-0"
+    "react": "^16.8.3"
   },
   "peerDependenciesMeta": {
+    "@reduxjs/toolkit": {
+      "optional": true
+    },
     "react-dom": {
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "redux": {
       "optional": true
     }
   },
