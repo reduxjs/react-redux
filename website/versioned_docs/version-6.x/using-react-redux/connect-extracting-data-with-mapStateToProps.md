@@ -223,7 +223,7 @@ function mapStateToProps(...args) {
 
 **Q&A**
 
-- [Why Is My Component Re-Rendering Too Often?](https://redux.js.org/faq/reactredux#why-is-my-component-re-rendering-too-often)
-- [Why isn't my component re-rendering, or my mapStateToProps running](https://redux.js.org/faq/reactredux#why-isnt-my-component-re-rendering-or-my-mapstatetoprops-running)
-- [How can I speed up my mapStateToProps?](https://redux.js.org/faq/reactredux#why-is-my-component-re-rendering-too-often)
-- [Should I only connect my top component, or can I connect multiple components in my tree?](https://redux.js.org/faq/reactredux#why-is-my-component-re-rendering-too-often)
+- [Why Is My Component Re-Rendering Too Often?](https://redux.js.org/faq/react-redux/#why-is-my-component-re-rendering-too-often)
+- [Why isn't my component re-rendering, or my mapStateToProps running](https://redux.js.org/faq/react-redux/#why-isnt-my-component-re-rendering-or-my-mapstatetoprops-running)
+- [How can I speed up my mapStateToProps?](https://redux.js.org/faq/react-redux/#how-can-i-speed-up-my-mapstatetoprops)
+- [Should I only connect my top component, or can I connect multiple components in my tree?](https://redux.js.org/faq/react-redux/#should-i-only-connect-my-top-component-or-can-i-connect-multiple-components-in-my-tree)
