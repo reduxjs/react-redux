@@ -1,6 +1,5 @@
-import { useReducer, useRef, useMemo, useContext } from 'react'
+import { useReducer, useContext } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
-import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 
@@ -10,72 +9,29 @@ function useSelectorWithStoreAndSubscription(
   selector,
   equalityFn,
   store,
-  contextSub
+  subscription
 ) {
-  const [, forceRender] = useReducer(s => s + 1, 0)
-
-  const subscription = useMemo(() => new Subscription(store, contextSub), [
-    store,
-    contextSub
-  ])
-
-  const latestSubscriptionCallbackError = useRef()
-  const latestSelector = useRef()
-  const latestSelectedState = useRef()
-
-  let selectedState
-
-  try {
-    if (
-      selector !== latestSelector.current ||
-      latestSubscriptionCallbackError.current
-    ) {
-      selectedState = selector(store.getState())
-    } else {
-      selectedState = latestSelectedState.current
-    }
-  } catch (err) {
-    if (latestSubscriptionCallbackError.current) {
-      err.message += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\n`
-    }
-
-    throw err
-  }
-
-  useIsomorphicLayoutEffect(() => {
-    latestSelector.current = selector
-    latestSelectedState.current = selectedState
-    latestSubscriptionCallbackError.current = undefined
-  })
-
-  useIsomorphicLayoutEffect(() => {
-    function checkForUpdates() {
-      try {
-        const newSelectedState = latestSelector.current(store.getState())
-
-        if (equalityFn(newSelectedState, latestSelectedState.current)) {
-          return
-        }
-
-        latestSelectedState.current = newSelectedState
-      } catch (err) {
-        // we ignore all errors here, since when the component
-        // is re-rendered, the selectors are called again, and
-        // will throw again, if neither props nor store state
-        // changed
-        latestSubscriptionCallbackError.current = err
+  const [selectedState, dispatch] = useReducer(
+    prevSelectedState => {
+      const nextState = store.getState()
+      const nextSelectedState = selector(nextState)
+      if (equalityFn(prevSelectedState, nextSelectedState)) {
+        return prevSelectedState
       }
+      return nextSelectedState
+    },
+    null,
+    () => selector(store.getState())
+  )
 
-      forceRender({})
-    }
-
-    subscription.onStateChange = checkForUpdates
+  useIsomorphicLayoutEffect(() => {
+    subscription.onStateChange = dispatch
     subscription.trySubscribe()
 
-    checkForUpdates()
+    dispatch()
 
     return () => subscription.tryUnsubscribe()
-  }, [store, subscription])
+  }, [subscription])
 
   return selectedState
 }
