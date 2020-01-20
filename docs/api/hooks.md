@@ -33,7 +33,7 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 ## `useSelector()`
 
 ```js
-const result : any = useSelector(selector : Function, equalityFn? : Function)
+const result: any = useSelector(selector: Function, equalityFn?: Function)
 ```
 
 Allows you to extract data from the Redux store state, using a selector function.
