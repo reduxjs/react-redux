@@ -399,8 +399,6 @@ export default function connectAdvanced(
         return childPropsSelector(store.getState(), wrapperProps)
       }, [store, previousStateUpdateResult, wrapperProps])
 
-      // To avoid memory leak issue of function closure in useEffect, move useEffect functions out of component scope.
-
       // We need this to execute synchronously every time we re-render. However, React warns
       // about useLayoutEffect in SSR, so we try to detect environment and fall back to
       // just useEffect instead to avoid the warning, since neither will run anyway.
