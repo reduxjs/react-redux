@@ -1,5 +1,6 @@
-import { useReducer, useContext } from 'react'
+import { useReducer, useMemo, useContext } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
+import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 
@@ -9,9 +10,9 @@ function useSelectorWithStoreAndSubscription(
   selector,
   equalityFn,
   store,
-  subscription
+  contextSub
 ) {
-  const [selectedState, dispatch] = useReducer(
+  const [selectedState, checkForUpdates] = useReducer(
     prevSelectedState => {
       const nextState = store.getState()
       const nextSelectedState = selector(nextState)
@@ -20,15 +21,20 @@ function useSelectorWithStoreAndSubscription(
       }
       return nextSelectedState
     },
-    null,
-    () => selector(store.getState())
+    store.getState(),
+    selector
   )
 
+  const subscription = useMemo(() => new Subscription(store, contextSub), [
+    store,
+    contextSub
+  ])
+
   useIsomorphicLayoutEffect(() => {
-    subscription.onStateChange = dispatch
+    subscription.onStateChange = checkForUpdates
     subscription.trySubscribe()
 
-    dispatch()
+    checkForUpdates()
 
     return () => subscription.tryUnsubscribe()
   }, [subscription])
