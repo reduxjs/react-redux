@@ -1,47 +1,46 @@
 /* eslint-env es6 */
 
-import { useReducer, useRef, useMemo } from 'react'
-import { useReduxContext } from './useReduxContext'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import { useReducer, useRef, useMemo, useContext } from 'react'
+import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
+import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import { ReactReduxContext } from '../components/Context'
 import { createDeepProxy, isDeepChanged } from '../utils/deepProxy'
 
-// TODO createTrackedStateHook for custom context
+function useTrackedStateWithStoreAndSubscription(store, contextSub) {
+  const [, forceRender] = useReducer(s => s + 1, 0)
 
-export const useTrackedState = () => {
-  const [, forceUpdate] = useReducer(c => c + 1, 0)
-  const { store, subscription: contextSub } = useReduxContext()
-  const state = store.getState()
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
     contextSub
   ])
+
+  const state = store.getState()
   const affected = new WeakMap()
-  const lastTracked = useRef(null)
+  const latestTracked = useRef(null)
   useIsomorphicLayoutEffect(() => {
-    lastTracked.current = {
+    latestTracked.current = {
       state,
       affected,
       cache: new WeakMap()
     }
   })
   useIsomorphicLayoutEffect(() => {
-    const checkForUpdates = () => {
+    function checkForUpdates() {
       const nextState = store.getState()
       if (
-        lastTracked.current.state === nextState ||
-        !isDeepChanged(
-          lastTracked.current.state,
+        latestTracked.current.state !== nextState &&
+        isDeepChanged(
+          latestTracked.current.state,
           nextState,
-          lastTracked.current.affected,
-          lastTracked.current.cache
+          latestTracked.current.affected,
+          latestTracked.current.cache
         )
       ) {
-        // not changed
-        return
+        forceRender()
       }
-      forceUpdate()
     }
+
     subscription.onStateChange = checkForUpdates
     subscription.trySubscribe()
 
@@ -49,6 +48,45 @@ export const useTrackedState = () => {
 
     return () => subscription.tryUnsubscribe()
   }, [store, subscription])
+
   const proxyCache = useRef(new WeakMap()) // per-hook proxyCache
   return createDeepProxy(state, affected, proxyCache.current)
 }
+
+/**
+ * Hook factory, which creates a `useTrackedState` hook bound to a given context.
+ *
+ * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @returns {Function} A `useTrackedState` hook bound to the specified context.
+ */
+export function createTrackedStateHook(context = ReactReduxContext) {
+  const useReduxContext =
+    context === ReactReduxContext
+      ? useDefaultReduxContext
+      : () => useContext(context)
+  return function useTrackedState() {
+    const { store, subscription: contextSub } = useReduxContext()
+
+    return useTrackedStateWithStoreAndSubscription(store, contextSub)
+  }
+}
+
+/**
+ * A hook to return the redux store's state.
+ *
+ * This hook tracks the state usage and only triggers
+ * re-rerenders if the used part of the state is changed.
+ *
+ * @returns {any} the whole state
+ *
+ * @example
+ *
+ * import React from 'react'
+ * import { useTrackedState } from 'react-redux'
+ *
+ * export const CounterComponent = () => {
+ *   const state = useTrackedState()
+ *   return <div>{state.counter}</div>
+ * }
+ */
+export const useTrackedState = /*#__PURE__*/ createTrackedStateHook()
