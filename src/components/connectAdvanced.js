@@ -23,8 +23,12 @@ function storeStateUpdatesReducer(state, action) {
   return [action.payload, updateCount + 1]
 }
 
-function useIsomorphicLayoutEffectWithArgs(create, deps, args) {
-  useIsomorphicLayoutEffect(() => create(...args), deps)
+function useIsomorphicLayoutEffectWithArgs(
+  effectFunc,
+  effectArgs,
+  dependencies
+) {
+  useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies)
 }
 
 function captureWrapperProps(
@@ -402,7 +406,7 @@ export default function connectAdvanced(
       // We need this to execute synchronously every time we re-render. However, React warns
       // about useLayoutEffect in SSR, so we try to detect environment and fall back to
       // just useEffect instead to avoid the warning, since neither will run anyway.
-      useIsomorphicLayoutEffectWithArgs(captureWrapperProps, undefined, [
+      useIsomorphicLayoutEffectWithArgs(captureWrapperProps, [
         lastWrapperProps,
         lastChildProps,
         renderIsScheduled,
@@ -415,7 +419,6 @@ export default function connectAdvanced(
       // Our re-subscribe logic only runs when the store/subscription setup changes
       useIsomorphicLayoutEffectWithArgs(
         subscribeUpdates,
-        [store, subscription, childPropsSelector],
         [
           shouldHandleStateChanges,
           store,
@@ -427,7 +430,8 @@ export default function connectAdvanced(
           childPropsFromStoreUpdate,
           notifyNestedSubs,
           forceComponentUpdateDispatch
-        ]
+        ],
+        [store, subscription, childPropsSelector]
       )
 
       // Now that all that's done, we can finally try to actually render the child component.
