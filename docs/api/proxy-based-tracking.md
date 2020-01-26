@@ -140,6 +140,6 @@ state.count
 state.foo
 ```
 
-So, if the state shape is defined initiall and never changed, it should be fine.
+So, if the state shape is defined initially and never changed, it should be fine.
 
 `Object.key()` and `in` operater is not supported. There might be other cases that polyfill doesn't support.
