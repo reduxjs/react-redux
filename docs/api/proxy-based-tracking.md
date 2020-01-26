@@ -11,13 +11,14 @@ This document describes about `useTrackedState` hook.
 
 ## How does this get used?
 
-`useTrackedState` is a hook that can be used instead of `useSelector`.
-It doesn't mean to replace `useSelector` completely.
-It gives a new way of connecting Redux store to React.
+`useTrackedState` allows components to read values from the Redux store state.
+It is similar to `useSelector`, but uses an internal tracking system
+to detect which state values are read in a component,
+without needing to define a selector function.
 
-> **Note**: It's not completely new in the sense that there already exists a library for `connect`: [beautiful-react-redux](https://github.com/theKashey/beautiful-react-redux)
+> **Note**: It doesn't mean to replace `useSelector` completely. It gives a new way of connecting Redux store to React.
 
-The usage of `useTrackedState` is extremely simple.
+The usage of `useTrackedState` is like the following.
 
 ```jsx
 import React from 'react'
@@ -29,7 +30,7 @@ export const CounterComponent = () => {
 }
 ```
 
-Using props is intuitive.
+If it needs to use props, it can be done so.
 
 ```jsx
 import React from 'react'
@@ -44,11 +45,49 @@ export const TodoListItem = props => {
 
 ## Why would you want to use it?
 
-> For beginners: Far easier to understand Redux and R-R without the notion of selectors
-> 
-> For intermediates: Never needs to worry about memoized selectors
-> 
-> For experts: No stale props issue
+### For beginners
+
+When learning Redux for the first time,
+it would be good to learn things step by step.
+`useTrackedState` allows developers to directly access the store state.
+They can learn selectors later for separation of concerns.
+
+### For intermediates
+
+`useSelector` requires a selector to produce a stable value for performance.
+For example,
+
+```js
+const selectUser = state => ({
+  name: state.user.name,
+  friends: state.user.friends.map(({ name }) => name),
+})
+const user = useSelector(selectUser)
+```
+
+such a selector needs to be memoized to avoid extra re-renders.
+
+`useTrackedState` doesn't require memoized selectors.
+
+```js
+const state = useTrackedState()
+const user = selectUser(state)
+```
+
+This works fine without extra re-renders.
+
+Even a custom hook can be created for this purpose.
+
+```js
+const useTrackedSelector = selector => selector(useTrackedState())
+```
+
+This can be used instead of `useSelector` for some cases.
+
+### For experts
+
+`useTrackedState` doesn't have [the technical issue](https://react-redux.js.org/api/hooks#stale-props-and-zombie-children) that `useSelector` has.
+This is because `useTrackedState` doesn't run selectors in checkForUpdates.
 
 ## What are the differences in behavior compared to useSelector?
 
@@ -76,45 +115,45 @@ Whereas with useTrackedState, a component re-renders whenever the `age` value is
 
 ### Caveats
 
-Proxy-based tracking may not work 100% as expected.
+Proxy-based tracking has limitations.
 
-> - Proxied states are referentially equal only in per-hook basis
-> 
-> ```js
-> const state1 = useTrackedState();
-> const state2 = useTrackedState();
-> // state1 and state2 is not referentially equal
-> // even if the underlying redux state is referentially equal.
-> ```
-> 
-> You should use `useTrackedState` only once in a component.
-> 
-> - An object referential change doesn't trigger re-render if an property of the object is accessed in previous render
-> 
-> ```js
-> const state = useTrackedState();
-> const { foo } = state;
-> return <Child key={foo.id} foo={foo} />;
-> 
-> const Child = React.memo(({ foo }) => {
->   // ...
-> };
-> // if foo doesn't change, Child won't render, so foo.id is only marked as used.
-> // it won't trigger Child to re-render even if foo is changed.
-> ```
-> 
-> It's recommended to use primitive values for props with memo'd components.
-> 
-> - Proxied state shouldn't be used outside of render
-> 
-> ```js
-> const state = useTrackedState();
-> const dispatch = useUpdate();
-> dispatch({ type: 'FOO', value: state.foo }); // This may lead unexpected behavior if state.foo is an object
-> dispatch({ type: 'FOO', value: state.fooStr }); // This is OK if state.fooStr is a string
-> ```
-> 
-> It's recommended to use primitive values for `dispatch`, `setState` and others.
+- Proxied states are referentially equal only in per-hook basis
+
+```js
+const state1 = useTrackedState();
+const state2 = useTrackedState();
+// state1 and state2 is not referentially equal
+// even if the underlying redux state is referentially equal.
+```
+
+You should use `useTrackedState` only once in a component.
+
+- An object referential change doesn't trigger re-render if an property of the object is accessed in previous render
+
+```js
+const state = useTrackedState();
+const { foo } = state;
+return <Child key={foo.id} foo={foo} />;
+
+const Child = React.memo(({ foo }) => {
+  // ...
+};
+// if foo doesn't change, Child won't render, so foo.id is only marked as used.
+// it won't trigger Child to re-render even if foo is changed.
+```
+
+It's recommended to use primitive values for props with memo'd components.
+
+- Proxied state shouldn't be used outside of render
+
+```js
+const state = useTrackedState();
+const dispatch = useUpdate();
+dispatch({ type: 'FOO', value: state.foo }); // This may lead unexpected behavior if state.foo is an object
+dispatch({ type: 'FOO', value: state.fooStr }); // This is OK if state.fooStr is a string
+```
+
+It's recommended to use primitive values for `dispatch`, `setState` and others.
 
 ### Performance
 
