@@ -43,7 +43,7 @@ function useSelectorWithStoreAndSubscription(
     if (!equalityFn(nextSelectedState, state.selectedState)) {
       selectedState = nextSelectedState
       // schedule another update
-      dispatch(state.storeState)
+      dispatch(store.getState())
     }
   }
 
