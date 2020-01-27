@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useContext } from 'react'
+import { useReducer, useEffect, useMemo, useContext } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { ReactReduxContext } from '../components/Context'
@@ -11,12 +11,26 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
-  const [state, setState] = useState(() => ({
-    storeState: store.getState(),
-    selector,
-    selectedState: selector(store.getState())
-    // subscriptionCallbackError: undefined
-  }))
+  const [state, dispatch] = useReducer(
+    (prevState, storeState) => {
+      const nextSelectedState = selector(storeState)
+      if (equalityFn(nextSelectedState, prevState.selectedState)) {
+        // bail out
+        return prevState
+      }
+      return {
+        selector,
+        storeState,
+        selectedState: nextSelectedState
+      }
+    },
+    store.getState(),
+    storeState => ({
+      selector,
+      storeState,
+      selectedState: selector(storeState)
+    })
+  )
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
@@ -24,59 +38,17 @@ function useSelectorWithStoreAndSubscription(
   ])
 
   let selectedState = state.selectedState
-
-  try {
-    if (selector !== state.selector || state.subscriptionCallbackError) {
-      const newSelectedState = selector(state.storeState)
-      if (!equalityFn(newSelectedState, selectedState)) {
-        selectedState = newSelectedState
-        // schedule another update
-        setState(prevState => ({
-          ...prevState,
-          selector,
-          selectedState
-          // subscriptionCallbackError: undefined
-        }))
-      }
+  if (state.selector !== selector) {
+    const nextSelectedState = selector(state.storeState)
+    if (!equalityFn(nextSelectedState, state.selectedState)) {
+      selectedState = nextSelectedState
+      // schedule another update
+      dispatch(state.storeState)
     }
-  } catch (err) {
-    if (state.subscriptionCallbackError) {
-      err.message += `\nThe error may be correlated with this previous error:\n${state.subscriptionCallbackError.stack}\n\n`
-    }
-
-    throw err
   }
 
   useEffect(() => {
-    function checkForUpdates() {
-      const newStoreState = store.getState()
-      setState(prevState => {
-        let newSelectedState
-        let subscriptionCallbackError
-        try {
-          newSelectedState = prevState.selector(newStoreState)
-
-          if (equalityFn(newSelectedState, prevState.selectedState)) {
-            // bail out rendering
-            return prevState
-          }
-        } catch (err) {
-          // we ignore all errors here, since when the component
-          // is re-rendered, the selectors are called again, and
-          // will throw again, if neither props nor store state
-          // changed
-          subscriptionCallbackError = err
-        }
-
-        return {
-          ...prevState,
-          storeState: newStoreState,
-          selectedState: newSelectedState,
-          subscriptionCallbackError
-        }
-      })
-    }
-
+    const checkForUpdates = () => dispatch(store.getState())
     subscription.onStateChange = checkForUpdates
     subscription.trySubscribe()
 
