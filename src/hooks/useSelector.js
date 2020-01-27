@@ -1,7 +1,6 @@
-import { useReducer, useMemo, useContext } from 'react'
+import { useReducer, useEffect, useMemo, useContext } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 
 const refEquality = (a, b) => a === b
@@ -12,32 +11,51 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
-  const [selectedState, checkForUpdates] = useReducer(
-    prevSelectedState => {
-      const nextState = store.getState()
-      const nextSelectedState = selector(nextState)
-      if (equalityFn(prevSelectedState, nextSelectedState)) {
-        return prevSelectedState
+  const [state, dispatch] = useReducer(
+    (prevState, storeState) => {
+      const nextSelectedState = selector(storeState)
+      if (equalityFn(nextSelectedState, prevState.selectedState)) {
+        // bail out
+        return prevState
       }
-      return nextSelectedState
+      return {
+        selector,
+        storeState,
+        selectedState: nextSelectedState
+      }
     },
     store.getState(),
-    selector
+    storeState => ({
+      selector,
+      storeState,
+      selectedState: selector(storeState)
+    })
   )
+
+  let selectedState = state.selectedState
+  if (state.selector !== selector) {
+    const nextSelectedState = selector(state.storeState)
+    if (!equalityFn(nextSelectedState, state.selectedState)) {
+      selectedState = nextSelectedState
+      // schedule another update
+      dispatch(state.storeState)
+    }
+  }
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
     contextSub
   ])
 
-  useIsomorphicLayoutEffect(() => {
+  useEffect(() => {
+    const checkForUpdates = () => dispatch(store.getState())
     subscription.onStateChange = checkForUpdates
     subscription.trySubscribe()
 
     checkForUpdates()
 
     return () => subscription.tryUnsubscribe()
-  }, [subscription])
+  }, [store, subscription])
 
   return selectedState
 }
