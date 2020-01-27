@@ -1,7 +1,6 @@
-import { useReducer, useRef, useMemo, useContext } from 'react'
+import { useState, useEffect, useMemo, useContext } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 
 const refEquality = (a, b) => a === b
@@ -12,61 +11,70 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
-  const [, forceRender] = useReducer(s => s + 1, 0)
+  const [state, setState] = useState(() => ({
+    storeState: store.getState(),
+    selector,
+    selectedState: selector(store.getState())
+    // subscriptionCallbackError: undefined
+  }))
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
     contextSub
   ])
 
-  const latestSubscriptionCallbackError = useRef()
-  const latestSelector = useRef()
-  const latestSelectedState = useRef()
-
-  let selectedState
+  let selectedState = state.selectedState
 
   try {
-    if (
-      selector !== latestSelector.current ||
-      latestSubscriptionCallbackError.current
-    ) {
-      selectedState = selector(store.getState())
-    } else {
-      selectedState = latestSelectedState.current
+    if (selector !== state.selector || state.subscriptionCallbackError) {
+      const newSelectedState = selector(state.storeState)
+      if (!equalityFn(newSelectedState, selectedState)) {
+        selectedState = newSelectedState
+        // schedule another update
+        setState(prevState => ({
+          ...prevState,
+          selector,
+          selectedState
+          // subscriptionCallbackError: undefined
+        }))
+      }
     }
   } catch (err) {
-    if (latestSubscriptionCallbackError.current) {
-      err.message += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\n`
+    if (state.subscriptionCallbackError) {
+      err.message += `\nThe error may be correlated with this previous error:\n${state.subscriptionCallbackError.stack}\n\n`
     }
 
     throw err
   }
 
-  useIsomorphicLayoutEffect(() => {
-    latestSelector.current = selector
-    latestSelectedState.current = selectedState
-    latestSubscriptionCallbackError.current = undefined
-  })
-
-  useIsomorphicLayoutEffect(() => {
+  useEffect(() => {
     function checkForUpdates() {
-      try {
-        const newSelectedState = latestSelector.current(store.getState())
+      const newStoreState = store.getState()
+      setState(prevState => {
+        let newSelectedState
+        let subscriptionCallbackError
+        try {
+          newSelectedState = prevState.selector(newStoreState)
 
-        if (equalityFn(newSelectedState, latestSelectedState.current)) {
-          return
+          if (equalityFn(newSelectedState, prevState.selectedState)) {
+            // bail out rendering
+            return prevState
+          }
+        } catch (err) {
+          // we ignore all errors here, since when the component
+          // is re-rendered, the selectors are called again, and
+          // will throw again, if neither props nor store state
+          // changed
+          subscriptionCallbackError = err
         }
 
-        latestSelectedState.current = newSelectedState
-      } catch (err) {
-        // we ignore all errors here, since when the component
-        // is re-rendered, the selectors are called again, and
-        // will throw again, if neither props nor store state
-        // changed
-        latestSubscriptionCallbackError.current = err
-      }
-
-      forceRender({})
+        return {
+          ...prevState,
+          storeState: newStoreState,
+          selectedState: newSelectedState,
+          subscriptionCallbackError
+        }
+      })
     }
 
     subscription.onStateChange = checkForUpdates
