@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useMemo, useContext } from 'react'
+import { useReducer, useEffect, useMemo, useContext, useRef } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { ReactReduxContext } from '../components/Context'
@@ -11,36 +11,23 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
+  const dispatching = useRef(false)
   const [state, dispatch] = useReducer(
     (prevState, storeState) => {
+      if (dispatching.current) {
+        // schedule update
+        return { ...prevState }
+      }
       const nextSelectedState = selector(storeState)
       if (equalityFn(nextSelectedState, prevState.selectedState)) {
         // bail out
         return prevState
       }
-      return {
-        selector,
-        storeState,
-        selectedState: nextSelectedState
-      }
+      return { selectedState: nextSelectedState }
     },
     store.getState(),
-    storeState => ({
-      selector,
-      storeState,
-      selectedState: selector(storeState)
-    })
+    storeState => ({ selectedState: selector(storeState) })
   )
-
-  let selectedState = state.selectedState
-  if (state.selector !== selector) {
-    const nextSelectedState = selector(state.storeState)
-    if (!equalityFn(nextSelectedState, state.selectedState)) {
-      selectedState = nextSelectedState
-      // schedule another update
-      dispatch(state.storeState)
-    }
-  }
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
@@ -48,7 +35,11 @@ function useSelectorWithStoreAndSubscription(
   ])
 
   useEffect(() => {
-    const checkForUpdates = () => dispatch(store.getState())
+    const checkForUpdates = () => {
+      dispatching.current = true
+      dispatch(store.getState())
+      dispatching.current = false
+    }
     subscription.onStateChange = checkForUpdates
     subscription.trySubscribe()
 
@@ -57,7 +48,7 @@ function useSelectorWithStoreAndSubscription(
     return () => subscription.tryUnsubscribe()
   }, [store, subscription])
 
-  return selectedState
+  return state.selectedState
 }
 
 /**
