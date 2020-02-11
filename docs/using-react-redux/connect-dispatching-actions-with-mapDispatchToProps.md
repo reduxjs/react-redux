@@ -159,7 +159,9 @@ render() {
 }
 
 const mapDispatchToProps = dispatch => {
-  toggleTodo: todoId => dispatch(toggleTodo(todoId))
+  return {
+    toggleTodo: todoId => dispatch(toggleTodo(todoId))
+  }
 }
 ```
 
@@ -171,7 +173,9 @@ render() {
 }
 
 const mapDispatchToProps = (dispatch, ownProps) => {
-  toggleTodo: () => dispatch(toggleTodo(ownProps.todoId))
+  return {
+    toggleTodo: () => dispatch(toggleTodo(ownProps.todoId))
+  }
 }
 ```
 
