@@ -4,46 +4,68 @@ import { getBatch } from './batch'
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
 
-const CLEARED = null
 const nullListeners = { notify() {} }
 
 function createListenerCollection() {
   const batch = getBatch()
-  // the current/next pattern is copied from redux's createStore code.
-  // TODO: refactor+expose that code to be reusable here?
-  let current = []
-  let next = []
+  let first = null
+  let last = null
 
   return {
     clear() {
-      next = CLEARED
-      current = CLEARED
+      first = null
+      last = null
     },
 
     notify() {
-      const listeners = (current = next)
       batch(() => {
-        for (let i = 0; i < listeners.length; i++) {
-          listeners[i]()
+        let listener = first
+        while (listener) {
+          listener.callback()
+          listener = listener.next
         }
       })
     },
 
     get() {
-      return next
+      let listeners = []
+      let listener = first
+      while (listener) {
+        listeners.push(listener)
+        listener = listener.next
+      }
+      return listeners
     },
 
-    subscribe(listener) {
+    subscribe(callback) {
       let isSubscribed = true
-      if (next === current) next = current.slice()
-      next.push(listener)
+
+      let listener = (last = {
+        callback,
+        next: null,
+        prev: last
+      })
+
+      if (listener.prev) {
+        listener.prev.next = listener
+      } else {
+        first = listener
+      }
 
       return function unsubscribe() {
-        if (!isSubscribed || current === CLEARED) return
+        if (!isSubscribed || first === null) return
         isSubscribed = false
 
-        if (next === current) next = current.slice()
-        next.splice(next.indexOf(listener), 1)
+        if (listener.next) {
+          listener.next.prev = listener.prev
+        } else {
+          last = listener.prev
+        }
+        if (listener.prev) {
+          listener.prev.next = listener.next
+        } else {
+          first = listener.next
+        }
       }
     }
   }
