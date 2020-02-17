@@ -25,7 +25,7 @@ or
 yarn add react-redux
 ```
 
-You'll also need to [install Redux](https://redux-docs.netlify.com/introduction/installation) and [set up a Redux store](https://redux-docs.netlify.com/recipes/configuring-your-store) in your app.
+You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
 
 ## `Provider`
 
