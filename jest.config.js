@@ -6,7 +6,7 @@ const defaults = {
 
 const testFolderPath = folderName => `<rootDir>/test/${folderName}/**/*.js`
 
-const NORMAL_TEST_FOLDERS = ['components', 'hooks', 'integration', 'utils']
+const NORMAL_TEST_FOLDERS = ['components', 'connect', 'hooks', 'integration', 'utils']
 
 const standardConfig = {
   ...defaults,
