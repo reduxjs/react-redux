@@ -1,8 +1,8 @@
 import verifyPlainObject from '../utils/verifyPlainObject'
 
 export function wrapMapToPropsConstant(getConstant) {
-  return function initConstantSelector(dispatch, options) {
-    const constant = getConstant(dispatch, options)
+  return function initConstantSelector(dispatch) {
+    const constant = getConstant(dispatch)
 
     function constantSelector() {
       return constant
