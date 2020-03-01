@@ -66,6 +66,8 @@ const createProxyHandler = () => ({
 
 export const createDeepProxy = (obj, affected, proxyCache) => {
   if (!isPlainObject(obj)) return obj
+  const origObj = obj[GET_ORIGINAL_SYMBOL] // unwrap proxy
+  if (origObj) obj = origObj
   let proxyHandler = proxyCache && proxyCache.get(obj)
   if (!proxyHandler) {
     proxyHandler = createProxyHandler()

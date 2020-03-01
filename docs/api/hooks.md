@@ -396,6 +396,19 @@ const young = useTrackedState().person.age < 11;
 
 Whereas with useTrackedState, a component re-renders whenever the `age` value is changed.
 
+#### How to debug
+
+Unlike useSelector, useTrackedState's behavior may seem like a magic.
+Disclosing the tracked information stored in useTrackedState could mitigate it.
+While useSelector shows the selected state with useDebugValue,
+useTrackedState shows the tracked state paths with useDebugValue.
+
+By using React Developer Tools, you can investigate the tracked
+information in the hook. It is inside `AffectedDebugValue`.
+If you experience extra re-renders or missing re-renders,
+you can check the tracked state paths which may help finding bugs
+in your application code or possible bugs in the library code.
+
 #### Caveats
 
 Proxy-based tracking has limitations.
@@ -427,16 +440,30 @@ const Child = React.memo(({ foo }) => {
 
 It's recommended to use primitive values for props with memo'd components.
 
-- Proxied state shouldn't be used outside of render
+- Proxied state might behave unexpectedly outside render
+
+Proxies are basically transparent, and it should behave like normal objects.
+However, there can be edge cases where it behaves unexpectedly.
+For example, if you console.log a proxied value,
+it will display a proxy wrapping an object.
+Notice, it will be kept tracking outside render,
+so any prorerty access will mark as used to trigger re-render on updates.
+
+useTrackedState will unwrap a Proxy before wrapping with a new Proxy,
+hence, it will work fine in usual use cases.
+There's only one known pitfall: If you wrap proxied state with your own Proxy
+outside the control of useTrackedState,
+it might lead memory leaks, because useTrackedState
+wouldn't know how to unwrap your own Proxy.
+
+To work around such edge cases, use primitive values.
 
 ```js
 const state = useTrackedState();
 const dispatch = useUpdate();
-dispatch({ type: 'FOO', value: state.foo }); // This may lead unexpected behavior if state.foo is an object
-dispatch({ type: 'FOO', value: state.fooStr }); // This is OK if state.fooStr is a string
+dispatch({ type: 'FOO', value: state.fooObj }); // Instead of using objects,
+dispatch({ type: 'FOO', value: state.fooStr }); // Use primitives.
 ```
-
-It's recommended to use primitive values for `dispatch`, `setState` and others.
 
 #### Performance
 
@@ -446,7 +473,7 @@ useTrackedState is sometimes more performant because it doesn't need to invoke a
 
 ### What are the limitations in browser support?
 
-Proxies are not supported in old browsers like IE11, and React Native (JavaScript Core).
+Proxies are not supported in old browsers like IE11.
 
 However, one could use [proxy-polyfill](https://github.com/GoogleChrome/proxy-polyfill) with care.
 

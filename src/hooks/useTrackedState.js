@@ -1,11 +1,43 @@
 /* eslint-env es6 */
 
-import { useReducer, useRef, useMemo, useContext } from 'react'
+import {
+  useReducer,
+  useRef,
+  useMemo,
+  useContext,
+  useEffect,
+  useDebugValue
+} from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 import { createDeepProxy, isDeepChanged } from '../utils/deepProxy'
+
+// convert "affected" (WeakMap) to serializable value (array of array of string)
+const affectedToPathList = (state, affected) => {
+  const list = []
+  const walk = (obj, path) => {
+    const used = affected.get(obj)
+    if (used) {
+      used.forEach(key => {
+        walk(obj[key], path ? [...path, key] : [key])
+      })
+    } else if (path) {
+      list.push(path)
+    }
+  }
+  walk(state)
+  return list
+}
+
+const useAffectedDebugValue = (state, affected) => {
+  const pathList = useRef(null)
+  useEffect(() => {
+    pathList.current = affectedToPathList(state, affected)
+  })
+  useDebugValue(pathList)
+}
 
 function useTrackedStateWithStoreAndSubscription(store, contextSub) {
   const [, forceRender] = useReducer(s => s + 1, 0)
@@ -48,6 +80,10 @@ function useTrackedStateWithStoreAndSubscription(store, contextSub) {
 
     return () => subscription.tryUnsubscribe()
   }, [store, subscription])
+
+  if (process.env.NODE_ENV !== 'production') {
+    useAffectedDebugValue(state, affected)
+  }
 
   const proxyCache = useRef(new WeakMap()) // per-hook proxyCache
   return createDeepProxy(state, affected, proxyCache.current)
