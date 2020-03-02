@@ -42,11 +42,9 @@ function useSelectorWithStoreAndSubscription(
     throw err
   }
 
-  useIsomorphicLayoutEffect(() => {
-    latestSelector.current = selector
-    latestSelectedState.current = selectedState
-    latestSubscriptionCallbackError.current = undefined
-  })
+  latestSelector.current = selector
+  latestSelectedState.current = selectedState
+  latestSubscriptionCallbackError.current = undefined
 
   useIsomorphicLayoutEffect(() => {
     function checkForUpdates() {

@@ -154,6 +154,49 @@ describe('React', () => {
 
           expect(renderedItems).toEqual([0, 1])
         })
+
+        it('works properly with dispatch from componentDidUpdate', () => {
+          store = createStore(c => c + 1, -1)
+
+          const Comp = () => {
+            const selector = useCallback(c => c, [])
+            const value = useSelector(selector)
+            renderedItems.push(value)
+            return <CompClass val={value} />
+          }
+
+          class CompClass extends React.PureComponent {
+            constructor(props) {
+              super(props)
+              this.dispatched = false
+            }
+            componentDidUpdate() {
+              if (this.dispatched) {
+                return
+              }
+              store.dispatch({ type: '' })
+              this.dispatched = true
+            }
+            render() {
+              return <div />
+            }
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          // The first render doesn't trigger componentDidUpdate
+          expect(renderedItems).toEqual([0])
+
+          // This dispatch forces Comp and CompClass to re-render,
+          // triggering componentDidUpdate and dispatching another action
+          store.dispatch({ type: '' })
+
+          expect(renderedItems).toEqual([0, 1, 2])
+        })
       })
 
       describe('performance optimizations and bail-outs', () => {
