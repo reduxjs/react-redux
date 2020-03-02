@@ -1,4 +1,4 @@
-import { useReducer, useRef, useMemo, useContext } from 'react'
+import { useReducer, useRef, useMemo, useContext, useDebugValue } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
@@ -97,12 +97,16 @@ export function createSelectorHook(context = ReactReduxContext) {
     }
     const { store, subscription: contextSub } = useReduxContext()
 
-    return useSelectorWithStoreAndSubscription(
+    const selectedState = useSelectorWithStoreAndSubscription(
       selector,
       equalityFn,
       store,
       contextSub
     )
+
+    useDebugValue(selectedState)
+
+    return selectedState
   }
 }
 

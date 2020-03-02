@@ -1,8 +1,9 @@
 ---
-id: quick-start
+id: version-7.2-quick-start
 title: Quick Start
 hide_title: true
 sidebar_label: Quick Start
+original_id: quick-start
 ---
 
 # Quick Start

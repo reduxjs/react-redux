@@ -1,8 +1,9 @@
 ---
-id: connect-mapdispatch
+id: version-7.2-connect-mapdispatch
 title: Connect: Dispatching Actions with mapDispatchToProps
 hide_title: true
 sidebar_label: Connect: Dispatching Actions with mapDispatchToProps
+original_id: connect-mapdispatch
 ---
 
 # Connect: Dispatching Actions with `mapDispatchToProps`
