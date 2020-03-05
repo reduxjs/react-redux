@@ -124,9 +124,9 @@ The second parameter is normally referred to as `ownProps` by convention.
 <button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 
 // binds on `props` change
-const mapDispatchToProps = (dispatch, ownProps) => {
+const mapDispatchToProps = (dispatch, ownProps) => ({
   toggleTodo: () => dispatch(toggleTodo(ownProps.todoId))
-}
+})
 ```
 
 The number of declared function parameters of `mapDispatchToProps` determines whether they receive ownProps. See notes [here](#the-arity-of-maptoprops-functions).
