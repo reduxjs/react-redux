@@ -21,16 +21,19 @@ function useSelectorWithStoreAndSubscription(
 
   const latestSubscriptionCallbackError = useRef()
   const latestSelector = useRef()
+  const latestStoreState = useRef()
   const latestSelectedState = useRef()
 
+  const storeState = store.getState()
   let selectedState
 
   try {
     if (
       selector !== latestSelector.current ||
+      storeState !== latestStoreState.current ||
       latestSubscriptionCallbackError.current
     ) {
-      selectedState = selector(store.getState())
+      selectedState = selector(storeState)
     } else {
       selectedState = latestSelectedState.current
     }
@@ -44,6 +47,7 @@ function useSelectorWithStoreAndSubscription(
 
   useIsomorphicLayoutEffect(() => {
     latestSelector.current = selector
+    latestStoreState.current = storeState
     latestSelectedState.current = selectedState
     latestSubscriptionCallbackError.current = undefined
   })
