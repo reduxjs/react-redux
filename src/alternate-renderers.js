@@ -10,6 +10,9 @@ import { useStore } from './hooks/useStore'
 import { getBatch } from './utils/batch'
 import shallowEqual from './utils/shallowEqual'
 
+import { wrapAsyncAction } from './asyncAction/wrapAsyncAction'
+import { reactReduxFetcher } from './asyncAction/reducer'
+
 // For other renderers besides ReactDOM and React Native, use the default noop batch function
 const batch = getBatch()
 
@@ -22,5 +25,7 @@ export {
   useDispatch,
   useSelector,
   useStore,
-  shallowEqual
+  shallowEqual,
+  wrapAsyncAction,
+  reactReduxFetcher
 }
