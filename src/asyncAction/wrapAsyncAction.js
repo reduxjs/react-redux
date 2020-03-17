@@ -14,10 +14,7 @@ export const wrapAsyncAction = asyncAction => actionArgs => (
   dispatch(
     pending(
       dispatch(asyncAction(actionArgs)).then(
-        r => {
-          console.log(r)
-          dispatch(success(r))
-        },
+        r => dispatch(success(r)),
         e => dispatch(error(e))
       )
     )
