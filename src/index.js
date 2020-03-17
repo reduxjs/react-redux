@@ -11,6 +11,9 @@ import { setBatch } from './utils/batch'
 import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
 import shallowEqual from './utils/shallowEqual'
 
+import { wrapAsyncAction } from './asyncAction/wrapAsyncAction'
+import { reactReduxFetcher } from './asyncAction/reducer'
+
 setBatch(batch)
 
 export {
@@ -25,5 +28,7 @@ export {
   createSelectorHook,
   useStore,
   createStoreHook,
-  shallowEqual
+  shallowEqual,
+  reactReduxFetcher,
+  wrapAsyncAction
 }
