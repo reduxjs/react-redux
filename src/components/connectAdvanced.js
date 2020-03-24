@@ -272,7 +272,11 @@ export default function connectAdvanced(
     const usePureOnlyMemo = pure ? useMemo : callback => callback()
 
     function ConnectFunction(props) {
-      const [propsContext, reactReduxForwardedRef, wrapperProps] = useMemo(() => {
+      const [
+        propsContext,
+        reactReduxForwardedRef,
+        wrapperProps
+      ] = useMemo(() => {
         // Distinguish between actual "data" props that were passed to the wrapper component,
         // and values needed to control behavior (forwarded refs, alternate context instances).
         // To maintain the wrapperProps object reference, memoize this destructuring.
@@ -437,7 +441,12 @@ export default function connectAdvanced(
       // Now that all that's done, we can finally try to actually render the child component.
       // We memoize the elements for the rendered child component as an optimization.
       const renderedWrappedComponent = useMemo(
-        () => <WrappedComponent {...actualChildProps} ref={reactReduxForwardedRef} />,
+        () => (
+          <WrappedComponent
+            {...actualChildProps}
+            ref={reactReduxForwardedRef}
+          />
+        ),
         [reactReduxForwardedRef, WrappedComponent, actualChildProps]
       )
 
