@@ -18,6 +18,10 @@ propagated to connected components, so that this works as expected by default.
 However, there may be certain use cases where you may need to customize how the store and state are propagated to
 connected components, or access the store directly. Here are some examples of how to do this.
 
+## Using the `useStore` Hook
+
+The [`useStore` hook](../api/hooks.md#useStore) returns the current store instance from the default `ReactReduxContext`. If you truly need to access the store, this is the recommended approach.
+
 ## Understanding Context Usage
 
 Internally, React Redux uses [React's "context" feature](https://reactjs.org/docs/context.html) to make the
