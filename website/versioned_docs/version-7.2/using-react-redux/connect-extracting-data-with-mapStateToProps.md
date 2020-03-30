@@ -93,7 +93,7 @@ function mapStateToProps(state) {
 // component will receive: props.a, props.todos, and props.filter
 ```
 
-> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage: Factory Functions](../api/connect.md) section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
+> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage: Factory Functions](https://react-redux.js.org/api/connect#factory-functions) section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
 
 ## Usage Guidelines
 
