@@ -161,7 +161,7 @@ By passing it to `connect`, our component receives it as a prop, and it will aut
 import { connect } from 'react-redux'
 import { addTodo } from '../redux/actions'
 
-class AddTodo extends React.Component {
+const AddTodo = ({ addTodo }) => {
   // ... component implementation
 }
 
@@ -180,40 +180,38 @@ We also need to implement the `handleAddTodo` function to let it dispatch the `a
 ```jsx
 // components/AddTodo.js
 
-import React from 'react'
-import { connect } from 'react-redux'
-import { addTodo } from '../redux/actions'
+import React, { useState } from "react";
+import { connect } from "react-redux";
+import { addTodo } from "../redux/actions";
 
-class AddTodo extends React.Component {
-  // ...
+const AddTodo = ({ addTodo }) => {
+  const [inputText, setInputText] = useState("");
 
-  handleAddTodo = () => {
+  const handleAddTodo = () => {
     // dispatches actions to add todo
-    this.props.addTodo(this.state.input)
-
+    addTodo(inputText);
+    
     // sets state back to empty string
-    this.setState({ input: '' })
-  }
+    setInputText("");
+  };
 
-  render() {
-    return (
-      <div>
-        <input
-          onChange={e => this.updateInput(e.target.value)}
-          value={this.state.input}
-        />
-        <button className="add-todo" onClick={this.handleAddTodo}>
-          Add Todo
-        </button>
-      </div>
-    )
-  }
+  return (
+    <div>
+      <input
+        onChange={e => setInputText(e.target.value)}
+        value={inputText}
+      />
+      <button className="add-todo" onClick={handleAddTodo}>
+        Add Todo
+      </button>
+    </div>
+  );
 }
 
 export default connect(
   null,
   { addTodo }
-)(AddTodo)
+)(AddTodo);
 ```
 
 Now our `<AddTodo />` is connected to the store. When we add a todo it would dispatch an action to change the store. We are not seeing it in the app because the other components are not connected yet. If you have the Redux DevTools Extension hooked up, you should see the action being dispatched:
