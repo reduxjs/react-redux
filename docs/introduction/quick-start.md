@@ -35,6 +35,8 @@ yarn add react-redux
 
 You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
 
+Also need to [install Reselect](https://github.com/reduxjs/reselect#installation) to use object shorthand for `mapStateToProps` in `connect`.
+
 ## `Provider`
 
 React Redux provides `<Provider />`, which makes the Redux store available to the rest of your app:

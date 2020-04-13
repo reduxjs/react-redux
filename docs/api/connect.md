@@ -27,7 +27,7 @@ The returns of `mapStateToProps` and `mapDispatchToProps` are referred to intern
 
 `connect` accepts four different parameters, all optional. By convention, they are called:
 
-1. `mapStateToProps?: Function`
+1. `mapStateToProps?: Function | Object`
 2. `mapDispatchToProps?: Function | Object`
 3. `mergeProps?: Function`
 4. `options?: Object`
@@ -72,6 +72,24 @@ The return of the `mapStateToProps` determine whether the connected component wi
 For more details on recommended usage of `mapStateToProps`, please refer to [our guide on using `mapStateToProps`](../using-react-redux/connect-mapstate).
 
 > You may define `mapStateToProps` and `mapDispatchToProps` as a factory function, i.e., you return a function instead of an object. In this case your returned function will be treated as the real `mapStateToProps` or `mapDispatchToProps`, and be called in subsequent calls. You may see notes on [Factory Functions](#factory-functions) or our guide on performance optimizations.
+
+#### Object Shorthand Form
+
+`mapStateToProps` may be an object where each field is an [selector](https://redux.js.org/recipes/computing-derived-data#selectorsindexjs).
+
+```js
+import { getTodos } from './selectors'
+
+const mapStateToProps = {
+  todos: getTodos,
+}
+
+export default connect(
+  mapStateToProps,
+)(TodoApp)
+```
+
+In this case, React-Redux binds the `state` and `ownProps` of your store to each of the selector using `createStructuredSelector` from [reselect](https://github.com/reduxjs/reselect).
 
 ### `mapDispatchToProps?: Object | (dispatch, ownProps?) => Object`
 
