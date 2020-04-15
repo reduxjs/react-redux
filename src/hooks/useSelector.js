@@ -1,8 +1,9 @@
-import { useReducer, useRef, useMemo, useContext, useDebugValue } from 'react'
+import { useRef, useMemo, useContext, useDebugValue } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
+import { useForceRender } from '../utils/customHooks'
 
 const refEquality = (a, b) => a === b
 
@@ -12,7 +13,7 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
-  const [, forceRender] = useReducer(s => s + 1, 0)
+  const forceRender = useForceRender()
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
