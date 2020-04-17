@@ -13,15 +13,23 @@ sidebar_label: Quick Start
 
 React Redux 7.1 requires **React 16.8.3 or later.**
 
-To use React Redux with your React app:
+### Using Create React App
 
-```bash
-npm install react-redux
+The recommended way to start new apps with React Redux is by using the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of [Redux Toolkit](https://redux-toolkit.js.org/).
+
+```sh
+npx create-react-app my-app --template redux
 ```
 
-or
+### An Existing React App
+
+To use React Redux with your React app, install it as a dependency:
 
 ```bash
+# If you use npm:
+npm install react-redux
+
+# Or if you use Yarn:
 yarn add react-redux
 ```
 

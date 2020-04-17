@@ -70,7 +70,7 @@ function useSelectorWithStoreAndSubscription(
         latestSubscriptionCallbackError.current = err
       }
 
-      forceRender({})
+      forceRender()
     }
 
     subscription.onStateChange = checkForUpdates
