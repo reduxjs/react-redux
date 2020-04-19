@@ -33,14 +33,14 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 ## `useSelector()`
 
 ```js
-const result : any = useSelector(selector : Function, equalityFn? : Function)
+const result: any = useSelector(selector: Function, equalityFn?: Function)
 ```
 
 Allows you to extract data from the Redux store state, using a selector function.
 
 > **Note**: The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
 
-The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-extracting-data-with-mapStateToProps.md) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders. `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
+The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-mapstate) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders (unless its reference hasn't changed since a previous render of the component so that a cached result can be returned by the hook without re-running the selector). `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
 
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
@@ -57,7 +57,7 @@ You may call `useSelector()` multiple times within a single function component. 
 ### Equality Comparisons and Updates
 
 When the function component renders, the provided selector function will be called and its result will be returned
-from the `useSelector()` hook. (A cached result may be returned if the selector has been run and hasn't changed.)
+from the `useSelector()` hook. (A cached result may be returned by the hook without re-running the selector if it's the same function reference as on a previous render of the component.)
 
 However, when an action is dispatched to the Redux store, `useSelector()` only forces a re-render if the selector result
 appears to be different than the last result. As of v7.1.0-alpha.5, the default comparison is a strict `===` reference

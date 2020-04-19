@@ -1,4 +1,4 @@
-import { useReducer, useRef, useMemo, useContext } from 'react'
+import { useReducer, useRef, useMemo, useContext, useDebugValue } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
@@ -21,16 +21,19 @@ function useSelectorWithStoreAndSubscription(
 
   const latestSubscriptionCallbackError = useRef()
   const latestSelector = useRef()
+  const latestStoreState = useRef()
   const latestSelectedState = useRef()
 
+  const storeState = store.getState()
   let selectedState
 
   try {
     if (
       selector !== latestSelector.current ||
+      storeState !== latestStoreState.current ||
       latestSubscriptionCallbackError.current
     ) {
-      selectedState = selector(store.getState())
+      selectedState = selector(storeState)
     } else {
       selectedState = latestSelectedState.current
     }
@@ -44,6 +47,7 @@ function useSelectorWithStoreAndSubscription(
 
   useIsomorphicLayoutEffect(() => {
     latestSelector.current = selector
+    latestStoreState.current = storeState
     latestSelectedState.current = selectedState
     latestSubscriptionCallbackError.current = undefined
   })
@@ -66,7 +70,7 @@ function useSelectorWithStoreAndSubscription(
         latestSubscriptionCallbackError.current = err
       }
 
-      forceRender({})
+      forceRender()
     }
 
     subscription.onStateChange = checkForUpdates
@@ -97,12 +101,16 @@ export function createSelectorHook(context = ReactReduxContext) {
     }
     const { store, subscription: contextSub } = useReduxContext()
 
-    return useSelectorWithStoreAndSubscription(
+    const selectedState = useSelectorWithStoreAndSubscription(
       selector,
       equalityFn,
       store,
       contextSub
     )
+
+    useDebugValue(selectedState)
+
+    return selectedState
   }
 }
 

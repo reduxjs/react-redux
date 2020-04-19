@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, { useCallback, useReducer } from 'react'
+import React, { useCallback, useReducer, useLayoutEffect } from 'react'
 import { createStore } from 'redux'
 import { renderHook, act } from '@testing-library/react-hooks'
 import * as rtl from '@testing-library/react'
@@ -154,6 +154,42 @@ describe('React', () => {
 
           expect(renderedItems).toEqual([0, 1])
         })
+      })
+
+      it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
+        store = createStore(c => c + 1, -1)
+
+        const Comp = () => {
+          const selector = useCallback(c => c, [])
+          const count = useSelector(selector)
+          renderedItems.push(count)
+          return <Child parentCount={count} />
+        }
+
+        const Child = ({ parentCount }) => {
+          useLayoutEffect(() => {
+            if (parentCount === 1) {
+              store.dispatch({ type: '' })
+            }
+          }, [parentCount])
+          return <div>{parentCount}</div>
+        }
+
+        rtl.render(
+          <ProviderMock store={store}>
+            <Comp />
+          </ProviderMock>
+        )
+
+        // The first render doesn't trigger dispatch
+        expect(renderedItems).toEqual([0])
+
+        // This dispatch triggers another dispatch in useLayoutEffect
+        rtl.act(() => {
+          store.dispatch({ type: '' })
+        })
+
+        expect(renderedItems).toEqual([0, 1, 2])
       })
 
       describe('performance optimizations and bail-outs', () => {

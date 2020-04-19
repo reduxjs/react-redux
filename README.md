@@ -11,11 +11,29 @@ Performant and flexible.
 
 ## Installation
 
-React Redux requires **React 16.8.3 or later.**
+### Using Create React App
 
+The recommended way to start new apps with React Redux is by using the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of [Redux Toolkit](https://redux-toolkit.js.org/).
+
+```sh
+npx create-react-app my-app --template redux
 ```
-npm install --save react-redux
+
+### An Existing React App
+
+React Redux 7.1 requires **React 16.8.3 or later.**
+
+To use React Redux with your React app, install it as a dependency:
+
+```bash
+# If you use npm:
+npm install react-redux
+
+# Or if you use Yarn:
+yarn add react-redux
 ```
+
+You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
 
 This assumes that you’re using [npm](http://npmjs.com/) package manager 
 with a module bundler like [Webpack](https://webpack.js.org/) or 

@@ -1,5 +1,5 @@
 ---
-id: version-7.1-hooks
+id: version-7.2-hooks
 title: Hooks
 sidebar_label: Hooks
 hide_title: true
@@ -34,7 +34,7 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 ## `useSelector()`
 
 ```js
-const result : any = useSelector(selector : Function, equalityFn? : Function)
+const result: any = useSelector(selector: Function, equalityFn?: Function)
 ```
 
 Allows you to extract data from the Redux store state, using a selector function.
@@ -46,7 +46,7 @@ The selector is approximately equivalent to the [`mapStateToProps` argument to `
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
 - The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
-- When an action is dispatched, `useSelector()` will do a shallow comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, the component will not re-render.
+- When an action is dispatched, `useSelector()` will do a reference comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, the component will not re-render.
 - The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector.
 - Extra care must be taken when using memoizing selectors (see examples below for more details).
 - `useSelector()` uses strict `===` reference equality checks by default, not shallow equality (see the following section for more details).
@@ -192,7 +192,7 @@ export const TodoCounterForIsDoneValue = ({ isDone }) => {
   )
 
   const numOfTodosWithIsDoneValue = useSelector(state =>
-    selectNumOfTodosWithIsDoneValue(state, isDone)
+    selectNumOfTodosWithIsDone(state, isDone)
   )
 
   return <div>{numOfTodosWithIsDoneValue}</div>
@@ -209,6 +209,8 @@ export const App = () => {
   )
 }
 ```
+
+## Removed: `useActions()`
 
 ## `useDispatch()`
 
@@ -286,6 +288,39 @@ export const CounterComponent = ({ value }) => {
   // EXAMPLE ONLY! Do not do this in a real app.
   // The component will not automatically update if the store state changes
   return <div>{store.getState()}</div>
+}
+```
+
+## Custom context
+
+The `<Provider>` component allows you to specify an alternate context via the `context` prop. This is useful if you're building a complex reusable component, and you don't want your store to collide with any Redux store your consumers' applications might use.
+
+To access an alternate context via the hooks API, use the hook creator functions:
+
+```js
+import React from 'react'
+import {
+  Provider,
+  createStoreHook,
+  createDispatchHook,
+  createSelectorHook
+} from 'react-redux'
+
+const MyContext = React.createContext(null)
+
+// Export your custom hooks if you wish to use them in other files.
+export const useStore = createStoreHook(MyContext)
+export const useDispatch = createDispatchHook(MyContext)
+export const useSelector = createSelectorHook(MyContext)
+
+const myStore = createStore(rootReducer)
+
+export function MyProvider({ children }) {
+  return (
+    <Provider context={MyContext} store={myStore}>
+      {children}
+    </Provider>
+  )
 }
 ```
 
@@ -370,21 +405,28 @@ import { useMemo } from 'react'
 
 export function useActions(actions, deps) {
   const dispatch = useDispatch()
-  return useMemo(() => {
-    if (Array.isArray(actions)) {
-      return actions.map(a => bindActionCreators(a, dispatch))
-    }
-    return bindActionCreators(actions, dispatch)
-  }, deps ? [dispatch, ...deps] : deps)
+  return useMemo(
+    () => {
+      if (Array.isArray(actions)) {
+        return actions.map(a => bindActionCreators(a, dispatch))
+      }
+      return bindActionCreators(actions, dispatch)
+    },
+    deps ? [dispatch, ...deps] : [dispatch]
+  )
 }
 ```
 
 ### Recipe: `useShallowEqualSelector()`
 
 ```js
-import { shallowEqual } from 'react-redux'
+import { useSelector, shallowEqual } from 'react-redux'
 
 export function useShallowEqualSelector(selector) {
   return useSelector(selector, shallowEqual)
 }
 ```
+
+### Additional considerations when using hooks
+
+There are some architectural trade offs to take into consideration when deciding whether to use hooks or not. Mark Erikson summarizes these nicely in his two blog posts [Thoughts on React Hooks, Redux, and Separation of Concerns](https://blog.isquaredsoftware.com/2019/07/blogged-answers-thoughts-on-hooks/) and [Hooks, HOCs, and Tradeoffs](https://blog.isquaredsoftware.com/2019/09/presentation-hooks-hocs-tradeoffs/).
