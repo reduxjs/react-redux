@@ -269,7 +269,7 @@ const areStatesEqual = () => false
 
 This would likely impact the other equality checks as well, depending on your `mapStateToProps` function.
 
-`areOwnPropsEqual: (next: Object, prev: Object) => boolean`
+#### `areOwnPropsEqual: (next: Object, prev: Object) => boolean`
 
 - default value: `shallowEqual: (objA, objB) => boolean`
   ( returns `true` when each field of the objects is equal )
