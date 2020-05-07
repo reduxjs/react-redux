@@ -97,7 +97,7 @@ export function createSelectorHook(context = ReactReduxContext) {
       : () => useContext(context)
   return function useSelector(selector, equalityFn = refEquality) {
     if (process.env.NODE_ENV !== 'production' && !selector) {
-      throw new Error(`You must pass a selector to useSelectors`)
+      throw new Error(`You must pass a selector to useSelector`)
     }
     const { store, subscription: contextSub } = useReduxContext()
 
