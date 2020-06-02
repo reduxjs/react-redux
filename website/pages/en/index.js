@@ -170,6 +170,34 @@ class Index extends React.Component {
 
     return (
       <div>
+        <div style={{ background: '#111', padding: '10px 0', lineHeight: 2 }}>
+          <div className="container">
+            <div
+              style={{
+                color: 'white',
+                fontWeight: 'bold',
+                textAlign: 'center'
+              }}
+            >
+              Black Lives Matter.
+              <a
+                style={{
+                  display: 'inline-block',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  margin: '0 10px',
+                  padding: '7px 20px',
+                  border: '1px solid white'
+                }}
+                href="https://support.eji.org/give/153413"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Support the Equal Justice Initiative.
+              </a>
+            </div>
+          </div>
+        </div>
         <HomeSplash language={language} />
         <div className="mainContainer">
           <div className="productShowcaseSection">
