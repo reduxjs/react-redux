@@ -83,7 +83,7 @@ As the official binding library for React and Redux, React Redux has a large com
 
 ### Community Resources
 
-- Discord channel: [#redux on Reactiflux](https://gist.github.com/gaearon/1d19088790e70ac32ea636c025ba424e) ([Reactiflux invite link](https://reactiflux.com))
+- Discord channel: [#redux on Reactiflux](https://discord.com/channels/102860784329052160/103538784460615680) ([Reactiflux invite link](https://reactiflux.com))
 - Stack Overflow topics: [Redux](https://stackoverflow.com/questions/tagged/redux), [React Redux](https://stackoverflow.com/questions/tagged/redux)
 - Reddit: [/r/reactjs](https://www.reddit.com/r/reactjs/), [/r/reduxjs](https://www.reddit.com/r/reduxjs/)
 - Github issues (bug reports and feature requests): https://github.com/reduxjs/react-redux/issues
