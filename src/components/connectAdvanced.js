@@ -471,7 +471,8 @@ export default function connectAdvanced(
     }
 
     // If we're in "pure" mode, ensure our wrapper component only re-renders when incoming props have changed.
-    const Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
+    // Applying React.memo twice ensures that props object reference doesn't change unless some of the props has changed.
+    const Connect = pure ? React.memo(React.memo(ConnectFunction)) : ConnectFunction
 
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = displayName
