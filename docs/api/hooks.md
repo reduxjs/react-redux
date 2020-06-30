@@ -219,7 +219,7 @@ const dispatch = useDispatch()
 
 This hook returns a reference to the `dispatch` function from the Redux store. You may use it to dispatch actions as needed.
 
-*Note: like [React's `useReducer`](https://reactjs.org/docs/hooks-reference.html#usereducer), the returned `dispatch` function identity is stable and won't change on re-renders.*
+*Note: like in [React's `useReducer`](https://reactjs.org/docs/hooks-reference.html#usereducer), the returned `dispatch` function identity is stable and won't change on re-renders (unless you change the `store` being passed to the `<Provider>`, which would be extremely unusual).*
 
 #### Examples
 
