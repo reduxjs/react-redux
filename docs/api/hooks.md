@@ -219,6 +219,8 @@ const dispatch = useDispatch()
 
 This hook returns a reference to the `dispatch` function from the Redux store. You may use it to dispatch actions as needed.
 
+*Note: like in [React's `useReducer`](https://reactjs.org/docs/hooks-reference.html#usereducer), the returned `dispatch` function identity is stable and won't change on re-renders (unless you change the `store` being passed to the `<Provider>`, which would be extremely unusual).*
+
 #### Examples
 
 ```jsx
@@ -239,7 +241,7 @@ export const CounterComponent = ({ value }) => {
 }
 ```
 
-When passing a callback using `dispatch` to a child component, it is recommended to memoize it with `useCallback`, since otherwise child components may render unnecessarily due to the changed reference.
+Reminder: when passing a callback using `dispatch` to a child component, you should memoize it with [`useCallback`](https://reactjs.org/docs/hooks-reference.html#usecallback), just like you should memoize any passed callback. This avoids unnecesarry rendering of child components due to the changed callback reference. You can safely pass `[dispatch]` in the dependency array for the `useCallback` call - since `dispatch` won't change, the callback will be reused properly (as it should). For example:
 
 ```jsx
 import React, { useCallback } from 'react'
