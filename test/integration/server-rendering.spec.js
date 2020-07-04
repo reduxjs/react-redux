@@ -67,7 +67,7 @@ describe('React', () => {
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-      const markup = renderToString(
+      renderToString(
         <Provider store={store}>
           <Greeter greeted="world" />
         </Provider>
