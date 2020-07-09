@@ -434,8 +434,6 @@ describe('React', () => {
         }))
       })
 
-      afterEach(() => rtl.cleanup())
-
       it('subscribes to the correct store', () => {
         const nestedContext = React.createContext(null)
         const useCustomSelector = createSelectorHook(nestedContext)
