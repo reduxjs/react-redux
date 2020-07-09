@@ -52,7 +52,7 @@ describe('React', () => {
         })
       })
 
-      describe('lifeycle interactions', () => {
+      describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
           store = createStore(c => c + 1, -1)
 
