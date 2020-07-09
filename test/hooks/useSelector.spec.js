@@ -52,7 +52,7 @@ describe('React', () => {
         })
       })
 
-      describe('lifeycle interactions', () => {
+      describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
           store = createStore(c => c + 1, -1)
 
@@ -433,8 +433,6 @@ describe('React', () => {
           count: count + 2
         }))
       })
-
-      afterEach(() => rtl.cleanup())
 
       it('subscribes to the correct store', () => {
         const nestedContext = React.createContext(null)
