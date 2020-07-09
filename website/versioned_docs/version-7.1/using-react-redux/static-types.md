@@ -30,7 +30,7 @@ export type RootState = ReturnType<typeof rootReducer>
 // {posts: PostsState, comments: CommentsState, users: UsersState}
 ```
 
-### Typing the useSelector hook
+### Typing the `useSelector` hook
 
 When writing selector functions for use with `useSelector`, you should explicitly define the type of the `state` parameter. TS should be able to then infer the return type of the selector, which will be reused as the return type of the `useSelector` hook:
 
@@ -46,7 +46,7 @@ const selectIsOn = (state: RootState) => state.isOn
 const isOn = useSelector(selectIsOn)
 ```
 
-If you want to avoid repeating the `state` type declaration, you can define a typed `useSelect` hook using a helper type exported by `@types/react-redux`:
+If you want to avoid repeating the `state` type declaration, you can define a typed `useSelector` hook using a helper type exported by `@types/react-redux`:
 
 ```ts
 // reducer.ts
