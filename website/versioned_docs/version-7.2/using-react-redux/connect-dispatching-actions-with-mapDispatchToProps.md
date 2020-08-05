@@ -152,7 +152,7 @@ If your `mapDispatchToProps` function is declared as taking two parameters, it w
 
 This means, instead of re-binding new `props` to action dispatchers upon component re-rendering, you may do so when your component's `props` change.
 
-**Binds on component re-rendering**
+**Binds on component mount**
 
 ```js
 render() {
