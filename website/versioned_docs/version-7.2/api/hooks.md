@@ -242,7 +242,7 @@ export const CounterComponent = ({ value }) => {
 }
 ```
 
-Reminder: when passing a callback using `dispatch` to a child component, you should memoize it with [`useCallback`](https://reactjs.org/docs/hooks-reference.html#usecallback), just like you should memoize any passed callback. This avoids unnecesarry rendering of child components due to the changed callback reference. You can safely pass `[dispatch]` in the dependency array for the `useCallback` call - since `dispatch` won't change, the callback will be reused properly (as it should). For example:
+Reminder: when passing a callback using `dispatch` to a child component, you should memoize it with [`useCallback`](https://reactjs.org/docs/hooks-reference.html#usecallback), just like you should memoize any passed callback. This avoids unnecessary rendering of child components due to the changed callback reference. You can safely pass `[dispatch]` in the dependency array for the `useCallback` call - since `dispatch` won't change, the callback will be reused properly (as it should). For example:
 
 ```jsx
 import React, { useCallback } from 'react'
