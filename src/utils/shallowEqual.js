@@ -1,6 +1,9 @@
 function is(x, y) {
   if (x === y) {
-    return x !== 0 || y !== 0 || 1 / x === 1 / y
+    // Ensure:
+    //  1). {x or y} != {+0 or -0}
+    //  2). +0 != -0
+    return x !== 0 || 1 / x === 1 / y
   } else {
     return x !== x && y !== y
   }
