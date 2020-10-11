@@ -1,4 +1,52 @@
 /* your custom css */
+:root {
+  --ifm-color-primary: #764abc;
+  --ifm-color-primary-dark: #6a43a9;
+  --ifm-color-primary-darker: #5e3b96;
+  --ifm-color-primary-darkest: #533484;
+  --ifm-color-primary-light: #845cc3;
+  --ifm-color-primary-lighter: #916ec9;
+  --ifm-color-primary-lightest: #9f80d0;
+
+  --ifm-code-font-size: 95%;
+  --ifm-code-border-radius: 3px;
+  --ifm-code-background: rgba(27, 31, 35, 0.05);
+
+  --ifm-blockquote-color: #ecf4f9;
+  --ifm-blockquote-color-dark: #cbddea;
+
+  --ifm-code-padding-vertical: 0.1rem;
+  --ifm-code-padding-horizontal: 0.2rem;
+
+  --ifm-tabs-padding-vertical: 0.2rem;
+  --ifm-tabs-padding-horizontal: 0.4rem;
+
+  --ifm-pre-background: rgb(39, 40, 34);
+  --ifm-alert-color: black;
+
+  --ra-admonition-color: #ecf4f9;
+  --ra-admonition-color-dark: #2a98b9;
+
+  --ra-admonition-color-important: #2a98b9;
+
+  --ra-admonition-color-success: #f1fdf9;
+  --ra-admonition-color-success-dark: #00bf88;
+
+  --ra-admonition-color-caution: #fffbf5;
+  --ra-admonition-color-caution-dark: #f0ad4e;
+
+  --ra-admonition-color-error: #fff2f2;
+  --ra-admonition-color-error-dark: #d9534f;
+
+  --ra-admonition-icon-color: black !important;
+}
+:root[data-theme='dark'] .hero.hero--primary {
+  --ifm-hero-background-color: #593d88;
+  --ifm-hero-text-color: #ffffff;
+}
+html[data-theme='dark'] blockquote {
+  border-left-color: var(--ifm-color-primary);
+}
 
 header.postHeader:empty {
   display: none;
