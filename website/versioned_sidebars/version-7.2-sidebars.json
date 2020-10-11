@@ -1,0 +1,23 @@
+{
+  "version-7.2/docs": {
+    "Introduction": [
+      "version-7.2/introduction/quick-start",
+      "version-7.2/introduction/basic-tutorial",
+      "version-7.2/introduction/why-use-react-redux"
+    ],
+    "Using React Redux": [
+      "version-7.2/using-react-redux/connect-mapstate",
+      "version-7.2/using-react-redux/connect-mapdispatch",
+      "version-7.2/using-react-redux/accessing-store",
+      "version-7.2/using-react-redux/static-typing"
+    ],
+    "API Reference": [
+      "version-7.2/api/connect",
+      "version-7.2/api/provider",
+      "version-7.2/api/connect-advanced",
+      "version-7.2/api/batch",
+      "version-7.2/api/hooks"
+    ],
+    "Guides": ["version-7.2/troubleshooting"]
+  }
+}

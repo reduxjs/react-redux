@@ -18,7 +18,7 @@ const siteConfig = {
           path: '../docs',
           sidebarPath: require.resolve('./sidebars.json'),
           routeBasePath: '/',
-          include: ['{api,introduction,using-react-redux}/*.{md,mdx}'], // no other way to exclude node_modules
+          include: ['{api,introduction,using-react-redux}/*.{md,mdx}', 'troubleshooting.md'], // no other way to exclude node_modules
         },
         theme: {
           customCss: [require.resolve('./static/css/custom.css')],

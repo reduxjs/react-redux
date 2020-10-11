@@ -1,9 +1,8 @@
 ---
-id: version-7.2-connect
+id: connect
 title: Connect
 sidebar_label: connect()
 hide_title: true
-original_id: connect
 ---
 
 # `connect()`

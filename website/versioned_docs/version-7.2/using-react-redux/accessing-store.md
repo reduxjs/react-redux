@@ -1,9 +1,8 @@
 ---
-id: version-7.2-accessing-store
+id: accessing-store
 title: Accessing the Store
 hide_title: true
 sidebar_label: Accessing the Store
-original_id: accessing-store
 ---
 
 # Accessing the Store

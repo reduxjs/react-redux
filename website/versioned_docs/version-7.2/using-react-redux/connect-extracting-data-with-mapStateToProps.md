@@ -1,9 +1,8 @@
 ---
-id: version-7.2-connect-mapstate
-title: Connect: Extracting Data with mapStateToProps
+id: connect-mapstate
+title: "Connect: Extracting Data with mapStateToProps"
 hide_title: true
-sidebar_label: Connect: Extracting Data with mapStateToProps
-original_id: connect-mapstate
+sidebar_label: "Connect: Extracting Data with mapStateToProps"
 ---
 
 # Connect: Extracting Data with `mapStateToProps`
@@ -66,7 +65,7 @@ function mapStateToProps(state, ownProps) {
 }
 
 // Later, in your application, a parent component renders:
-<ConnectedTodo id={123} />
+;<ConnectedTodo id={123} />
 // and your component receives props.id, props.todo, and props.visibilityFilter
 ```
 
@@ -93,7 +92,7 @@ function mapStateToProps(state) {
 // component will receive: props.a, props.todos, and props.filter
 ```
 
-> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage: Factory Functions](../api/connect.md) section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
+> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage](./) section of the docs for more details, as well as [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
 
 ## Usage Guidelines
 
@@ -103,7 +102,7 @@ function mapStateToProps(state) {
 
 ### Use Selector Functions to Extract and Transform Data
 
-We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree. Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Computing Derived Data](https://redux.js.org/recipes/computing-derived-data) page for more details on why and how to use selectors.)
+We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree. Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Performance](./) page for more details on why and how to use selectors.)
 
 ### `mapStateToProps` Functions Should Be Fast
 
@@ -113,7 +112,7 @@ As part of the "re-shaping data" idea, `mapStateToProps` functions frequently ne
 
 ### `mapStateToProps` Functions Should Be Pure and Synchronous
 
-Much like a Redux reducer, a `mapStateToProps` function should always be 100% pure and synchronous. It should only take `state` (and `ownProps`) as arguments, and return the data the component needs as props without mutating those arguments. It should _not_ be used to trigger asynchronous behavior like AJAX calls for data fetching, and the functions should not be declared as `async`.
+Much like a Redux reducer, a `mapStateToProps` function should always be 100% pure and synchronous. It should simply take `state` (and `ownProps`) as arguments, and return the data the component needs as props. It should _not_ be used to trigger asynchronous behavior like AJAX calls for data fetching, and the functions should not be declared as `async`.
 
 ## `mapStateToProps` and Performance
 
@@ -150,7 +149,7 @@ There are a few ways to approach this:
 
 - Some transformations could be calculated in an action creator or reducer, and the transformed data could be kept in the store
 - Transformations can also be done in a component's `render()` method
-- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions]() to ensure the transformation is only run when the input values have changed.
+- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions](https://redux.js.org/recipes/computing-derived-data#creating-a-memoized-selector) to ensure the transformation is only run when the input values have changed.
 
 #### Immutable.js Performance Concerns
 
@@ -185,7 +184,7 @@ function mapStateToProps(state) {
 }
 const mapStateToProps = (state, ownProps = {}) => {
   console.log(state) // state
-  console.log(ownProps) // {}
+  console.log(ownProps) // undefined
 }
 ```
 
@@ -223,7 +222,7 @@ function mapStateToProps(...args) {
 
 **Q&A**
 
-- [Why Is My Component Re-Rendering Too Often?](https://redux.js.org/faq/react-redux#why-is-my-component-re-rendering-too-often)
-- [Why isn't my component re-rendering, or my mapStateToProps running](https://redux.js.org/faq/react-redux#why-isnt-my-component-re-rendering-or-my-mapstatetoprops-running)
-- [How can I speed up my mapStateToProps?](https://redux.js.org/faq/react-redux#why-is-my-component-re-rendering-too-often)
-- [Should I only connect my top component, or can I connect multiple components in my tree?](https://redux.js.org/faq/react-redux#why-is-my-component-re-rendering-too-often)
+- [Why Is My Component Re-Rendering Too Often?](https://redux.js.org/faq/react-redux/#why-is-my-component-re-rendering-too-often)
+- [Why isn't my component re-rendering, or my mapStateToProps running](https://redux.js.org/faq/react-redux/#why-isnt-my-component-re-rendering-or-my-mapstatetoprops-running)
+- [How can I speed up my mapStateToProps?](https://redux.js.org/faq/react-redux/#how-can-i-speed-up-my-mapstatetoprops)
+- [Should I only connect my top component, or can I connect multiple components in my tree?](https://redux.js.org/faq/react-redux/#should-i-only-connect-my-top-component-or-can-i-connect-multiple-components-in-my-tree)

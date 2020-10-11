@@ -1,9 +1,8 @@
 ---
-id: version-5.x-troubleshooting
+id: troubleshooting
 title: Troubleshooting
 sidebar_label: Troubleshooting
 hide_title: true
-original_id: troubleshooting
 ---
 
 ## Troubleshooting

@@ -1,9 +1,8 @@
 ---
-id: version-5.x-basic-tutorial
+id: basic-tutorial
 title: Basic Tutorial
 hide_title: true
 sidebar_label: Basic Tutorial
-original_id: basic-tutorial
 ---
 
 # Basic Tutorial

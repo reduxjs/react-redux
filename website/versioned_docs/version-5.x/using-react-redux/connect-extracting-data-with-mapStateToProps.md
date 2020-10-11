@@ -1,9 +1,8 @@
 ---
-id: version-5.x-connect-mapstate
-title: Connect: Extracting Data with mapStateToProps
+id: connect-mapstate
+title: "Connect: Extracting Data with mapStateToProps"
 hide_title: true
-sidebar_label: Connect: Extracting Data with mapStateToProps
-original_id: connect-mapstate
+sidebar_label: "Connect: Extracting Data with mapStateToProps"
 ---
 
 # Connect: Extracting Data with `mapStateToProps`
@@ -94,7 +93,7 @@ function mapStateToProps(state) {
 ```
 
 
-> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage]() section of the docs for more details, as well as  [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
+> Note: In advanced scenarios where you need more control over the rendering performance, `mapStateToProps` can also return a function. In this case, that function will be used as the final `mapStateToProps` for a particular component instance. This allows you to do per-instance memoization. See the [Advanced Usage](./) section of the docs for more details, as well as  [PR #279](https://github.com/reduxjs/react-redux/pull/279) and the tests it adds. Most apps never need this.
 
 
 ## Usage Guidelines
@@ -107,7 +106,7 @@ function mapStateToProps(state) {
 
 ### Use Selector Functions to Extract and Transform Data
 
-We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree.  Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Performance]() page for more details on why and how to use selectors.)
+We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree.  Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Performance](./) page for more details on why and how to use selectors.)
 
 
 ### `mapStateToProps` Functions Should Be Fast
@@ -151,7 +150,7 @@ Many common operations result in new object or array references being created:
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
-Put these operations in [memoized selector functions]() to ensure that they only run if the input values have changed.  This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
+Put these operations in [memoized selector functions](https://redux.js.org/recipes/computing-derived-data#creating-a-memoized-selector) to ensure that they only run if the input values have changed.  This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
 
 
 
@@ -163,7 +162,7 @@ There are a few ways to approach this:
 
 - Some transformations could be calculated in an action creator or reducer, and the transformed data could be kept in the store
 - Transformations can also be done in a component's `render()` method
-- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions]() to ensure the transformation is only run when the input values have changed.
+- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions](https://redux.js.org/recipes/computing-derived-data#creating-a-memoized-selector) to ensure the transformation is only run when the input values have changed.
 
 
 #### Immutable.js Performance Concerns

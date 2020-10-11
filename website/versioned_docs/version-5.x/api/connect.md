@@ -1,8 +1,7 @@
 ---
-id: version-5.x-connect
+id: connect
 title: Connect
 sidebar_label: connect()
-original_id: connect
 ---
 
 ## connect
