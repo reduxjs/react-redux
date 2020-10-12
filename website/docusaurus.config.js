@@ -85,7 +85,8 @@ const siteConfig = {
       title: 'React Redux',
       logo: {
         alt: 'Redux Logo',
-        src: 'img/redux_white.svg',
+        src: 'img/redux.svg',
+        srcDark: 'img/redux_white.svg',
       },
       items: [
         { to: 'introduction/quick-start', label: 'Quick Start', position: 'right' },
