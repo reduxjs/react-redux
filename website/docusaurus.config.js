@@ -59,8 +59,10 @@ const siteConfig = {
   scripts: [
     '/scripts/sidebarScroll.js',
     '/scripts/codeblock.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
-    'https://buttons.github.io/buttons.js'
+    {
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
+      async: true,
+    },
   ],
 
   // You may provide arbitrary config keys to be used as needed by your
@@ -92,7 +94,7 @@ const siteConfig = {
         { to: 'introduction/quick-start', label: 'Quick Start', position: 'right' },
         { to: 'using-react-redux/connect-mapstate', label: 'Using React Redux', position: 'right' },
         { to: 'api/connect', label: 'API', position: 'right' },
-        { href: 'https://www.github.com/reduxjs/react-redux', label: 'Github', position: 'right' },
+        { href: 'https://www.github.com/reduxjs/react-redux', label: 'Github', position: 'right', className: 'github' },
         { href: '/introduction/quick-start#help-and-discussion', label: 'Need help?', position: 'right' }
       ],
     },
@@ -148,7 +150,7 @@ const siteConfig = {
             {
               html: `
                 <a
-                  className="github-button"
+                  class="github-button"
                   href="https://github.com/reduxjs/react-redux"
                   data-icon="octicon-star"
                   data-count-href="/reduxjs/react-redux/stargazers"

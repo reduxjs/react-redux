@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import classnames from 'classnames'
 import Layout from '@theme/Layout'
 import Link from '@docusaurus/Link'
@@ -101,6 +101,13 @@ const LogoImage = () => {
 function Home() {
   const context = useDocusaurusContext()
   const { siteConfig = {} } = context
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://buttons.github.io/buttons.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, [])
+
   return (
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
       <div style={{ background: '#111', padding: '10px 0', lineHeight: 2 }}>
