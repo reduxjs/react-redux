@@ -61,8 +61,12 @@
   --ifm-color-primary-light: #b97cfd;
   --ifm-color-primary-lighter: #cc8ffc;
   --ifm-color-primary-lightest: #fcf2ff;
+  --ifm-button-color: #ffffff;
   --ifm-blockquote-color: #1a1d1e;
   --ifm-blockquote-color-dark: #6d1cac;
+}
+:root[data-theme='dark'] .hero .button--primary {
+  --ifm-button-background-color: #764abc;
 }
 :root[data-theme='dark'] .hero.hero--primary {
   --ifm-hero-background-color: #593d88;

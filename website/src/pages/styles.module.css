@@ -92,7 +92,7 @@ html[data-theme='dark'] .blockImage img {
 
 .getStarted:hover {
   background: #fff;
-  color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary-dark);
 }
 
 .secondTitle {
