@@ -116,9 +116,6 @@ a.contents__link.contents__link--active {
   font-weight: 600;
 }
 
-a:visited {
-  color: var(--ifm-color-primary);
-}
 .hero.hero--primary {
   --ifm-hero-background-color: #ffffff;
   --ifm-hero-text-color: #764abc;
