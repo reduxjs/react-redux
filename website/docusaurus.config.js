@@ -27,6 +27,7 @@ const siteConfig = {
     ]
   ],
   title: 'React Redux', // Title for your website.
+  onBrokenLinks: 'throw',
   tagline: 'Official React bindings for Redux',
   url: 'https://react-redux.js.org', // Your website URL
   baseUrl: '/',
