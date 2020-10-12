@@ -21,7 +21,11 @@ const siteConfig = {
           include: ['{api,introduction,using-react-redux}/*.{md,mdx}', 'troubleshooting.md'], // no other way to exclude node_modules
         },
         theme: {
-          customCss: [require.resolve('./static/css/custom.css')],
+          customCss: [
+            require.resolve('./static/css/custom.css'),
+            require.resolve('./static/css/404.css'),
+            require.resolve('./static/css/codeblock.css')
+          ],
         },
       }
     ]
