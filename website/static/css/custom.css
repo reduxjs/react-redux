@@ -134,6 +134,11 @@ html[data-theme='dark'] blockquote {
   display: flex;
   font-size: 0;
 }
+
+.navbar__items .dropdown .navbar__link--active {
+  color: var(--ifm-navbar-link-color);
+}
+
 html[data-theme='dark'] .navbar__items a[href*='github']::before {
   filter: invert(0);
 }
