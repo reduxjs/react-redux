@@ -29,10 +29,6 @@
   width: 100%;
 }
 
-.featuresLight {
-  background: var(--ifm-blockquote-color);
-}
-
 .featureBlock {
   margin-top: 40px;
 }

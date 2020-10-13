@@ -155,7 +155,7 @@ function Home() {
       </header>
       <main>
         {features && features.length && (
-          <section className={`${styles.features} ${styles.featuresLight}`}>
+          <section className={styles.features}>
             <div className={classnames('container', styles.featureBlock)}>
               <div className="row">
                 {features.map(({ image, title, content }, idx) => (
