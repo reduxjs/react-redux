@@ -93,7 +93,6 @@ const siteConfig = {
       logo: {
         alt: 'Redux Logo',
         src: 'img/redux.svg',
-        srcDark: 'img/redux_white.svg',
       },
       items: [
         {

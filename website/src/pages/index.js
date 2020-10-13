@@ -86,18 +86,6 @@ const otherLibraries = [
   },
 ]
 
-const LogoImage = () => {
-  const { isDarkTheme } = useThemeContext();
-  return (
-    <img
-      src={isDarkTheme ? 'img/redux_white.svg' : 'img/redux.svg'}
-      alt="Redux logo"
-      width="100"
-      height="100"
-    />
-  );
-}
-
 function Home() {
   const context = useDocusaurusContext()
   const { siteConfig = {} } = context
@@ -141,7 +129,12 @@ function Home() {
       <header className={classnames('hero hero--primary', styles.heroBanner)}>
         <div className="container">
           <div className={styles.title}>
-            <LogoImage />
+            <img
+              src="img/redux_white.svg"
+              alt="Redux logo"
+              width="100"
+              height="100"
+            />
             <h1 className={`${styles.projectTitle} hero__title`}>
               {siteConfig.title}
             </h1>
@@ -150,7 +143,7 @@ function Home() {
           <div className={styles.buttons}>
             <Link
               className={classnames(
-                'button button--primary button--lg',
+                'button button--secondary button--lg',
                 styles.getStarted,
               )}
               to={useBaseUrl('introduction/quick-start')}
@@ -172,7 +165,7 @@ function Home() {
                         {image}
                       </div>
                     )}
-                    <h2 className={`text--center text--primary ${styles.featureTitle}`}>
+                    <h2 className={`text--center ${styles.featureTitle}`}>
                       {title}
                     </h2>
                     <div className={styles.featureContent}>{content}</div>
@@ -187,7 +180,7 @@ function Home() {
             <div className="container">
               <div className="row">
                 <div className="col">
-                  <h2 className={`text--center text--primary ${styles.secondTitle}`}>
+                  <h2 className={`text--center ${styles.secondTitle}`}>
                     Other Libraries from the Redux Team
                   </h2>
                 </div>

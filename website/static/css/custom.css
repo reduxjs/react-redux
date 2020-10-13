@@ -65,9 +65,7 @@
   --ifm-blockquote-color: #1a1d1e;
   --ifm-blockquote-color-dark: #6d1cac;
 }
-:root[data-theme='dark'] .hero .button--primary {
-  --ifm-button-background-color: #764abc;
-}
+
 :root[data-theme='dark'] .hero.hero--primary {
   --ifm-hero-background-color: #593d88;
   --ifm-hero-text-color: #ffffff;
@@ -117,38 +115,16 @@ a.contents__link.contents__link--active {
 }
 
 .hero.hero--primary {
-  --ifm-hero-background-color: #ffffff;
-  --ifm-hero-text-color: #764abc;
+  --ifm-hero-background-color: #764abc;
+  --ifm-hero-text-color: #ffffff;
 }
-.hero__subtitle {
-  color: black;
-}
-html[data-theme='dark'] .hero__subtitle {
-  color: #ffffff;
-}
+
 html[data-theme='dark'] blockquote {
   border-left-color: var(--ifm-color-primary);
 }
 
-.navbar__items a[href*='github'] {
-  display: flex;
-  font-size: 0;
-}
-
 .navbar__items .dropdown .navbar__link--active {
   color: var(--ifm-navbar-link-color);
-}
-
-html[data-theme='dark'] .navbar__items a[href*='github']::before {
-  filter: invert(0);
-}
-
-.navbar__items a[href*='github']::before {
-  content: "";
-  width: 32px;
-  height: 32px;
-  filter: invert(100%);
-  background: url(/img/github-brands.svg);
 }
 
 .menu__link {
