@@ -1,0 +1,89 @@
+/**
+ * CSS files with the .module.css suffix will be treated as CSS modules
+ * and scoped locally.
+ */
+
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 966px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.features {
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+  width: 100%;
+}
+
+.featureBlock {
+  margin-top: 40px;
+}
+
+.blockImage {
+  margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80px;
+}
+
+html[data-theme='dark'] .blockImage img {
+  filter: invert(100%);
+}
+
+.blockImage svg {
+  fill: currentColor;
+  width: 60px;
+  height: 60px;
+}
+
+.featureTitle {
+  font-size: 30px;
+  padding: 10px 0;
+}
+
+@media screen and (max-width: 966px) {
+  .featureContent {
+    text-align: center;
+  }
+}
+
+.title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.projectTitle {
+  margin: 0.3em 0;
+}
+
+.featureAnchor svg {
+  margin-left: 5px;
+  max-width: 16px;
+  max-height: 16px;
+  fill: currentColor;
+}
+
+.getStarted:hover {
+  background: #fff;
+  color: var(--ifm-color-primary-dark);
+}
+
+.secondTitle {
+  font-size: 30px;
+  margin-bottom: 55px;
+}

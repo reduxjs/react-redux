@@ -1,9 +1,8 @@
 ---
-id: version-5.x-connect-advanced
+id: connect-advanced
 title: connectAdvanced
 sidebar_label: connectAdvanced()
 hide_title: true
-original_id: connect-advanced
 ---
 
 ## connectAdvanced

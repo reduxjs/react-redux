@@ -1,8 +1,8 @@
 ---
 id: connect-mapstate
-title: Connect: Extracting Data with mapStateToProps
+title: "Connect: Extracting Data with mapStateToProps"
 hide_title: true
-sidebar_label: Connect: Extracting Data with mapStateToProps
+sidebar_label: "Connect: Extracting Data with mapStateToProps"
 ---
 
 # Connect: Extracting Data with `mapStateToProps`
@@ -149,7 +149,7 @@ There are a few ways to approach this:
 
 - Some transformations could be calculated in an action creator or reducer, and the transformed data could be kept in the store
 - Transformations can also be done in a component's `render()` method
-- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions]() to ensure the transformation is only run when the input values have changed.
+- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions](https://redux.js.org/recipes/computing-derived-data#creating-a-memoized-selector) to ensure the transformation is only run when the input values have changed.
 
 #### Immutable.js Performance Concerns
 

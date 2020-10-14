@@ -1,270 +1,190 @@
 /* your custom css */
+:root {
+  --ifm-color-primary: #764abc;
+  --ifm-color-primary-dark: #6a43a9;
+  --ifm-color-primary-darker: #5e3b96;
+  --ifm-color-primary-darkest: #533484;
+  --ifm-color-primary-light: #845cc3;
+  --ifm-color-primary-lighter: #916ec9;
+  --ifm-color-primary-lightest: #9f80d0;
 
-header.postHeader:empty {
-  display: none;
+  --ifm-code-font-size: 95%;
+  --ifm-code-border-radius: 3px;
+  --ifm-code-background: rgba(27, 31, 35, 0.05);
+
+  --ifm-blockquote-color: #ecf4f9;
+  --ifm-blockquote-color-dark: #cbddea;
+
+  --ifm-code-padding-vertical: 0.1rem;
+  --ifm-code-padding-horizontal: 0.2rem;
+
+  --ifm-tabs-padding-vertical: 0.2rem;
+  --ifm-tabs-padding-horizontal: 0.4rem;
+
+  --ifm-pre-background: rgb(39, 40, 34);
+  --ifm-alert-color: black;
+
+  --ra-admonition-color: #ecf4f9;
+  --ra-admonition-color-dark: #2a98b9;
+
+  --ra-admonition-color-important: #2a98b9;
+
+  --ra-admonition-color-success: #f1fdf9;
+  --ra-admonition-color-success-dark: #00bf88;
+
+  --ra-admonition-color-caution: #fffbf5;
+  --ra-admonition-color-caution-dark: #f0ad4e;
+
+  --ra-admonition-color-error: #fff2f2;
+  --ra-admonition-color-error-dark: #d9534f;
+
+  --ra-admonition-icon-color: black !important;
 }
 
-header.postHeader:empty + article h1 {
-  margin-top: 0;
+@media screen and (max-width: 996px) {
+  :root {
+    --ifm-font-size-base: 15px;
+  }
 }
 
-.post article a {
-  /* add underlines to links in blocks of text for a11y */
-  color: $primaryColor;
-  text-decoration: underline;
-  overflow: hidden;
-  position: relative;
-  transition: outline-offset 0.2s ease-in-out;
+@media screen and (min-width: 997px) {
+  :root {
+    --ifm-font-size-base: 17px;
+  }
 }
 
-.post article a:hover,
-.post article a:focus,
-.post article a:active {
-  /* change color and bg to display state change in more than one way for a11y */
-  background-color: $secondaryColor;
-  color: white;
-  box-shadow: 0 0 0 2px $secondaryColor;
-  outline: none;
-  text-decoration: underline;
-  overflow: hidden;
-  position: relative;
-  transition: outline-offset 0.2s ease-in-out;
+:root[data-theme='dark'] {
+  --ifm-color-primary: #ba8fff;
+  --ifm-color-primary-dark: #7431ca;
+  --ifm-color-primary-darker: #6d1cac;
+  --ifm-color-primary-darkest: #730c9a;
+  --ifm-color-primary-light: #b97cfd;
+  --ifm-color-primary-lighter: #cc8ffc;
+  --ifm-color-primary-lightest: #fcf2ff;
+  --ifm-button-color: #ffffff;
+  --ifm-blockquote-color: #1a1d1e;
+  --ifm-blockquote-color-dark: #6d1cac;
 }
 
-.post article blockquote {
-  color: black;
-  background-color: $accentColor4;
-  border-left: 8px solid $accentColor5;
+:root[data-theme='dark'] .hero.hero--primary {
+  --ifm-hero-background-color: #593d88;
+  --ifm-hero-text-color: #ffffff;
+}
+blockquote {
+  color: var(--ifm-font-base-color);
+  background-color: var(--ifm-blockquote-color);
+  border-left: 6px solid var(--ifm-blockquote-color-dark);
+  border-radius: var(--ifm-global-radius);
 }
 
-.post article blockquote a {
-  /* add underlines to links in blocks of text for a11y */
-  color: black;
-  text-decoration: underline;
-  overflow: hidden;
-  position: relative;
-  transition: outline-offset 0.2s ease-in-out;
+html[data-theme='dark'] blockquote {
+  border-left-color: var(--ifm-color-primary);
 }
 
-.post article blockquote a:hover,
-.post article blockquote a:focus,
-.post article blockquote a:active {
-  /* change color and bg to display state change in more than one way for a11y */
-  background-color: $accentColor6;
-  color: white;
-  box-shadow: 0 0 0 2px $accentColor6;
-  outline: none;
-  text-decoration: underline;
-}
-
-.post article blockquote {
-  color: black;
-  background-color: $accentColor4;
-  border-left: 8px solid $accentColor5;
-}
-
-.post article blockquote a {
-  /* add underlines to links in blocks of text for a11y */
-  color: black;
-  text-decoration: underline;
-  overflow: hidden;
-  position: relative;
-  transition: outline-offset 0.2s ease-in-out;
-}
-
-.post article blockquote a:hover,
-.post article blockquote a:focus,
-.post article blockquote a:active {
-  /* change color and bg to display state change in more than one way for a11y */
-  background-color: $accentColor6;
-  color: white;
-  box-shadow: 0 0 0 2px $accentColor6;
-  outline: none;
-  text-decoration: underline;
-}
-
-.post article .hash-link {
-  /* add underlines to links in blocks of text for a11y */
-  color: $accentColor1;
-  transition: outline-offset 0.2s ease-in-out;
-  opacity: 1;
-}
-
-.post article .hash-link:hover,
-.post article .hash-link:focus,
-.post article .hash-link:active {
-  /* change color and bg to display state change in more than one way for a11y */
-  color: $secondaryColor;
-  background-color: white;
-  box-shadow: 0 0 0 0 $accentColor6;
-  transition: outline-offset 0.2s ease-in-out;
-}
-
-.hash-link .hash-link-icon {
-  fill: currentColor;
-}
-
-.fixedHeaderContainer header .headerTitleWithLogo {
-  color: white;
-  display: block !important;
-}
-
-.navigationSlider .slidingNav ul.nav-site a {
-  color: white;
-  font-weight: 400;
-}
-
-.navigationSlider .slidingNav ul.nav-site a:hover,
-.navigationSlider .slidingNav ul.nav-site a:focus,
-.navigationSlider .slidingNav ul.nav-site a:active {
-  color: white;
-  font-weight: 400;
-  text-decoration: underline;
-}
-
-.navigationSlider .slidingNav ul a[href*='github'] {
-  font-size: 0;
-}
-
-.navigationSlider .slidingNav ul a[href*='github']::before {
-  content: '';
-  width: 32px;
-  height: 32px;
-  background: url('/img/github-brands.svg');
-}
-
-.nav-footer .copyright,
-.nav-footer .sitemap a {
-  /* increase link contrast */
-  color: white;
-}
-
-.button.hero {
-  background: $primaryColor;
-  color: #fff;
-  font-size: 30px;
-  padding: 0.5em 1.25em;
-  font-weight: bold;
-}
-
-.button.hero:visited {
-  background: $primaryColor;
-  color: #fff;
-}
-
-.button.hero:hover {
-  background: #fff;
-  color: $primaryColor;
-}
-
-.homeContainer .homeWrapper {
+.docusaurus-highlight-code-line {
+  background-color: rgb(72, 77, 91);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding-top: 0;
   padding-bottom: 0;
+  padding-left: calc(-0.25em + var(--ifm-pre-padding));
+  padding-right: var(--ifm-pre-padding);
+  border-left: 0.25em solid #1976d2;
+}
+div[class*='codeBlockTitle'] {
+  padding: 0.15rem var(--ifm-pre-padding);
 }
 
-.productShowcaseSection .featureBlock {
-  padding: 40px 0;
+code {
+  background-color: var(--ifm-color-emphasis-300);
+  border-radius: 0.2rem;
 }
 
-.productShowcaseSection .featureBlock img {
-  width: 60px;
-  height: 60px;
-  max-width: 60px;
-  max-height: 60px;
+a code,
+code a {
+  background-color: var(--ifm-color-emphasis-200);
+  color: inherit;
 }
 
-.featureBlock .blockContent > div p {
-  text-align: left;
+a.contents__link > code {
+  color: inherit;
 }
 
-.libBlock > div p {
-  text-align: center;
+a.contents__link.contents__link--active {
+  font-weight: 600;
 }
 
-.libBlock h2 a,
-.libBlock h2 a:visited {
+.hero.hero--primary {
+  --ifm-hero-background-color: #764abc;
+  --ifm-hero-text-color: #ffffff;
+}
+
+html[data-theme='dark'] blockquote {
+  border-left-color: var(--ifm-color-primary);
+}
+
+.navbar__items .dropdown .navbar__link--active {
+  color: var(--ifm-navbar-link-color);
+}
+
+.menu__link {
+  font-weight: normal;
+}
+
+.menu__link--sublist {
+  color: var(--ifm-font-base-color) !important;
+  font-weight: var(--ifm-font-weight-semibold);
+}
+
+.menu .menu__link.menu__link--sublist:after {
+  transform: rotateZ(180deg);
+  -webkit-transition: -webkit-transform 0.2s linear;
+  transition: -webkit-transform 0.2s linear;
+  transition-property: transform, -webkit-transform;
+  transition-duration: 0.2s, 0.2s;
+  transition-timing-function: linear, linear;
+  transition-delay: 0s, 0s;
+  transition: transform 0.2s linear;
+  transition: transform 0.2s linear, -webkit-transform 0.2s linear;
+}
+
+.menu .menu__list-item.menu__list-item--collapsed .menu__link--sublist:after {
+  transform: rotateZ(90deg);
+}
+
+.admonition {
   color: black;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  border-radius: var(--ifm-global-radius);
+  border-left: 6px solid var(--ra-admonition-color-dark);
 }
 
-.libBlock img {
-  margin-left: 5px;
-  max-width: 16px !important;
-  max-height: 16px !important;
+.admonition.admonition-note,
+.admonition.admonition-info,
+.admonition.admonition-important,
+.admonition.admonition-secondary {
+  --ra-admonition-color: #ecf4f9;
+  background-color: var(--ra-admonition-color);
 }
 
-.container .wrapper .alignLeft h2 {
-  margin-top: 10px;
-  margin-bottom: 5px;
+.admonition.admonition-success,
+.admonition.admonition-tip {
+  background-color: var(--ra-admonition-color-success);
+  border-left-color: var(--ra-admonition-color-success-dark);
 }
 
-@media only screen and (max-device-width: 480px) {
-  .productShowcaseSection .featureBlock {
-    padding-top: 30px;
-    padding-bottom: 5px;
-  }
-
-  .featureBlock .imageAlignTop .blockImage {
-    margin-bottom: 0;
-  }
-
-  .featureBlock .blockContent h2 {
-    margin-top: 0;
-    margin-bottom: 5px;
-  }
-
-  .featureBlock .blockContent {
-    margin-bottom: 25px;
-  }
-
-  .homeSplashFade img {
-    width: 60px;
-    height: 60px;
-  }
-
-  .homeSplashFade h1 {
-    margin-top: 0;
-    margin-bottom: 0;
-  }
+.admonition.admonition-caution {
+  background-color: var(--ra-admonition-color-caution);
+  border-left-color: var(--ra-admonition-color-caution-dark);
 }
 
-@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+.admonition.admonition-warning,
+.admonition.admonition-danger {
+  background-color: var(--ra-admonition-color-error);
+  border-left-color: var(--ra-admonition-color-error-dark);
 }
 
-@media only screen and (min-width: 1024px) {
-  .reactNavSearchWrapper input#search_input_react {
-    height: 100%;
-    padding-top: 8px;
-    padding-bottom: 8px;
-    padding-left: 38px;
-  }
-
-  .navSearchWrapper:before {
-    left: 24px;
-  }
-
-  .navSearchWrapper:after {
-    left: 35px;
-  }
+.admonition .admonition-icon svg {
+  fill: black;
+  stroke: black;
 }
 
-@media only screen and (max-width: 1023px) {
-  .reactNavSearchWrapper input#search_input_react {
-    padding-left: 38px;
-  }
-
-  .navSearchWrapper:before {
-    left: 24px;
-  }
-
-  .navSearchWrapper:after {
-    left: 35px;
-  }
-}
-
-@media only screen and (min-width: 1400px) {
-}
-
-@media only screen and (min-width: 1500px) {
-}

@@ -1,22 +1,22 @@
 {
-  "version-5.x-docs": {
+  "version-5.x/docs": {
     "Introduction": [
-      "version-5.x-introduction/quick-start",
-      "version-5.x-introduction/basic-tutorial",
-      "version-5.x-introduction/why-use-react-redux"
+      "version-5.x/introduction/quick-start",
+      "version-5.x/introduction/basic-tutorial",
+      "version-5.x/introduction/why-use-react-redux"
     ],
     "Using React-Redux": [
-      "version-5.x-using-react-redux/connect-mapstate",
-      "version-5.x-using-react-redux/connect-mapdispatch"
+      "version-5.x/using-react-redux/connect-mapstate",
+      "version-5.x/using-react-redux/connect-mapdispatch"
     ],
     "API Reference": [
-      "version-5.x-api",
-      "version-5.x-api/connect",
-      "version-5.x-api/connect-advanced",
-      "version-5.x-api/provider"
+      "version-5.x/api/api",
+      "version-5.x/api/connect",
+      "version-5.x/api/connect-advanced",
+      "version-5.x/api/provider"
     ],
     "Guides": [
-      "version-5.x-troubleshooting"
+      "version-5.x/troubleshooting"
     ]
   }
 }

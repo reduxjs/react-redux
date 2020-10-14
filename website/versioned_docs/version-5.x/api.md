@@ -1,9 +1,8 @@
 ---
-id: version-5.x-api
+id: api
 title: Api
 sidebar_label: API
 hide_title: true
-original_id: api
 ---
 
 # API

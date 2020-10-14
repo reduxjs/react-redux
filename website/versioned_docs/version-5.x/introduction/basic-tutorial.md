@@ -1,9 +1,8 @@
 ---
-id: version-5.x-basic-tutorial
+id: basic-tutorial
 title: Basic Tutorial
 hide_title: true
 sidebar_label: Basic Tutorial
-original_id: basic-tutorial
 ---
 
 # Basic Tutorial
@@ -353,7 +352,7 @@ export default connect(
 )(Component);
 ```
 
-These four cases cover the most basic usages of `connect`. To read more about `connect`, continue reading our [API section](./api.md) that explains it in more detail.
+These four cases cover the most basic usages of `connect`. To read more about `connect`, continue reading our [API section](../api/api.md) that explains it in more detail.
 
 <!-- TODO: Put up link to the page that further explains connect -->
 

@@ -1,8 +1,7 @@
 ---
-id: version-5.x-provider
+id: provider
 title: Provider
 sidebar_label: Provider
-original_id: provider
 ---
 
 # `<Provider />`

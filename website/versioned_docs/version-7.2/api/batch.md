@@ -1,9 +1,8 @@
 ---
-id: version-7.2-batch
+id: batch
 title: batch
 sidebar_label: batch()
 hide_title: true
-original_id: batch
 ---
 
 # `batch()`

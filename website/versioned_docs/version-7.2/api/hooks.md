@@ -1,9 +1,8 @@
 ---
-id: version-7.2-hooks
+id: hooks
 title: Hooks
 sidebar_label: Hooks
 hide_title: true
-original_id: hooks
 ---
 
 # Hooks
