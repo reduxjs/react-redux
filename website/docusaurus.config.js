@@ -145,7 +145,7 @@ const siteConfig = {
             },
             {
               label: 'Discord',
-              href: 'https://discord.gg/0ZcbPKXt5bZ6au5t',
+              href: 'https://discord.gg/reactiflux',
             }
           ]
         },
