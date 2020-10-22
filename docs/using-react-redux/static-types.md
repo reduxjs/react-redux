@@ -80,6 +80,11 @@ export type AppDispatch = typeof store.dispatch
 // MyComponent.tsx
 const dispatch: AppDispatch = useDispatch()
 ```
+You may also find it to be more convenient to export a hook like `useAppDispatch` shown below, then using it wherever you'd call `useDispatch`:
+```ts
+export type AppDispatch = typeof store.dispatch
+export const useAppDispatch = () => useDispatch<AppDispatch>() // Export a hook that can be reused to resolve types
+```
 
 ### Typing the `connect` higher order component
 
