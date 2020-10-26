@@ -8,7 +8,7 @@ describe('React', () => {
   describe('connectAdvanced', () => {
     it('should map state and render on mount', () => {
       const initialState = {
-        foo: 'bar'
+        foo: 'bar',
       }
 
       let mapCount = 0
@@ -22,7 +22,7 @@ describe('React', () => {
       }
 
       const Container = connectAdvanced(() => {
-        return state => {
+        return (state) => {
           mapCount++
           return state
         }
@@ -49,7 +49,7 @@ describe('React', () => {
 
       // force new reference on each dispatch
       const store = createStore(() => ({
-        foo: 'bar'
+        foo: 'bar',
       }))
 
       function Inner(props) {
@@ -58,7 +58,7 @@ describe('React', () => {
       }
 
       const Container = connectAdvanced(() => {
-        return state => {
+        return (state) => {
           mapCount++
           return state
         }
@@ -84,7 +84,7 @@ describe('React', () => {
 
     it('should not render when the returned reference does not change', () => {
       const staticReference = {
-        foo: 'bar'
+        foo: 'bar',
       }
 
       let mapCount = 0
@@ -92,7 +92,7 @@ describe('React', () => {
 
       // force new reference on each dispatch
       const store = createStore(() => ({
-        foo: 'bar'
+        foo: 'bar',
       }))
 
       function Inner(props) {
@@ -131,7 +131,7 @@ describe('React', () => {
 
     it('should map state on own props change but not render when the reference does not change', () => {
       const staticReference = {
-        foo: 'bar'
+        foo: 'bar',
       }
 
       let mapCount = 0
@@ -174,7 +174,7 @@ describe('React', () => {
       let outerComponent
       rtl.render(
         <ProviderMock store={store}>
-          <OuterComponent ref={c => (outerComponent = c)} />
+          <OuterComponent ref={(c) => (outerComponent = c)} />
         </ProviderMock>
       )
 

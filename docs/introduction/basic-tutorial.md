@@ -118,18 +118,12 @@ const mapDispatchToProps = {
 }
 
 // `connect` returns a new function that accepts the component to wrap:
-const connectToStore = connect(
-  mapStateToProps,
-  mapDispatchToProps
-)
+const connectToStore = connect(mapStateToProps, mapDispatchToProps)
 // and that function returns the connected, wrapper component:
 const ConnectedComponent = connectToStore(Component)
 
 // We normally do both in one step, like this:
-connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Component)
+connect(mapStateToProps, mapDispatchToProps)(Component)
 ```
 
 Let’s work on `<AddTodo />` first. It needs to trigger changes to the `store` to add new todos. Therefore, it needs to be able to `dispatch` actions to the store. Here’s how we do it.
@@ -141,12 +135,12 @@ Our `addTodo` action creator looks like this:
 import { ADD_TODO } from './actionTypes'
 
 let nextTodoId = 0
-export const addTodo = content => ({
+export const addTodo = (content) => ({
   type: ADD_TODO,
   payload: {
     id: ++nextTodoId,
-    content
-  }
+    content,
+  },
 })
 
 // ... other actions
@@ -165,10 +159,7 @@ class AddTodo extends React.Component {
   // ... component implementation
 }
 
-export default connect(
-  null,
-  { addTodo }
-)(AddTodo)
+export default connect(null, { addTodo })(AddTodo)
 ```
 
 Notice now that `<AddTodo />` is wrapped with a parent component called `<Connect(AddTodo) />`. Meanwhile, `<AddTodo />` now gains one prop: the `addTodo` action.
@@ -199,7 +190,7 @@ class AddTodo extends React.Component {
     return (
       <div>
         <input
-          onChange={e => this.updateInput(e.target.value)}
+          onChange={(e) => this.updateInput(e.target.value)}
           value={this.state.input}
         />
         <button className="add-todo" onClick={this.handleAddTodo}>
@@ -210,10 +201,7 @@ class AddTodo extends React.Component {
   }
 }
 
-export default connect(
-  null,
-  { addTodo }
-)(AddTodo)
+export default connect(null, { addTodo })(AddTodo)
 ```
 
 Now our `<AddTodo />` is connected to the store. When we add a todo it would dispatch an action to change the store. We are not seeing it in the app because the other components are not connected yet. If you have the Redux DevTools Extension hooked up, you should see the action being dispatched:
@@ -253,16 +241,16 @@ Luckily we have a selector that does exactly this. We may simply import the sele
 ```js
 // redux/selectors.js
 
-export const getTodosState = store => store.todos
+export const getTodosState = (store) => store.todos
 
-export const getTodoList = store =>
+export const getTodoList = (store) =>
   getTodosState(store) ? getTodosState(store).allIds : []
 
 export const getTodoById = (store, id) =>
   getTodosState(store) ? { ...getTodosState(store).byIds[id], id } : {}
 
-export const getTodos = store =>
-  getTodoList(store).map(id => getTodoById(store, id))
+export const getTodos = (store) =>
+  getTodoList(store).map((id) => getTodoById(store, id))
 ```
 
 ```js
@@ -315,7 +303,7 @@ If you call `connect` with only `mapStateToProps`, your component will:
 
 ```js
 // ... Component
-const mapStateToProps = state => state.partOfState
+const mapStateToProps = (state) => state.partOfState
 export default connect(mapStateToProps)(Component)
 ```
 
@@ -329,10 +317,7 @@ If you call `connect` with only `mapDispatchToProps`, your component will:
 ```js
 import { addTodo } from './actionCreators'
 // ... Component
-export default connect(
-  null,
-  { addTodo }
-)(Component)
+export default connect(null, { addTodo })(Component)
 ```
 
 #### Subscribe to the store and inject action creators
@@ -345,11 +330,8 @@ If you call `connect` with both `mapStateToProps` and `mapDispatchToProps`, your
 ```js
 import * as actionCreators from './actionCreators'
 // ... Component
-const mapStateToProps = state => state.partOfState
-export default connect(
-  mapStateToProps,
-  actionCreators
-)(Component)
+const mapStateToProps = (state) => state.partOfState
+export default connect(mapStateToProps, actionCreators)(Component)
 ```
 
 These four cases cover the most basic usages of `connect`. To read more about `connect`, continue reading our [API section](../api/connect.md) that explains it in more detail.
@@ -413,9 +395,9 @@ export const getTodosByVisibilityFilter = (store, visibilityFilter) => {
   const allTodos = getTodos(store)
   switch (visibilityFilter) {
     case VISIBILITY_FILTERS.COMPLETED:
-      return allTodos.filter(todo => todo.completed)
+      return allTodos.filter((todo) => todo.completed)
     case VISIBILITY_FILTERS.INCOMPLETE:
-      return allTodos.filter(todo => !todo.completed)
+      return allTodos.filter((todo) => !todo.completed)
     case VISIBILITY_FILTERS.ALL:
     default:
       return allTodos
@@ -430,7 +412,7 @@ And connecting to the store with the help of the selector:
 
 // ...
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   const { visibilityFilter } = state
   const todos = getTodosByVisibilityFilter(state, visibilityFilter)
   return { todos }

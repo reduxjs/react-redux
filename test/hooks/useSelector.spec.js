@@ -9,7 +9,7 @@ import {
   useSelector,
   shallowEqual,
   connect,
-  createSelectorHook
+  createSelectorHook,
 } from '../../src/index.js'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
@@ -21,7 +21,7 @@ describe('React', () => {
 
       beforeEach(() => {
         store = createStore(({ count } = { count: -1 }) => ({
-          count: count + 1
+          count: count + 1,
         }))
         renderedItems = []
       })
@@ -30,16 +30,16 @@ describe('React', () => {
 
       describe('core subscription behavior', () => {
         it('selects the state on initial render', () => {
-          const { result } = renderHook(() => useSelector(s => s.count), {
-            wrapper: props => <ProviderMock {...props} store={store} />
+          const { result } = renderHook(() => useSelector((s) => s.count), {
+            wrapper: (props) => <ProviderMock {...props} store={store} />,
           })
 
           expect(result.current).toEqual(0)
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const { result } = renderHook(() => useSelector(s => s.count), {
-            wrapper: props => <ProviderMock {...props} store={store} />
+          const { result } = renderHook(() => useSelector((s) => s.count), {
+            wrapper: (props) => <ProviderMock {...props} store={store} />,
           })
 
           expect(result.current).toEqual(0)
@@ -54,10 +54,10 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          store = createStore(c => c + 1, -1)
+          store = createStore((c) => c + 1, -1)
 
           const Comp = () => {
-            const selector = useCallback(c => c + 1, [])
+            const selector = useCallback((c) => c + 1, [])
             const value = useSelector(selector)
             renderedItems.push(value)
             return <div />
@@ -82,12 +82,12 @@ describe('React', () => {
           const Parent = () => {
             const { subscription } = useReduxContext()
             rootSubscription = subscription
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             return count === 1 ? <Child /> : null
           }
 
           const Child = () => {
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             return <div>{count}</div>
           }
 
@@ -110,12 +110,12 @@ describe('React', () => {
           const Parent = () => {
             const { subscription } = useReduxContext()
             rootSubscription = subscription
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             return count === 0 ? <Child /> : null
           }
 
           const Child = () => {
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             return <div>{count}</div>
           }
 
@@ -134,7 +134,7 @@ describe('React', () => {
 
         it('notices store updates between render and store subscription effect', () => {
           const Comp = () => {
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             renderedItems.push(count)
 
             // I don't know a better way to trigger a store update before the
@@ -157,10 +157,10 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        store = createStore(c => c + 1, -1)
+        store = createStore((c) => c + 1, -1)
 
         const Comp = () => {
-          const selector = useCallback(c => c, [])
+          const selector = useCallback((c) => c, [])
           const count = useSelector(selector)
           renderedItems.push(count)
           return <Child parentCount={count} />
@@ -198,7 +198,7 @@ describe('React', () => {
           store = createStore(() => state)
 
           const Comp = () => {
-            const value = useSelector(s => s)
+            const value = useSelector((s) => s)
             renderedItems.push(value)
             return <div />
           }
@@ -220,12 +220,12 @@ describe('React', () => {
           store = createStore(
             ({ count, stable } = { count: -1, stable: {} }) => ({
               count: count + 1,
-              stable
+              stable,
             })
           )
 
           const Comp = () => {
-            const value = useSelector(s => Object.keys(s), shallowEqual)
+            const value = useSelector((s) => Object.keys(s), shallowEqual)
             renderedItems.push(value)
             return <div />
           }
@@ -249,7 +249,7 @@ describe('React', () => {
         let forceRender
 
         const Comp = () => {
-          const [, f] = useReducer(c => c + 1, 0)
+          const [, f] = useReducer((c) => c + 1, 0)
           forceRender = f
           const renderedSelectorId = selectorId++
           const value = useSelector(() => renderedSelectorId)
@@ -282,7 +282,7 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             return <Child parentCount={count} />
           }
 
@@ -313,7 +313,7 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
-            const result = useSelector(count => {
+            const result = useSelector((count) => {
               if (count > 0) {
                 throw new Error('foo')
               }
@@ -345,7 +345,7 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             return <Child parentCount={count} />
           }
 
@@ -376,7 +376,7 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector(s => s.count)
+            const count = useSelector((s) => s.count)
             return <ConnectedWrapper parentCount={count} />
           }
 
@@ -427,10 +427,10 @@ describe('React', () => {
 
       beforeEach(() => {
         defaultStore = createStore(({ count } = { count: -1 }) => ({
-          count: count + 1
+          count: count + 1,
         }))
         customStore = createStore(({ count } = { count: 10 }) => ({
-          count: count + 2
+          count: count + 2,
         }))
       })
 
@@ -440,7 +440,7 @@ describe('React', () => {
         let defaultCount = null
         let customCount = null
 
-        const getCount = s => s.count
+        const getCount = (s) => s.count
 
         const DisplayDefaultCount = ({ children = null }) => {
           const count = useSelector(getCount)

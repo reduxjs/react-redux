@@ -6,14 +6,14 @@ import {
   connect,
   batch,
   useSelector,
-  useDispatch
+  useDispatch,
 } from '../../src/index.js'
 import { useIsomorphicLayoutEffect } from '../../src/utils/useIsomorphicLayoutEffect'
 import * as rtl from '@testing-library/react-native'
 import '@testing-library/jest-native/extend-expect'
 
 describe('React Native', () => {
-  const propMapper = prop => {
+  const propMapper = (prop) => {
     switch (typeof prop) {
       case 'object':
       case 'boolean':
@@ -28,7 +28,7 @@ describe('React Native', () => {
     render() {
       return (
         <View>
-          {Object.keys(this.props).map(prop => (
+          {Object.keys(this.props).map((prop) => (
             <View title="prop" testID={prop} key={prop}>
               {propMapper(this.props[prop])}
             </View>
@@ -66,7 +66,7 @@ describe('React Native', () => {
 
       let childMapStateInvokes = 0
 
-      @connect(state => ({ state }))
+      @connect((state) => ({ state }))
       class Container extends Component {
         emitChange() {
           store.dispatch({ type: 'APPEND', body: 'b' })
@@ -113,7 +113,10 @@ describe('React Native', () => {
         store.dispatch({ type: 'APPEND', body: 'c' })
       })
       expect(childMapStateInvokes).toBe(2)
-      expect(childCalls).toEqual([['a', 'a'], ['ac', 'ac']])
+      expect(childCalls).toEqual([
+        ['a', 'a'],
+        ['ac', 'ac'],
+      ])
 
       // setState calls DOM handlers are batched
       const button = tester.getByTestId('change-button')
@@ -129,7 +132,7 @@ describe('React Native', () => {
         ['a', 'a'],
         ['ac', 'ac'],
         ['acb', 'acb'],
-        ['acbd', 'acbd']
+        ['acbd', 'acbd'],
       ])
     })
 
@@ -142,7 +145,7 @@ describe('React Native', () => {
 
       let propsPassedIn
 
-      @connect(reduxCount => {
+      @connect((reduxCount) => {
         return { reduxCount }
       })
       class InnerComponent extends Component {
@@ -166,7 +169,7 @@ describe('React Native', () => {
       let outerComponent
       rtl.render(
         <ProviderMock store={store}>
-          <OuterComponent ref={c => (outerComponent = c)} />
+          <OuterComponent ref={(c) => (outerComponent = c)} />
         </ProviderMock>
       )
       outerComponent.setState(({ count }) => ({ count: count + 1 }))
@@ -183,10 +186,10 @@ describe('React Native', () => {
       const spy = jest.spyOn(console, 'error')
       spy.mockImplementation(() => {})
 
-      const reactCallbackMiddleware = store => {
+      const reactCallbackMiddleware = (store) => {
         let callback
 
-        return next => action => {
+        return (next) => (action) => {
           if (action.type === 'SET_COMPONENT_CALLBACK') {
             callback = action.payload
           }
@@ -224,7 +227,7 @@ describe('React Native', () => {
         applyMiddleware(reactCallbackMiddleware)
       )
 
-      const Child = connect(count => ({ count }))(function(props) {
+      const Child = connect((count) => ({ count }))(function (props) {
         return (
           <View>
             <Text testID="child-prop">{props.prop}</Text>
@@ -236,12 +239,12 @@ describe('React Native', () => {
         constructor() {
           super()
           this.state = {
-            prop: 'a'
+            prop: 'a',
           }
           this.inc1 = () => store.dispatch({ type: 'INC1' })
           store.dispatch({
             type: 'SET_COMPONENT_CALLBACK',
-            payload: () => this.setState({ prop: 'b' })
+            payload: () => this.setState({ prop: 'b' }),
           })
         }
 
@@ -255,7 +258,7 @@ describe('React Native', () => {
       }
 
       let parent
-      const rendered = rtl.render(<Parent ref={ref => (parent = ref)} />)
+      const rendered = rtl.render(<Parent ref={(ref) => (parent = ref)} />)
       expect(rendered.getByTestId('child-count').children).toEqual(['0'])
       expect(rendered.getByTestId('child-prop').children).toEqual(['a'])
 
@@ -278,7 +281,7 @@ describe('React Native', () => {
 
       let reduxCountPassedToMapState
 
-      @connect(reduxCount => {
+      @connect((reduxCount) => {
         reduxCountPassedToMapState = reduxCount
         return reduxCount < 2 ? { a: 'a' } : { a: 'b' }
       })
@@ -302,7 +305,7 @@ describe('React Native', () => {
       let outerComponent
       rtl.render(
         <ProviderMock store={store}>
-          <OuterComponent ref={c => (outerComponent = c)} />
+          <OuterComponent ref={(c) => (outerComponent = c)} />
         </ProviderMock>
       )
 
@@ -325,7 +328,7 @@ describe('React Native', () => {
         'parent map',
         'parent render',
         'child map',
-        'child render'
+        'child render',
       ]
 
       const ChildImpl = () => {
@@ -333,7 +336,7 @@ describe('React Native', () => {
         return <View>child</View>
       }
 
-      const Child = connect(state => {
+      const Child = connect((state) => {
         executionOrder.push('child map')
         return { state }
       })(ChildImpl)
@@ -343,7 +346,7 @@ describe('React Native', () => {
         return <Child />
       }
 
-      const Parent = connect(state => {
+      const Parent = connect((state) => {
         executionOrder.push('parent map')
         return { state }
       })(ParentImpl)
@@ -387,8 +390,8 @@ describe('React Native', () => {
 
       const store = createStore(reducer, INIT_STATE)
 
-      const selector = state => ({
-        bool: state.bool
+      const selector = (state) => ({
+        bool: state.bool,
       })
 
       const ReduxBugParent = () => {
@@ -464,7 +467,7 @@ describe('React Native', () => {
 
       const rendered = rtl.render(<ReduxBugDemo />)
 
-      const assertValuesMatch = rendered => {
+      const assertValuesMatch = (rendered) => {
         const [, boolFromSelector] = rendered.getByTestId(
           'boolFromSelector'
         ).children

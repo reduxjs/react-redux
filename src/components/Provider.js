@@ -9,7 +9,7 @@ function Provider({ store, context, children }) {
     subscription.onStateChange = subscription.notifyNestedSubs
     return {
       store,
-      subscription
+      subscription,
     }
   }, [store])
 
@@ -38,10 +38,10 @@ if (process.env.NODE_ENV !== 'production') {
     store: PropTypes.shape({
       subscribe: PropTypes.func.isRequired,
       dispatch: PropTypes.func.isRequired,
-      getState: PropTypes.func.isRequired
+      getState: PropTypes.func.isRequired,
     }),
     context: PropTypes.object,
-    children: PropTypes.any
+    children: PropTypes.any,
   }
 }
 

@@ -22,7 +22,7 @@ Both `mapState` and `useSelector` depend on declaring the type of the complete R
 export const rootReducer = combineReducers({
   posts: postsReducer,
   comments: commentsReducer,
-  users: usersReducer
+  users: usersReducer,
 })
 
 export type RootState = ReturnType<typeof rootReducer>
@@ -60,7 +60,7 @@ export const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector
 // my-component.tsx
 import { useTypedSelector } from './reducer.ts'
 
-const isOn = useTypedSelector(state => state.isOn)
+const isOn = useTypedSelector((state) => state.isOn)
 ```
 
 ### Typing the `useDispatch` hook
@@ -80,7 +80,9 @@ export type AppDispatch = typeof store.dispatch
 // MyComponent.tsx
 const dispatch: AppDispatch = useDispatch()
 ```
+
 You may also find it to be more convenient to export a hook like `useAppDispatch` shown below, then using it wherever you'd call `useDispatch`:
+
 ```ts
 export type AppDispatch = typeof store.dispatch
 export const useAppDispatch = () => useDispatch<AppDispatch>() // Export a hook that can be reused to resolve types
@@ -110,11 +112,11 @@ interface OwnProps {
 type Props = StateProps & DispatchProps & OwnProps
 
 const mapState = (state: RootState) => ({
-  isOn: state.isOn
+  isOn: state.isOn,
 })
 
 const mapDispatch = {
-  toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
 }
 
 const MyComponent = (props: Props) => (
@@ -136,11 +138,11 @@ It is also possible to shorten this somewhat, by inferring the types of `mapStat
 
 ```ts
 const mapState = (state: RootState) => ({
-  isOn: state.isOn
+  isOn: state.isOn,
 })
 
 const mapDispatch = {
-  toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
 }
 
 type StateProps = ReturnType<typeof mapState>
@@ -165,17 +167,14 @@ interface RootState {
 }
 
 const mapState = (state: RootState) => ({
-  isOn: state.isOn
+  isOn: state.isOn,
 })
 
 const mapDispatch = {
-  toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
 }
 
-const connector = connect(
-  mapState,
-  mapDispatch
-)
+const connector = connect(mapState, mapDispatch)
 
 // The inferred type will look like:
 // {isOn: boolean, toggleOn: () => void}

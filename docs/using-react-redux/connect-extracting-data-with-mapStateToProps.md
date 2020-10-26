@@ -1,8 +1,8 @@
 ---
 id: connect-mapstate
-title: "Connect: Extracting Data with mapStateToProps"
+title: 'Connect: Extracting Data with mapStateToProps'
 hide_title: true
-sidebar_label: "Connect: Extracting Data with mapStateToProps"
+sidebar_label: 'Connect: Extracting Data with mapStateToProps'
 ---
 
 # Connect: Extracting Data with `mapStateToProps`
@@ -65,7 +65,7 @@ function mapStateToProps(state, ownProps) {
 }
 
 // Later, in your application, a parent component renders:
-<ConnectedTodo id={123} />
+;<ConnectedTodo id={123} />
 // and your component receives props.id, props.todo, and props.visibilityFilter
 ```
 
@@ -85,7 +85,7 @@ function mapStateToProps(state) {
   return {
     a: 42,
     todos: state.todos,
-    filter: state.visibilityFilter
+    filter: state.visibilityFilter,
   }
 }
 

@@ -8,7 +8,7 @@ hide_title: true
 # `batch()`
 
 ```js
-batch(fn: Function)
+batch((fn: Function))
 ```
 
 React's `unstable_batchedUpdates()` API allows any React updates in an event loop tick to be batched together into a single render pass. React already uses this internally for its own event handler callbacks. This API is actually part of the renderer packages like ReactDOM and React Native, not the React core itself.

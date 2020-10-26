@@ -91,7 +91,7 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 
 export const CounterComponent = () => {
-  const counter = useSelector(state => state.counter)
+  const counter = useSelector((state) => state.counter)
   return <div>{counter}</div>
 }
 ```
@@ -102,8 +102,8 @@ Using props via closure to determine what to extract:
 import React from 'react'
 import { useSelector } from 'react-redux'
 
-export const TodoListItem = props => {
-  const todo = useSelector(state => state.todos[props.id])
+export const TodoListItem = (props) => {
+  const todo = useSelector((state) => state.todos[props.id])
   return <div>{todo.text}</div>
 }
 ```
@@ -120,8 +120,8 @@ import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
 const selectNumOfDoneTodos = createSelector(
-  state => state.todos,
-  todos => todos.filter(todo => todo.isDone).length
+  (state) => state.todos,
+  (todos) => todos.filter((todo) => todo.isDone).length
 )
 
 export const DoneTodosCounter = () => {
@@ -147,13 +147,13 @@ import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
 const selectNumOfTodosWithIsDoneValue = createSelector(
-  state => state.todos,
+  (state) => state.todos,
   (_, isDone) => isDone,
-  (todos, isDone) => todos.filter(todo => todo.isDone === isDone).length
+  (todos, isDone) => todos.filter((todo) => todo.isDone === isDone).length
 )
 
 export const TodoCounterForIsDoneValue = ({ isDone }) => {
-  const NumOfTodosWithIsDoneValue = useSelector(state =>
+  const NumOfTodosWithIsDoneValue = useSelector((state) =>
     selectNumOfTodosWithIsDoneValue(state, isDone)
   )
 
@@ -179,9 +179,9 @@ import { createSelector } from 'reselect'
 
 const makeNumOfTodosWithIsDoneSelector = () =>
   createSelector(
-    state => state.todos,
+    (state) => state.todos,
     (_, isDone) => isDone,
-    (todos, isDone) => todos.filter(todo => todo.isDone === isDone).length
+    (todos, isDone) => todos.filter((todo) => todo.isDone === isDone).length
   )
 
 export const TodoCounterForIsDoneValue = ({ isDone }) => {
@@ -190,7 +190,7 @@ export const TodoCounterForIsDoneValue = ({ isDone }) => {
     []
   )
 
-  const numOfTodosWithIsDoneValue = useSelector(state =>
+  const numOfTodosWithIsDoneValue = useSelector((state) =>
     selectNumOfTodosWithIsDone(state, isDone)
   )
 
@@ -219,7 +219,7 @@ const dispatch = useDispatch()
 
 This hook returns a reference to the `dispatch` function from the Redux store. You may use it to dispatch actions as needed.
 
-*Note: like in [React's `useReducer`](https://reactjs.org/docs/hooks-reference.html#usereducer), the returned `dispatch` function identity is stable and won't change on re-renders (unless you change the `store` being passed to the `<Provider>`, which would be extremely unusual).*
+_Note: like in [React's `useReducer`](https://reactjs.org/docs/hooks-reference.html#usereducer), the returned `dispatch` function identity is stable and won't change on re-renders (unless you change the `store` being passed to the `<Provider>`, which would be extremely unusual)._
 
 #### Examples
 
@@ -304,7 +304,7 @@ import {
   Provider,
   createStoreHook,
   createDispatchHook,
-  createSelectorHook
+  createSelectorHook,
 } from 'react-redux'
 
 const MyContext = React.createContext(null)
@@ -368,7 +368,7 @@ If further performance optimizations are necessary, you may consider wrapping yo
 
 ```jsx
 const CounterComponent = ({ name }) => {
-  const counter = useSelector(state => state.counter)
+  const counter = useSelector((state) => state.counter)
   return (
     <div>
       {name}: {counter}
@@ -409,7 +409,7 @@ export function useActions(actions, deps) {
   return useMemo(
     () => {
       if (Array.isArray(actions)) {
-        return actions.map(a => bindActionCreators(a, dispatch))
+        return actions.map((a) => bindActionCreators(a, dispatch))
       }
       return bindActionCreators(actions, dispatch)
     },

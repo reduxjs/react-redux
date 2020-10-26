@@ -9,13 +9,13 @@ export function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
 
 export function whenMapDispatchToPropsIsMissing(mapDispatchToProps) {
   return !mapDispatchToProps
-    ? wrapMapToPropsConstant(dispatch => ({ dispatch }))
+    ? wrapMapToPropsConstant((dispatch) => ({ dispatch }))
     : undefined
 }
 
 export function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
   return mapDispatchToProps && typeof mapDispatchToProps === 'object'
-    ? wrapMapToPropsConstant(dispatch =>
+    ? wrapMapToPropsConstant((dispatch) =>
         bindActionCreators(mapDispatchToProps, dispatch)
       )
     : undefined
@@ -24,5 +24,5 @@ export function whenMapDispatchToPropsIsObject(mapDispatchToProps) {
 export default [
   whenMapDispatchToPropsIsFunction,
   whenMapDispatchToPropsIsMissing,
-  whenMapDispatchToPropsIsObject
+  whenMapDispatchToPropsIsObject,
 ]

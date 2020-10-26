@@ -10,7 +10,7 @@ import { ReactReduxContext } from './Context'
 const EMPTY_ARRAY = []
 const NO_SUBSCRIPTION_ARRAY = [null, null]
 
-const stringifyComponent = Comp => {
+const stringifyComponent = (Comp) => {
   try {
     return JSON.stringify(Comp)
   } catch (err) {
@@ -116,8 +116,8 @@ function subscribeUpdates(
       forceComponentUpdateDispatch({
         type: 'STORE_UPDATED',
         payload: {
-          error
-        }
+          error,
+        },
       })
     }
   }
@@ -173,7 +173,7 @@ export default function connectAdvanced(
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
     // probably overridden by wrapper functions such as connect()
-    getDisplayName = name => `ConnectAdvanced(${name})`,
+    getDisplayName = (name) => `ConnectAdvanced(${name})`,
 
     // shown in error messages
     // probably overridden by wrapper functions such as connect()
@@ -257,7 +257,7 @@ export default function connectAdvanced(
       storeKey,
       displayName,
       wrappedComponentName,
-      WrappedComponent
+      WrappedComponent,
     }
 
     const { pure } = connectOptions
@@ -269,13 +269,13 @@ export default function connectAdvanced(
     // If we aren't running in "pure" mode, we don't want to memoize values.
     // To avoid conditionally calling hooks, we fall back to a tiny wrapper
     // that just executes the given callback immediately.
-    const usePureOnlyMemo = pure ? useMemo : callback => callback()
+    const usePureOnlyMemo = pure ? useMemo : (callback) => callback()
 
     function ConnectFunction(props) {
       const [
         propsContext,
         reactReduxForwardedRef,
-        wrapperProps
+        wrapperProps,
       ] = useMemo(() => {
         // Distinguish between actual "data" props that were passed to the wrapper component,
         // and values needed to control behavior (forwarded refs, alternate context instances).
@@ -364,7 +364,7 @@ export default function connectAdvanced(
         // connected descendants won't update until after this component is done
         return {
           ...contextValue,
-          subscription
+          subscription,
         }
       }, [didStoreComeFromProps, contextValue, subscription])
 
@@ -372,7 +372,7 @@ export default function connectAdvanced(
       // causes a change to the calculated child component props (or we caught an error in mapState)
       const [
         [previousStateUpdateResult],
-        forceComponentUpdateDispatch
+        forceComponentUpdateDispatch,
       ] = useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates)
 
       // Propagate any mapState/mapDispatch errors upwards
@@ -417,7 +417,7 @@ export default function connectAdvanced(
         wrapperProps,
         actualChildProps,
         childPropsFromStoreUpdate,
-        notifyNestedSubs
+        notifyNestedSubs,
       ])
 
       // Our re-subscribe logic only runs when the store/subscription setup changes
@@ -433,7 +433,7 @@ export default function connectAdvanced(
           renderIsScheduled,
           childPropsFromStoreUpdate,
           notifyNestedSubs,
-          forceComponentUpdateDispatch
+          forceComponentUpdateDispatch,
         ],
         [store, subscription, childPropsSelector]
       )

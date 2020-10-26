@@ -69,14 +69,9 @@ function mapStateToProps(state) {
   return { todos: state.todos }
 }
 
-export default connect(
-  mapStateToProps,
-  null,
-  null,
-  {
-    pure: false
-  }
-)(TodoApp)
+export default connect(mapStateToProps, null, null, {
+  pure: false,
+})(TodoApp)
 ```
 
 This will remove the assumption that `TodoApp` is pure and cause it to update whenever its parent component renders. Note that this will make your application less performant, so only do this if you have no other option.

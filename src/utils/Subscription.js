@@ -43,7 +43,7 @@ function createListenerCollection() {
       let listener = (last = {
         callback,
         next: null,
-        prev: last
+        prev: last,
       })
 
       if (listener.prev) {
@@ -67,7 +67,7 @@ function createListenerCollection() {
           first = listener.next
         }
       }
-    }
+    },
   }
 }
 

@@ -157,7 +157,7 @@ describe('React', () => {
         action.type === 'INC' ? state + 1 : state
 
       const innerStore = createStore(reducer)
-      const innerMapStateToProps = jest.fn(state => ({ count: state }))
+      const innerMapStateToProps = jest.fn((state) => ({ count: state }))
       @connect(innerMapStateToProps)
       class Inner extends Component {
         render() {
@@ -166,7 +166,7 @@ describe('React', () => {
       }
 
       const outerStore = createStore(reducer)
-      @connect(state => ({ count: state }))
+      @connect((state) => ({ count: state }))
       class Outer extends Component {
         render() {
           return (
@@ -204,7 +204,7 @@ describe('React', () => {
 
       let childMapStateInvokes = 0
 
-      @connect(state => ({ state }))
+      @connect((state) => ({ state }))
       class Container extends Component {
         emitChange() {
           store.dispatch({ type: 'APPEND', body: 'b' })
@@ -247,7 +247,10 @@ describe('React', () => {
       })
 
       expect(childMapStateInvokes).toBe(2)
-      expect(childCalls).toEqual([['a', 'a'], ['ac', 'ac']])
+      expect(childCalls).toEqual([
+        ['a', 'a'],
+        ['ac', 'ac'],
+      ])
 
       // setState calls DOM handlers are batched
       const button = tester.getByText('change')
@@ -263,7 +266,7 @@ describe('React', () => {
         ['a', 'a'],
         ['ac', 'ac'], // then store update is processed
         ['acb', 'acb'], // then store update is processed
-        ['acbd', 'acbd'] // then store update is processed
+        ['acbd', 'acbd'], // then store update is processed
       ])
       expect(childMapStateInvokes).toBe(4)
     })
@@ -292,7 +295,7 @@ describe('React', () => {
 
       // Keep track of unsubscribe by wrapping subscribe()
       const spy = jest.fn(() => ({}))
-      store.subscribe = listener => {
+      store.subscribe = (listener) => {
         const unsubscribe = subscribe(listener)
         return () => {
           spy()
@@ -320,14 +323,14 @@ describe('React', () => {
       const storeA = createStore(reducerA)
       const storeB = createStore(reducerB)
 
-      @connect(state => ({ value: state.nestedA.value }))
+      @connect((state) => ({ value: state.nestedA.value }))
       class ComponentA extends Component {
         render() {
           return <div data-testid="value">{this.props.value}</div>
         }
       }
 
-      @connect(state => ({ value: state.nestedB.value }))
+      @connect((state) => ({ value: state.nestedB.value }))
       class ComponentB extends Component {
         render() {
           return <div data-testid="value">{this.props.value}</div>

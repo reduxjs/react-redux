@@ -48,7 +48,7 @@ export function createConnect({
   mapStateToPropsFactories = defaultMapStateToPropsFactories,
   mapDispatchToPropsFactories = defaultMapDispatchToPropsFactories,
   mergePropsFactories = defaultMergePropsFactories,
-  selectorFactory = defaultSelectorFactory
+  selectorFactory = defaultSelectorFactory,
 } = {}) {
   return function connect(
     mapStateToProps,
@@ -80,7 +80,7 @@ export function createConnect({
       methodName: 'connect',
 
       // used to compute Connect's displayName from the wrapped component's displayName.
-      getDisplayName: name => `Connect(${name})`,
+      getDisplayName: (name) => `Connect(${name})`,
 
       // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
       shouldHandleStateChanges: Boolean(mapStateToProps),
@@ -96,7 +96,7 @@ export function createConnect({
       areMergedPropsEqual,
 
       // any extra options args can override defaults of connect or connectAdvanced
-      ...extraOptions
+      ...extraOptions,
     })
   }
 }

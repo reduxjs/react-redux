@@ -31,9 +31,9 @@ describe('React', () => {
     function ExtraReducersProvider({ children, reducers }) {
       return (
         <InjectReducersContext.Consumer>
-          {injectReducers => (
+          {(injectReducers) => (
             <ReactReduxContext.Consumer>
-              {reduxContext => {
+              {(reduxContext) => {
                 const latestState = reduxContext.store.getState()
                 const contextState = reduxContext.storeState
 
@@ -65,7 +65,7 @@ describe('React', () => {
                   // this would better avoid tearing in a future concurrent world
                   const patchedReduxContext = {
                     ...reduxContext,
-                    storeState: reduxContext.store.getState()
+                    storeState: reduxContext.store.getState(),
                   }
                   return (
                     <ReactReduxContext.Provider value={patchedReduxContext}>
@@ -83,21 +83,21 @@ describe('React', () => {
     }
 
     const initialReducer = {
-      initial: (state = { greeting: 'Hello world' }) => state
+      initial: (state = { greeting: 'Hello world' }) => state,
     }
     const dynamicReducer = {
-      dynamic: (state = { greeting: 'Hello dynamic world' }) => state
+      dynamic: (state = { greeting: 'Hello dynamic world' }) => state,
     }
 
     function Greeter({ greeting }) {
       return <div>{greeting}</div>
     }
 
-    const InitialGreeting = connect(state => ({
-      greeting: state.initial.greeting
+    const InitialGreeting = connect((state) => ({
+      greeting: state.initial.greeting,
     }))(Greeter)
-    const DynamicGreeting = connect(state => ({
-      greeting: state.dynamic.greeting
+    const DynamicGreeting = connect((state) => ({
+      greeting: state.dynamic.greeting,
     }))(Greeter)
 
     function createInjectReducers(store, initialReducer) {

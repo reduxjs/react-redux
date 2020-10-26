@@ -48,7 +48,7 @@ A `mapStateToProps` function takes a maximum of two parameters. The number of de
 If your `mapStateToProps` function is declared as taking one parameter, it will be called whenever the store state changes, and given the store state as the only parameter.
 
 ```js
-const mapStateToProps = state => ({ todos: state.todos })
+const mapStateToProps = (state) => ({ todos: state.todos })
 ```
 
 ##### `ownProps`
@@ -59,7 +59,7 @@ The second parameter is normally referred to as `ownProps` by convention.
 
 ```js
 const mapStateToProps = (state, ownProps) => ({
-  todo: state.todos[ownProps.id]
+  todo: state.todos[ownProps.id],
 })
 ```
 
@@ -83,12 +83,7 @@ Your component will receive `dispatch` by default, i.e., when you do not supply 
 // do not pass `mapDispatchToProps`
 connect()(MyComponent)
 connect(mapState)(MyComponent)
-connect(
-  mapState,
-  null,
-  mergeProps,
-  options
-)(MyComponent)
+connect(mapState, null, mergeProps, options)(MyComponent)
 ```
 
 If you define a `mapDispatchToProps` as a function, it will be called with a maximum of two parameters.
@@ -103,12 +98,12 @@ If you define a `mapDispatchToProps` as a function, it will be called with a max
 If your `mapDispatchToProps` is declared as a function taking one parameter, it will be given the `dispatch` of your `store`.
 
 ```js
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     // dispatching plain actions
     increment: () => dispatch({ type: 'INCREMENT' }),
     decrement: () => dispatch({ type: 'DECREMENT' }),
-    reset: () => dispatch({ type: 'RESET' })
+    reset: () => dispatch({ type: 'RESET' }),
   }
 }
 ```
@@ -121,11 +116,11 @@ The second parameter is normally referred to as `ownProps` by convention.
 
 ```js
 // binds on component re-rendering
-<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
+;<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 
 // binds on `props` change
 const mapDispatchToProps = (dispatch, ownProps) => ({
-  toggleTodo: () => dispatch(toggleTodo(ownProps.todoId))
+  toggleTodo: () => dispatch(toggleTodo(ownProps.todoId)),
 })
 ```
 
@@ -146,7 +141,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     dispatchActionCreatedByActionCreator: () => dispatch(createMyAction()),
     ...boundActions,
     // you may return dispatch here
-    dispatch
+    dispatch,
   }
 }
 ```
@@ -165,13 +160,10 @@ import { addTodo, deleteTodo, toggleTodo } from './actionCreators'
 const mapDispatchToProps = {
   addTodo,
   deleteTodo,
-  toggleTodo
+  toggleTodo,
 }
 
-export default connect(
-  null,
-  mapDispatchToProps
-)(TodoApp)
+export default connect(null, mapDispatchToProps)(TodoApp)
 ```
 
 In this case, React-Redux binds the `dispatch` of your store to each of the action creators using `bindActionCreators`. The result will be regarded as `dispatchProps`, which will be either directly merged to your connected components, or supplied to `mergeProps` as the second argument.
@@ -226,12 +218,9 @@ You may pass the context to your connected component either by passing it here a
 
 ```js
 // const MyContext = React.createContext();
-connect(
-  mapStateToProps,
-  mapDispatchToProps,
-  null,
-  { context: MyContext }
-)(MyComponent)
+connect(mapStateToProps, mapDispatchToProps, null, { context: MyContext })(
+  MyComponent
+)
 ```
 
 #### `pure: boolean`
@@ -308,14 +297,11 @@ The return of `connect()` is a wrapper function that takes your component and re
 ```js
 import { login, logout } from './actionCreators'
 
-const mapState = state => state.user
+const mapState = (state) => state.user
 const mapDispatch = { login, logout }
 
 // first call: returns a hoc that you can use to wrap any component
-const connectUser = connect(
-  mapState,
-  mapDispatch
-)
+const connectUser = connect(mapState, mapDispatch)
 
 // second call: returns the wrapper component with mergedProps
 // you may use the hoc to enable different components to get the same behavior
@@ -328,16 +314,13 @@ In most cases, the wrapper function will be called right away, without being sav
 ```js
 import { login, logout } from './actionCreators'
 
-const mapState = state => state.user
+const mapState = (state) => state.user
 const mapDispatch = { login, logout }
 
 // call connect to generate the wrapper function, and immediately call
 // the wrapper function to generate the final wrapper component.
 
-export default connect(
-  mapState,
-  mapDispatch
-)(Login)
+export default connect(mapState, mapDispatch)(Login)
 ```
 
 ## Example Usage
@@ -355,10 +338,7 @@ export default connect()(TodoApp)
 ```js
 import * as actionCreators from './actionCreators'
 
-export default connect(
-  null,
-  actionCreators
-)(TodoApp)
+export default connect(null, actionCreators)(TodoApp)
 ```
 
 - Inject `dispatch` and every field in the global state
@@ -368,7 +348,7 @@ export default connect(
 
 ```js
 // don't do this!
-export default connect(state => state)(TodoApp)
+export default connect((state) => state)(TodoApp)
 ```
 
 - Inject `dispatch` and `todos`
@@ -390,10 +370,7 @@ function mapStateToProps(state) {
   return { todos: state.todos }
 }
 
-export default connect(
-  mapStateToProps,
-  actionCreators
-)(TodoApp)
+export default connect(mapStateToProps, actionCreators)(TodoApp)
 ```
 
 - Inject `todos` and all action creators (`addTodo`, `completeTodo`, ...) as `actions`
@@ -410,10 +387,7 @@ function mapDispatchToProps(dispatch) {
   return { actions: bindActionCreators(actionCreators, dispatch) }
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TodoApp)
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
 - Inject `todos` and a specific action creator (`addTodo`)
@@ -430,10 +404,7 @@ function mapDispatchToProps(dispatch) {
   return bindActionCreators({ addTodo }, dispatch)
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TodoApp)
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
 - Inject `todos` and specific action creators (`addTodo` and `deleteTodo`) with shorthand syntax
@@ -447,13 +418,10 @@ function mapStateToProps(state) {
 
 const mapDispatchToProps = {
   addTodo,
-  deleteTodo
+  deleteTodo,
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TodoApp)
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
 - Inject `todos`, `todoActionCreators` as `todoActions`, and `counterActionCreators` as `counterActions`
@@ -470,14 +438,11 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return {
     todoActions: bindActionCreators(todoActionCreators, dispatch),
-    counterActions: bindActionCreators(counterActionCreators, dispatch)
+    counterActions: bindActionCreators(counterActionCreators, dispatch),
   }
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TodoApp)
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
 - Inject `todos`, and todoActionCreators and counterActionCreators together as `actions`
@@ -496,14 +461,11 @@ function mapDispatchToProps(dispatch) {
     actions: bindActionCreators(
       { ...todoActionCreators, ...counterActionCreators },
       dispatch
-    )
+    ),
   }
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TodoApp)
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
 - Inject `todos`, and all `todoActionCreators` and `counterActionCreators` directly as props
@@ -524,10 +486,7 @@ function mapDispatchToProps(dispatch) {
   )
 }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(TodoApp)
+export default connect(mapStateToProps, mapDispatchToProps)(TodoApp)
 ```
 
 - Inject `todos` of a specific user depending on props
@@ -554,15 +513,11 @@ function mapStateToProps(state) {
 function mergeProps(stateProps, dispatchProps, ownProps) {
   return Object.assign({}, ownProps, {
     todos: stateProps.todos[ownProps.userId],
-    addTodo: text => dispatchProps.addTodo(ownProps.userId, text)
+    addTodo: (text) => dispatchProps.addTodo(ownProps.userId, text),
   })
 }
 
-export default connect(
-  mapStateToProps,
-  actionCreators,
-  mergeProps
-)(TodoApp)
+export default connect(mapStateToProps, actionCreators, mergeProps)(TodoApp)
 ```
 
 ## Notes
@@ -612,11 +567,8 @@ The factory functions are commonly used with memoized selectors. This gives you 
 
 ```js
 const makeUniqueSelectorInstance = () =>
-  createSelector(
-    [selectItems, selectItemId],
-    (items, itemId) => items[itemId]
-  )
-const makeMapState = state => {
+  createSelector([selectItems, selectItemId], (items, itemId) => items[itemId])
+const makeMapState = (state) => {
   const selectItemForThisComponent = makeUniqueSelectorInstance()
   return function realMapState(state, ownProps) {
     const item = selectItemForThisComponent(state, ownProps.itemId)

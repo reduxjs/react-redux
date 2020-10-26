@@ -25,5 +25,5 @@ export {
   createSelectorHook,
   useStore,
   createStoreHook,
-  shallowEqual
+  shallowEqual,
 }

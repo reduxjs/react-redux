@@ -22,5 +22,5 @@ export {
   useDispatch,
   useSelector,
   useStore,
-  shallowEqual
+  shallowEqual,
 }

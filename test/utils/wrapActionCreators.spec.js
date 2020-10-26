@@ -5,14 +5,14 @@ describe('Utils', () => {
     it('should return a function that wraps argument in a call to bindActionCreators', () => {
       function dispatch(action) {
         return {
-          dispatched: action
+          dispatched: action,
         }
       }
 
       const actionResult = { an: 'action' }
 
       const actionCreators = {
-        action: () => actionResult
+        action: () => actionResult,
       }
 
       const wrapped = wrapActionCreators(actionCreators)

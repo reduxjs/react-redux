@@ -20,9 +20,9 @@ describe('React', () => {
     }
 
     const Greeting = ({ greeting, greeted }) => greeting + ' ' + greeted
-    const ConnectedGreeting = connect(state => state)(Greeting)
+    const ConnectedGreeting = connect((state) => state)(Greeting)
 
-    const Greeter = props => (
+    const Greeter = (props) => (
       <div>
         <ConnectedGreeting {...props} />
       </div>

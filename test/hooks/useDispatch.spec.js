@@ -4,18 +4,18 @@ import { renderHook } from '@testing-library/react-hooks'
 import {
   Provider as ProviderMock,
   useDispatch,
-  createDispatchHook
+  createDispatchHook,
 } from '../../src/index.js'
 
-const store = createStore(c => c + 1)
-const store2 = createStore(c => c + 2)
+const store = createStore((c) => c + 1)
+const store2 = createStore((c) => c + 2)
 
 describe('React', () => {
   describe('hooks', () => {
     describe('useDispatch', () => {
       it("returns the store's dispatch function", () => {
         const { result } = renderHook(() => useDispatch(), {
-          wrapper: props => <ProviderMock {...props} store={store} />
+          wrapper: (props) => <ProviderMock {...props} store={store} />,
         })
 
         expect(result.current).toBe(store.dispatch)
@@ -33,7 +33,7 @@ describe('React', () => {
                 {children}
               </ProviderMock>
             </ProviderMock>
-          )
+          ),
         })
 
         expect(result.current).toBe(store.dispatch)
@@ -46,7 +46,7 @@ describe('React', () => {
                 {children}
               </ProviderMock>
             </ProviderMock>
-          )
+          ),
         })
 
         expect(result2.current).toBe(store2.dispatch)

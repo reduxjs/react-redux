@@ -16,7 +16,7 @@ describe('Utils', () => {
         true
       )
 
-      const d = function() {
+      const d = function () {
         return 1
       }
       expect(
@@ -30,16 +30,16 @@ describe('Utils', () => {
           {
             a: 1,
             b: 2,
-            d: function() {
+            d: function () {
               return 1
-            }
+            },
           },
           {
             a: 1,
             b: 2,
-            d: function() {
+            d: function () {
               return 1
-            }
+            },
           }
         )
       ).toBe(false)

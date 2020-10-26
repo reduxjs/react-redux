@@ -12,11 +12,11 @@ function useSelectorWithStoreAndSubscription(
   store,
   contextSub
 ) {
-  const [, forceRender] = useReducer(s => s + 1, 0)
+  const [, forceRender] = useReducer((s) => s + 1, 0)
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
-    contextSub
+    contextSub,
   ])
 
   const latestSubscriptionCallbackError = useRef()

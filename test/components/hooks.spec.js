@@ -17,14 +17,14 @@ describe('React', () => {
             ? state
             : {
                 byId: {},
-                list: []
+                list: [],
               }
         switch (action.type) {
           case 'FOO':
             newState = {
               ...newState,
               list: [1],
-              byId: { 1: 'foo' }
+              byId: { 1: 'foo' },
             }
             break
         }
@@ -36,21 +36,21 @@ describe('React', () => {
 
       let component1StateList
 
-      const component1Decorator = connect(state => {
+      const component1Decorator = connect((state) => {
         mapStateSpy1()
 
         return {
-          list: state.list
+          list: state.list,
         }
       })
 
-      const component1 = props => {
+      const component1 = (props) => {
         const [state, setState] = React.useState({ list: props.list })
 
         component1StateList = state.list
 
         React.useEffect(() => {
-          setState(prevState => ({ ...prevState, list: props.list }))
+          setState((prevState) => ({ ...prevState, list: props.list }))
         }, [props.list])
 
         renderSpy1()
@@ -67,11 +67,11 @@ describe('React', () => {
         mapStateSpy2()
 
         return {
-          mappedProp: ownProps.list.map(id => state.byId[id])
+          mappedProp: ownProps.list.map((id) => state.byId[id]),
         }
       })
 
-      const component2 = props => {
+      const component2 = (props) => {
         renderSpy2()
 
         expect(props.list).toBe(component1StateList)
