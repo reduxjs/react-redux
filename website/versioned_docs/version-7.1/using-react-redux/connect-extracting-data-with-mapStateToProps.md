@@ -57,6 +57,7 @@ You may define the function with a second argument, `ownProps`, if your componen
 
 function mapStateToProps(state, ownProps) {
   const { visibilityFilter } = state
+// ownProps would look like { "id" : 123 }
   const { id } = ownProps
   const todo = getTodoById(state, id)
 
@@ -65,7 +66,7 @@ function mapStateToProps(state, ownProps) {
 }
 
 // Later, in your application, a parent component renders:
-;<ConnectedTodo id={123} />
+<ConnectedTodo id={123} />
 // and your component receives props.id, props.todo, and props.visibilityFilter
 ```
 
