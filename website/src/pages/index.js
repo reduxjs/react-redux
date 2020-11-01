@@ -22,7 +22,7 @@ const features = [
     content: (
       <p>
         <strong>Designed to work with React's component model</strong>.
-        {' '} You define how to extract the values your component needs from Redux, and your component receives them as props.",
+        {' '} You define how to extract the values your component needs from Redux, and your component receives them as props.
       </p>
     ),
     image: <img src="img/noun_Check_1870817.svg" />,
@@ -42,7 +42,7 @@ const features = [
   {
     content: (
       <p>
-        Automatically implements <strong>complex performance optimizations</strong>, so that your own component only re-renders when the data it needs has actually changed.',
+        Automatically implements <strong>complex performance optimizations</strong>, so that your own component only re-renders when the data it needs has actually changed.
       </p>
     ),
     image: <img src="img/noun_Rocket_1245262.svg" />,
