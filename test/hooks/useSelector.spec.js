@@ -412,6 +412,35 @@ describe('React', () => {
 
           spy.mockRestore()
         })
+
+        it('reuse latest selected state on selector re-run', () => {
+          store = createStore(({ count } = { count: -1 }) => ({
+            count: count + 1,
+          }))
+
+          const alwaysEqual = () => true
+
+          const Comp = () => {
+            // triggers render on store change
+            useSelector((s) => s.count)
+            const array = useSelector(() => [1, 2, 3], alwaysEqual)
+            renderedItems.push(array)
+            return <div />
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(renderedItems.length).toBe(1)
+
+          store.dispatch({ type: '' })
+
+          expect(renderedItems.length).toBe(2)
+          expect(renderedItems[0]).toBe(renderedItems[1])
+        })
       })
 
       describe('error handling for invalid arguments', () => {
