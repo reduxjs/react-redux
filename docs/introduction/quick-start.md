@@ -11,7 +11,7 @@ sidebar_label: Quick Start
 
 ## Installation
 
-React Redux 7.2 requires **React 16.8.3 or later.** The latest version also allows you to use React Redux with **React 17**
+React Redux 7.2 requires **React 16.8.3 or later.**
 
 ### Using Create React App
 
