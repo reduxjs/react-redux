@@ -34,7 +34,7 @@ function useSelectorWithStoreAndSubscription(
       latestSubscriptionCallbackError.current
     ) {
       const newSelectedState = selector(storeState)
-      // ensure latest selected state is reused so that a curtom equality function can result in identical references
+      // ensure latest selected state is reused so that a custom equality function can result in identical references
       if (
         latestSelectedState.current === undefined ||
         !equalityFn(newSelectedState, latestSelectedState.current)
