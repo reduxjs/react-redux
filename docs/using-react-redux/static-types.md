@@ -202,7 +202,7 @@ export default connector(MyComponent)
 Because types can be defined in any order, you can still declare your component before declaring the connector if you want.
 
 ```tsx
-// alternately, declare `type Props = Props From Redux & {backgroundColor: string}`
+// alternately, declare `type Props = PropsFromRedux & {backgroundColor: string}`
 interface Props extends PropsFromRedux {
   backgroundColor: string;
 }
