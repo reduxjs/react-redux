@@ -103,7 +103,7 @@ const siteConfig = {
         { to: 'introduction/quick-start', label: 'Quick Start', position: 'right' },
         { to: 'using-react-redux/connect-mapstate', label: 'Using React Redux', position: 'right' },
         { to: 'api/connect', label: 'API', position: 'right' },
-        { href: 'https://www.github.com/reduxjs/react-redux', label: 'Github', position: 'right', className: 'github' },
+        { href: 'https://www.github.com/reduxjs/react-redux', label: 'GitHub', position: 'right', className: 'github' },
         { href: '/introduction/quick-start#help-and-discussion', label: 'Need help?', position: 'right' }
       ],
     },
