@@ -125,8 +125,8 @@ const selectNumOfDoneTodos = createSelector(
 )
 
 export const DoneTodosCounter = () => {
-  const NumOfDoneTodos = useSelector(selectNumOfDoneTodos)
-  return <div>{NumOfDoneTodos}</div>
+  const numOfDoneTodos = useSelector(selectNumOfDoneTodos)
+  return <div>{numOfDoneTodos}</div>
 }
 
 export const App = () => {
