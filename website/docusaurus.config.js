@@ -1,4 +1,4 @@
-const { resolve } = require('path');
+const { resolve } = require('path')
 /**
  * Copyright (c) 2017-present, Facebook, Inc.
  *
@@ -18,17 +18,20 @@ const siteConfig = {
           path: '../docs',
           sidebarPath: require.resolve('./sidebars.json'),
           routeBasePath: '/',
-          include: ['{api,introduction,using-react-redux}/*.{md,mdx}', 'troubleshooting.md'], // no other way to exclude node_modules
+          include: [
+            '{api,introduction,using-react-redux}/*.{md,mdx}',
+            'troubleshooting.md',
+          ], // no other way to exclude node_modules
         },
         theme: {
           customCss: [
             require.resolve('./static/css/custom.css'),
             require.resolve('./static/css/404.css'),
-            require.resolve('./static/css/codeblock.css')
+            require.resolve('./static/css/codeblock.css'),
           ],
         },
-      }
-    ]
+      },
+    ],
   ],
   title: 'React Redux', // Title for your website.
   onBrokenLinks: 'throw',
@@ -65,7 +68,8 @@ const siteConfig = {
     '/scripts/sidebarScroll.js',
     '/scripts/codeblock.js',
     {
-      src: 'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
+      src:
+        'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
       async: true,
     },
   ],
@@ -85,7 +89,7 @@ const siteConfig = {
   themeConfig: {
     metadatas: [{ name: 'twitter:card', content: 'summary' }],
     prism: {
-      theme: require('./static/scripts/monokaiTheme.js')
+      theme: require('./static/scripts/monokaiTheme.js'),
     },
     image: 'img/redux-logo-landscape.png',
     navbar: {
@@ -100,11 +104,28 @@ const siteConfig = {
           position: 'left',
           // Do not add the link active class when browsing docs.
         },
-        { to: 'introduction/quick-start', label: 'Quick Start', position: 'right' },
-        { to: 'using-react-redux/connect-mapstate', label: 'Using React Redux', position: 'right' },
+        {
+          to: 'introduction/quick-start',
+          label: 'Quick Start',
+          position: 'right',
+        },
+        {
+          to: 'using-react-redux/connect-mapstate',
+          label: 'Using React Redux',
+          position: 'right',
+        },
         { to: 'api/connect', label: 'API', position: 'right' },
-        { href: 'https://www.github.com/reduxjs/react-redux', label: 'GitHub', position: 'right', className: 'github' },
-        { href: '/introduction/quick-start#help-and-discussion', label: 'Need help?', position: 'right' }
+        {
+          href: 'https://www.github.com/reduxjs/react-redux',
+          label: 'GitHub',
+          position: 'right',
+          className: 'github',
+        },
+        {
+          href: '/introduction/quick-start#help-and-discussion',
+          label: 'Need help?',
+          position: 'right',
+        },
       ],
     },
     footer: {
@@ -113,41 +134,42 @@ const siteConfig = {
         alt: 'Redux Logo',
         src: 'img/redux_white.svg',
       },
-      copyright: 'Copyright (c) 2015-present Dan Abramov and the Redux documentation authors.',
+      copyright:
+        'Copyright (c) 2015-present Dan Abramov and the Redux documentation authors.',
       links: [
         {
           title: 'Docs',
           items: [
             {
               label: 'Introduction',
-              to: 'introduction/quick-start'
+              to: 'introduction/quick-start',
             },
             {
               label: 'Using React Redux',
-              to: 'using-react-redux/connect-mapstate'
+              to: 'using-react-redux/connect-mapstate',
             },
             {
               label: 'API Reference',
-              to: 'api/connect'
+              to: 'api/connect',
             },
             {
               label: 'Guides',
-              to: 'troubleshooting'
-            }
-          ]
+              to: 'troubleshooting',
+            },
+          ],
         },
         {
           title: 'Community',
           items: [
             {
               label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/react-redux'
+              href: 'https://stackoverflow.com/questions/tagged/react-redux',
             },
             {
               label: 'Discord',
-              href: 'https://discord.gg/reactiflux',
-            }
-          ]
+              href: 'https://discord.gg/0ZcbPKXt5bZ6au5t',
+            },
+          ],
         },
         {
           title: 'More',
@@ -169,7 +191,7 @@ const siteConfig = {
                 >
                   Star
                 </a>
-              `
+              `,
             },
             {
               html: `
@@ -179,21 +201,21 @@ const siteConfig = {
                     alt="Deploys by Netlify"
                   />
                 </a>
-              `
-            }
-          ]
-        }
+              `,
+            },
+          ],
+        },
       ],
     },
     algolia: {
       apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
       indexName: 'react-redux',
-      algoliaOptions: {}
+      algoliaOptions: {},
     },
     googleAnalytics: {
       trackingID: 'UA-130598673-2',
     },
-  }
+  },
 }
 
 module.exports = siteConfig
