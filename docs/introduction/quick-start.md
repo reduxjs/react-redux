@@ -86,6 +86,6 @@ The **[#redux channel](https://discord.gg/0ZcbPKXt5bZ6au5t)** of the **[Reactifl
 
 You can also ask questions on [Stack Overflow](https://stackoverflow.com) using the **[#redux tag](https://stackoverflow.com/questions/tagged/redux)**.
 
-## React-Redux Docs Translations
+## Docs Translations
 
-- [React-Redux in Portuguese](https://fernandobelotto.github.io/react-redux) — Portuguese
+- [Portuguese](https://fernandobelotto.github.io/react-redux)
