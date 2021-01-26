@@ -1,7 +1,8 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { ReactReduxContext } from './Context'
 import Subscription from '../utils/Subscription'
+import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 
 function Provider({ store, context, children }) {
   const contextValue = useMemo(() => {
@@ -15,7 +16,7 @@ function Provider({ store, context, children }) {
 
   const previousState = useMemo(() => store.getState(), [store])
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue
     subscription.trySubscribe()
 
