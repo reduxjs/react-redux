@@ -9,6 +9,10 @@ import { useStore } from './hooks/useStore'
 
 import { getBatch } from './utils/batch'
 import shallowEqual from './utils/shallowEqual'
+import {
+  forceUseLayoutEffect,
+  getUseIsomorphicLayoutEffect,
+} from './utils/useIsomorphicLayoutEffect.js'
 
 // For other renderers besides ReactDOM and React Native, use the default noop batch function
 const batch = getBatch()
@@ -23,4 +27,6 @@ export {
   useSelector,
   useStore,
   shallowEqual,
+  forceUseLayoutEffect,
+  getUseIsomorphicLayoutEffect,
 }
