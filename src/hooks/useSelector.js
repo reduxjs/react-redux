@@ -1,7 +1,7 @@
 import { useReducer, useRef, useMemo, useContext, useDebugValue } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import { getUseIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 
 const refEquality = (a, b) => a === b
@@ -45,14 +45,14 @@ function useSelectorWithStoreAndSubscription(
     throw err
   }
 
-  useIsomorphicLayoutEffect(() => {
+  getUseIsomorphicLayoutEffect()(() => {
     latestSelector.current = selector
     latestStoreState.current = storeState
     latestSelectedState.current = selectedState
     latestSubscriptionCallbackError.current = undefined
   })
 
-  useIsomorphicLayoutEffect(() => {
+  getUseIsomorphicLayoutEffect()(() => {
     function checkForUpdates() {
       try {
         const newSelectedState = latestSelector.current(store.getState())

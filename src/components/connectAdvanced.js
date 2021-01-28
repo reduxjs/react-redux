@@ -2,7 +2,7 @@ import hoistStatics from 'hoist-non-react-statics'
 import React, { useContext, useMemo, useRef, useReducer } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 import Subscription from '../utils/Subscription'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import { getUseIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 
 import { ReactReduxContext } from './Context'
 
@@ -28,7 +28,7 @@ function useIsomorphicLayoutEffectWithArgs(
   effectArgs,
   dependencies
 ) {
-  useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies)
+  getUseIsomorphicLayoutEffect()(() => effectFunc(...effectArgs), dependencies)
 }
 
 function captureWrapperProps(
