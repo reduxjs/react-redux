@@ -93,6 +93,39 @@ describe('useIsomorphicLayoutEffect', () => {
     })
   })
 
+  describe('forceUseEffect', () => {
+    let useIsomorphicLayoutEffect, forceUseEffect
+
+    describe('when document.createElement is defined', () => {
+      let _document, createElement
+
+      beforeEach(async () => {
+        _document = window?.document
+        createElement = window?.document?.createElement
+
+        if (!_document) window.document = {}
+        if (!createElement) window.document.createElement = () => {}
+        ;({ useIsomorphicLayoutEffect, forceUseEffect } = await import(
+          '../../src/utils/useIsomorphicLayoutEffect'
+        ))
+      })
+
+      afterEach(() => {
+        if (createElement) window.document.createElement = createElement
+        if (_document) window.document = _document
+      })
+
+      it('forces useIsomorphicLayoutEffect to useEffect', async () => {
+        forceUseEffect()
+        ;({ useIsomorphicLayoutEffect } = await import(
+          '../../src/utils/useIsomorphicLayoutEffect'
+        ))
+
+        expect(useIsomorphicLayoutEffect).toBe(useEffect)
+      })
+    })
+  })
+
   describe('getUseIsomorphicLayoutEffect', () => {
     let getUseIsomorphicLayoutEffect, forceUseLayoutEffect
     let createElement

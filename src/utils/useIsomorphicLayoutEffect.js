@@ -20,5 +20,9 @@ export const forceUseLayoutEffect = () => {
   useIsomorphicLayoutEffect = useLayoutEffect
 }
 
+export const forceUseEffect = () => {
+  useIsomorphicLayoutEffect = useEffect
+}
+
 // Supply a getter just to skip dealing with ESM bindings
 export const getUseIsomorphicLayoutEffect = () => useIsomorphicLayoutEffect
