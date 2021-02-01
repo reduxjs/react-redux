@@ -209,8 +209,6 @@ export const App = () => {
 }
 ```
 
-## Removed: `useActions()`
-
 ## `useDispatch()`
 
 ```js
