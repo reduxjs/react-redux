@@ -18,7 +18,6 @@ module.exports = {
         ].replace(/^[^0-9]*/, '')
       }
     ],
-    '@babel/plugin-syntax-dynamic-import'
   ].filter(Boolean),
   env: {
     test: {
