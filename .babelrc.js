@@ -18,12 +18,6 @@ module.exports = {
         ].replace(/^[^0-9]*/, '')
       }
     ],
+    'babel-plugin-dynamic-import-node'
   ].filter(Boolean),
-  env: {
-    test: {
-      plugins: [
-        'babel-plugin-dynamic-import-node'
-      ]
-    }
-  }
 }
