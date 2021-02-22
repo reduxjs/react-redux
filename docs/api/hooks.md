@@ -304,7 +304,7 @@ export const Todos() = () => {
 
 ```js
 const store = useStore()
-````
+```
 
 This hook returns a reference to the same Redux store that was passed in to the `<Provider>` component.
 
