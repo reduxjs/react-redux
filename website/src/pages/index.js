@@ -11,7 +11,11 @@ const features = [
   {
     content: (
       <p>
-        React Redux is maintained by the Redux team, and <strong>kept up-to-date with the latest APIs from Redux and React</strong>.
+        React Redux is maintained by the Redux team, and{' '}
+        <strong>
+          kept up-to-date with the latest APIs from Redux and React
+        </strong>
+        .
       </p>
     ),
     image: <img src="img/noun_Certificate_1945625.svg" />,
@@ -21,8 +25,9 @@ const features = [
   {
     content: (
       <p>
-        <strong>Designed to work with React's component model</strong>.
-        {' '} You define how to extract the values your component needs from Redux, and your component receives them as props.
+        <strong>Designed to work with React's component model</strong>. You
+        define how to extract the values your component needs from Redux, and
+        your component receives them as props.
       </p>
     ),
     image: <img src="img/noun_Check_1870817.svg" />,
@@ -32,7 +37,9 @@ const features = [
   {
     content: (
       <p>
-        Creates wrapper components that <strong>manage the store interaction logic for you</strong>, so you don't have to write it yourself.
+        Creates wrapper components that{' '}
+        <strong>manage the store interaction logic for you</strong>, so you
+        don't have to write it yourself.
       </p>
     ),
     image: <img src="img/noun_Box_1664404.svg" />,
@@ -42,13 +49,15 @@ const features = [
   {
     content: (
       <p>
-        Automatically implements <strong>complex performance optimizations</strong>, so that your own component only re-renders when the data it needs has actually changed.
+        Automatically implements{' '}
+        <strong>complex performance optimizations</strong>, so that your own
+        component only re-renders when the data it needs has actually changed.
       </p>
     ),
     image: <img src="img/noun_Rocket_1245262.svg" />,
     imageAlign: 'top',
     title: 'Optimized'
-  },
+  }
 ]
 
 const otherLibraries = [
@@ -66,10 +75,11 @@ const otherLibraries = [
       >
         <path d="M448 80v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V80c0-26.51 21.49-48 48-48h352c26.51 0 48 21.49 48 48zm-88 16H248.029c-21.313 0-32.08 25.861-16.971 40.971l31.984 31.987L67.515 364.485c-4.686 4.686-4.686 12.284 0 16.971l31.029 31.029c4.687 4.686 12.285 4.686 16.971 0l195.526-195.526 31.988 31.991C358.058 263.977 384 253.425 384 231.979V120c0-13.255-10.745-24-24-24z"></path>
       </svg>
-    ),
+    )
   },
   {
-    content: 'The official, opinionated, batteries-included toolset for efficient Redux development',
+    content:
+      'The official, opinionated, batteries-included toolset for efficient Redux development',
     title: 'Redux Toolkit',
     link: 'https://redux-toolkit.js.org',
     image: (
@@ -82,50 +92,22 @@ const otherLibraries = [
       >
         <path d="M448 80v352c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V80c0-26.51 21.49-48 48-48h352c26.51 0 48 21.49 48 48zm-88 16H248.029c-21.313 0-32.08 25.861-16.971 40.971l31.984 31.987L67.515 364.485c-4.686 4.686-4.686 12.284 0 16.971l31.029 31.029c4.687 4.686 12.285 4.686 16.971 0l195.526-195.526 31.988 31.991C358.058 263.977 384 253.425 384 231.979V120c0-13.255-10.745-24-24-24z"></path>
       </svg>
-    ),
-  },
+    )
+  }
 ]
 
 function Home() {
   const context = useDocusaurusContext()
   const { siteConfig = {} } = context
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://buttons.github.io/buttons.js";
-    script.async = true;
-    document.body.appendChild(script);
+    const script = document.createElement('script')
+    script.src = 'https://buttons.github.io/buttons.js'
+    script.async = true
+    document.body.appendChild(script)
   }, [])
 
   return (
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
-      <div style={{ background: '#111', padding: '10px 0', lineHeight: 2 }}>
-        <div className="container">
-          <div
-            style={{
-              color: 'white',
-              fontWeight: 'bold',
-              textAlign: 'center'
-            }}
-          >
-            Black Lives Matter.
-            <a
-              style={{
-                display: 'inline-block',
-                color: 'white',
-                fontWeight: 'bold',
-                margin: '0 10px',
-                padding: '7px 20px',
-                border: '1px solid white'
-              }}
-              href="https://support.eji.org/give/153413"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Support the Equal Justice Initiative.
-            </a>
-          </div>
-        </div>
-      </div>
       <header className={classnames('hero hero--primary', styles.heroBanner)}>
         <div className="container">
           <div className={styles.title}>
@@ -144,7 +126,7 @@ function Home() {
             <Link
               className={classnames(
                 'button button--secondary button--lg',
-                styles.getStarted,
+                styles.getStarted
               )}
               to={useBaseUrl('introduction/quick-start')}
             >
@@ -209,4 +191,4 @@ function Home() {
   )
 }
 
-export default Home;
+export default Home
