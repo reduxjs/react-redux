@@ -11,6 +11,14 @@ React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give funct
 
 React Redux now offers a set of hook APIs as an alternative to the existing `connect()` Higher Order Component. These APIs allow you to subscribe to the Redux store and dispatch actions, without having to wrap your components in `connect()`.
 
+:::tip
+
+**We recommend using the React-Redux hooks API as the default approach in your React components.**
+
+The existing `connect` API still works and will continue to be supported, but the hooks API is simpler and works better with TypeScript.
+
+:::
+
 These hooks were first added in v7.1.0.
 
 ## Using Hooks in a React Redux App
@@ -38,7 +46,11 @@ const result: any = useSelector(selector: Function, equalityFn?: Function)
 
 Allows you to extract data from the Redux store state, using a selector function.
 
-> **Note**: The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
+:::info
+
+The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
+
+:::
 
 The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-mapstate) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders (unless its reference hasn't changed since a previous render of the component so that a cached result can be returned by the hook without re-running the selector). `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
 
@@ -50,7 +62,11 @@ However, there are some differences between the selectors passed to `useSelector
 - Extra care must be taken when using memoizing selectors (see examples below for more details).
 - `useSelector()` uses strict `===` reference equality checks by default, not shallow equality (see the following section for more details).
 
-> **Note**: There are potential edge cases with using props in selectors that may cause errors. See the [Usage Warnings](#usage-warnings) section of this page for further details.
+:::info
+
+There are potential edge cases with using props in selectors that may cause issues. See the [Usage Warnings](#usage-warnings) section of this page for further details.
+
+:::
 
 You may call `useSelector()` multiple times within a single function component. Each call to `useSelector()` creates an individual subscription to the Redux store. Because of the React update batching behavior used in React Redux v7, a dispatched action that causes multiple `useSelector()`s in the same component to return new values _should_ only result in a single re-render.
 
@@ -91,7 +107,7 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 
 export const CounterComponent = () => {
-  const counter = useSelector((state) => state.counter)
+  const counter = useSelector(state => state.counter)
   return <div>{counter}</div>
 }
 ```
@@ -102,8 +118,8 @@ Using props via closure to determine what to extract:
 import React from 'react'
 import { useSelector } from 'react-redux'
 
-export const TodoListItem = (props) => {
-  const todo = useSelector((state) => state.todos[props.id])
+export const TodoListItem = props => {
+  const todo = useSelector(state => state.todos[props.id])
   return <div>{todo.text}</div>
 }
 ```
@@ -119,21 +135,21 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
-const selectNumOfDoneTodos = createSelector(
-  (state) => state.todos,
-  (todos) => todos.filter((todo) => todo.isDone).length
+const selectNumCompletedTodos = createSelector(
+  state => state.todos,
+  todos => todos.filter(todo => todo.completed).length
 )
 
-export const DoneTodosCounter = () => {
-  const numOfDoneTodos = useSelector(selectNumOfDoneTodos)
-  return <div>{numOfDoneTodos}</div>
+export const CompletedTodosCounter = () => {
+  const numCompletedTodos = useSelector(selectNumCompletedTodos)
+  return <div>{numCompletedTodos}</div>
 }
 
 export const App = () => {
   return (
     <>
-      <span>Number of done todos:</span>
-      <DoneTodosCounter />
+      <span>Number of completed todos:</span>
+      <CompletedTodosCounter />
     </>
   )
 }
@@ -146,25 +162,26 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
-const selectNumOfTodosWithIsDoneValue = createSelector(
-  (state) => state.todos,
-  (_, isDone) => isDone,
-  (todos, isDone) => todos.filter((todo) => todo.isDone === isDone).length
+const selectCompletedTodosCount = createSelector(
+  state => state.todos,
+  (_, completed) => completed,
+  (todos, completed) =>
+    todos.filter(todo => todo.completed === completed).length
 )
 
-export const TodoCounterForIsDoneValue = ({ isDone }) => {
-  const NumOfTodosWithIsDoneValue = useSelector((state) =>
-    selectNumOfTodosWithIsDoneValue(state, isDone)
+export const CompletedTodosCount = ({ completed }) => {
+  const matchingCount = useSelector(state =>
+    selectCompletedTodosCount(state, completed)
   )
 
-  return <div>{NumOfTodosWithIsDoneValue}</div>
+  return <div>{matchingCount}</div>
 }
 
 export const App = () => {
   return (
     <>
       <span>Number of done todos:</span>
-      <TodoCounterForIsDoneValue isDone={true} />
+      <CompletedTodosCount completed={true} />
     </>
   )
 }
@@ -177,39 +194,35 @@ import React, { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
-const makeNumOfTodosWithIsDoneSelector = () =>
+const makeSelectCompletedTodosCount = () =>
   createSelector(
-    (state) => state.todos,
-    (_, isDone) => isDone,
-    (todos, isDone) => todos.filter((todo) => todo.isDone === isDone).length
+    state => state.todos,
+    (_, completed) => completed,
+    (todos, completed) =>
+      todos.filter(todo => todo.completed === completed).length
   )
 
-export const TodoCounterForIsDoneValue = ({ isDone }) => {
-  const selectNumOfTodosWithIsDone = useMemo(
-    makeNumOfTodosWithIsDoneSelector,
-    []
+export const CompletedTodosCount = ({ completed }) => {
+  const selectCompletedTodosCount = useMemo(makeSelectCompletedTodosCount, [])
+
+  const matchingCount = useSelector(state =>
+    selectCompletedTodosCount(state, completed)
   )
 
-  const numOfTodosWithIsDoneValue = useSelector((state) =>
-    selectNumOfTodosWithIsDone(state, isDone)
-  )
-
-  return <div>{numOfTodosWithIsDoneValue}</div>
+  return <div>{matchingCount}</div>
 }
 
 export const App = () => {
   return (
     <>
       <span>Number of done todos:</span>
-      <TodoCounterForIsDoneValue isDone={true} />
+      <CompletedTodosCount completed={true} />
       <span>Number of unfinished todos:</span>
-      <TodoCounterForIsDoneValue isDone={false} />
+      <CompletedTodosCount completed={false} />
     </>
   )
 }
 ```
-
-## Removed: `useActions()`
 
 ## `useDispatch()`
 
@@ -218,8 +231,6 @@ const dispatch = useDispatch()
 ```
 
 This hook returns a reference to the `dispatch` function from the Redux store. You may use it to dispatch actions as needed.
-
-_Note: like in [React's `useReducer`](https://reactjs.org/docs/hooks-reference.html#usereducer), the returned `dispatch` function identity is stable and won't change on re-renders (unless you change the `store` being passed to the `<Provider>`, which would be extremely unusual)._
 
 #### Examples
 
@@ -241,7 +252,7 @@ export const CounterComponent = ({ value }) => {
 }
 ```
 
-Reminder: when passing a callback using `dispatch` to a child component, you should memoize it with [`useCallback`](https://reactjs.org/docs/hooks-reference.html#usecallback), just like you should memoize any passed callback. This avoids unnecessary rendering of child components due to the changed callback reference. You can safely pass `[dispatch]` in the dependency array for the `useCallback` call - since `dispatch` won't change, the callback will be reused properly (as it should). For example:
+When passing a callback using `dispatch` to a child component, you may sometimes want to memoize it with [`useCallback`](https://reactjs.org/docs/hooks-reference.html#usecallback). _If_ the child component is trying to optimize render behavior using `React.memo()` or similar, this avoids unnecessary rendering of child components due to the changed callback reference.
 
 ```jsx
 import React, { useCallback } from 'react'
@@ -266,6 +277,28 @@ export const MyIncrementButton = React.memo(({ onIncrement }) => (
   <button onClick={onIncrement}>Increment counter</button>
 ))
 ```
+
+:::info
+
+The `dispatch` function reference will be stable as long as the same store instance is being passed to the `<Provider>`.
+Normally, that store instance never changes in an application.
+
+However, the React hooks lint rules do not know that `dispatch` should be stable, and will warn that the `dispatch` variable
+should be added to dependency arrays for `useEffect` and `useCallback`. The simplest solution is to do just that:
+
+````js
+export const Todos() = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(fetchTodos())
+  // highlight-start
+  // Safe to add dispatch to the dependencies array
+  }, [dispatch])
+  // highlight-end
+}
+
+:::
 
 ## `useStore()`
 
@@ -304,7 +337,7 @@ import {
   Provider,
   createStoreHook,
   createDispatchHook,
-  createSelectorHook,
+  createSelectorHook
 } from 'react-redux'
 
 const MyContext = React.createContext(null)
@@ -328,6 +361,12 @@ export function MyProvider({ children }) {
 ## Usage Warnings
 
 ### Stale Props and "Zombie Children"
+
+:::info
+
+The React-Redux hooks API has been production-ready since we released it in v7.1.0, and **we recommend using the hooks API as the default approach in your components**. However, there are a couple of edge cases that can occur, and **we're documenting those so that you can be aware of them**.
+
+:::
 
 One of the most difficult aspects of React Redux's implementation is ensuring that if your `mapStateToProps` function is defined as `(state, ownProps)`, it will be called with the "latest" props every time. Up through version 4, there were recurring bugs reported involving edge case situations, such as errors thrown from a `mapState` function for a list item whose data had just been deleted.
 
@@ -358,7 +397,15 @@ If you prefer to deal with this issue yourself, here are some possible options f
 - In cases where you do rely on props in your selector function _and_ those props may change over time, _or_ the data you're extracting may be based on items that can be deleted, try writing the selector functions defensively. Don't just reach straight into `state.todos[props.id].name` - read `state.todos[props.id]` first, and verify that it exists before trying to read `todo.name`.
 - Because `connect` adds the necessary `Subscription` to the context provider and delays evaluating child subscriptions until the connected component has re-rendered, putting a connected component in the component tree just above the component using `useSelector` will prevent these issues as long as the connected component gets re-rendered due to the same store update as the hooks component.
 
-> **Note**: For a longer description of this issue, see ["Stale props and zombie children in Redux" by Kai Hao](https://kaihao.dev/posts/Stale-props-and-zombie-children-in-Redux), [this chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec), and [issue #1179](https://github.com/reduxjs/react-redux/issues/1179).
+:::info
+
+For a longer description of these scenarios, see:
+
+- ["Stale props and zombie children in Redux" by Kai Hao](https://kaihao.dev/posts/Stale-props-and-zombie-children-in-Redux)
+- [this chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec)
+- [issue #1179](https://github.com/reduxjs/react-redux/issues/1179)
+
+:::
 
 ### Performance
 
@@ -368,7 +415,7 @@ If further performance optimizations are necessary, you may consider wrapping yo
 
 ```jsx
 const CounterComponent = ({ name }) => {
-  const counter = useSelector((state) => state.counter)
+  const counter = useSelector(state => state.counter)
   return (
     <div>
       {name}: {counter}
@@ -409,7 +456,7 @@ export function useActions(actions, deps) {
   return useMemo(
     () => {
       if (Array.isArray(actions)) {
-        return actions.map((a) => bindActionCreators(a, dispatch))
+        return actions.map(a => bindActionCreators(a, dispatch))
       }
       return bindActionCreators(actions, dispatch)
     },
@@ -431,3 +478,4 @@ export function useShallowEqualSelector(selector) {
 ### Additional considerations when using hooks
 
 There are some architectural trade offs to take into consideration when deciding whether to use hooks or not. Mark Erikson summarizes these nicely in his two blog posts [Thoughts on React Hooks, Redux, and Separation of Concerns](https://blog.isquaredsoftware.com/2019/07/blogged-answers-thoughts-on-hooks/) and [Hooks, HOCs, and Tradeoffs](https://blog.isquaredsoftware.com/2019/09/presentation-hooks-hocs-tradeoffs/).
+````
