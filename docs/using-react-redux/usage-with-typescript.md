@@ -7,9 +7,9 @@ sidebar_label: Usage with TypeScript
 
 # Usage with TypeScript
 
-React-Redux is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript and Flow.
+React-Redux itself is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript and Flow.
 
-React-Redux doesn't ship with its own type definitions. If you are using TypeScript you should install the [`@types/react-redux` type definitions](https://npm.im/@types/react-redux) from npm. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
+React-Redux doesn't ship with its own type definitions. If you are using TypeScript you should install the [`@types/react-redux` type definitions](https://npm.im/@types/react-redux) from NPM. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
 
 ## Defining the Root State Type
 

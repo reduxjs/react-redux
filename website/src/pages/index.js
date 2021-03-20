@@ -39,7 +39,7 @@ const features = [
       <p>
         Provides APIs that{' '}
         <strong>enable your components to interact with the Redux store</strong>
-        , so you don't have to write that logi yourself.
+        , so you don't have to write that logic yourself.
       </p>
     ),
     image: <img src="img/noun_Box_1664404.svg" />,

@@ -34,7 +34,7 @@ The [`useStore` hook](../api/hooks.md#useStore) returns the current store instan
 
 Instead of using the default context instance from React Redux, you may supply your own custom context instance.
 
-```js
+```jsx
 <Provider context={MyContext} store={store}>
   <App />
 </Provider>
@@ -75,7 +75,7 @@ The following runtime error occurs when React Redux does not find a store in the
 ## Multiple Stores
 
 [Redux was designed to use a single store](https://redux.js.org/api/store#a-note-for-flux-users).
-However, if you are in an unavoidable position of needing to use multiple stores, with v6 you may do so by providing (multiple) custom contexts.
+However, if you are in an unavoidable position of needing to use multiple stores, as of v6 you may do so by providing (multiple) custom contexts.
 This also provides a natural isolation of the stores as they live in separate context instances.
 
 ```js
@@ -118,17 +118,26 @@ compose(
 In rare cases, you may need to access the Redux store directly in your own components. This can be done by rendering
 the appropriate context consumer yourself, and accessing the `store` field out of the context value.
 
-> **Note**: This is **_not_ considered part of the React Redux public API, and may break without notice**. We do recognize
-> that the community has use cases where this is necessary, and will try to make it possible for users to build additional
-> functionality on top of React Redux, but our specific use of context is considered an implementation detail.
-> If you have additional use cases that are not sufficiently covered by the current APIs, please file an issue to discuss
-> possible API improvements.
+:::caution
 
-```js
+This is **_not_ considered part of the React Redux public API, and may break without notice**. We do recognize
+that the community has use cases where this is necessary, and will try to make it possible for users to build additional
+functionality on top of React Redux, but our specific use of context is considered an implementation detail.
+If you have additional use cases that are not sufficiently covered by the current APIs, please file an issue to discuss
+possible API improvements.
+
+:::
+
+```jsx
 import { ReactReduxContext } from 'react-redux'
 
-// in your connected component
+// Somewhere inside of a <Provider>
 function MyConnectedComponent() {
+  // Access the store via the `useContext` hook
+  const {store} = useContext(ReactReduxContext)
+
+  // alternately, use the render props form of the context
+  /*
   return (
     <ReactReduxContext.Consumer>
       {({ store }) => {
@@ -137,6 +146,7 @@ function MyConnectedComponent() {
       }}
     </ReactReduxContext.Consumer>
   )
+  */
 }
 ```
 
