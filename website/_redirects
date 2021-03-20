@@ -10,7 +10,9 @@
 /next/introduction/quick-started        /introduction/getting-started
 
 /introduction/basic-tutorial            /tutorials/connect
-/next/introduction/basic-tutorial            /tutorials/connect
+/next/introduction/basic-tutorial       /tutorials/connect
+
+/using-react-redux/static-typing        /using-react-redux/usage-with-typescript
 
 # Drop versioned docs and redirect all legacy versions to the "current" version
 /next/*         /:splat

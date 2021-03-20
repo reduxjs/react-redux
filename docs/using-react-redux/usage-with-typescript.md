@@ -1,19 +1,17 @@
 ---
-id: static-typing
-title: Static Typing
+id: usage-with-typescript
+title: Usage with TypeScript
 hide_title: true
-sidebar_label: Static Typing
+sidebar_label: Usage with TypeScript
 ---
 
-# Static Typing
+# Usage with TypeScript
 
 React-Redux is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript and Flow.
 
-## TypeScript
+React-Redux doesn't ship with its own type definitions. If you are using TypeScript you should install the [`@types/react-redux` type definitions](https://npm.im/@types/react-redux) from npm. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
 
-React-Redux doesn't ship with its own type definitions. If you are using Typescript you should install the [`@types/react-redux` type definitions](https://npm.im/@types/react-redux) from npm. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
-
-### Defining the Root State Type
+## Defining the Root State Type
 
 Both `mapState` and `useSelector` depend on declaring the type of the complete Redux store state value. While this type could be written by hand, the easiest way to define it is to have TypeScript infer it based on what your root reducer function returns. This way, the type is automatically updated as the reducer functions are modified.
 
@@ -29,7 +27,7 @@ export type RootState = ReturnType<typeof rootReducer>
 // {posts: PostsState, comments: CommentsState, users: UsersState}
 ```
 
-### Typing the `useSelector` hook
+## Typing the `useSelector` hook
 
 When writing selector functions for use with `useSelector`, you should explicitly define the type of the `state` parameter. TS should be able to then infer the return type of the selector, which will be reused as the return type of the `useSelector` hook:
 
@@ -63,7 +61,7 @@ import { useTypedSelector } from './reducer.ts'
 const isOn = useTypedSelector((state) => state.isOn)
 ```
 
-### Typing the `useDispatch` hook
+## Typing the `useDispatch` hook
 
 By default, the return value of `useDispatch` is the standard `Dispatch` type defined by the Redux core types, so no declarations are needed:
 
@@ -88,9 +86,9 @@ export type AppDispatch = typeof store.dispatch
 export const useAppDispatch = () => useDispatch<AppDispatch>() // Export a hook that can be reused to resolve types
 ```
 
-### Typing the `connect` higher order component
+## Typing the `connect` higher order component
 
-#### Manually Typing `connect`
+### Manually Typing `connect`
 
 The `connect` higher-order component is somewhat complex to type, because there are 3 sources of props: `mapStateToProps`, `mapDispatchToProps`, and props passed in from the parent component. Here's a full example of what it looks like to do that manually.
 
@@ -153,7 +151,7 @@ type Props = StateProps & DispatchProps & OwnProps
 
 However, inferring the type of `mapDispatch` this way will break if it is defined as an object and also refers to thunks.
 
-#### Inferring The Connected Props Automatically
+### Inferring The Connected Props Automatically
 
 `connect` consists of two functions that are called sequentially. The first function accepts `mapState` and `mapDispatch` as arguments, and returns a second function. The second function accepts the component to be wrapped, and returns a new wrapper component that passes down the props from `mapState` and `mapDispatch`. Normally, both functions are called together, like `connect(mapState, mapDispatch)(MyComponent)`.
 
@@ -216,7 +214,7 @@ type PropsFromRedux = ConnectedProps<typeof connector>
 export default connector(MyComponent)
 ```
 
-### Recommendations
+## Recommendations
 
 The hooks API is generally simpler to use with static types. **If you're looking for the easiest solution for using static types with React-Redux, use the hooks API.**
 
@@ -226,7 +224,7 @@ If you're using `connect`, **we recommend using the `ConnectedProps<T>` approach
 
 For additional information, see these additional resources:
 
-- [Redux docs: Usage with TypeScript](https://redux.js.org/recipes/usage-with-typescript): Examples of how to declare types for actions, reducers, and the store
-- [Redux Toolkit docs: Advanced Tutorial](https://redux-toolkit.js.org/tutorials/advanced-tutorial): shows how to use RTK and the React-Redux hooks API with TypeScript
+- [Redux docs: Usage with TypeScript](https://redux.js.org/recipes/usage-with-typescript): Examples of how to use Redux Toolkit, the Redux core, and React Redux with TypeScript
+- [Redux Toolkit docs: TypeScript Quick start](https://redux-toolkit.js.org/tutorials/typescript): shows how to use RTK and the React-Redux hooks API with TypeScript
 - [React+TypeScript Cheatsheet](https://github.com/typescript-cheatsheets/react-typescript-cheatsheet): a comprehensive guide to using React with TypeScript
 - [React + Redux in TypeScript Guide](https://github.com/piotrwitek/react-redux-typescript-guide): extensive information on patterns for using React and Redux with TypeScript

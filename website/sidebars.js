@@ -6,10 +6,10 @@ module.exports = {
     ],
     Tutorials: ['tutorials/connect'],
     'Using React Redux': [
+      'using-react-redux/usage-with-typescript',
       'using-react-redux/connect-mapstate',
       'using-react-redux/connect-mapdispatch',
-      'using-react-redux/accessing-store',
-      'using-react-redux/static-typing'
+      'using-react-redux/accessing-store'
     ],
     'API Reference': [
       'api/connect',
