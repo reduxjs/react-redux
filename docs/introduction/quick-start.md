@@ -11,7 +11,7 @@ sidebar_label: Quick Start
 
 ## Installation
 
-React Redux 7.2 requires **React 16.8.3 or later.**
+React Redux 7.1+ requires **React 16.8.3 or later**, in order to make use of React Hooks.
 
 ### Using Create React App
 
@@ -35,9 +35,15 @@ yarn add react-redux
 
 You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
 
+If you are using TypeScript, the React Redux types are maintained separately in DefinitelyTyped. You'll need to install those as well:
+
+```bash
+npm install @types/react-redux
+```
+
 ## `Provider`
 
-React Redux provides `<Provider />`, which makes the Redux store available to the rest of your app:
+React Redux includes a `<Provider />` component, which makes the Redux store available to the rest of your app:
 
 ```js
 import React from 'react'
@@ -57,27 +63,52 @@ ReactDOM.render(
 )
 ```
 
-## `connect()`
+## Hooks
 
-React Redux provides a `connect` function for you to connect your component to the store.
+React Redux provides a pair of custom React hooks that allow your React components to interact with the Redux store.
 
-Normally, you’ll call `connect` in this way:
+`useSelector` reads a value from the store state and subscribes to updates, while `useDispatch` returns the store's `dispatch` method to let you dispatch actions.
 
 ```js
-import { connect } from 'react-redux'
-import { increment, decrement, reset } from './actionCreators'
+import React, { useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import {
+  decrement,
+  increment,
+  incrementByAmount,
+  incrementAsync,
+  selectCount
+} from './counterSlice'
+import styles from './Counter.module.css'
 
-// const Counter = ...
+export function Counter() {
+  const count = useSelector(selectCount)
+  const dispatch = useDispatch()
+  const [incrementAmount, setIncrementAmount] = useState('2')
 
-const mapStateToProps = (state /*, ownProps*/) => {
-  return {
-    counter: state.counter,
-  }
+  return (
+    <div>
+      <div className={styles.row}>
+        <button
+          className={styles.button}
+          aria-label="Increment value"
+          onClick={() => dispatch(increment())}
+        >
+          +
+        </button>
+        <span className={styles.value}>{count}</span>
+        <button
+          className={styles.button}
+          aria-label="Decrement value"
+          onClick={() => dispatch(decrement())}
+        >
+          -
+        </button>
+      </div>
+      {/* omit additional rendering output here */}
+    </div>
+  )
 }
-
-const mapDispatchToProps = { increment, decrement, reset }
-
-export default connect(mapStateToProps, mapDispatchToProps)(Counter)
 ```
 
 ## Help and Discussion
