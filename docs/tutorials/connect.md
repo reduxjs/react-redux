@@ -1,11 +1,11 @@
 ---
 id: connect
-title: `connect` Tutorial
+title: "Tutorial: `connect`"
 hide_title: true
-sidebar_label: `connect` Tutorial
+sidebar_label: 
 ---
 
-# `connect` Tutorial
+# Tutorial: `connect`
 
 :::tip
 
