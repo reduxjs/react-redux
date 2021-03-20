@@ -100,11 +100,6 @@ const siteConfig = {
       },
       items: [
         {
-          type: 'docsVersionDropdown',
-          position: 'left'
-          // Do not add the link active class when browsing docs.
-        },
-        {
           to: 'introduction/quick-start',
           label: 'Quick Start',
           position: 'right'
