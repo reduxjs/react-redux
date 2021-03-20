@@ -7,74 +7,19 @@ hide_title: true
 
 ## Troubleshooting
 
-Make sure to check out [Troubleshooting Redux](https://redux.js.org/troubleshooting) first.
+The **[#redux channel](https://discord.gg/0ZcbPKXt5bZ6au5t)** of the **[Reactiflux Discord community](http://www.reactiflux.com)** is our official resource for all questions related to learning and using Redux. Reactiflux is a great place to hang out, ask questions, and learn - come join us!
 
-### I'm getting the following alert: Accessing PropTypes via the main React package is deprecated. Use the prop-types package from npm instead.
+You can also ask questions on [Stack Overflow](https://stackoverflow.com) using the **[#redux tag](https://stackoverflow.com/questions/tagged/redux)**.
 
-This warning is shown when using react 15.5.\*. Basically, now it's just a warning, but in react16 the application might break. the PropTypes should now be imported from 'prop-types' package, and not from the react package.
-
-Update to the latest version of react-redux.
 
 ### My views aren’t updating!
 
-See the link above.
 In short,
 
 - Reducers should never mutate state, they must return new objects, or React Redux won’t see the updates.
-- Make sure you either bind action creators with the `mapDispatchToProps` argument to `connect()` or with the `bindActionCreators()` method, or that you manually call `dispatch()`. Just calling your `MyActionCreators.addTodo()` function won’t work because it just _returns_ an action, but does not _dispatch_ it.
+- Make sure you are actually _dispatching_ actions. For example, if you have an action creator like `addTodo`, just calling the imported `addTodo()` function by itself won't do anything because it just _returns_ an action, but does not _dispatch_ it.  You either need to call `dispatch(addTodo())` (if using the hooks API) or `props.addTodo()` (if using `connect` + `mapDispatch`).
 
-### My views aren’t updating on route change with React Router 0.13
 
-If you’re using React Router 0.13, you might [bump into this problem](https://github.com/reduxjs/react-redux/issues/43). The solution is simple: whenever you use `<RouteHandler>` or the `Handler` provided by `Router.run`, pass the router state to it.
-
-Root view:
-
-```jsx
-Router.run(routes, Router.HistoryLocation, (Handler, routerState) => {
-  // note "routerState" here
-  ReactDOM.render(
-    <Provider store={store}>
-      {/* note "routerState" here */}
-      <Handler routerState={routerState} />
-    </Provider>,
-    document.getElementById('root')
-  )
-})
-```
-
-Nested view:
-
-```js
-render() {
-  // Keep passing it down
-  return <RouteHandler routerState={this.props.routerState} />
-}
-```
-
-Conveniently, this gives your components access to the router state!
-You can also upgrade to React Router 1.0 which shouldn’t have this problem. (Let us know if it does!)
-
-### My views aren’t updating when something changes outside of Redux
-
-If your views depend on global state or [React “context”](http://facebook.github.io/react/docs/context.html), you might find that views decorated with `connect()` will fail to update.
-
-> This is because `connect()` implements [shouldComponentUpdate](https://facebook.github.io/react/docs/component-specs.html#updating-shouldcomponentupdate) by default, assuming that your component will produce the same results given the same props and state. This is a similar concept to React’s [PureRenderMixin](https://facebook.github.io/react/docs/pure-render-mixin.html).
-
-The _best_ solution to this is to make sure that your components are pure and pass any external state to them via props. This will ensure that your views do not re-render unless they actually need to re-render and will greatly speed up your application.
-
-If that’s not practical for whatever reason (for example, if you’re using a library that depends heavily on React context), you may pass the `pure: false` option to `connect()`:
-
-```js
-function mapStateToProps(state) {
-  return { todos: state.todos }
-}
-
-export default connect(mapStateToProps, null, null, {
-  pure: false,
-})(TodoApp)
-```
-
-This will remove the assumption that `TodoApp` is pure and cause it to update whenever its parent component renders. Note that this will make your application less performant, so only do this if you have no other option.
 
 ### Could not find "store" in either the context or props
 
