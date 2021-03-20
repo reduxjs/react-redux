@@ -17,7 +17,12 @@ It does not modify the component class passed to it; instead, it _returns_ a new
 
 Most applications will not need to use this, as the default behavior in `connect` is intended to work for most use cases.
 
-> Note: `connectAdvanced` was added in version 5.0, and `connect` was reimplemented as a specific set of parameters to `connectAdvanced`.
+:::info
+
+`connectAdvanced` was added in version 5.0, and `connect` was reimplemented as a specific set of parameters to `connectAdvanced`.  However, [**`connectAdvanced` is now deprecated**](https://github.com/reduxjs/react-redux/issues/1236) and will eventually be removed in a future major version of React Redux.
+
+:::
+
 
 ## Arguments
 
