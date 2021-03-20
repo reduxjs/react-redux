@@ -5,9 +5,12 @@
 
 /docs/*          /:splat
 
-# Renamed page
-/introduction/quick-start       /introduction/getting-started
-/next/introduction/quick-start       /introduction/getting-started
+# Renamed pages
+/introduction/quick-start               /introduction/getting-started
+/next/introduction/quick-started        /introduction/getting-started
+
+/introduction/basic-tutorial            /tutorials/connect
+/next/introduction/basic-tutorial            /tutorials/connect
 
 # Drop versioned docs and redirect all legacy versions to the "current" version
 /next/*         /:splat
