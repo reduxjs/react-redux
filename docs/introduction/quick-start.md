@@ -1,11 +1,11 @@
 ---
-id: quick-start
-title: Quick Start
+id: getting-started
+title: Getting Started
 hide_title: true
-sidebar_label: Quick Start
+sidebar_label: Getting Started
 ---
 
-# Quick Start
+# Getting Started with React Redux
 
 [React Redux](https://github.com/reduxjs/react-redux) is the official [React](https://reactjs.org/) binding for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update data.
 

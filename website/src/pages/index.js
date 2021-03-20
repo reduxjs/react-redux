@@ -128,7 +128,7 @@ function Home() {
                 'button button--secondary button--lg',
                 styles.getStarted
               )}
-              to={useBaseUrl('introduction/quick-start')}
+              to={useBaseUrl('introduction/getting-started')}
             >
               Get Started
             </Link>

@@ -100,8 +100,8 @@ const siteConfig = {
       },
       items: [
         {
-          to: 'introduction/quick-start',
-          label: 'Quick Start',
+          to: 'introduction/getting-started',
+          label: 'Getting Started',
           position: 'right'
         },
         {
@@ -117,7 +117,7 @@ const siteConfig = {
           className: 'github'
         },
         {
-          href: '/introduction/quick-start#help-and-discussion',
+          href: '/introduction/getting-started#help-and-discussion',
           label: 'Need help?',
           position: 'right'
         }
@@ -137,7 +137,7 @@ const siteConfig = {
           items: [
             {
               label: 'Introduction',
-              to: 'introduction/quick-start'
+              to: 'introduction/getting-started'
             },
             {
               label: 'Using React Redux',
