@@ -16,7 +16,7 @@ const siteConfig = {
       {
         docs: {
           path: '../docs',
-          sidebarPath: require.resolve('./sidebars.json'),
+          sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
           include: [
             '{api,introduction,using-react-redux}/*.{md,mdx}',
