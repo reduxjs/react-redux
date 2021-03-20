@@ -2,9 +2,9 @@ module.exports = {
   docs: {
     Introduction: [
       'introduction/getting-started',
-      'introduction/basic-tutorial',
       'introduction/why-use-react-redux'
     ],
+    Tutorials: ['tutorials/connect'],
     'Using React Redux': [
       'using-react-redux/connect-mapstate',
       'using-react-redux/connect-mapdispatch',

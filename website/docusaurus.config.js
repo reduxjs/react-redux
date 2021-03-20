@@ -105,6 +105,11 @@ const siteConfig = {
           position: 'right'
         },
         {
+          to: 'tutorials/connect',
+          label: 'Tutorial',
+          position: 'right'
+        },
+        {
           to: 'using-react-redux/connect-mapstate',
           label: 'Using React Redux',
           position: 'right'
