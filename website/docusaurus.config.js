@@ -19,7 +19,7 @@ const siteConfig = {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
           include: [
-            '{api,introduction,using-react-redux}/*.{md,mdx}',
+            '{api,introduction,using-react-redux,tutorials}/*.{md,mdx}',
             'troubleshooting.md'
           ] // no other way to exclude node_modules
         },
