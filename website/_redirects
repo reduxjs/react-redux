@@ -4,3 +4,10 @@
 /docs/using-react-redux/connect-dispatching-actions-with-mapdispatchtoprops       /using-react-redux/connect-mapdispatch
 
 /docs/*          /:splat
+
+# Drop versioned docs and redirect all legacy versions to the "current" version
+/next/*         /:splat
+/5.x/*          /:splat
+/6.x/*          /:splat
+/7.0/*          /:splat
+/7.1/*          /:splat
