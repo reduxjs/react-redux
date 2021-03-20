@@ -12,11 +12,11 @@ module.exports = {
       'using-react-redux/accessing-store'
     ],
     'API Reference': [
-      'api/connect',
       'api/provider',
+      'api/hooks',
+      'api/connect',
       'api/connect-advanced',
-      'api/batch',
-      'api/hooks'
+      'api/batch'
     ],
     Guides: ['troubleshooting']
   }

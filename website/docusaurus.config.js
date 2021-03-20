@@ -41,27 +41,10 @@ const siteConfig = {
   // Used for publishing and more
   projectName: 'react-redux',
   organizationName: 'reduxjs',
-  // For top-level user or org sites, the organization is still the same.
-  // e.g., for the https://JoelMarcey.github.io site, it would be set like...
-  //   organizationName: 'JoelMarcey'
 
   // For no header links in the top nav bar -> headerLinks: [],
   /* path to images for header/footer */
   favicon: 'img/favicon/favicon.ico',
-
-  /* Custom fonts for website */
-  /*
-  fonts: {
-    myFont: [
-      "Times New Roman",
-      "Serif"
-    ],
-    myOtherFont: [
-      "-apple-system",
-      "system-ui"
-    ]
-  },
-  */
 
   // Add custom scripts here that would be placed in <script> tags.
   scripts: [
@@ -73,19 +56,11 @@ const siteConfig = {
       async: true
     }
   ],
-
   // You may provide arbitrary config keys to be used as needed by your
   // template. For example, if you need your repo's URL...
   customFields: {
     repoUrl: 'https://github.com/reduxjs/react-redux'
   },
-  /**
-   * Note:
-   * This will generate a link on the versioned docs page for "pre-release versions"
-   * Once next version is released, run "yarn run version 7.x", and docusaurus will add 7.x to stable version
-   * After that, 7.x will no longer appear in "pre-release" versions and we should remove this line
-   * More info: https://docusaurus.io/docs/en/versioning
-   */
   themeConfig: {
     metadatas: [{ name: 'twitter:card', content: 'summary' }],
     prism: {

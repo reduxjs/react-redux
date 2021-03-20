@@ -9,9 +9,9 @@ hide_title: true
 
 ## Overview
 
-The `<Provider />` makes the Redux `store` available to any nested components that have been wrapped in the `connect()` function.
+The `<Provider>` component makes the Redux `store` available to any nested components that need to access the Redux store.
 
-Since any React component in a React Redux app can be connected, most applications will render a `<Provider>` at the top level, with the entire app’s component tree inside of it.
+Since any React component in a React Redux app can be connected to the store, most applications will render a `<Provider>` at the top level, with the entire app’s component tree inside of it.
 
 Normally, you can’t use a connected component unless it is nested inside of a `<Provider>`.
 

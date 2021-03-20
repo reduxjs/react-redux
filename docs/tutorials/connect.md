@@ -1,11 +1,11 @@
 ---
 id: connect
-title: "Tutorial: `connect`"
+title: "Tutorial: Connect API"
 hide_title: true
 sidebar_label: 
 ---
 
-# Tutorial: `connect`
+# Tutorial: Using the `connect` API
 
 :::tip
 
