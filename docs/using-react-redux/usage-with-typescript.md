@@ -7,27 +7,71 @@ sidebar_label: Usage with TypeScript
 
 # Usage with TypeScript
 
-React-Redux itself is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript and Flow.
+React-Redux itself is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript.
 
 React-Redux doesn't ship with its own type definitions. If you are using TypeScript you should install the [`@types/react-redux` type definitions](https://npm.im/@types/react-redux) from NPM. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
 
-## Defining the Root State Type
 
-Both `mapState` and `useSelector` depend on declaring the type of the complete Redux store state value. While this type could be written by hand, the easiest way to define it is to have TypeScript infer it based on what your root reducer function returns. This way, the type is automatically updated as the reducer functions are modified.
+## Standard Redux Toolkit Project Setup with TypeScript
 
-```ts
-// rootReducer.ts
-export const rootReducer = combineReducers({
-  posts: postsReducer,
-  comments: commentsReducer,
-  users: usersReducer,
+We assume that a typical Redux project is using Redux Toolkit and React Redux together.
+
+[Redux Toolkit](https://redux-toolkit.js.org) (RTK) is the standard approach for writing modern Redux logic. RTK is already written in TypeScript, and its API is designed to provide a good experience for TypeScript usage.
+
+The [Redux+TS template for Create-React-App](https://github.com/reduxjs/cra-template-redux-typescript) comes with a working example of these patterns already configured.
+
+### Define Root State and Dispatch Types
+
+Using [configureStore](https://redux-toolkit.js.org/api/configureStore) should not need any additional typings. You will, however, want to extract the `RootState` type and the `Dispatch` type so that they can be referenced as needed. Inferring these types from the store itself means that they correctly update as you add more state slices or modify middleware settings.
+
+Since those are types, it's safe to export them directly from your store setup file such as `app/store.ts` and import them directly into other files.
+
+```ts title="app/store.ts"
+import { configureStore } from '@reduxjs/toolkit'
+// ...
+
+const store = configureStore({
+  reducer: {
+    posts: postsReducer,
+    comments: commentsReducer,
+    users: usersReducer,
+  }
 })
 
-export type RootState = ReturnType<typeof rootReducer>
-// {posts: PostsState, comments: CommentsState, users: UsersState}
+// highlight-start
+// Infer the `RootState` and `AppDispatch` types from the store itself
+export type RootState = ReturnType<typeof store.getState>
+// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
+export type AppDispatch = typeof store.dispatch
+// highlight-end
 ```
 
-## Typing the `useSelector` hook
+### Define Typed Hooks
+
+While it's possible to import the `RootState` and `AppDispatch` types into each component, it's better to **create pre-typed versions of the `useDispatch` and `useSelector` hooks for usage in your application**. This is important for a couple reasons:
+
+- For `useSelector`, it saves you the need to type `(state: RootState)` every time
+- For `useDispatch`, the default `Dispatch` type does not know about thunks or other middleware. In order to correctly dispatch thunks, you need to use the specific customized `AppDispatch` type from the store that includes the thunk middleware types, and use that with `useDispatch`. Adding a pre-typed `useDispatch` hook keeps you from forgetting to import `AppDispatch` where it's needed.
+
+Since these are actual variables, not types, it's important to define them in a separate file such as `app/hooks.ts`, not the store setup file. This allows you to import them into any component file that needs to use the hooks, and avoids potential circular import dependency issues.
+
+```ts title="app/hooks.ts"
+import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
+import type { RootState, AppDispatch } from './store'
+
+// highlight-start
+// Use throughout your app instead of plain `useDispatch` and `useSelector`
+export const useAppDispatch = () => useDispatch<AppDispatch>()
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+// highlight-end
+```
+
+
+## Typing Hooks Manually
+
+We recommend using the pre-typed `useAppSelector` and `useAppDispatch` hooks shown above.  If you prefer not to use those, here is how to type the hooks by themselves.
+
+### Typing the `useSelector` hook
 
 When writing selector functions for use with `useSelector`, you should explicitly define the type of the `state` parameter. TS should be able to then infer the return type of the selector, which will be reused as the return type of the `useSelector` hook:
 
@@ -43,25 +87,14 @@ const selectIsOn = (state: RootState) => state.isOn
 const isOn = useSelector(selectIsOn)
 ```
 
-If you want to avoid repeating the `state` type declaration, you can define a typed `useSelector` hook using a helper type exported by `@types/react-redux`:
+This can also be done inline as well:
 
 ```ts
-// reducer.ts
-import { useSelector, TypedUseSelectorHook } from 'react-redux'
-
-interface RootState {
-  isOn: boolean
-}
-
-export const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector
-
-// my-component.tsx
-import { useTypedSelector } from './reducer.ts'
-
-const isOn = useTypedSelector((state) => state.isOn)
+const isOn = useSelector( (state: RootState) => state.isOn)
 ```
 
-## Typing the `useDispatch` hook
+
+### Typing the `useDispatch` hook
 
 By default, the return value of `useDispatch` is the standard `Dispatch` type defined by the Redux core types, so no declarations are needed:
 
@@ -79,14 +112,72 @@ export type AppDispatch = typeof store.dispatch
 const dispatch: AppDispatch = useDispatch()
 ```
 
-You may also find it to be more convenient to export a hook like `useAppDispatch` shown below, then using it wherever you'd call `useDispatch`:
-
-```ts
-export type AppDispatch = typeof store.dispatch
-export const useAppDispatch = () => useDispatch<AppDispatch>() // Export a hook that can be reused to resolve types
-```
 
 ## Typing the `connect` higher order component
+
+
+### Inferring The Connected Props Automatically
+
+`connect` consists of two functions that are called sequentially. The first function accepts `mapState` and `mapDispatch` as arguments, and returns a second function. The second function accepts the component to be wrapped, and returns a new wrapper component that passes down the props from `mapState` and `mapDispatch`. Normally, both functions are called together, like `connect(mapState, mapDispatch)(MyComponent)`.
+
+As of v7.1.2, the `@types/react-redux` package exposes a helper type, `ConnectedProps`, that can extract the return types of `mapStateToProps` and `mapDispatchToProps` from the first function. This means that if you split the `connect` call into two steps, all of the "props from Redux" can be inferred automatically without having to write them by hand. While this approach may feel unusual if you've been using React-Redux for a while, it does simplify the type declarations considerably.
+
+```ts
+import { connect, ConnectedProps } from 'react-redux'
+
+interface RootState {
+  isOn: boolean
+}
+
+const mapState = (state: RootState) => ({
+  isOn: state.isOn,
+})
+
+const mapDispatch = {
+  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
+}
+
+const connector = connect(mapState, mapDispatch)
+
+// The inferred type will look like:
+// {isOn: boolean, toggleOn: () => void}
+type PropsFromRedux = ConnectedProps<typeof connector>
+```
+
+The return type of `ConnectedProps` can then be used to type your props object.
+
+```tsx
+interface Props extends PropsFromRedux {
+  backgroundColor: string
+}
+
+const MyComponent = (props: Props) => (
+  <div style={{ backgroundColor: props.backgroundColor }}>
+    <button onClick={props.toggleOn}>
+      Toggle is {props.isOn ? 'ON' : 'OFF'}
+    </button>
+  </div>
+)
+
+export default connector(MyComponent)
+```
+
+Because types can be defined in any order, you can still declare your component before declaring the connector if you want.
+
+```tsx
+// alternately, declare `type Props = PropsFromRedux & {backgroundColor: string}`
+interface Props extends PropsFromRedux {
+  backgroundColor: string;
+}
+
+const MyComponent = (props: Props) => /* same as above */
+
+const connector = connect(/* same as above*/)
+
+type PropsFromRedux = ConnectedProps<typeof connector>
+
+export default connector(MyComponent)
+```
 
 ### Manually Typing `connect`
 
@@ -151,68 +242,6 @@ type Props = StateProps & DispatchProps & OwnProps
 
 However, inferring the type of `mapDispatch` this way will break if it is defined as an object and also refers to thunks.
 
-### Inferring The Connected Props Automatically
-
-`connect` consists of two functions that are called sequentially. The first function accepts `mapState` and `mapDispatch` as arguments, and returns a second function. The second function accepts the component to be wrapped, and returns a new wrapper component that passes down the props from `mapState` and `mapDispatch`. Normally, both functions are called together, like `connect(mapState, mapDispatch)(MyComponent)`.
-
-As of v7.1.2, the `@types/react-redux` package exposes a helper type, `ConnectedProps`, that can extract the return types of `mapStateToProps` and `mapDispatchToProps` from the first function. This means that if you split the `connect` call into two steps, all of the "props from Redux" can be inferred automatically without having to write them by hand. While this approach may feel unusual if you've been using React-Redux for a while, it does simplify the type declarations considerably.
-
-```ts
-import { connect, ConnectedProps } from 'react-redux'
-
-interface RootState {
-  isOn: boolean
-}
-
-const mapState = (state: RootState) => ({
-  isOn: state.isOn,
-})
-
-const mapDispatch = {
-  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
-}
-
-const connector = connect(mapState, mapDispatch)
-
-// The inferred type will look like:
-// {isOn: boolean, toggleOn: () => void}
-type PropsFromRedux = ConnectedProps<typeof connector>
-```
-
-The return type of `ConnectedProps` can then be used to type your props object.
-
-```tsx
-interface Props extends PropsFromRedux {
-  backgroundColor: string
-}
-
-const MyComponent = (props: Props) => (
-  <div style={{ backgroundColor: props.backgroundColor }}>
-    <button onClick={props.toggleOn}>
-      Toggle is {props.isOn ? 'ON' : 'OFF'}
-    </button>
-  </div>
-)
-
-export default connector(MyComponent)
-```
-
-Because types can be defined in any order, you can still declare your component before declaring the connector if you want.
-
-```tsx
-// alternately, declare `type Props = PropsFromRedux & {backgroundColor: string}`
-interface Props extends PropsFromRedux {
-  backgroundColor: string;
-}
-
-const MyComponent = (props: Props) => /* same as above */
-
-const connector = connect(/* same as above*/)
-
-type PropsFromRedux = ConnectedProps<typeof connector>
-
-export default connector(MyComponent)
-```
 
 ## Recommendations
 
