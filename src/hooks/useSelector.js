@@ -64,15 +64,15 @@ function useSelectorWithStoreAndSubscription(
   useIsomorphicLayoutEffect(() => {
     function checkForUpdates() {
       try {
-        const storeState = store.getState()
-        const newSelectedState = latestSelector.current(storeState)
+        const newStoreState = store.getState()
+        const newSelectedState = latestSelector.current(newStoreState)
 
         if (equalityFn(newSelectedState, latestSelectedState.current)) {
           return
         }
 
         latestSelectedState.current = newSelectedState
-        latestStoreState.current = storeState
+        latestStoreState.current = newStoreState
       } catch (err) {
         // we ignore all errors here, since when the component
         // is re-rendered, the selectors are called again, and
