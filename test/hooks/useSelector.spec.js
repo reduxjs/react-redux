@@ -38,17 +38,21 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const { result } = renderHook(() => useSelector((s) => s.count), {
+          const selector = jest.fn((s) => s.count)
+
+          const { result } = renderHook(() => useSelector(selector), {
             wrapper: (props) => <ProviderMock {...props} store={store} />,
           })
 
           expect(result.current).toEqual(0)
+          expect(selector).toHaveBeenCalledTimes(2)
 
           act(() => {
             store.dispatch({ type: '' })
           })
 
           expect(result.current).toEqual(1)
+          expect(selector).toHaveBeenCalledTimes(3)
         })
       })
 
