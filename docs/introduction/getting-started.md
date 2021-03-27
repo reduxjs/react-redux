@@ -70,7 +70,7 @@ React Redux provides a pair of custom React hooks that allow your React componen
 `useSelector` reads a value from the store state and subscribes to updates, while `useDispatch` returns the store's `dispatch` method to let you dispatch actions.
 
 ```js
-import React, { useState } from 'react'
+import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   decrement,
@@ -84,7 +84,6 @@ import styles from './Counter.module.css'
 export function Counter() {
   const count = useSelector(selectCount)
   const dispatch = useDispatch()
-  const [incrementAmount, setIncrementAmount] = useState('2')
 
   return (
     <div>
