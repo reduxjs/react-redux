@@ -1,4 +1,4 @@
-import { bindActionCreators } from 'redux'
+import bindActionCreators from '../utils/bindActionCreators'
 import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
 
 export function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
