@@ -451,6 +451,14 @@ describe('React', () => {
         it('throws if no selector is passed', () => {
           expect(() => useSelector()).toThrow()
         })
+
+        it('throws if selector is not a function', () => {
+          expect(() => useSelector(1)).toThrow()
+        })
+
+        it('throws if equality function is not a function', () => {
+          expect(() => useSelector((s) => s.count, 1)).toThrow()
+        })
       })
     })
 
