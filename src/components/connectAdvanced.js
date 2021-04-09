@@ -474,7 +474,7 @@ export default function connectAdvanced(
     const Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
 
     Connect.WrappedComponent = WrappedComponent
-    Connect.displayName = displayName
+    Connect.displayName = ConnectFunction.displayName = displayName
 
     if (forwardRef) {
       const forwarded = React.forwardRef(function forwardConnectRef(
