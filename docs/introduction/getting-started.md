@@ -41,7 +41,7 @@ If you are using TypeScript, the React Redux types are maintained separately in 
 npm install @types/react-redux
 ```
 
-The code used for this example is almost the same as the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux). Additionally the same code template for typescript can be found [here](https://github.com/reduxjs/cra-template-redux-typescript).
+The code used for this example is based on the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux). Additionally the same code template for typescript can be found [here](https://github.com/reduxjs/cra-template-redux-typescript).
 
 ## `Provider`
 
