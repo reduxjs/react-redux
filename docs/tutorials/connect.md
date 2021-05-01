@@ -1,8 +1,7 @@
 ---
 id: connect
-title: "Tutorial: Connect API"
+title: 'Tutorial: Connect API'
 hide_title: true
-sidebar_label: 
 ---
 
 # Tutorial: Using the `connect` API
