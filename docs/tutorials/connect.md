@@ -2,6 +2,7 @@
 id: connect
 title: 'Tutorial: Connect API'
 hide_title: true
+sidebar_label: 'Tutorial: Connect API'
 ---
 
 # Tutorial: Using the `connect` API
