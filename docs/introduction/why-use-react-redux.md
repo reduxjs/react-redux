@@ -6,6 +6,8 @@ sidebar_label: Why Use React Redux?
 description: 'Introduction > Why Use React Redux: benefits of using React Redux in a React app'
 ---
 
+&nbsp;
+
 # Why Use React Redux?
 
 Redux itself is a standalone library that can be used with any UI layer or framework, including React, Angular, Vue, Ember, and vanilla JS. Although Redux and React are commonly used together, they are independent of each other.

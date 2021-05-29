@@ -6,6 +6,8 @@ sidebar_label: Usage with TypeScript
 description: 'Usage > TypeScript: how to correctly type React Redux APIs'
 ---
 
+&nbsp;
+
 # Usage with TypeScript
 
 React Redux itself is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript.

@@ -6,6 +6,8 @@ hide_title: true
 description: 'API > connectAdvanced: customizing connect for advanced behavior'
 ---
 
+&nbsp;
+
 # `connectAdvanced()`
 
 ```js

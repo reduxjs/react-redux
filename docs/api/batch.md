@@ -6,6 +6,8 @@ hide_title: true
 description: 'API > batch: batching React rendering updates'
 ---
 
+&nbsp;
+
 # `batch()`
 
 ```js

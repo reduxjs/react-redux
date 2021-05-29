@@ -5,21 +5,20 @@ sidebar_label: Troubleshooting
 hide_title: true
 ---
 
+&nbsp;
+
 ## Troubleshooting
 
 The **[#redux channel](https://discord.gg/0ZcbPKXt5bZ6au5t)** of the **[Reactiflux Discord community](http://www.reactiflux.com)** is our official resource for all questions related to learning and using Redux. Reactiflux is a great place to hang out, ask questions, and learn - come join us!
 
 You can also ask questions on [Stack Overflow](https://stackoverflow.com) using the **[#redux tag](https://stackoverflow.com/questions/tagged/redux)**.
 
-
 ### My views aren’t updating!
 
 In short,
 
 - Reducers should never mutate state, they must return new objects, or React Redux won’t see the updates.
-- Make sure you are actually _dispatching_ actions. For example, if you have an action creator like `addTodo`, just calling the imported `addTodo()` function by itself won't do anything because it just _returns_ an action, but does not _dispatch_ it.  You either need to call `dispatch(addTodo())` (if using the hooks API) or `props.addTodo()` (if using `connect` + `mapDispatch`).
-
-
+- Make sure you are actually _dispatching_ actions. For example, if you have an action creator like `addTodo`, just calling the imported `addTodo()` function by itself won't do anything because it just _returns_ an action, but does not _dispatch_ it. You either need to call `dispatch(addTodo())` (if using the hooks API) or `props.addTodo()` (if using `connect` + `mapDispatch`).
 
 ### Could not find "store" in either the context or props
 

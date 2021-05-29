@@ -6,6 +6,8 @@ sidebar_label: 'Tutorial: Connect API'
 description: 'Tutorials > Connect API: how to use the legacy connect API'
 ---
 
+&nbsp;
+
 # Tutorial: Using the `connect` API
 
 :::tip

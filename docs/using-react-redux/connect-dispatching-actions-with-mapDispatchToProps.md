@@ -6,6 +6,8 @@ sidebar_label: 'Connect: Dispatching Actions with mapDispatchToProps'
 description: 'Usage > mapDispatch: options for dispatching actions with connect'
 ---
 
+&nbsp;
+
 # Connect: Dispatching Actions with `mapDispatchToProps`
 
 As the second argument passed in to `connect`, `mapDispatchToProps` is used for dispatching actions to the store.

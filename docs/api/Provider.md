@@ -6,6 +6,8 @@ hide_title: true
 description: 'API > Provider: providing the Redux store to your React app'
 ---
 
+&nbsp;
+
 # `Provider`
 
 ## Overview

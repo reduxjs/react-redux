@@ -6,6 +6,8 @@ hide_title: true
 description: 'API > connect: a Higher-Order Component to interact with Redux'
 ---
 
+&nbsp;
+
 # `connect()`
 
 ## Overview

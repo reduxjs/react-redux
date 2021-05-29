@@ -1,8 +1,9 @@
 ---
 id: getting-started
-title: Getting Started
+title: Getting Started with React Redux
 hide_title: true
 sidebar_label: Getting Started
+description: 'Introduction > Getting Started: First steps with React Redux'
 ---
 
 # Getting Started with React Redux

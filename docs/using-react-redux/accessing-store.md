@@ -6,6 +6,8 @@ sidebar_label: Accessing the Store
 description: 'Usage > Accessing the Store: techniques for getting the store in your components'
 ---
 
+&nbsp;
+
 # Accessing the Store
 
 React Redux provides APIs that allow your components to dispatch actions and subscribe to data updates from the store.
