@@ -6,14 +6,18 @@ module.exports = {
       collapsed: false,
       items: [
         'introduction/getting-started',
-        'introduction/why-use-react-redux'
-      ]
+        'introduction/why-use-react-redux',
+      ],
     },
     {
       type: 'category',
       label: 'Tutorials',
       collapsed: false,
-      items: ['tutorials/connect']
+      items: [
+        'tutorials/quick-start',
+        'tutorials/typescript-quick-start',
+        'tutorials/connect',
+      ],
     },
     {
       type: 'category',
@@ -23,8 +27,8 @@ module.exports = {
         'using-react-redux/usage-with-typescript',
         'using-react-redux/connect-mapstate',
         'using-react-redux/connect-mapdispatch',
-        'using-react-redux/accessing-store'
-      ]
+        'using-react-redux/accessing-store',
+      ],
     },
     {
       type: 'category',
@@ -34,13 +38,13 @@ module.exports = {
         'api/hooks',
         'api/connect',
         'api/connect-advanced',
-        'api/batch'
-      ]
+        'api/batch',
+      ],
     },
     {
       type: 'category',
       label: 'Guides',
-      items: ['troubleshooting']
-    }
-  ]
+      items: ['troubleshooting'],
+    },
+  ],
 }

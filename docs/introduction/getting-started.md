@@ -21,10 +21,14 @@ React Redux 7.1+ requires **React 16.8.3 or later**, in order to make use of Rea
 
 ### Using Create React App
 
-The recommended way to start new apps with React Redux is by using the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of [Redux Toolkit](https://redux-toolkit.js.org/).
+The recommended way to start new apps with React and Redux is by using the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux) or [Redux+TS template](https://github.com/reduxjs/cra-template-redux-typescript) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of **[Redux Toolkit](https://redux-toolkit.js.org/)** and React Redux's integration with React components.
 
-```sh
+```bash
+# Redux + Plain JS template
 npx create-react-app my-app --template redux
+
+# Redux + TypeScript template
+npx create-react-app my-app --template redux-typescript
 ```
 
 ### An Existing React App
@@ -41,13 +45,11 @@ yarn add react-redux
 
 You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
 
-If you are using TypeScript, the React Redux types are maintained separately in DefinitelyTyped. You'll need to install those as well:
+If you are using TypeScript, the React Redux types are maintained separately in DefinitelyTyped, but included as a dependency of the `react-redux` package, so they should be installed automatically. If you still need to install them manually, run:
 
 ```bash
 npm install @types/react-redux
 ```
-
-The code used for this example is based on the [official Redux template](https://github.com/reduxjs/cra-template-redux). Additionally, the same code template for TypeScript can be found [here](https://github.com/reduxjs/cra-template-redux-typescript).
 
 ## API Overview
 
