@@ -6,6 +6,8 @@ sidebar_label: Getting Started
 description: 'Introduction > Getting Started: First steps with React Redux'
 ---
 
+&nbsp;
+
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
 import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
