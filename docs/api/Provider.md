@@ -3,6 +3,7 @@ id: provider
 title: Provider
 sidebar_label: Provider
 hide_title: true
+description: 'API > Provider: providing the Redux store to your React app'
 ---
 
 # `Provider`
@@ -30,12 +31,9 @@ You may provide a context instance. If you do so, you will need to provide the s
 >
 > Could not find "store" in the context of "Connect(MyComponent)". Either wrap the root component in a `<Provider>`, or pass a custom React context provider to `<Provider>` and the corresponding React context consumer to Connect(Todo) in connect options.
 
-
-
 ### Example Usage
 
 In the example below, the `<App />` component is our root-level component. This means it’s at the very top of our component hierarchy.
-
 
 ```jsx
 import React from 'react'
@@ -54,4 +52,3 @@ ReactDOM.render(
   document.getElementById('root')
 )
 ```
-

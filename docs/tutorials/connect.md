@@ -3,6 +3,7 @@ id: connect
 title: 'Tutorial: Connect API'
 hide_title: true
 sidebar_label: 'Tutorial: Connect API'
+description: 'Tutorials > Connect API: how to use the legacy connect API'
 ---
 
 # Tutorial: Using the `connect` API

@@ -3,6 +3,7 @@ id: usage-with-typescript
 title: Usage with TypeScript
 hide_title: true
 sidebar_label: Usage with TypeScript
+description: 'Usage > TypeScript: how to correctly type React Redux APIs'
 ---
 
 # Usage with TypeScript
@@ -37,7 +38,7 @@ const store = configureStore({
     posts: postsReducer,
     comments: commentsReducer,
     users: usersReducer,
-  }
+  },
 })
 
 // highlight-start
@@ -68,10 +69,9 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 // highlight-end
 ```
 
-
 ## Typing Hooks Manually
 
-We recommend using the pre-typed `useAppSelector` and `useAppDispatch` hooks shown above.  If you prefer not to use those, here is how to type the hooks by themselves.
+We recommend using the pre-typed `useAppSelector` and `useAppDispatch` hooks shown above. If you prefer not to use those, here is how to type the hooks by themselves.
 
 ### Typing the `useSelector` hook
 
@@ -92,9 +92,8 @@ const isOn = useSelector(selectIsOn)
 This can also be done inline as well:
 
 ```ts
-const isOn = useSelector( (state: RootState) => state.isOn)
+const isOn = useSelector((state: RootState) => state.isOn)
 ```
-
 
 ### Typing the `useDispatch` hook
 
@@ -114,9 +113,7 @@ export type AppDispatch = typeof store.dispatch
 const dispatch: AppDispatch = useDispatch()
 ```
 
-
 ## Typing the `connect` higher order component
-
 
 ### Inferring The Connected Props Automatically
 
@@ -243,7 +240,6 @@ type Props = StateProps & DispatchProps & OwnProps
 ```
 
 However, inferring the type of `mapDispatch` this way will break if it is defined as an object and also refers to thunks.
-
 
 ## Recommendations
 

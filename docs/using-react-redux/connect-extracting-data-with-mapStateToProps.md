@@ -3,6 +3,7 @@ id: connect-mapstate
 title: 'Connect: Extracting Data with mapStateToProps'
 hide_title: true
 sidebar_label: 'Connect: Extracting Data with mapStateToProps'
+description: "Usage > mapState: options for reading state with connect"
 ---
 
 # Connect: Extracting Data with `mapStateToProps`

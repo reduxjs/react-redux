@@ -43,11 +43,13 @@ npm install @types/react-redux
 
 The code used for this example is based on the [official Redux template](https://github.com/reduxjs/cra-template-redux). Additionally, the same code template for TypeScript can be found [here](https://github.com/reduxjs/cra-template-redux-typescript).
 
-## `Provider`
+## API Overview
+
+### `Provider`
 
 React Redux includes a `<Provider />` component, which makes the Redux store available to the rest of your app:
 
-```js
+```jsx
 import React from 'react'
 import ReactDOM from 'react-dom'
 
@@ -65,13 +67,13 @@ ReactDOM.render(
 )
 ```
 
-## Hooks
+### Hooks
 
 React Redux provides a pair of custom React hooks that allow your React components to interact with the Redux store.
 
 `useSelector` reads a value from the store state and subscribes to updates, while `useDispatch` returns the store's `dispatch` method to let you dispatch actions.
 
-```js
+```jsx
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -79,7 +81,7 @@ import {
   increment,
   incrementByAmount,
   incrementAsync,
-  selectCount
+  selectCount,
 } from './counterSlice'
 import styles from './Counter.module.css'
 

@@ -3,6 +3,7 @@ id: connect-mapdispatch
 title: 'Connect: Dispatching Actions with mapDispatchToProps'
 hide_title: true
 sidebar_label: 'Connect: Dispatching Actions with mapDispatchToProps'
+description: 'Usage > mapDispatch: options for dispatching actions with connect'
 ---
 
 # Connect: Dispatching Actions with `mapDispatchToProps`
@@ -297,7 +298,7 @@ Note that:
 
 ```js
 // React Redux does this for you automatically:
-(dispatch) => bindActionCreators(mapDispatchToProps, dispatch)
+;(dispatch) => bindActionCreators(mapDispatchToProps, dispatch)
 ```
 
 Therefore, our `mapDispatchToProps` can simply be:
