@@ -33,7 +33,16 @@ function useSelectorWithStoreAndSubscription(
       storeState !== latestStoreState.current ||
       latestSubscriptionCallbackError.current
     ) {
-      selectedState = selector(storeState)
+      const newSelectedState = selector(storeState)
+      // ensure latest selected state is reused so that a custom equality function can result in identical references
+      if (
+        latestSelectedState.current === undefined ||
+        !equalityFn(newSelectedState, latestSelectedState.current)
+      ) {
+        selectedState = newSelectedState
+      } else {
+        selectedState = latestSelectedState.current
+      }
     } else {
       selectedState = latestSelectedState.current
     }
@@ -55,13 +64,15 @@ function useSelectorWithStoreAndSubscription(
   useIsomorphicLayoutEffect(() => {
     function checkForUpdates() {
       try {
-        const newSelectedState = latestSelector.current(store.getState())
+        const newStoreState = store.getState()
+        const newSelectedState = latestSelector.current(newStoreState)
 
         if (equalityFn(newSelectedState, latestSelectedState.current)) {
           return
         }
 
         latestSelectedState.current = newSelectedState
+        latestStoreState.current = newStoreState
       } catch (err) {
         // we ignore all errors here, since when the component
         // is re-rendered, the selectors are called again, and
@@ -96,8 +107,18 @@ export function createSelectorHook(context = ReactReduxContext) {
       ? useDefaultReduxContext
       : () => useContext(context)
   return function useSelector(selector, equalityFn = refEquality) {
-    if (process.env.NODE_ENV !== 'production' && !selector) {
-      throw new Error(`You must pass a selector to useSelector`)
+    if (process.env.NODE_ENV !== 'production') {
+      if (!selector) {
+        throw new Error(`You must pass a selector to useSelector`)
+      }
+      if (typeof selector !== 'function') {
+        throw new Error(`You must pass a function as a selector to useSelector`)
+      }
+      if (typeof equalityFn !== 'function') {
+        throw new Error(
+          `You must pass a function as an equality function to useSelector`
+        )
+      }
     }
     const { store, subscription: contextSub } = useReduxContext()
 

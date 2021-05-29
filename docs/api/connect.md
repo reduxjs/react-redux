@@ -116,7 +116,7 @@ The second parameter is normally referred to as `ownProps` by convention.
 
 ```js
 // binds on component re-rendering
-;<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
+<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 
 // binds on `props` change
 const mapDispatchToProps = (dispatch, ownProps) => ({
@@ -577,3 +577,13 @@ const makeMapState = (state) => {
 }
 export default connect(makeMapState)(SomeComponent)
 ```
+
+
+## Legacy Version Docs
+
+While the `connect` API has stayed almost entirely API-compatible between all of our major versions, there have been some small changes in options and behavior from version to version.
+
+For details on the legacy 5.x and 6.x versions, please see these archived files in the React Redux repo:
+
+- [5.x `connect` API reference](https://github.com/reduxjs/react-redux/blob/v7.2.2/website/versioned_docs/version-5.x/api/connect.md)
+- [6.x `connect` API reference](https://github.com/reduxjs/react-redux/blob/v7.2.2/website/versioned_docs/version-6.x/api/connect.md)

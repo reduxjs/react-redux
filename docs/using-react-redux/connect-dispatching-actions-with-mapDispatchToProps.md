@@ -297,7 +297,7 @@ Note that:
 
 ```js
 // React Redux does this for you automatically:
-;(dispatch) => bindActionCreators(mapDispatchToProps, dispatch)
+(dispatch) => bindActionCreators(mapDispatchToProps, dispatch)
 ```
 
 Therefore, our `mapDispatchToProps` can simply be:

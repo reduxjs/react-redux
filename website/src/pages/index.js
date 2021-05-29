@@ -27,7 +27,7 @@ const features = [
       <p>
         <strong>Designed to work with React's component model</strong>. You
         define how to extract the values your component needs from Redux, and
-        your component receives them as props.
+        your component updates automatically as needed.
       </p>
     ),
     image: <img src="img/noun_Check_1870817.svg" />,
@@ -37,9 +37,9 @@ const features = [
   {
     content: (
       <p>
-        Creates wrapper components that{' '}
-        <strong>manage the store interaction logic for you</strong>, so you
-        don't have to write it yourself.
+        Provides APIs that{' '}
+        <strong>enable your components to interact with the Redux store</strong>
+        , so you don't have to write that logic yourself.
       </p>
     ),
     image: <img src="img/noun_Box_1664404.svg" />,
@@ -128,7 +128,7 @@ function Home() {
                 'button button--secondary button--lg',
                 styles.getStarted
               )}
-              to={useBaseUrl('introduction/quick-start')}
+              to={useBaseUrl('introduction/getting-started')}
             >
               Get Started
             </Link>

@@ -38,17 +38,21 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const { result } = renderHook(() => useSelector((s) => s.count), {
+          const selector = jest.fn((s) => s.count)
+
+          const { result } = renderHook(() => useSelector(selector), {
             wrapper: (props) => <ProviderMock {...props} store={store} />,
           })
 
           expect(result.current).toEqual(0)
+          expect(selector).toHaveBeenCalledTimes(2)
 
           act(() => {
             store.dispatch({ type: '' })
           })
 
           expect(result.current).toEqual(1)
+          expect(selector).toHaveBeenCalledTimes(3)
         })
       })
 
@@ -412,11 +416,48 @@ describe('React', () => {
 
           spy.mockRestore()
         })
+
+        it('reuse latest selected state on selector re-run', () => {
+          store = createStore(({ count } = { count: -1 }) => ({
+            count: count + 1,
+          }))
+
+          const alwaysEqual = () => true
+
+          const Comp = () => {
+            // triggers render on store change
+            useSelector((s) => s.count)
+            const array = useSelector(() => [1, 2, 3], alwaysEqual)
+            renderedItems.push(array)
+            return <div />
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(renderedItems.length).toBe(1)
+
+          store.dispatch({ type: '' })
+
+          expect(renderedItems.length).toBe(2)
+          expect(renderedItems[0]).toBe(renderedItems[1])
+        })
       })
 
       describe('error handling for invalid arguments', () => {
         it('throws if no selector is passed', () => {
           expect(() => useSelector()).toThrow()
+        })
+
+        it('throws if selector is not a function', () => {
+          expect(() => useSelector(1)).toThrow()
+        })
+
+        it('throws if equality function is not a function', () => {
+          expect(() => useSelector((s) => s.count, 1)).toThrow()
         })
       })
     })
