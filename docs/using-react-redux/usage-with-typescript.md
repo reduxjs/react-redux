@@ -12,10 +12,9 @@ description: 'Usage > TypeScript: how to correctly type React Redux APIs'
 
 React Redux itself is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript.
 
-The React Redux type definitions are a separate [`@types/react-redux` typedefs package](https://npm.im/@types/react-redux) on NPM.  In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
+The React Redux type definitions are a separate [`@types/react-redux` typedefs package](https://npm.im/@types/react-redux) on NPM. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
 
-**As of React Redux v7.2.3, the `react-redux` package has a dependency on `@types/react-redux`, so the type definitions will be automatically installed with the library**.  Otherwise, you'll need to manually install them yourself ( `npm install @types/react-redux` ).
-
+**As of React Redux v7.2.3, the `react-redux` package has a dependency on `@types/react-redux`, so the type definitions will be automatically installed with the library**. Otherwise, you'll need to manually install them yourself ( `npm install @types/react-redux` ).
 
 ## Standard Redux Toolkit Project Setup with TypeScript
 

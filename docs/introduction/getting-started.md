@@ -6,6 +6,9 @@ sidebar_label: Getting Started
 description: 'Introduction > Getting Started: First steps with React Redux'
 ---
 
+import LiteYouTubeEmbed from 'react-lite-youtube-embed';
+import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
+
 # Getting Started with React Redux
 
 [React Redux](https://github.com/reduxjs/react-redux) is the official [React](https://reactjs.org/) UI bindings layer for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update state.
@@ -114,6 +117,19 @@ export function Counter() {
   )
 }
 ```
+
+## Learning React Redux
+
+### Learn Modern Redux Livestream
+
+Redux maintainer Mark Erikson appeared on the "Learn with Jason" show to explain how we recommend using Redux today. The show includes a live-coded example app that shows how to use Redux Toolkit and React-Redux hooks with Typescript, as well as the new RTK Query data fetching APIs.
+
+See [the "Learn Modern Redux" show notes page](https://www.learnwithjason.dev/let-s-learn-modern-redux) for a transcript and links to the example app source.
+
+<LiteYouTubeEmbed 
+    id="9zySeP5vH9c"
+    title="Learn Modern Redux - Redux Toolkit, React-Redux Hooks, and RTK Query"
+/>
 
 ## Help and Discussion
 
