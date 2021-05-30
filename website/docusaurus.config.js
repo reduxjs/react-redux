@@ -20,18 +20,18 @@ const siteConfig = {
           routeBasePath: '/',
           include: [
             '{api,introduction,using-react-redux,tutorials}/*.{md,mdx}',
-            'troubleshooting.md'
-          ] // no other way to exclude node_modules
+            'troubleshooting.md',
+          ], // no other way to exclude node_modules
         },
         theme: {
           customCss: [
             require.resolve('./static/css/custom.css'),
             require.resolve('./static/css/404.css'),
-            require.resolve('./static/css/codeblock.css')
-          ]
-        }
-      }
-    ]
+            require.resolve('./static/css/codeblock.css'),
+          ],
+        },
+      },
+    ],
   ],
   title: 'React Redux', // Title for your website.
   onBrokenLinks: 'throw',
@@ -53,61 +53,61 @@ const siteConfig = {
     {
       src:
         'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
-      async: true
-    }
+      async: true,
+    },
   ],
   // You may provide arbitrary config keys to be used as needed by your
   // template. For example, if you need your repo's URL...
   customFields: {
-    repoUrl: 'https://github.com/reduxjs/react-redux'
+    repoUrl: 'https://github.com/reduxjs/react-redux',
   },
   themeConfig: {
     metadatas: [{ name: 'twitter:card', content: 'summary' }],
     prism: {
-      theme: require('./static/scripts/monokaiTheme.js')
+      theme: require('./static/scripts/monokaiTheme.js'),
     },
     image: 'img/redux-logo-landscape.png',
     navbar: {
       title: 'React Redux',
       logo: {
         alt: 'Redux Logo',
-        src: 'img/redux.svg'
+        src: 'img/redux.svg',
       },
       items: [
         {
           to: 'introduction/getting-started',
           label: 'Getting Started',
-          position: 'right'
+          position: 'right',
         },
         {
-          to: 'tutorials/connect',
+          to: 'tutorials/quick-start',
           label: 'Tutorial',
-          position: 'right'
+          position: 'right',
         },
         {
           to: 'using-react-redux/connect-mapstate',
           label: 'Using React Redux',
-          position: 'right'
+          position: 'right',
         },
         { to: 'api/hooks', label: 'API', position: 'right' },
         {
           href: 'https://www.github.com/reduxjs/react-redux',
           label: 'GitHub',
           position: 'right',
-          className: 'github'
+          className: 'github',
         },
         {
           href: '/introduction/getting-started#help-and-discussion',
           label: 'Need help?',
-          position: 'right'
-        }
-      ]
+          position: 'right',
+        },
+      ],
     },
     footer: {
       style: 'dark',
       logo: {
         alt: 'Redux Logo',
-        src: 'img/redux_white.svg'
+        src: 'img/redux_white.svg',
       },
       copyright:
         'Copyright (c) 2015-present Dan Abramov and the Redux documentation authors.',
@@ -117,41 +117,41 @@ const siteConfig = {
           items: [
             {
               label: 'Introduction',
-              to: 'introduction/getting-started'
+              to: 'introduction/getting-started',
             },
             {
               label: 'Using React Redux',
-              to: 'using-react-redux/connect-mapstate'
+              to: 'using-react-redux/connect-mapstate',
             },
             {
               label: 'API Reference',
-              to: 'api/hooks'
+              to: 'api/hooks',
             },
             {
               label: 'Guides',
-              to: 'troubleshooting'
-            }
-          ]
+              to: 'troubleshooting',
+            },
+          ],
         },
         {
           title: 'Community',
           items: [
             {
               label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/react-redux'
+              href: 'https://stackoverflow.com/questions/tagged/react-redux',
             },
             {
               label: 'Discord',
-              href: 'https://discord.gg/0ZcbPKXt5bZ6au5t'
-            }
-          ]
+              href: 'https://discord.gg/0ZcbPKXt5bZ6au5t',
+            },
+          ],
         },
         {
           title: 'More',
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/reduxjs/react-redux'
+              href: 'https://github.com/reduxjs/react-redux',
             },
             {
               html: `
@@ -166,7 +166,7 @@ const siteConfig = {
                 >
                   Star
                 </a>
-              `
+              `,
             },
             {
               html: `
@@ -176,21 +176,21 @@ const siteConfig = {
                     alt="Deploys by Netlify"
                   />
                 </a>
-              `
-            }
-          ]
-        }
-      ]
+              `,
+            },
+          ],
+        },
+      ],
     },
     algolia: {
       apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
       indexName: 'react-redux',
-      algoliaOptions: {}
+      algoliaOptions: {},
     },
     googleAnalytics: {
-      trackingID: 'UA-130598673-2'
-    }
-  }
+      trackingID: 'UA-130598673-2',
+    },
+  },
 }
 
 module.exports = siteConfig

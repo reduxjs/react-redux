@@ -3,7 +3,10 @@ id: accessing-store
 title: Accessing the Store
 hide_title: true
 sidebar_label: Accessing the Store
+description: 'Usage > Accessing the Store: techniques for getting the store in your components'
 ---
+
+&nbsp;
 
 # Accessing the Store
 
@@ -134,7 +137,7 @@ import { ReactReduxContext } from 'react-redux'
 // Somewhere inside of a <Provider>
 function MyConnectedComponent() {
   // Access the store via the `useContext` hook
-  const {store} = useContext(ReactReduxContext)
+  const { store } = useContext(ReactReduxContext)
 
   // alternately, use the render props form of the context
   /*

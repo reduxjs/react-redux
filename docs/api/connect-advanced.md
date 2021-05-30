@@ -3,7 +3,10 @@ id: connect-advanced
 title: connectAdvanced
 sidebar_label: connectAdvanced()
 hide_title: true
+description: 'API > connectAdvanced: customizing connect for advanced behavior'
 ---
+
+&nbsp;
 
 # `connectAdvanced()`
 
@@ -19,10 +22,9 @@ Most applications will not need to use this, as the default behavior in `connect
 
 :::info
 
-`connectAdvanced` was added in version 5.0, and `connect` was reimplemented as a specific set of parameters to `connectAdvanced`.  However, [**`connectAdvanced` is now deprecated**](https://github.com/reduxjs/react-redux/issues/1236) and will eventually be removed in a future major version of React Redux.
+`connectAdvanced` was added in version 5.0, and `connect` was reimplemented as a specific set of parameters to `connectAdvanced`. However, [**`connectAdvanced` is now deprecated**](https://github.com/reduxjs/react-redux/issues/1236) and will eventually be removed in a future major version of React Redux.
 
 :::
-
 
 ## Arguments
 

@@ -3,7 +3,10 @@ id: why-use-react-redux
 title: Why Use React Redux?
 hide_title: true
 sidebar_label: Why Use React Redux?
+description: 'Introduction > Why Use React Redux: benefits of using React Redux in a React app'
 ---
+
+&nbsp;
 
 # Why Use React Redux?
 

@@ -2,17 +2,22 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "build": "docusaurus build --out-dir='build/react-redux'",
+    "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "version": "docusaurus docs:version",
     "serve": "docusaurus serve"
   },
-  "devDependencies": {
-    "@docusaurus/core": "2.0.0-alpha.75",
-    "@docusaurus/preset-classic": "2.0.0-alpha.75",
-    "classnames": "^2.2.6",
+  "dependencies": {
+    "@docusaurus/core": "2.0.0-beta.0",
+    "@docusaurus/preset-classic": "2.0.0-beta.0",
+    "classnames": "2.2.6",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "react-dom": "17.0.2",
+    "react-lite-youtube-embed": "^2.0.3",
+    "url-search-params-polyfill": "^8.1.0"
+  },
+  "devDependencies": {
+    "netlify-plugin-cache": "^1.0.3"
   }
 }

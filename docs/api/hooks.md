@@ -3,13 +3,16 @@ id: hooks
 title: Hooks
 sidebar_label: Hooks
 hide_title: true
+description: 'API > Hooks: the `useSelector` and `useDispatch` hooks`'
 ---
+
+&nbsp;
 
 # Hooks
 
-React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give function components the ability to use local component state, execute side effects, and more.  React also lets us write [custom hooks](https://reactjs.org/docs/hooks-custom.html), which let us extract reusable hooks to add our own behavior on top of React's built-in hooks.
+React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give function components the ability to use local component state, execute side effects, and more. React also lets us write [custom hooks](https://reactjs.org/docs/hooks-custom.html), which let us extract reusable hooks to add our own behavior on top of React's built-in hooks.
 
-React Redux includes its own custom hook APIs, which allow your React components to subscribe to the Redux store and dispatch actions. 
+React Redux includes its own custom hook APIs, which allow your React components to subscribe to the Redux store and dispatch actions.
 
 :::tip
 
@@ -107,7 +110,7 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 
 export const CounterComponent = () => {
-  const counter = useSelector(state => state.counter)
+  const counter = useSelector((state) => state.counter)
   return <div>{counter}</div>
 }
 ```
@@ -118,8 +121,8 @@ Using props via closure to determine what to extract:
 import React from 'react'
 import { useSelector } from 'react-redux'
 
-export const TodoListItem = props => {
-  const todo = useSelector(state => state.todos[props.id])
+export const TodoListItem = (props) => {
+  const todo = useSelector((state) => state.todos[props.id])
   return <div>{todo.text}</div>
 }
 ```
@@ -136,8 +139,8 @@ import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
 const selectNumCompletedTodos = createSelector(
-  state => state.todos,
-  todos => todos.filter(todo => todo.completed).length
+  (state) => state.todos,
+  (todos) => todos.filter((todo) => todo.completed).length
 )
 
 export const CompletedTodosCounter = () => {
@@ -163,14 +166,14 @@ import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
 const selectCompletedTodosCount = createSelector(
-  state => state.todos,
+  (state) => state.todos,
   (_, completed) => completed,
   (todos, completed) =>
-    todos.filter(todo => todo.completed === completed).length
+    todos.filter((todo) => todo.completed === completed).length
 )
 
 export const CompletedTodosCount = ({ completed }) => {
-  const matchingCount = useSelector(state =>
+  const matchingCount = useSelector((state) =>
     selectCompletedTodosCount(state, completed)
   )
 
@@ -196,16 +199,16 @@ import { createSelector } from 'reselect'
 
 const makeSelectCompletedTodosCount = () =>
   createSelector(
-    state => state.todos,
+    (state) => state.todos,
     (_, completed) => completed,
     (todos, completed) =>
-      todos.filter(todo => todo.completed === completed).length
+      todos.filter((todo) => todo.completed === completed).length
   )
 
 export const CompletedTodosCount = ({ completed }) => {
   const selectCompletedTodosCount = useMemo(makeSelectCompletedTodosCount, [])
 
-  const matchingCount = useSelector(state =>
+  const matchingCount = useSelector((state) =>
     selectCompletedTodosCount(state, completed)
   )
 

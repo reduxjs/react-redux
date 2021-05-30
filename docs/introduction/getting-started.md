@@ -1,9 +1,15 @@
 ---
 id: getting-started
-title: Getting Started
+title: Getting Started with React Redux
 hide_title: true
 sidebar_label: Getting Started
+description: 'Introduction > Getting Started: First steps with React Redux'
 ---
+
+&nbsp;
+
+import LiteYouTubeEmbed from 'react-lite-youtube-embed';
+import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
 # Getting Started with React Redux
 
@@ -15,10 +21,14 @@ React Redux 7.1+ requires **React 16.8.3 or later**, in order to make use of Rea
 
 ### Using Create React App
 
-The recommended way to start new apps with React Redux is by using the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of [Redux Toolkit](https://redux-toolkit.js.org/).
+The recommended way to start new apps with React and Redux is by using the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux) or [Redux+TS template](https://github.com/reduxjs/cra-template-redux-typescript) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of **[Redux Toolkit](https://redux-toolkit.js.org/)** and React Redux's integration with React components.
 
-```sh
+```bash
+# Redux + Plain JS template
 npx create-react-app my-app --template redux
+
+# Redux + TypeScript template
+npx create-react-app my-app --template redux-typescript
 ```
 
 ### An Existing React App
@@ -35,19 +45,19 @@ yarn add react-redux
 
 You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
 
-If you are using TypeScript, the React Redux types are maintained separately in DefinitelyTyped. You'll need to install those as well:
+If you are using TypeScript, the React Redux types are maintained separately in DefinitelyTyped, but included as a dependency of the `react-redux` package, so they should be installed automatically. If you still need to install them manually, run:
 
 ```bash
 npm install @types/react-redux
 ```
 
-The code used for this example is based on the [official Redux template](https://github.com/reduxjs/cra-template-redux). Additionally, the same code template for TypeScript can be found [here](https://github.com/reduxjs/cra-template-redux-typescript).
+## API Overview
 
-## `Provider`
+### `Provider`
 
 React Redux includes a `<Provider />` component, which makes the Redux store available to the rest of your app:
 
-```js
+```jsx
 import React from 'react'
 import ReactDOM from 'react-dom'
 
@@ -65,13 +75,13 @@ ReactDOM.render(
 )
 ```
 
-## Hooks
+### Hooks
 
 React Redux provides a pair of custom React hooks that allow your React components to interact with the Redux store.
 
 `useSelector` reads a value from the store state and subscribes to updates, while `useDispatch` returns the store's `dispatch` method to let you dispatch actions.
 
-```js
+```jsx
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -79,7 +89,7 @@ import {
   increment,
   incrementByAmount,
   incrementAsync,
-  selectCount
+  selectCount,
 } from './counterSlice'
 import styles from './Counter.module.css'
 
@@ -111,6 +121,19 @@ export function Counter() {
   )
 }
 ```
+
+## Learning React Redux
+
+### Learn Modern Redux Livestream
+
+Redux maintainer Mark Erikson appeared on the "Learn with Jason" show to explain how we recommend using Redux today. The show includes a live-coded example app that shows how to use Redux Toolkit and React-Redux hooks with Typescript, as well as the new RTK Query data fetching APIs.
+
+See [the "Learn Modern Redux" show notes page](https://www.learnwithjason.dev/let-s-learn-modern-redux) for a transcript and links to the example app source.
+
+<LiteYouTubeEmbed 
+    id="9zySeP5vH9c"
+    title="Learn Modern Redux - Redux Toolkit, React-Redux Hooks, and RTK Query"
+/>
 
 ## Help and Discussion
 

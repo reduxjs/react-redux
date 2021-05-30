@@ -3,7 +3,10 @@ id: connect
 title: Connect
 sidebar_label: connect()
 hide_title: true
+description: 'API > connect: a Higher-Order Component to interact with Redux'
 ---
+
+&nbsp;
 
 # `connect()`
 
@@ -116,7 +119,7 @@ The second parameter is normally referred to as `ownProps` by convention.
 
 ```js
 // binds on component re-rendering
-<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
+;<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 
 // binds on `props` change
 const mapDispatchToProps = (dispatch, ownProps) => ({
@@ -577,7 +580,6 @@ const makeMapState = (state) => {
 }
 export default connect(makeMapState)(SomeComponent)
 ```
-
 
 ## Legacy Version Docs
 
