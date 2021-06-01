@@ -2,11 +2,8 @@
 id: provider
 title: Provider
 sidebar_label: Provider
-hide_title: true
 description: 'API > Provider: providing the Redux store to your React app'
 ---
-
-&nbsp;
 
 # `Provider`
 
