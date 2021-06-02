@@ -6,13 +6,15 @@ import { ReactReduxContext } from '../components/Context'
 
 const refEquality = (a, b) => a === b
 
+const forceRenderReducer = (s) => s + 1
+
 function useSelectorWithStoreAndSubscription(
   selector,
   equalityFn,
   store,
   contextSub
 ) {
-  const [, forceRender] = useReducer((s) => s + 1, 0)
+  const forceRender = useReducer(forceRenderReducer, 0)[1]
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
     store,
