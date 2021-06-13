@@ -84,7 +84,7 @@
     "eslint-plugin-prettier": "^3.1.4",
     "eslint-plugin-react": "^7.21.5",
     "glob": "^7.1.6",
-    "jest": "^26.6.1",
+    "jest": "^27.0.4",
     "prettier": "^2.1.2",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",

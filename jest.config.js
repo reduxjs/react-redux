@@ -1,6 +1,7 @@
 const defaults = {
   coverageDirectory: './coverage/',
   collectCoverage: true,
+  testEnvironment: 'jsdom',
   testURL: 'http://localhost'
 }
 
