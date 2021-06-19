@@ -18,12 +18,16 @@ If you are using Redux with any kind of UI framework, you will normally use a "U
 
 To understand why you should use React Redux, it may help to understand what a "UI binding library" does.
 
-> **Note**: If you have questions about whether you should use Redux in general, please see these articles for discussion of when and why you might want to use Redux, and how it's intended to be used:
->
-> - [Redux docs: Motivation](https://redux.js.org/introduction/motivation)
-> - [Redux docs: FAQ - When should I use Redux?](https://redux.js.org/faq/general#when-should-i-use-redux)
-> - [You Might Not Need Redux](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367)
-> - [Idiomatic Redux: The Tao of Redux, Part 1 - Implementation and Intent](https://blog.isquaredsoftware.com/2017/05/idiomatic-redux-tao-of-redux-part-1/)
+:::info
+
+If you have questions about whether you should use Redux in general, please see these articles for discussion of when and why you might want to use Redux, and how it's intended to be used:
+
+- [Redux docs: Motivation](https://redux.js.org/introduction/motivation)
+- [Redux docs: FAQ - When should I use Redux?](https://redux.js.org/faq/general#when-should-i-use-redux)
+- [You Might Not Need Redux](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367)
+- [Idiomatic Redux: The Tao of Redux, Part 1 - Implementation and Intent](https://blog.isquaredsoftware.com/2017/05/idiomatic-redux-tao-of-redux-part-1/)
+
+:::
 
 ## Integrating Redux with a UI
 
@@ -42,7 +46,11 @@ While it is possible to write this logic by hand, doing so would become very rep
 
 The process of subscribing to the store, checking for updated data, and triggering a re-render can be made more generic and reusable. **A UI binding library like React Redux handles the store interaction logic, so you don't have to write that code yourself.**
 
-> **Note**: For a deeper look at how React Redux works internally and how it handles the store interaction for you, see **[Idiomatic Redux: The History and Implementation of React Redux](https://blog.isquaredsoftware.com/2018/11/react-redux-history-implementation/)**.
+:::info
+
+For a deeper look at how React Redux works internally and how it handles the store interaction for you, see **[Idiomatic Redux: The History and Implementation of React Redux](https://blog.isquaredsoftware.com/2018/11/react-redux-history-implementation/)**.
+
+:::
 
 ## Reasons to Use React Redux
 
@@ -50,17 +58,7 @@ The process of subscribing to the store, checking for updated data, and triggeri
 
 While Redux can be used with any UI layer, it was originally designed and intended for use with React. There are [UI binding layers for many other frameworks](https://redux.js.org/introduction/ecosystem#library-integration-and-bindings), but React Redux is maintained directly by the Redux team.
 
-As the offical Redux binding for React, React Redux is kept up-to-date with any API changes from either library, to ensure that your React components behave as expected. Its intended usage adopts the design principles of React - writing declarative components.
-
-### It Encourages Good React Architecture
-
-React components are a lot like functions. While it's possible to write all your code in a single function, it's usually better to split that logic into smaller functions that each handle a specific task, making them easier to understand.
-
-Similarly, while you can write large React components that handle many different tasks, it's usually better to split up components based on responsibilities. In particular, it is common to have "container" components that are responsible for collecting and managing some kind of data, and "presentational" components that simply display UI based on whatever data they've received as props.
-
-**The React Redux `connect` function generates "container" wrapper components that handle the process of interacting with the store for you**. That way, your own components can focus on other tasks, whether it be collecting other data, or just displaying a piece of the UI. In addition, **`connect` abstracts away the question of _which_ store is being used, making your own components more reusable**.
-
-As a general architectural principle, **we want to keep our own components "unaware" of Redux**. They should simply receive data and functions as props, just like any other React component. This ultimately makes it easier to test and reuse your own components.
+As the official Redux binding for React, React Redux is kept up-to-date with any API changes from either library, to ensure that your React components behave as expected. Its intended usage adopts the design principles of React - writing declarative components.
 
 ### It Implements Performance Optimizations For You
 
