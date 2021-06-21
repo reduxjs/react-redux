@@ -3,6 +3,7 @@ import connectAdvanced from './components/connectAdvanced'
 import { ReactReduxContext } from './components/Context'
 import connect from './connect/connect'
 
+import { useBoundDispatch, createBoundDispatchHook } from './hooks/useBoundDispatch'
 import { useDispatch, createDispatchHook } from './hooks/useDispatch'
 import { useSelector, createSelectorHook } from './hooks/useSelector'
 import { useStore, createStoreHook } from './hooks/useStore'
@@ -19,6 +20,8 @@ export {
   ReactReduxContext,
   connect,
   batch,
+  useBoundDispatch,
+  createBoundDispatchHook,
   useDispatch,
   createDispatchHook,
   useSelector,
