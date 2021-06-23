@@ -11,6 +11,10 @@ import { setBatch } from './utils/batch'
 import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
 import shallowEqual from './utils/shallowEqual'
 
+import { add } from './test.ts'
+
+console.log(add('s', 3))
+
 setBatch(batch)
 
 export {
