@@ -7,7 +7,7 @@ import pkg from './package.json'
 
 const env = process.env.NODE_ENV
 
-const extensions = ['.js', '.ts']
+const extensions = ['.js', '.ts', '.json']
 
 const config = {
   input: 'src/index.js',
@@ -26,6 +26,7 @@ const config = {
       extensions,
     }),
     babel({
+      include: 'src/**/*',
       exclude: '**/node_modules/**',
       babelHelpers: 'runtime',
       extensions,

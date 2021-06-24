@@ -1,10 +1,11 @@
 {
-  "parser": "babel-eslint",
+  "parser": "@typescript-eslint/parser",
   "extends": [
     "eslint:recommended",
     "plugin:import/recommended",
     "plugin:react/recommended",
     "plugin:prettier/recommended"
+    // "plugin:@typescript-eslint/recommended"
   ],
   "settings": {
     "react": {
@@ -32,6 +33,7 @@
     "react/no-string-refs": 0
   },
   "plugins": [
+    "@typescript-eslint",
     "import",
     "react"
   ]
