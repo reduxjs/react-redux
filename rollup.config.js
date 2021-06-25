@@ -7,6 +7,8 @@ import pkg from './package.json'
 
 const env = process.env.NODE_ENV
 
+const extensions = ['.js', '.ts', '.json']
+
 const config = {
   input: 'src/index.js',
   external: Object.keys(pkg.peerDependencies || {}).concat('react-dom'),
@@ -20,10 +22,14 @@ const config = {
     },
   },
   plugins: [
-    nodeResolve(),
+    nodeResolve({
+      extensions,
+    }),
     babel({
+      include: 'src/**/*',
       exclude: '**/node_modules/**',
       babelHelpers: 'runtime',
+      extensions,
     }),
     replace({
       'process.env.NODE_ENV': JSON.stringify(env),
