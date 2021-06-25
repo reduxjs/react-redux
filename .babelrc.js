@@ -3,7 +3,7 @@ const cjs = NODE_ENV === 'test' || BABEL_ENV === 'commonjs'
 const loose = true
 
 module.exports = {
-  presets: [['@babel/env', { loose, modules: false }]],
+  presets: [['@babel/env', { loose, modules: false }], '@babel/preset-typescript'],
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
     ['@babel/proposal-object-rest-spread', { loose }],
@@ -18,5 +18,5 @@ module.exports = {
         ].replace(/^[^0-9]*/, '')
       }
     ]
-  ].filter(Boolean)
+  ].filter(Boolean),
 }
