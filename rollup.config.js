@@ -7,7 +7,7 @@ import pkg from './package.json'
 
 const env = process.env.NODE_ENV
 
-const extensions = ['.js', '.ts', '.json']
+const extensions = ['.js', '.ts', '.tsx', '.json']
 
 const config = {
   input: 'src/index.js',
