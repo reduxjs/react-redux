@@ -2,8 +2,8 @@ import React from 'react'
 import type Subscription from '../utils/Subscription'
 
 export type ReduxContextProps = {
-  store: any,
-  subscription: Subscription,
+  store: any
+  subscription: Subscription
 }
 export const ReactReduxContext = /*#__PURE__*/ React.createContext<ReduxContextProps | null>(null)
 

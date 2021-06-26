@@ -5,10 +5,10 @@ import { getBatch } from './batch'
 // ancestor components re-render before descendants
 
 type Listener = {
-  callback: () => void;
-  next: Listener | null;
-  prev: Listener | null;
-};
+  callback: () => void
+  next: Listener | null
+  prev: Listener | null
+}
 
 function createListenerCollection() {
   const batch = getBatch()
@@ -75,14 +75,14 @@ function createListenerCollection() {
   }
 }
 
-type ListenerCollection = ReturnType<typeof createListenerCollection>;
+type ListenerCollection = ReturnType<typeof createListenerCollection>
 
 export default class Subscription {
-  private store: any;
-  private parentSub?: Subscription;
-  private unsubscribe?: () => void;
-  private listeners?: ListenerCollection;
-  public onStateChange?: () => void;
+  private store: any
+  private parentSub?: Subscription
+  private unsubscribe?: () => void
+  private listeners?: ListenerCollection
+  public onStateChange?: () => void
 
   constructor(store: any, parentSub?: Subscription) {
     this.store = store
@@ -125,7 +125,7 @@ export default class Subscription {
       this.unsubscribe()
       this.unsubscribe = undefined
       this.listeners?.clear()
-      this.listeners = undefined;
+      this.listeners = undefined
     }
   }
 }
