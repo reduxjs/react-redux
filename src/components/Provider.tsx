@@ -25,7 +25,7 @@ function Provider({ store, context, children }: { store: any, context?: React.Co
     }
     return () => {
       subscription.tryUnsubscribe()
-      subscription.onStateChange = null
+      subscription.onStateChange = undefined
     }
   }, [contextValue, previousState])
 
