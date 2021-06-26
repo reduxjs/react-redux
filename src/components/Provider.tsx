@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { ReactNode, useMemo } from 'react'
 import PropTypes from 'prop-types'
-import { ReactReduxContext } from './Context'
+import { ReactReduxContext, ReduxContextProps } from './Context'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 
-function Provider({ store, context, children }) {
+function Provider({ store, context, children }: { store: any, context?: React.Context<ReduxContextProps>, children: ReactNode }) {
   const contextValue = useMemo(() => {
     const subscription = new Subscription(store)
     subscription.onStateChange = subscription.notifyNestedSubs
