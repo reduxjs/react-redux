@@ -3,8 +3,8 @@ import { Action, AnyAction, Store } from 'redux'
 import type { FixTypeLater } from '../types'
 import type Subscription from '../utils/Subscription'
 
-export interface ReactReduxContextValue<A extends Action = AnyAction> {
-  store: Store<FixTypeLater, A>
+export interface ReactReduxContextValue<SS = FixTypeLater, A extends Action = AnyAction> {
+  store: Store<SS, A>
   subscription: Subscription
 }
 
