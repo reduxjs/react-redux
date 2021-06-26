@@ -1,5 +1,4 @@
 import React, { Context, ReactNode, useMemo } from 'react'
-import PropTypes from 'prop-types'
 import { ReactReduxContext, ReactReduxContextValue } from './Context'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
@@ -48,18 +47,6 @@ function Provider({ store, context, children }: ProviderProps) {
   const Context = context || ReactReduxContext
 
   return <Context.Provider value={contextValue}>{children}</Context.Provider>
-}
-
-if (process.env.NODE_ENV !== 'production') {
-  Provider.propTypes = {
-    store: PropTypes.shape({
-      subscribe: PropTypes.func.isRequired,
-      dispatch: PropTypes.func.isRequired,
-      getState: PropTypes.func.isRequired,
-    }),
-    context: PropTypes.object,
-    children: PropTypes.any,
-  }
 }
 
 export default Provider
