@@ -1,5 +1,7 @@
 import { useContext } from 'react'
+import { Action, AnyAction, Store } from 'redux'
 import { ReactReduxContext } from '../components/Context'
+import type { FixTypeLater } from '../types'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 
 /**
@@ -8,13 +10,14 @@ import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useStore` hook bound to the specified context.
  */
-export function createStoreHook(context = ReactReduxContext) {
+ 
+export function createStoreHook<S = FixTypeLater, A extends Action = AnyAction>(context = ReactReduxContext) {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
       : () => useContext(context)
   return function useStore() {
-    const { store } = useReduxContext()
+    const { store } = useReduxContext()!
     return store
   }
 }
