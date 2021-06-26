@@ -44,7 +44,7 @@ function createListenerCollection() {
     subscribe(callback: () => void) {
       let isSubscribed = true
 
-      let listener = (last = {
+      let listener: Listener = (last = {
         callback,
         next: null,
         prev: last,
@@ -61,7 +61,6 @@ function createListenerCollection() {
         isSubscribed = false
 
         if (listener.next) {
-          //@ts-expect-error -- listener.next is always null
           listener.next.prev = listener.prev
         } else {
           last = listener.prev
