@@ -126,6 +126,7 @@ export default class Subscription {
       this.unsubscribe()
       this.unsubscribe = undefined
       this.listeners?.clear()
+      this.listeners = undefined;
     }
   }
 }
