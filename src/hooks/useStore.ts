@@ -1,7 +1,5 @@
 import { useContext } from 'react'
-import { Action, AnyAction, Store } from 'redux'
 import { ReactReduxContext } from '../components/Context'
-import type { FixTypeLater } from '../types'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 
 /**
@@ -11,7 +9,7 @@ import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
  * @returns {Function} A `useStore` hook bound to the specified context.
  */
  
-export function createStoreHook<S = FixTypeLater, A extends Action = AnyAction>(context = ReactReduxContext) {
+export function createStoreHook(context = ReactReduxContext) {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
