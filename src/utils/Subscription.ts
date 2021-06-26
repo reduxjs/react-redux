@@ -4,12 +4,16 @@ import { getBatch } from './batch'
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
 
-const nullListeners = { notify() {} }
+type Listener = {
+  callback: () => void
+  next: Listener | null
+  prev: Listener | null
+}
 
 function createListenerCollection() {
   const batch = getBatch()
-  let first = null
-  let last = null
+  let first: Listener | null = null
+  let last: Listener | null = null
 
   return {
     clear() {
@@ -37,10 +41,10 @@ function createListenerCollection() {
       return listeners
     },
 
-    subscribe(callback) {
+    subscribe(callback: () => void) {
       let isSubscribed = true
 
-      let listener = (last = {
+      let listener: Listener = (last = {
         callback,
         next: null,
         prev: last,
@@ -71,29 +75,35 @@ function createListenerCollection() {
   }
 }
 
+type ListenerCollection = ReturnType<typeof createListenerCollection>
+
 export default class Subscription {
-  constructor(store, parentSub) {
+  private store: any
+  private parentSub?: Subscription
+  private unsubscribe?: () => void
+  private listeners?: ListenerCollection
+  public onStateChange?: () => void
+
+  constructor(store: any, parentSub?: Subscription) {
     this.store = store
     this.parentSub = parentSub
-    this.unsubscribe = null
-    this.listeners = nullListeners
+    this.unsubscribe = undefined
+    this.listeners = undefined
 
     this.handleChangeWrapper = this.handleChangeWrapper.bind(this)
   }
 
-  addNestedSub(listener) {
+  addNestedSub(listener: () => void) {
     this.trySubscribe()
-    return this.listeners.subscribe(listener)
+    return this.listeners?.subscribe(listener)
   }
 
   notifyNestedSubs() {
-    this.listeners.notify()
+    this.listeners?.notify()
   }
 
   handleChangeWrapper() {
-    if (this.onStateChange) {
-      this.onStateChange()
-    }
+    this.onStateChange?.()
   }
 
   isSubscribed() {
@@ -113,9 +123,9 @@ export default class Subscription {
   tryUnsubscribe() {
     if (this.unsubscribe) {
       this.unsubscribe()
-      this.unsubscribe = null
-      this.listeners.clear()
-      this.listeners = nullListeners
+      this.unsubscribe = undefined
+      this.listeners?.clear()
+      this.listeners = undefined
     }
   }
 }
