@@ -8,7 +8,6 @@ import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useStore` hook bound to the specified context.
  */
- 
 export function createStoreHook(context = ReactReduxContext) {
   const useReduxContext =
     context === ReactReduxContext
