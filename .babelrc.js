@@ -3,7 +3,10 @@ const cjs = NODE_ENV === 'test' || BABEL_ENV === 'commonjs'
 const loose = true
 
 module.exports = {
-  presets: [['@babel/env', { loose, modules: false }], '@babel/preset-typescript'],
+  presets: [
+    ['@babel/env', { loose, modules: false }],
+    '@babel/preset-typescript',
+  ],
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
     ['@babel/proposal-object-rest-spread', { loose }],
@@ -15,8 +18,8 @@ module.exports = {
         useESModules: !cjs,
         version: require('./package.json').dependencies[
           '@babel/runtime'
-        ].replace(/^[^0-9]*/, '')
-      }
-    ]
+        ].replace(/^[^0-9]*/, ''),
+      },
+    ],
   ].filter(Boolean),
 }
