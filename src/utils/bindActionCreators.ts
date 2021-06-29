@@ -1,4 +1,9 @@
-import { ActionCreator, ActionCreatorsMapObject, AnyAction, Dispatch } from "redux"
+import {
+  ActionCreator,
+  ActionCreatorsMapObject,
+  AnyAction,
+  Dispatch,
+} from 'redux'
 
 function bindActionCreator<A extends AnyAction = AnyAction>(
   actionCreator: ActionCreator<A>,
@@ -9,7 +14,10 @@ function bindActionCreator<A extends AnyAction = AnyAction>(
   }
 }
 
-export default function bindActionCreators(actionCreators: ActionCreator<any> | ActionCreatorsMapObject, dispatch: Dispatch) {
+export default function bindActionCreators(
+  actionCreators: ActionCreator<any> | ActionCreatorsMapObject,
+  dispatch: Dispatch
+) {
   if (typeof actionCreators === 'function') {
     return bindActionCreator(actionCreators, dispatch)
   }

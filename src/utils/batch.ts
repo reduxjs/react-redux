@@ -6,7 +6,8 @@ function defaultNoopBatch(callback: () => void) {
 let batch = defaultNoopBatch
 
 // Allow injecting another batching function later
-export const setBatch = (newBatch: (callback: () => void) => void) => (batch = newBatch)
+export const setBatch = (newBatch: typeof defaultNoopBatch) =>
+  (batch = newBatch)
 
 // Supply a getter just to skip dealing with ESM bindings
 export const getBatch = () => batch
