@@ -14,7 +14,7 @@ export function createStoreHook(context = ReactReduxContext) {
       ? useDefaultReduxContext
       : () => useContext(context)
   return function useStore() {
-    const { store } = useReduxContext()
+    const { store } = useReduxContext()!
     return store
   }
 }
