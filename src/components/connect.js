@@ -363,5 +363,5 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     }
 
     return hoistStatics(Connect, WrappedComponent)
-  };
+  }
 }
