@@ -35,7 +35,7 @@ export default class Provider extends Component {
 }
 
 if (process.env.NODE_ENV !== 'production') {
-  Provider.prototype.componentWillReceiveProps = function (nextProps) {
+  Provider.prototype.UNSAFE_componentWillReceiveProps = function (nextProps) {
     const { store } = this
     const { store: nextStore } = nextProps
 

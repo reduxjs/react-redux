@@ -212,7 +212,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
         this.trySubscribe()
       }
 
-      componentWillReceiveProps(nextProps) {
+      UNSAFE_componentWillReceiveProps(nextProps) {
         if (!pure || !shallowEqual(nextProps, this.props)) {
           this.haveOwnPropsChanged = true
         }
@@ -350,7 +350,7 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     }
 
     if (process.env.NODE_ENV !== 'production') {
-      Connect.prototype.componentWillUpdate = function componentWillUpdate() {
+      Connect.prototype.UNSAFE_componentWillUpdate = function componentWillUpdate() {
         if (this.version === version) {
           return
         }
@@ -363,5 +363,5 @@ export default function connect(mapStateToProps, mapDispatchToProps, mergeProps,
     }
 
     return hoistStatics(Connect, WrappedComponent)
-  }
+  };
 }
