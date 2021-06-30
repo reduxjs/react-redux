@@ -2660,7 +2660,7 @@ describe('React', () => {
           store.dispatch({ type: 'test' })
         })
 
-        expect(initialOwnProps).toBe(undefined)
+        expect(initialOwnProps).toBe(null)
         expect(initialState).not.toBe(undefined)
         expect(secondaryOwnProps).not.toBe(undefined)
         expect(secondaryOwnProps.name).toBe('a')
