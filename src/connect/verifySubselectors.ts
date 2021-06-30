@@ -1,6 +1,10 @@
 import warning from '../utils/warning'
 
-function verify(selector, methodName, displayName) {
+function verify(
+  selector: unknown,
+  methodName: string,
+  displayName: string
+): void {
   if (!selector) {
     throw new Error(`Unexpected value for ${methodName} in ${displayName}.`)
   } else if (
@@ -16,11 +20,11 @@ function verify(selector, methodName, displayName) {
 }
 
 export default function verifySubselectors(
-  mapStateToProps,
-  mapDispatchToProps,
-  mergeProps,
-  displayName
-) {
+  mapStateToProps: unknown,
+  mapDispatchToProps: unknown,
+  mergeProps: unknown,
+  displayName: string
+): void {
   verify(mapStateToProps, 'mapStateToProps', displayName)
   verify(mapDispatchToProps, 'mapDispatchToProps', displayName)
   verify(mergeProps, 'mergeProps', displayName)
