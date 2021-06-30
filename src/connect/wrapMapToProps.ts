@@ -1,17 +1,23 @@
 import { Dispatch } from 'redux'
 
+import { FixTypeLater } from '../types'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
 export type MapToProps = {
-  (stateOrDispatch: any, ownProps?: any): any
+  (stateOrDispatch: FixTypeLater, ownProps?: unknown): FixTypeLater
   dependsOnOwnProps: boolean
 }
 
 export function wrapMapToPropsConstant(
-  getConstant: (dispatch: Dispatch, options: any) => void
+  // * Note:
+  //  It seems that the dispatch identifier here
+  //  could be dispatch in some cases (ex: whenMapDispatchToPropsIsMissing)
+  // and state in some others (ex: whenMapStateToPropsIsMissing)
+  //
+  getConstant: (dispatch: Dispatch) => FixTypeLater
 ) {
-  return function initConstantSelector(dispatch: Dispatch, options: any) {
-    const constant = getConstant(dispatch, options)
+  return function initConstantSelector(dispatch: Dispatch) {
+    const constant = getConstant(dispatch)
 
     function constantSelector() {
       return constant
@@ -52,9 +58,9 @@ export function wrapMapToPropsFunc(mapToProps: MapToProps, methodName: string) {
     { displayName }: { displayName: string }
   ) {
     const proxy = function mapToPropsProxy(
-      stateOrDispatch: any,
-      ownProps: any
-    ): any {
+      stateOrDispatch: FixTypeLater,
+      ownProps: unknown
+    ): FixTypeLater {
       return proxy.dependsOnOwnProps
         ? proxy.mapToProps(stateOrDispatch, ownProps)
         : proxy.mapToProps(stateOrDispatch, null)
@@ -64,8 +70,8 @@ export function wrapMapToPropsFunc(mapToProps: MapToProps, methodName: string) {
     proxy.dependsOnOwnProps = true
 
     proxy.mapToProps = function detectFactoryAndVerify(
-      stateOrDispatch: any,
-      ownProps: any
+      stateOrDispatch: FixTypeLater,
+      ownProps: unknown
     ) {
       proxy.mapToProps = mapToProps
       proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps)
