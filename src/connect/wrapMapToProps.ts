@@ -3,18 +3,23 @@ import { Dispatch } from 'redux'
 import { FixTypeLater } from '../types'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
-export type MapToProps = {
-  (stateOrDispatch: FixTypeLater, ownProps?: unknown): FixTypeLater
-  dependsOnOwnProps: boolean
+type AnyState = { [key: string]: any }
+type StateOrDispatch<S = AnyState> = S | Dispatch
+
+type AnyProps = { [key: string]: any }
+
+export type MapToProps<P = AnyProps> = {
+  (stateOrDispatch: StateOrDispatch, ownProps?: P): FixTypeLater
+  dependsOnOwnProps?: boolean
 }
 
 export function wrapMapToPropsConstant(
   // * Note:
-  //  It seems that the dispatch identifier here
-  //  could be dispatch in some cases (ex: whenMapDispatchToPropsIsMissing)
-  // and state in some others (ex: whenMapStateToPropsIsMissing)
+  //  It seems that the dispatch argument
+  //  could be a dispatch function in some cases (ex: whenMapDispatchToPropsIsMissing)
+  //  and a state object in some others (ex: whenMapStateToPropsIsMissing)
   //
-  getConstant: (dispatch: Dispatch) => FixTypeLater
+  getConstant: (dispatch: Dispatch) => { dispatch?: Dispatch }
 ) {
   return function initConstantSelector(dispatch: Dispatch) {
     const constant = getConstant(dispatch)
@@ -52,27 +57,30 @@ export function getDependsOnOwnProps(mapToProps: MapToProps) {
 //  * On first call, verifies the first result is a plain object, in order to warn
 //    the developer that their mapToProps function is not returning a valid result.
 //
-export function wrapMapToPropsFunc(mapToProps: MapToProps, methodName: string) {
+export function wrapMapToPropsFunc<P = AnyProps>(
+  mapToProps: MapToProps,
+  methodName: string
+) {
   return function initProxySelector(
     dispatch: Dispatch,
     { displayName }: { displayName: string }
   ) {
     const proxy = function mapToPropsProxy(
-      stateOrDispatch: FixTypeLater,
-      ownProps: unknown
-    ): FixTypeLater {
+      stateOrDispatch: StateOrDispatch,
+      ownProps?: P
+    ): MapToProps {
       return proxy.dependsOnOwnProps
         ? proxy.mapToProps(stateOrDispatch, ownProps)
-        : proxy.mapToProps(stateOrDispatch, null)
+        : proxy.mapToProps(stateOrDispatch, undefined)
     }
 
     // allow detectFactoryAndVerify to get ownProps
     proxy.dependsOnOwnProps = true
 
     proxy.mapToProps = function detectFactoryAndVerify(
-      stateOrDispatch: FixTypeLater,
-      ownProps: unknown
-    ) {
+      stateOrDispatch: StateOrDispatch,
+      ownProps?: P
+    ): MapToProps {
       proxy.mapToProps = mapToProps
       proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps)
       let props = proxy(stateOrDispatch, ownProps)
