@@ -9,6 +9,7 @@ type StateOrDispatch<S = AnyState> = S | Dispatch
 type AnyProps = { [key: string]: any }
 
 export type MapToProps<P = AnyProps> = {
+  // eslint-disable-next-line no-unused-vars
   (stateOrDispatch: StateOrDispatch, ownProps?: P): FixTypeLater
   dependsOnOwnProps?: boolean
 }
@@ -18,7 +19,7 @@ export function wrapMapToPropsConstant(
   //  It seems that the dispatch argument
   //  could be a dispatch function in some cases (ex: whenMapDispatchToPropsIsMissing)
   //  and a state object in some others (ex: whenMapStateToPropsIsMissing)
-  //
+  // eslint-disable-next-line no-unused-vars
   getConstant: (dispatch: Dispatch) => { dispatch?: Dispatch }
 ) {
   return function initConstantSelector(dispatch: Dispatch) {
