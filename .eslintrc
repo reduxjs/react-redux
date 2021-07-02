@@ -38,5 +38,8 @@
     "react/jsx-wrap-multilines": 2,
     "react/no-string-refs": 0
   },
-  "plugins": ["@typescript-eslint", "import", "react"]
+  "plugins": ["@typescript-eslint", "import", "react"],
+  "globals": {
+    "JSX": true
+  }
 }
