@@ -37,6 +37,9 @@
     "test": "jest",
     "coverage": "codecov"
   },
+  "workspaces": [
+    "website"
+  ],
   "peerDependencies": {
     "react": "^16.8.3 || ^17"
   },
