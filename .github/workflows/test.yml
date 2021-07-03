@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master]
+    branches: [master, typescript-port]
   pull_request:
-    branches: [master]
+    branches: [master, typescript-port]
 
 jobs:
   build:
