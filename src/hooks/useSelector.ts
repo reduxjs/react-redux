@@ -1,16 +1,16 @@
 import { useReducer, useRef, useMemo, useContext, useDebugValue } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
-import Subscription from '../utils/Subscription'
+import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 import { AnyAction, Store } from 'redux'
 import { DefaultRootState } from '../types'
 
-type EqualityFn<T> = (a: T | undefined, b: T | undefined) => boolean;
+type EqualityFn<T> = (a: T | undefined, b: T | undefined) => boolean
 
 const refEquality: EqualityFn<any> = (a, b) => a === b
 
-type TSelector<S, R> = (state: S) => R;
+type TSelector<S, R> = (state: S) => R
 
 function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
   selector: TSelector<TStoreState, TSelectedState>,
@@ -20,10 +20,10 @@ function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
 ): TSelectedState {
   const [, forceRender] = useReducer((s) => s + 1, 0)
 
-  const subscription = useMemo(() => new Subscription(store, contextSub), [
-    store,
-    contextSub,
-  ])
+  const subscription = useMemo(
+    () => createSubscription(store, contextSub),
+    [store, contextSub]
+  )
 
   const latestSubscriptionCallbackError = useRef<Error>()
   const latestSelector = useRef<TSelector<TStoreState, TSelectedState>>()
@@ -107,13 +107,21 @@ function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(context = ReactReduxContext): <TState = DefaultRootState, Selected = unknown>(selector: (state: TState) => Selected, equalityFn?: EqualityFn<Selected>) => Selected {
+export function createSelectorHook(
+  context = ReactReduxContext
+): <TState = DefaultRootState, Selected = unknown>(
+  selector: (state: TState) => Selected,
+  equalityFn?: EqualityFn<Selected>
+) => Selected {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
       : () => useContext(context)
-      
-  return function useSelector<TState, Selected extends unknown>(selector: (state: TState) => Selected, equalityFn: EqualityFn<Selected> = refEquality): Selected {
+
+  return function useSelector<TState, Selected extends unknown>(
+    selector: (state: TState) => Selected,
+    equalityFn: EqualityFn<Selected> = refEquality
+  ): Selected {
     if (process.env.NODE_ENV !== 'production') {
       if (!selector) {
         throw new Error(`You must pass a selector to useSelector`)
