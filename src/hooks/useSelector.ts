@@ -3,15 +3,21 @@ import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import Subscription from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
+import { AnyAction, Store } from 'redux'
+import { DefaultRootState } from '../types'
 
-const refEquality = (a, b) => a === b
+type EqualityFn<T> = (a: T | undefined, b: T | undefined) => boolean;
 
-function useSelectorWithStoreAndSubscription(
-  selector,
-  equalityFn,
-  store,
-  contextSub
-) {
+const refEquality: EqualityFn<any> = (a, b) => a === b
+
+type TSelector<S, R> = (state: S) => R;
+
+function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
+  selector: TSelector<TStoreState, TSelectedState>,
+  equalityFn: EqualityFn<TSelectedState>,
+  store: Store<TStoreState, AnyAction>,
+  contextSub: Subscription
+): TSelectedState {
   const [, forceRender] = useReducer((s) => s + 1, 0)
 
   const subscription = useMemo(() => new Subscription(store, contextSub), [
@@ -19,13 +25,13 @@ function useSelectorWithStoreAndSubscription(
     contextSub,
   ])
 
-  const latestSubscriptionCallbackError = useRef()
-  const latestSelector = useRef()
-  const latestStoreState = useRef()
-  const latestSelectedState = useRef()
+  const latestSubscriptionCallbackError = useRef<Error>()
+  const latestSelector = useRef<TSelector<TStoreState, TSelectedState>>()
+  const latestStoreState = useRef<TStoreState>()
+  const latestSelectedState = useRef<TSelectedState>()
 
   const storeState = store.getState()
-  let selectedState
+  let selectedState: TSelectedState | undefined
 
   try {
     if (
@@ -65,7 +71,7 @@ function useSelectorWithStoreAndSubscription(
     function checkForUpdates() {
       try {
         const newStoreState = store.getState()
-        const newSelectedState = latestSelector.current(newStoreState)
+        const newSelectedState = latestSelector.current!(newStoreState)
 
         if (equalityFn(newSelectedState, latestSelectedState.current)) {
           return
@@ -92,7 +98,7 @@ function useSelectorWithStoreAndSubscription(
     return () => subscription.tryUnsubscribe()
   }, [store, subscription])
 
-  return selectedState
+  return selectedState!
 }
 
 /**
@@ -101,12 +107,13 @@ function useSelectorWithStoreAndSubscription(
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(context = ReactReduxContext) {
+export function createSelectorHook(context = ReactReduxContext): <TState = DefaultRootState, Selected = unknown>(selector: (state: TState) => Selected, equalityFn?: EqualityFn<Selected>) => Selected {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
       : () => useContext(context)
-  return function useSelector(selector, equalityFn = refEquality) {
+      
+  return function useSelector<TState, Selected extends unknown>(selector: (state: TState) => Selected, equalityFn: EqualityFn<Selected> = refEquality): Selected {
     if (process.env.NODE_ENV !== 'production') {
       if (!selector) {
         throw new Error(`You must pass a selector to useSelector`)
@@ -120,7 +127,7 @@ export function createSelectorHook(context = ReactReduxContext) {
         )
       }
     }
-    const { store, subscription: contextSub } = useReduxContext()
+    const { store, subscription: contextSub } = useReduxContext()!
 
     const selectedState = useSelectorWithStoreAndSubscription(
       selector,
