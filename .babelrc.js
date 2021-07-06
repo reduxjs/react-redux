@@ -12,6 +12,7 @@ module.exports = {
         // Use the equivalent of `babel-preset-modules`
         bugfixes: true,
         modules: false,
+        loose: true,
       },
     ],
     '@babel/preset-typescript',
@@ -19,8 +20,9 @@ module.exports = {
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
     '@babel/transform-react-jsx',
-    '@babel/plugin-proposal-class-properties',
-    '@babel/plugin-proposal-private-methods',
+    ['@babel/plugin-proposal-class-properties', { loose: true }],
+    ['@babel/plugin-proposal-private-methods', { loose: true }],
+    ['@babel/plugin-proposal-private-property-in-object', { loose: true }],
     cjs && ['@babel/transform-modules-commonjs'],
     [
       '@babel/transform-runtime',
