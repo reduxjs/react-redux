@@ -1,7 +1,7 @@
 import hoistStatics from 'hoist-non-react-statics'
 import React, { useContext, useMemo, useRef, useReducer } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
-import Subscription from '../utils/Subscription'
+import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 
 import { ReactReduxContext } from './Context'
@@ -334,7 +334,7 @@ export default function connectAdvanced(
 
         // This Subscription's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const subscription = new Subscription(
+        const subscription = createSubscription(
           store,
           didStoreComeFromProps ? null : contextValue.subscription
         )

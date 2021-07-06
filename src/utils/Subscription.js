@@ -4,8 +4,6 @@ import { getBatch } from './batch'
 // well as nesting subscriptions of descendant components, so that we can ensure the
 // ancestor components re-render before descendants
 
-const nullListeners = { notify() {} }
-
 function createListenerCollection() {
   const batch = getBatch()
   let first = null
@@ -71,51 +69,62 @@ function createListenerCollection() {
   }
 }
 
-export default class Subscription {
-  constructor(store, parentSub) {
-    this.store = store
-    this.parentSub = parentSub
-    this.unsubscribe = null
-    this.listeners = nullListeners
+const nullListeners = {
+  notify() {},
+  get: () => [],
+}
 
-    this.handleChangeWrapper = this.handleChangeWrapper.bind(this)
+export function createSubscription(store, parentSub) {
+  let unsubscribe
+  let listeners = nullListeners
+
+  function addNestedSub(listener) {
+    trySubscribe()
+    return listeners.subscribe(listener)
   }
 
-  addNestedSub(listener) {
-    this.trySubscribe()
-    return this.listeners.subscribe(listener)
+  function notifyNestedSubs() {
+    listeners.notify()
   }
 
-  notifyNestedSubs() {
-    this.listeners.notify()
-  }
-
-  handleChangeWrapper() {
-    if (this.onStateChange) {
-      this.onStateChange()
+  function handleChangeWrapper() {
+    if (subscription.onStateChange) {
+      subscription.onStateChange()
     }
   }
 
-  isSubscribed() {
-    return Boolean(this.unsubscribe)
+  function isSubscribed() {
+    return Boolean(unsubscribe)
   }
 
-  trySubscribe() {
-    if (!this.unsubscribe) {
-      this.unsubscribe = this.parentSub
-        ? this.parentSub.addNestedSub(this.handleChangeWrapper)
-        : this.store.subscribe(this.handleChangeWrapper)
+  function trySubscribe() {
+    if (!unsubscribe) {
+      unsubscribe = parentSub
+        ? parentSub.addNestedSub(handleChangeWrapper)
+        : store.subscribe(handleChangeWrapper)
 
-      this.listeners = createListenerCollection()
+      listeners = createListenerCollection()
     }
   }
 
-  tryUnsubscribe() {
-    if (this.unsubscribe) {
-      this.unsubscribe()
-      this.unsubscribe = null
-      this.listeners.clear()
-      this.listeners = nullListeners
+  function tryUnsubscribe() {
+    if (unsubscribe) {
+      unsubscribe()
+      unsubscribe = undefined
+      listeners.clear()
+      listeners = nullListeners
     }
   }
+
+  const subscription = {
+    addNestedSub,
+    notifyNestedSubs,
+    handleChangeWrapper,
+    isSubscribed,
+    trySubscribe,
+    tryUnsubscribe,
+    getListeners: () => listeners,
+  }
+
+  return subscription
 }
