@@ -1,17 +1,25 @@
 const { NODE_ENV, BABEL_ENV } = process.env
 const cjs = NODE_ENV === 'test' || BABEL_ENV === 'commonjs'
-const loose = true
 
 module.exports = {
   presets: [
-    ['@babel/env', { loose, modules: false }],
+    [
+      '@babel/preset-env',
+      {
+        targets: {
+          esmodules: true,
+        },
+        // Use the equivalent of `babel-preset-modules`
+        bugfixes: true,
+        modules: false,
+      },
+    ],
     '@babel/preset-typescript',
   ],
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
-    ['@babel/proposal-object-rest-spread', { loose }],
     '@babel/transform-react-jsx',
-    cjs && ['@babel/transform-modules-commonjs', { loose }],
+    cjs && ['@babel/transform-modules-commonjs'],
     [
       '@babel/transform-runtime',
       {
@@ -22,4 +30,7 @@ module.exports = {
       },
     ],
   ].filter(Boolean),
+  assumptions: {
+    enumerableModuleMeta: true,
+  },
 }
