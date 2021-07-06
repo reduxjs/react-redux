@@ -18,6 +18,8 @@ import type { NonReactStatics } from 'hoist-non-react-statics'
 
 export type FixTypeLater = any
 
+export type EqualityFn<T> = (a: T | undefined, b: T | undefined) => boolean
+
 /**
  * This interface can be augmented by users to add default types for the root state when
  * using `react-redux`.
@@ -118,9 +120,8 @@ export type InferableComponentEnhancerWithProps<TInjectedProps, TNeedsProps> = <
 // Injects props and removes them from the prop requirements.
 // Will not pass through the injected props if they are passed in during
 // render.
-export type InferableComponentEnhancer<
-  TInjectedProps
-> = InferableComponentEnhancerWithProps<TInjectedProps, {}>
+export type InferableComponentEnhancer<TInjectedProps> =
+  InferableComponentEnhancerWithProps<TInjectedProps, {}>
 
 export type InferThunkActionCreatorType<
   TActionCreator extends (...args: any[]) => any
@@ -148,111 +149,110 @@ export type ResolveThunks<TDispatchProps> = TDispatchProps extends {
 
 // the conditional type is to support TypeScript 3.0, which does not support mapping over tuples and arrays;
 // once the typings are updated to at least TypeScript 3.1, a simple mapped type can replace this mess
-export type ResolveArrayThunks<
-  TDispatchProps extends ReadonlyArray<any>
-> = TDispatchProps extends [
-  infer A1,
-  infer A2,
-  infer A3,
-  infer A4,
-  infer A5,
-  infer A6,
-  infer A7,
-  infer A8,
-  infer A9
-]
-  ? [
-      HandleThunkActionCreator<A1>,
-      HandleThunkActionCreator<A2>,
-      HandleThunkActionCreator<A3>,
-      HandleThunkActionCreator<A4>,
-      HandleThunkActionCreator<A5>,
-      HandleThunkActionCreator<A6>,
-      HandleThunkActionCreator<A7>,
-      HandleThunkActionCreator<A8>,
-      HandleThunkActionCreator<A9>
-    ]
-  : TDispatchProps extends [
-      infer A1,
-      infer A2,
-      infer A3,
-      infer A4,
-      infer A5,
-      infer A6,
-      infer A7,
-      infer A8
-    ]
-  ? [
-      HandleThunkActionCreator<A1>,
-      HandleThunkActionCreator<A2>,
-      HandleThunkActionCreator<A3>,
-      HandleThunkActionCreator<A4>,
-      HandleThunkActionCreator<A5>,
-      HandleThunkActionCreator<A6>,
-      HandleThunkActionCreator<A7>,
-      HandleThunkActionCreator<A8>
-    ]
-  : TDispatchProps extends [
-      infer A1,
-      infer A2,
-      infer A3,
-      infer A4,
-      infer A5,
-      infer A6,
-      infer A7
-    ]
-  ? [
-      HandleThunkActionCreator<A1>,
-      HandleThunkActionCreator<A2>,
-      HandleThunkActionCreator<A3>,
-      HandleThunkActionCreator<A4>,
-      HandleThunkActionCreator<A5>,
-      HandleThunkActionCreator<A6>,
-      HandleThunkActionCreator<A7>
-    ]
-  : TDispatchProps extends [
-      infer A1,
-      infer A2,
-      infer A3,
-      infer A4,
-      infer A5,
-      infer A6
-    ]
-  ? [
-      HandleThunkActionCreator<A1>,
-      HandleThunkActionCreator<A2>,
-      HandleThunkActionCreator<A3>,
-      HandleThunkActionCreator<A4>,
-      HandleThunkActionCreator<A5>,
-      HandleThunkActionCreator<A6>
-    ]
-  : TDispatchProps extends [infer A1, infer A2, infer A3, infer A4, infer A5]
-  ? [
-      HandleThunkActionCreator<A1>,
-      HandleThunkActionCreator<A2>,
-      HandleThunkActionCreator<A3>,
-      HandleThunkActionCreator<A4>,
-      HandleThunkActionCreator<A5>
-    ]
-  : TDispatchProps extends [infer A1, infer A2, infer A3, infer A4]
-  ? [
-      HandleThunkActionCreator<A1>,
-      HandleThunkActionCreator<A2>,
-      HandleThunkActionCreator<A3>,
-      HandleThunkActionCreator<A4>
-    ]
-  : TDispatchProps extends [infer A1, infer A2, infer A3]
-  ? [
-      HandleThunkActionCreator<A1>,
-      HandleThunkActionCreator<A2>,
-      HandleThunkActionCreator<A3>
-    ]
-  : TDispatchProps extends [infer A1, infer A2]
-  ? [HandleThunkActionCreator<A1>, HandleThunkActionCreator<A2>]
-  : TDispatchProps extends [infer A1]
-  ? [HandleThunkActionCreator<A1>]
-  : TDispatchProps extends Array<infer A>
-  ? Array<HandleThunkActionCreator<A>>
-  : TDispatchProps extends ReadonlyArray<infer A>
-  ? ReadonlyArray<HandleThunkActionCreator<A>>
-  : never
+export type ResolveArrayThunks<TDispatchProps extends ReadonlyArray<any>> =
+  TDispatchProps extends [
+    infer A1,
+    infer A2,
+    infer A3,
+    infer A4,
+    infer A5,
+    infer A6,
+    infer A7,
+    infer A8,
+    infer A9
+  ]
+    ? [
+        HandleThunkActionCreator<A1>,
+        HandleThunkActionCreator<A2>,
+        HandleThunkActionCreator<A3>,
+        HandleThunkActionCreator<A4>,
+        HandleThunkActionCreator<A5>,
+        HandleThunkActionCreator<A6>,
+        HandleThunkActionCreator<A7>,
+        HandleThunkActionCreator<A8>,
+        HandleThunkActionCreator<A9>
+      ]
+    : TDispatchProps extends [
+        infer A1,
+        infer A2,
+        infer A3,
+        infer A4,
+        infer A5,
+        infer A6,
+        infer A7,
+        infer A8
+      ]
+    ? [
+        HandleThunkActionCreator<A1>,
+        HandleThunkActionCreator<A2>,
+        HandleThunkActionCreator<A3>,
+        HandleThunkActionCreator<A4>,
+        HandleThunkActionCreator<A5>,
+        HandleThunkActionCreator<A6>,
+        HandleThunkActionCreator<A7>,
+        HandleThunkActionCreator<A8>
+      ]
+    : TDispatchProps extends [
+        infer A1,
+        infer A2,
+        infer A3,
+        infer A4,
+        infer A5,
+        infer A6,
+        infer A7
+      ]
+    ? [
+        HandleThunkActionCreator<A1>,
+        HandleThunkActionCreator<A2>,
+        HandleThunkActionCreator<A3>,
+        HandleThunkActionCreator<A4>,
+        HandleThunkActionCreator<A5>,
+        HandleThunkActionCreator<A6>,
+        HandleThunkActionCreator<A7>
+      ]
+    : TDispatchProps extends [
+        infer A1,
+        infer A2,
+        infer A3,
+        infer A4,
+        infer A5,
+        infer A6
+      ]
+    ? [
+        HandleThunkActionCreator<A1>,
+        HandleThunkActionCreator<A2>,
+        HandleThunkActionCreator<A3>,
+        HandleThunkActionCreator<A4>,
+        HandleThunkActionCreator<A5>,
+        HandleThunkActionCreator<A6>
+      ]
+    : TDispatchProps extends [infer A1, infer A2, infer A3, infer A4, infer A5]
+    ? [
+        HandleThunkActionCreator<A1>,
+        HandleThunkActionCreator<A2>,
+        HandleThunkActionCreator<A3>,
+        HandleThunkActionCreator<A4>,
+        HandleThunkActionCreator<A5>
+      ]
+    : TDispatchProps extends [infer A1, infer A2, infer A3, infer A4]
+    ? [
+        HandleThunkActionCreator<A1>,
+        HandleThunkActionCreator<A2>,
+        HandleThunkActionCreator<A3>,
+        HandleThunkActionCreator<A4>
+      ]
+    : TDispatchProps extends [infer A1, infer A2, infer A3]
+    ? [
+        HandleThunkActionCreator<A1>,
+        HandleThunkActionCreator<A2>,
+        HandleThunkActionCreator<A3>
+      ]
+    : TDispatchProps extends [infer A1, infer A2]
+    ? [HandleThunkActionCreator<A1>, HandleThunkActionCreator<A2>]
+    : TDispatchProps extends [infer A1]
+    ? [HandleThunkActionCreator<A1>]
+    : TDispatchProps extends Array<infer A>
+    ? Array<HandleThunkActionCreator<A>>
+    : TDispatchProps extends ReadonlyArray<infer A>
+    ? ReadonlyArray<HandleThunkActionCreator<A>>
+    : never

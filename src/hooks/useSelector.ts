@@ -4,9 +4,7 @@ import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 import { AnyAction, Store } from 'redux'
-import { DefaultRootState } from '../types'
-
-type EqualityFn<T> = (a: T | undefined, b: T | undefined) => boolean
+import { DefaultRootState, EqualityFn } from '../types'
 
 const refEquality: EqualityFn<any> = (a, b) => a === b
 
