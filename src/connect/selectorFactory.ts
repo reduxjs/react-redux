@@ -198,7 +198,7 @@ export function pureFinalPropsSelectorFactory<
   }
 }
 
-interface SelectorFactoryOptions<
+export interface SelectorFactoryOptions<
   TStateProps,
   TOwnProps,
   TDispatchProps,

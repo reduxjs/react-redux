@@ -169,7 +169,7 @@ function subscribeUpdates(
 
 const initStateUpdates = () => EMPTY_ARRAY
 
-interface ConnectProps {
+export interface ConnectProps {
   reactReduxForwardedRef?: React.ForwardedRef<unknown>
   context?: ReactReduxContextInstance
   store?: Store
