@@ -19,6 +19,8 @@ module.exports = {
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
     '@babel/transform-react-jsx',
+    '@babel/plugin-proposal-class-properties',
+    '@babel/plugin-proposal-private-methods',
     cjs && ['@babel/transform-modules-commonjs'],
     [
       '@babel/transform-runtime',
