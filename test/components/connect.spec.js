@@ -2793,55 +2793,6 @@ describe('React', () => {
     })
 
     describe('Error handling for removed API options and StrictMode', () => {
-      it('should error on withRef=true', () => {
-        class Container extends Component {
-          render() {
-            return <div>hi</div>
-          }
-        }
-        expect(() =>
-          connect(undefined, undefined, undefined, { withRef: true })(Container)
-        ).toThrow(/withRef is removed/)
-      })
-
-      it('should error on receiving a custom store key', () => {
-        const connectOptions = { storeKey: 'customStoreKey' }
-
-        expect(() => {
-          @connect(undefined, undefined, undefined, connectOptions)
-          class Container extends Component {
-            render() {
-              return <Passthrough {...this.props} />
-            }
-          }
-          new Container()
-        }).toThrow(/storeKey has been removed/)
-      })
-
-      it.skip('should error on custom store', () => {
-        function Comp() {
-          return <div>hi</div>
-        }
-        const Container = connect()(Comp)
-        function Oops() {
-          return <Container store={'oops'} />
-        }
-        expect(() => {
-          rtl.render(<Oops />)
-        }).toThrow(/Passing redux store/)
-      })
-
-      it('should error on renderCount prop if specified in connect options', () => {
-        function Comp(props) {
-          return <div>{props.count}</div>
-        }
-        expect(() => {
-          connect(undefined, undefined, undefined, {
-            renderCountProp: 'count',
-          })(Comp)
-        }).toThrow(/renderCountProp is removed/)
-      })
-
       it('works in <StrictMode> without warnings (React 16.3+)', () => {
         if (!React.StrictMode) {
           return
