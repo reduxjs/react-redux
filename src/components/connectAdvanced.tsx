@@ -38,14 +38,12 @@ function storeStateUpdatesReducer(
   return [action.payload, updateCount + 1]
 }
 
-type UseLayoutEffect = typeof useLayoutEffect
 type EffectFunc = (...args: any[]) => void | ReturnType<React.EffectCallback>
-type EffectDeps = Parameters<UseLayoutEffect>[1]
 
 function useIsomorphicLayoutEffectWithArgs(
   effectFunc: EffectFunc,
   effectArgs: any[],
-  dependencies?: EffectDeps
+  dependencies?: React.DependencyList
 ) {
   useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies)
 }
