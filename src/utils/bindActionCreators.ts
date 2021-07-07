@@ -15,14 +15,11 @@ function bindActionCreator<A extends AnyAction = AnyAction>(
 }
 
 export default function bindActionCreators(
-  actionCreators: ActionCreator<any> | ActionCreatorsMapObject,
+  actionCreators: ActionCreatorsMapObject,
   dispatch: Dispatch
-): ActionCreatorsMapObject | ActionCreator<any> {
-  if (typeof actionCreators === 'function') {
-    return bindActionCreator(actionCreators, dispatch)
-  }
-
+): ActionCreatorsMapObject {
   const boundActionCreators: ActionCreatorsMapObject = {}
+
   for (const key in actionCreators) {
     const actionCreator = actionCreators[key]
     if (typeof actionCreator === 'function') {
