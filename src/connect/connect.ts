@@ -1,9 +1,14 @@
+import type { Dispatch } from 'redux'
 import connectAdvanced from '../components/connectAdvanced'
 import shallowEqual from '../utils/shallowEqual'
 import defaultMapDispatchToPropsFactories from './mapDispatchToProps'
 import defaultMapStateToPropsFactories from './mapStateToProps'
 import defaultMergePropsFactories from './mergeProps'
-import defaultSelectorFactory from './selectorFactory'
+import defaultSelectorFactory, {
+  MapStateToPropsParam,
+  MapDispatchToPropsParam,
+  MergeProps,
+} from './selectorFactory'
 
 /*
   connect is a facade over connectAdvanced. It turns its args into a compatible
@@ -22,22 +27,26 @@ import defaultSelectorFactory from './selectorFactory'
   it receives new props or store state.
  */
 
-function match(arg, factories, name) {
+function match<T>(
+  arg: unknown,
+  factories: ((value: unknown) => T)[],
+  name: string
+): T {
   for (let i = factories.length - 1; i >= 0; i--) {
     const result = factories[i](arg)
     if (result) return result
   }
 
-  return (dispatch, options) => {
+  return ((dispatch: Dispatch, options: { wrappedComponentName: string }) => {
     throw new Error(
       `Invalid value of type ${typeof arg} for ${name} argument when connecting component ${
         options.wrappedComponentName
       }.`
     )
-  }
+  }) as any
 }
 
-function strictEqual(a, b) {
+function strictEqual(a: unknown, b: unknown) {
   return a === b
 }
 
@@ -51,9 +60,9 @@ export function createConnect({
   selectorFactory = defaultSelectorFactory,
 } = {}) {
   return function connect(
-    mapStateToProps,
-    mapDispatchToProps,
-    mergeProps,
+    mapStateToProps: MapStateToPropsParam<unknown, unknown>,
+    mapDispatchToProps: MapDispatchToPropsParam<unknown, unknown>,
+    mergeProps: MergeProps<unknown, unknown, unknown, unknown>,
     {
       pure = true,
       areStatesEqual = strictEqual,
@@ -65,16 +74,24 @@ export function createConnect({
   ) {
     const initMapStateToProps = match(
       mapStateToProps,
+      // @ts-ignore
       mapStateToPropsFactories,
       'mapStateToProps'
     )
     const initMapDispatchToProps = match(
       mapDispatchToProps,
+      // @ts-ignore
       mapDispatchToPropsFactories,
       'mapDispatchToProps'
     )
-    const initMergeProps = match(mergeProps, mergePropsFactories, 'mergeProps')
+    const initMergeProps = match(
+      mergeProps,
+      // @ts-ignore
+      mergePropsFactories,
+      'mergeProps'
+    )
 
+    // @ts-ignore
     return connectHOC(selectorFactory, {
       // used in error messages
       methodName: 'connect',

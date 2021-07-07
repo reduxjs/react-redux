@@ -23,8 +23,8 @@
     "es"
   ],
   "scripts": {
-    "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --extensions \".js,.ts\" --out-dir lib",
-    "build:es": "babel src --extensions \".js,.ts\" --out-dir es",
+    "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --extensions \".js,.ts,.tsx\" --out-dir lib",
+    "build:es": "babel src --extensions \".js,.ts,.tsx\" --out-dir es",
     "build:umd": "cross-env NODE_ENV=development rollup -c -o dist/react-redux.js",
     "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/react-redux.min.js",
     "build:types": "tsc",
