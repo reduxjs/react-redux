@@ -1,16 +1,28 @@
 import hoistStatics from 'hoist-non-react-statics'
-import React, { useContext, useMemo, useRef, useReducer } from 'react'
+import React, {
+  useContext,
+  useMemo,
+  useRef,
+  useReducer,
+  useLayoutEffect,
+} from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
-import { createSubscription } from '../utils/Subscription'
+import type { Store } from 'redux'
+import type { SelectorFactory } from '../connect/selectorFactory'
+import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 
-import { ReactReduxContext } from './Context'
+import {
+  ReactReduxContext,
+  ReactReduxContextValue,
+  ReactReduxContextInstance,
+} from './Context'
 
 // Define some constant arrays just to avoid re-creating these
-const EMPTY_ARRAY = []
+const EMPTY_ARRAY: [unknown, number] = [null, 0]
 const NO_SUBSCRIPTION_ARRAY = [null, null]
 
-const stringifyComponent = (Comp) => {
+const stringifyComponent = (Comp: unknown) => {
   try {
     return JSON.stringify(Comp)
   } catch (err) {
@@ -18,27 +30,32 @@ const stringifyComponent = (Comp) => {
   }
 }
 
-function storeStateUpdatesReducer(state, action) {
+function storeStateUpdatesReducer(
+  state: [payload: unknown, counter: number],
+  action: { payload: unknown }
+) {
   const [, updateCount] = state
   return [action.payload, updateCount + 1]
 }
 
+type EffectFunc = (...args: any[]) => void | ReturnType<React.EffectCallback>
+
 function useIsomorphicLayoutEffectWithArgs(
-  effectFunc,
-  effectArgs,
-  dependencies
+  effectFunc: EffectFunc,
+  effectArgs: any[],
+  dependencies?: React.DependencyList
 ) {
   useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies)
 }
 
 function captureWrapperProps(
-  lastWrapperProps,
-  lastChildProps,
-  renderIsScheduled,
-  wrapperProps,
-  actualChildProps,
-  childPropsFromStoreUpdate,
-  notifyNestedSubs
+  lastWrapperProps: React.MutableRefObject<unknown>,
+  lastChildProps: React.MutableRefObject<unknown>,
+  renderIsScheduled: React.MutableRefObject<boolean>,
+  wrapperProps: React.MutableRefObject<unknown>,
+  actualChildProps: React.MutableRefObject<unknown>,
+  childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
+  notifyNestedSubs: () => void
 ) {
   // We want to capture the wrapper props and child props we used for later comparisons
   lastWrapperProps.current = wrapperProps
@@ -53,23 +70,23 @@ function captureWrapperProps(
 }
 
 function subscribeUpdates(
-  shouldHandleStateChanges,
-  store,
-  subscription,
-  childPropsSelector,
-  lastWrapperProps,
-  lastChildProps,
-  renderIsScheduled,
-  childPropsFromStoreUpdate,
-  notifyNestedSubs,
-  forceComponentUpdateDispatch
+  shouldHandleStateChanges: boolean,
+  store: Store,
+  subscription: Subscription,
+  childPropsSelector: (state: unknown, props: unknown) => unknown,
+  lastWrapperProps: React.MutableRefObject<unknown>,
+  lastChildProps: React.MutableRefObject<unknown>,
+  renderIsScheduled: React.MutableRefObject<boolean>,
+  childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
+  notifyNestedSubs: () => void,
+  forceComponentUpdateDispatch: React.Dispatch<any>
 ) {
   // If we're not subscribed to the store, nothing to do here
   if (!shouldHandleStateChanges) return
 
   // Capture values for checking if and when this component unmounts
   let didUnsubscribe = false
-  let lastThrownError = null
+  let lastThrownError: Error | null = null
 
   // We'll run this callback every time a store subscription update propagates to this component
   const checkForUpdates = () => {
@@ -148,7 +165,29 @@ function subscribeUpdates(
   return unsubscribeWrapper
 }
 
-const initStateUpdates = () => [null, 0]
+const initStateUpdates = () => EMPTY_ARRAY
+
+export interface ConnectProps {
+  reactReduxForwardedRef?: React.ForwardedRef<unknown>
+  context?: ReactReduxContextInstance
+  store?: Store
+}
+
+export type ConnectedComponent<
+  C extends React.ComponentType<any>,
+  P
+> = React.NamedExoticComponent<JSX.LibraryManagedAttributes<C, P>> & {
+  WrappedComponent: C
+}
+
+interface ConnectAdvancedOptions {
+  getDisplayName?: (name: string) => string
+  methodName?: string
+  shouldHandleStateChanges?: boolean
+  forwardRef?: boolean
+  context?: typeof ReactReduxContext
+  pure?: boolean
+}
 
 export default function connectAdvanced(
   /*
@@ -168,7 +207,7 @@ export default function connectAdvanced(
     props. Do not use connectAdvanced directly without memoizing results between calls to your
     selector, otherwise the Connect component will re-render on every state or props change.
   */
-  selectorFactory,
+  selectorFactory: SelectorFactory<unknown, unknown, unknown, unknown>,
   // options object:
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
@@ -179,18 +218,8 @@ export default function connectAdvanced(
     // probably overridden by wrapper functions such as connect()
     methodName = 'connectAdvanced',
 
-    // REMOVED: if defined, the name of the property passed to the wrapped element indicating the number of
-    // calls to render. useful for watching in react devtools for unnecessary re-renders.
-    renderCountProp = undefined,
-
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
-
-    // REMOVED: the key of props/context to get the store
-    storeKey = 'store',
-
-    // REMOVED: expose the wrapped component via refs
-    withRef = false,
 
     // use React's forwardRef to expose a ref of the wrapped component
     forwardRef = false,
@@ -200,37 +229,13 @@ export default function connectAdvanced(
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
-  } = {}
+  }: ConnectAdvancedOptions = {}
 ) {
-  if (process.env.NODE_ENV !== 'production') {
-    if (renderCountProp !== undefined) {
-      throw new Error(
-        `renderCountProp is removed. render counting is built into the latest React Dev Tools profiling extension`
-      )
-    }
-    if (withRef) {
-      throw new Error(
-        'withRef is removed. To access the wrapped instance, use a ref on the connected component'
-      )
-    }
-
-    const customStoreWarningMessage =
-      'To use a custom Redux store for specific components, create a custom React context with ' +
-      "React.createContext(), and pass the context object to React Redux's Provider and specific components" +
-      ' like: <Provider context={MyContext}><ConnectedComponent context={MyContext} /></Provider>. ' +
-      'You may also pass a {context : MyContext} option to connect'
-
-    if (storeKey !== 'store') {
-      throw new Error(
-        'storeKey has been removed and does not do anything. ' +
-          customStoreWarningMessage
-      )
-    }
-  }
-
   const Context = context
 
-  return function wrapWithConnect(WrappedComponent) {
+  return function wrapWithConnect<WC extends React.ComponentType>(
+    WrappedComponent: WC
+  ) {
     if (
       process.env.NODE_ENV !== 'production' &&
       !isValidElementType(WrappedComponent)
@@ -252,9 +257,7 @@ export default function connectAdvanced(
       ...connectOptions,
       getDisplayName,
       methodName,
-      renderCountProp,
       shouldHandleStateChanges,
-      storeKey,
       displayName,
       wrappedComponentName,
       WrappedComponent,
@@ -262,33 +265,33 @@ export default function connectAdvanced(
 
     const { pure } = connectOptions
 
-    function createChildSelector(store) {
+    function createChildSelector(store: Store) {
       return selectorFactory(store.dispatch, selectorFactoryOptions)
     }
 
     // If we aren't running in "pure" mode, we don't want to memoize values.
     // To avoid conditionally calling hooks, we fall back to a tiny wrapper
     // that just executes the given callback immediately.
-    const usePureOnlyMemo = pure ? useMemo : (callback) => callback()
+    const usePureOnlyMemo = pure
+      ? useMemo
+      : (callback: () => void) => callback()
 
-    function ConnectFunction(props) {
-      const [
-        propsContext,
-        reactReduxForwardedRef,
-        wrapperProps,
-      ] = useMemo(() => {
-        // Distinguish between actual "data" props that were passed to the wrapper component,
-        // and values needed to control behavior (forwarded refs, alternate context instances).
-        // To maintain the wrapperProps object reference, memoize this destructuring.
-        const { reactReduxForwardedRef, ...wrapperProps } = props
-        return [props.context, reactReduxForwardedRef, wrapperProps]
-      }, [props])
+    function ConnectFunction<TOwnProps>(props: ConnectProps & TOwnProps) {
+      const [propsContext, reactReduxForwardedRef, wrapperProps] =
+        useMemo(() => {
+          // Distinguish between actual "data" props that were passed to the wrapper component,
+          // and values needed to control behavior (forwarded refs, alternate context instances).
+          // To maintain the wrapperProps object reference, memoize this destructuring.
+          const { reactReduxForwardedRef, ...wrapperProps } = props
+          return [props.context, reactReduxForwardedRef, wrapperProps]
+        }, [props])
 
-      const ContextToUse = useMemo(() => {
+      const ContextToUse: ReactReduxContextInstance = useMemo(() => {
         // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
         // Memoize the check that determines which context instance we should use.
         return propsContext &&
           propsContext.Consumer &&
+          // @ts-ignore
           isContextConsumer(<propsContext.Consumer />)
           ? propsContext
           : Context
@@ -302,10 +305,10 @@ export default function connectAdvanced(
       // This allows us to pass through a `store` prop that is just a plain value.
       const didStoreComeFromProps =
         Boolean(props.store) &&
-        Boolean(props.store.getState) &&
-        Boolean(props.store.dispatch)
+        Boolean(props.store!.getState) &&
+        Boolean(props.store!.dispatch)
       const didStoreComeFromContext =
-        Boolean(contextValue) && Boolean(contextValue.store)
+        Boolean(contextValue) && Boolean(contextValue!.store)
 
       if (
         process.env.NODE_ENV !== 'production' &&
@@ -321,7 +324,9 @@ export default function connectAdvanced(
       }
 
       // Based on the previous check, one of these must be true
-      const store = didStoreComeFromProps ? props.store : contextValue.store
+      const store: Store = didStoreComeFromProps
+        ? props.store!
+        : contextValue!.store
 
       const childPropsSelector = useMemo(() => {
         // The child props selector needs the store reference as an input.
@@ -336,7 +341,7 @@ export default function connectAdvanced(
         // connected to the store via props shouldn't use subscription from context, or vice versa.
         const subscription = createSubscription(
           store,
-          didStoreComeFromProps ? null : contextValue.subscription
+          didStoreComeFromProps ? undefined : contextValue!.subscription
         )
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
@@ -356,7 +361,7 @@ export default function connectAdvanced(
           // This component is directly subscribed to a store from props.
           // We don't want descendants reading from this store - pass down whatever
           // the existing context value is from the nearest connected ancestor.
-          return contextValue
+          return contextValue!
         }
 
         // Otherwise, put this component's subscription instance into context, so that
@@ -364,15 +369,18 @@ export default function connectAdvanced(
         return {
           ...contextValue,
           subscription,
-        }
+        } as ReactReduxContextValue
       }, [didStoreComeFromProps, contextValue, subscription])
 
       // We need to force this wrapper component to re-render whenever a Redux store update
       // causes a change to the calculated child component props (or we caught an error in mapState)
-      const [
-        [previousStateUpdateResult],
-        forceComponentUpdateDispatch,
-      ] = useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates)
+      const [[previousStateUpdateResult], forceComponentUpdateDispatch] =
+        useReducer(
+          storeStateUpdatesReducer,
+          // @ts-ignore
+          EMPTY_ARRAY as any,
+          initStateUpdates
+        )
 
       // Propagate any mapState/mapDispatch errors upwards
       if (previousStateUpdateResult && previousStateUpdateResult.error) {
@@ -441,6 +449,7 @@ export default function connectAdvanced(
       // We memoize the elements for the rendered child component as an optimization.
       const renderedWrappedComponent = useMemo(
         () => (
+          // @ts-ignore
           <WrappedComponent
             {...actualChildProps}
             ref={reactReduxForwardedRef}
@@ -470,19 +479,23 @@ export default function connectAdvanced(
     }
 
     // If we're in "pure" mode, ensure our wrapper component only re-renders when incoming props have changed.
-    const Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
+    const _Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
 
+    const Connect = _Connect as typeof _Connect & { WrappedComponent: WC }
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = ConnectFunction.displayName = displayName
 
     if (forwardRef) {
-      const forwarded = React.forwardRef(function forwardConnectRef(
+      const _forwarded = React.forwardRef(function forwardConnectRef(
         props,
         ref
       ) {
         return <Connect {...props} reactReduxForwardedRef={ref} />
       })
 
+      const forwarded = _forwarded as typeof _forwarded & {
+        WrappedComponent: WC
+      }
       forwarded.displayName = displayName
       forwarded.WrappedComponent = WrappedComponent
       return hoistStatics(forwarded, WrappedComponent)

@@ -14,6 +14,8 @@ export interface ReactReduxContextValue<
 export const ReactReduxContext =
   /*#__PURE__*/ React.createContext<ReactReduxContextValue | null>(null)
 
+export type ReactReduxContextInstance = typeof ReactReduxContext
+
 if (process.env.NODE_ENV !== 'production') {
   ReactReduxContext.displayName = 'ReactRedux'
 }
