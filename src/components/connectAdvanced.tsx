@@ -227,7 +227,7 @@ export default function connectAdvanced<
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
-  }: ConnectAdvancedOptions & TFactoryOptions
+  }: ConnectAdvancedOptions & TFactoryOptions = {} as any
 ) {
   const Context = context
 
