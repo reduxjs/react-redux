@@ -173,14 +173,7 @@ export interface ConnectProps {
   store?: Store
 }
 
-export type ConnectedComponent<
-  C extends React.ComponentType<any>,
-  P
-> = React.NamedExoticComponent<JSX.LibraryManagedAttributes<C, P>> & {
-  WrappedComponent: C
-}
-
-interface ConnectAdvancedOptions {
+export interface ConnectAdvancedOptions {
   getDisplayName?: (name: string) => string
   methodName?: string
   shouldHandleStateChanges?: boolean
@@ -189,7 +182,12 @@ interface ConnectAdvancedOptions {
   pure?: boolean
 }
 
-export default function connectAdvanced(
+export default function connectAdvanced<
+  S,
+  TProps,
+  TOwnProps,
+  TFactoryOptions = {}
+>(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
     compute new props from state, props, and dispatch. For example:
@@ -207,7 +205,7 @@ export default function connectAdvanced(
     props. Do not use connectAdvanced directly without memoizing results between calls to your
     selector, otherwise the Connect component will re-render on every state or props change.
   */
-  selectorFactory: SelectorFactory<unknown, unknown, unknown, unknown>,
+  selectorFactory: SelectorFactory<S, TProps, TOwnProps, TFactoryOptions>,
   // options object:
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
@@ -229,7 +227,7 @@ export default function connectAdvanced(
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
-  }: ConnectAdvancedOptions = {}
+  }: ConnectAdvancedOptions & TFactoryOptions
 ) {
   const Context = context
 

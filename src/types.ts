@@ -256,3 +256,22 @@ export type ResolveArrayThunks<TDispatchProps extends ReadonlyArray<any>> =
     : TDispatchProps extends ReadonlyArray<infer A>
     ? ReadonlyArray<HandleThunkActionCreator<A>>
     : never
+
+/**
+ * This interface allows you to easily create a hook that is properly typed for your
+ * store's root state.
+ *
+ * @example
+ *
+ * interface RootState {
+ *   property: string;
+ * }
+ *
+ * const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector;
+ */
+export interface TypedUseSelectorHook<TState> {
+  <TSelected>(
+    selector: (state: TState) => TSelected,
+    equalityFn?: (left: TSelected, right: TSelected) => boolean
+  ): TSelected
+}

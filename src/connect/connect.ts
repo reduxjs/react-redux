@@ -1,5 +1,6 @@
 import type { Dispatch } from 'redux'
 import connectAdvanced from '../components/connectAdvanced'
+import type { ConnectAdvancedOptions } from '../components/connectAdvanced'
 import shallowEqual from '../utils/shallowEqual'
 import defaultMapDispatchToPropsFactories from './mapDispatchToProps'
 import defaultMapStateToPropsFactories from './mapStateToProps'
@@ -9,6 +10,7 @@ import defaultSelectorFactory, {
   MapDispatchToPropsParam,
   MergeProps,
 } from './selectorFactory'
+import type { DefaultRootState } from '../types'
 
 /*
   connect is a facade over connectAdvanced. It turns its args into a compatible
@@ -50,6 +52,31 @@ function strictEqual(a: unknown, b: unknown) {
   return a === b
 }
 
+export interface ConnectOptions<
+  State = DefaultRootState,
+  TStateProps = {},
+  TOwnProps = {},
+  TMergedProps = {}
+> extends ConnectAdvancedOptions {
+  pure?: boolean | undefined
+  areStatesEqual?: ((nextState: State, prevState: State) => boolean) | undefined
+
+  areOwnPropsEqual?: (
+    nextOwnProps: TOwnProps,
+    prevOwnProps: TOwnProps
+  ) => boolean
+
+  areStatePropsEqual?: (
+    nextStateProps: TStateProps,
+    prevStateProps: TStateProps
+  ) => boolean
+  areMergedPropsEqual?: (
+    nextMergedProps: TMergedProps,
+    prevMergedProps: TMergedProps
+  ) => boolean
+  forwardRef?: boolean | undefined
+}
+
 // createConnect with default args builds the 'official' connect behavior. Calling it with
 // different options opens up some testing and extensibility scenarios
 export function createConnect({
@@ -70,7 +97,7 @@ export function createConnect({
       areStatePropsEqual = shallowEqual,
       areMergedPropsEqual = shallowEqual,
       ...extraOptions
-    } = {}
+    }: ConnectOptions = {}
   ) {
     const initMapStateToProps = match(
       mapStateToProps,
