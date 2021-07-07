@@ -17,7 +17,7 @@ function bindActionCreator<A extends AnyAction = AnyAction>(
 export default function bindActionCreators(
   actionCreators: ActionCreator<any> | ActionCreatorsMapObject,
   dispatch: Dispatch
-) {
+): ActionCreatorsMapObject | ActionCreator<any> {
   if (typeof actionCreators === 'function') {
     return bindActionCreator(actionCreators, dispatch)
   }

@@ -1,4 +1,4 @@
-import { Dispatch } from 'redux'
+import { ActionCreatorsMapObject, Dispatch, ActionCreator } from 'redux'
 
 import { FixTypeLater } from '../types'
 import verifyPlainObject from '../utils/verifyPlainObject'
@@ -20,7 +20,13 @@ export function wrapMapToPropsConstant(
   //  could be a dispatch function in some cases (ex: whenMapDispatchToPropsIsMissing)
   //  and a state object in some others (ex: whenMapStateToPropsIsMissing)
   // eslint-disable-next-line no-unused-vars
-  getConstant: (dispatch: Dispatch) => { dispatch?: Dispatch }
+  getConstant: (dispatch: Dispatch) =>
+    | {
+        dispatch?: Dispatch
+        dependsOnOwnProps?: boolean
+      }
+    | ActionCreatorsMapObject
+    | ActionCreator<any>
 ) {
   return function initConstantSelector(dispatch: Dispatch) {
     const constant = getConstant(dispatch)
