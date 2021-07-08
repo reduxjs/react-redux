@@ -182,11 +182,15 @@ export interface ConnectAdvancedOptions {
   pure?: boolean
 }
 
+interface AnyObject {
+  [x: string]: any
+}
+
 export default function connectAdvanced<
   S,
   TProps,
   TOwnProps,
-  TFactoryOptions = {}
+  TFactoryOptions extends AnyObject = {}
 >(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
@@ -205,7 +209,7 @@ export default function connectAdvanced<
     props. Do not use connectAdvanced directly without memoizing results between calls to your
     selector, otherwise the Connect component will re-render on every state or props change.
   */
-  selectorFactory: SelectorFactory<S, TProps, TOwnProps, TFactoryOptions>,
+  selectorFactory: SelectorFactory<S, TProps, TOwnProps, unknown>,
   // options object:
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
@@ -227,7 +231,7 @@ export default function connectAdvanced<
 
     // additional options are passed through to the selectorFactory
     ...connectOptions
-  }: ConnectAdvancedOptions & TFactoryOptions = {} as any
+  }: ConnectAdvancedOptions & Partial<TFactoryOptions> = {}
 ) {
   const Context = context
 
