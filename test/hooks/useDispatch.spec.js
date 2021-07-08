@@ -5,7 +5,7 @@ import {
   Provider as ProviderMock,
   useDispatch,
   createDispatchHook,
-} from '../../src/index.js'
+} from '../../src/index'
 
 const store = createStore((c) => c + 1)
 const store2 = createStore((c) => c + 2)

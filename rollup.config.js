@@ -10,7 +10,7 @@ const env = process.env.NODE_ENV
 const extensions = ['.js', '.ts', '.tsx', '.json']
 
 const config = {
-  input: 'src/index.js',
+  input: 'src/index.ts',
   external: Object.keys(pkg.peerDependencies || {}).concat('react-dom'),
   output: {
     format: 'umd',

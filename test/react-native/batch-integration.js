@@ -7,7 +7,7 @@ import {
   batch,
   useSelector,
   useDispatch,
-} from '../../src/index.js'
+} from '../../src/index'
 import { useIsomorphicLayoutEffect } from '../../src/utils/useIsomorphicLayoutEffect'
 import * as rtl from '@testing-library/react-native'
 import '@testing-library/jest-native/extend-expect'
@@ -468,9 +468,8 @@ describe('React Native', () => {
       const rendered = rtl.render(<ReduxBugDemo />)
 
       const assertValuesMatch = (rendered) => {
-        const [, boolFromSelector] = rendered.getByTestId(
-          'boolFromSelector'
-        ).children
+        const [, boolFromSelector] =
+          rendered.getByTestId('boolFromSelector').children
         const [, boolFromStore] = rendered.getByTestId('boolFromStore').children
         expect(boolFromSelector).toBe(boolFromStore)
       }

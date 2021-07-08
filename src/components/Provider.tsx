@@ -5,7 +5,7 @@ import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { FixTypeLater } from '../types'
 import { Action, AnyAction, Store } from 'redux'
 
-interface ProviderProps<A extends Action = AnyAction> {
+export interface ProviderProps<A extends Action = AnyAction> {
   /**
    * The single Redux store in your application.
    */

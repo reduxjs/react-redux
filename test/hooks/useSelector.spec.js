@@ -10,7 +10,7 @@ import {
   shallowEqual,
   connect,
   createSelectorHook,
-} from '../../src/index.js'
+} from '../../src/index'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {

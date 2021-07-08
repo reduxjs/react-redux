@@ -11,7 +11,7 @@
 import React from 'react'
 import { renderToString } from 'react-dom/server'
 import { createStore } from 'redux'
-import { Provider, connect } from '../../src/index.js'
+import { Provider, connect } from '../../src/index'
 
 describe('React', () => {
   describe('server rendering', () => {
