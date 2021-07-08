@@ -33,10 +33,8 @@ import shallowEqual from './utils/shallowEqual'
 setBatch(batch)
 
 export * from './types'
-export {
+export type {
   ProviderProps,
-  Provider,
-  connectAdvanced,
   SelectorFactory,
   Selector,
   MapStateToProps,
@@ -50,8 +48,12 @@ export {
   MapDispatchToPropsParam,
   MapDispatchToPropsNonObject,
   MergeProps,
-  ReactReduxContext,
   ReactReduxContextValue,
+}
+export {
+  Provider,
+  connectAdvanced,
+  ReactReduxContext,
   connect,
   batch,
   useDispatch,
