@@ -209,7 +209,7 @@ export default function connectAdvanced<
     props. Do not use connectAdvanced directly without memoizing results between calls to your
     selector, otherwise the Connect component will re-render on every state or props change.
   */
-  selectorFactory: SelectorFactory<S, TProps, TOwnProps, unknown>,
+  selectorFactory: SelectorFactory<S, TProps, unknown, unknown>,
   // options object:
   {
     // the func used to compute this HOC's displayName from the wrapped component's displayName.
