@@ -10,7 +10,7 @@
     "jsx": "react",
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "./lib",
+    "outDir": "./es",
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*", "types"],
