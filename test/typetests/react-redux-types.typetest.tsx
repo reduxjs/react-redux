@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 import { Component, ReactElement } from 'react'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import { Store, Dispatch, bindActionCreators } from 'redux'
+import { Store, Dispatch, bindActionCreators, AnyAction } from 'redux'
 import { connect, Provider } from '../../src/index'
 
 import objectAssign from 'object-assign'
@@ -29,7 +30,7 @@ function mapStateToProps(state: CounterState) {
 }
 
 // Which action creators does it want to receive by props?
-function mapDispatchToProps(dispatch: Dispatch<CounterState>) {
+function mapDispatchToProps(dispatch: Dispatch<AnyAction>) {
   return {
     onIncrement: () => dispatch(increment()),
   }
@@ -67,7 +68,7 @@ connect<ICounterStateProps, ICounterDispatchProps, {}>(
 )(Counter)
 
 class App extends Component<any, any> {
-  render(): JSX.Element {
+  render(): React.ReactNode {
     // ...
     return null
   }
@@ -88,12 +89,15 @@ interface TodoProps {
 }
 interface DispatchProps {
   addTodo(userId: number, text: string): void
-  action: Function
+  // action: Function
 }
-declare var actionCreators: () => {
-  action: Function
-}
-declare var addTodo: () => { type: string }
+
+const addTodo = (userId: number, text: string) => ({
+  type: 'todos/todoAdded',
+  payload: { userId, text },
+})
+const actionCreators = { addTodo }
+type AddTodoAction = ReturnType<typeof addTodo>
 declare var todoActionCreators: { [type: string]: (...args: any[]) => any }
 declare var counterActionCreators: { [type: string]: (...args: any[]) => any }
 
@@ -132,7 +136,7 @@ connect(mapStateToProps2, actionCreators)(TodoApp)
 //    return { todos: state.todos };
 //}
 
-function mapDispatchToProps2(dispatch: Dispatch<TodoState>) {
+function mapDispatchToProps2(dispatch: Dispatch<AnyAction>) {
   return { actions: bindActionCreators(actionCreators, dispatch) }
 }
 
@@ -144,7 +148,7 @@ connect(mapStateToProps2, mapDispatchToProps2)(TodoApp)
 //    return { todos: state.todos };
 //}
 
-function mapDispatchToProps3(dispatch: Dispatch<TodoState>) {
+function mapDispatchToProps3(dispatch: Dispatch<AnyAction>) {
   return bindActionCreators({ addTodo }, dispatch)
 }
 
@@ -156,7 +160,7 @@ connect(mapStateToProps2, mapDispatchToProps3)(TodoApp)
 //    return { todos: state.todos };
 //}
 
-function mapDispatchToProps4(dispatch: Dispatch<TodoState>) {
+function mapDispatchToProps4(dispatch: Dispatch<AnyAction>) {
   return {
     todoActions: bindActionCreators(todoActionCreators, dispatch),
     counterActions: bindActionCreators(counterActionCreators, dispatch),
@@ -171,7 +175,7 @@ connect(mapStateToProps2, mapDispatchToProps4)(TodoApp)
 //    return { todos: state.todos };
 //}
 
-function mapDispatchToProps5(dispatch: Dispatch<TodoState>) {
+function mapDispatchToProps5(dispatch: Dispatch<AnyAction>) {
   return {
     actions: bindActionCreators(
       objectAssign({}, todoActionCreators, counterActionCreators),
@@ -188,7 +192,7 @@ connect(mapStateToProps2, mapDispatchToProps5)(TodoApp)
 //    return { todos: state.todos };
 //}
 
-function mapDispatchToProps6(dispatch: Dispatch<TodoState>) {
+function mapDispatchToProps6(dispatch: Dispatch<AnyAction>) {
   return bindActionCreators(
     objectAssign({}, todoActionCreators, counterActionCreators),
     dispatch
@@ -215,7 +219,7 @@ function mergeProps(
   stateProps: TodoState,
   dispatchProps: DispatchProps,
   ownProps: TodoProps
-): DispatchProps & TodoState {
+): { addTodo: (userId: string) => void } & TodoState {
   return objectAssign({}, ownProps, {
     todos: stateProps.todos[ownProps.userId],
     addTodo: (text: string) => dispatchProps.addTodo(ownProps.userId, text),
@@ -236,7 +240,7 @@ class TestComponent extends Component<TestProp, TestState> {}
 const WrappedTestComponent = connect()(TestComponent)
 
 // return value of the connect()(TestComponent) is of the type TestComponent
-let ATestComponent: typeof TestComponent = null
+let ATestComponent: typeof TestComponent
 ATestComponent = TestComponent
 ATestComponent = WrappedTestComponent
 
@@ -247,7 +251,8 @@ let anElement: ReactElement<TestProp>
 
 class NonComponent {}
 // this doesn't compile
-//connect()(NonComponent);
+// @ts-expect-error
+connect()(NonComponent)
 
 // stateless functions
 interface HelloMessageProps {
@@ -284,7 +289,7 @@ namespace TestStatelessFunctionWithMapArguments {
   }
 
   const mapDispatchToProps = (
-    dispatch: Dispatch<any>,
+    dispatch: Dispatch<AnyAction>,
     ownProps: GreetingProps
   ) => {
     return {
@@ -337,18 +342,20 @@ namespace TestTOwnPropsInference {
     mapStateToPropsWithoutOwnProps
   )(OwnPropsComponent)
 
-  // This compiles, which is bad.
+  // @ts-expect-error
   React.createElement(ConnectedWithoutOwnProps, { anything: 'goes!' })
 
   // This compiles, as expected.
   React.createElement(ConnectedWithOwnProps, { own: 'string' })
 
   // This should not compile, which is good.
-  // React.createElement(ConnectedWithOwnProps, { missingOwn: true });
+  // @ts-expect-error
+  React.createElement(ConnectedWithOwnProps, { missingOwn: true })
 
   // This compiles, as expected.
   React.createElement(ConnectedWithTypeHint, { own: 'string' })
 
   // This should not compile, which is good.
-  // React.createElement(ConnectedWithTypeHint, { missingOwn: true });
+  // @ts-expect-error
+  React.createElement(ConnectedWithTypeHint, { missingOwn: true })
 }

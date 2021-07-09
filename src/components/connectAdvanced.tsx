@@ -7,10 +7,11 @@ import React, {
   useLayoutEffect,
 } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
-import type { Store } from 'redux'
+import type { Store, AnyAction } from 'redux'
 import type { SelectorFactory } from '../connect/selectorFactory'
 import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import type { DispatchProp, Matching, GetProps } from '../types'
 
 import {
   ReactReduxContext,
@@ -235,9 +236,12 @@ export default function connectAdvanced<
 ) {
   const Context = context
 
-  return function wrapWithConnect<WC extends React.ComponentType>(
-    WrappedComponent: WC
-  ) {
+  return function wrapWithConnect<
+    WC extends React.ComponentClass<
+      Matching<DispatchProp<AnyAction>, GetProps<WC>>,
+      any
+    >
+  >(WrappedComponent: WC) {
     if (
       process.env.NODE_ENV !== 'production' &&
       !isValidElementType(WrappedComponent)
