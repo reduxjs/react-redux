@@ -3628,6 +3628,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-is@npm:^17.0.1":
+  version: 17.0.1
+  resolution: "@types/react-is@npm:17.0.1"
+  dependencies:
+    "@types/react": "*"
+  checksum: d0ea951ddcde54bcaf6ea227595b7345085c316f2791277a4acfdbbe63cc0de098264269c5463050d7e1308042303556980f9dda32eb2f619eace2efd4e9bdd4
+  languageName: node
+  linkType: hard
+
 "@types/react-redux@npm:^7.1.18":
   version: 7.1.18
   resolution: "@types/react-redux@npm:7.1.18"
@@ -14481,6 +14490,7 @@ __metadata:
     "@types/object-assign": ^4.0.30
     "@types/react": ^17.0.14
     "@types/react-dom": ^17.0.9
+    "@types/react-is": ^17.0.1
     "@types/react-redux": ^7.1.18
     "@typescript-eslint/eslint-plugin": ^4.28.0
     "@typescript-eslint/parser": ^4.28.0
