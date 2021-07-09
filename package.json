@@ -36,6 +36,7 @@
     "prepare": "yarn clean && yarn build",
     "pretest": "yarn lint",
     "test": "jest",
+    "type-tests": "yarn tsc -p test/typetests",
     "coverage": "codecov"
   },
   "workspaces": [
