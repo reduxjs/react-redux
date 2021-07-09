@@ -1,23 +1,11 @@
 import hoistStatics from 'hoist-non-react-statics'
-import React, {
-  useContext,
-  useMemo,
-  useRef,
-  useReducer,
-  useLayoutEffect,
-} from 'react'
+import React, { useContext, useMemo, useRef, useReducer } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
-import type { Store, AnyAction } from 'redux'
+import type { Store } from 'redux'
 import type { SelectorFactory } from '../connect/selectorFactory'
 import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import type {
-  DispatchProp,
-  Matching,
-  GetProps,
-  AdvancedComponentDecorator,
-  ConnectedComponent,
-} from '../types'
+import type { AdvancedComponentDecorator, ConnectedComponent } from '../types'
 
 import {
   ReactReduxContext,
@@ -38,7 +26,7 @@ const stringifyComponent = (Comp: unknown) => {
 }
 
 function storeStateUpdatesReducer(
-  state: [payload: unknown, counter: number],
+  state: [unknown, number],
   action: { payload: unknown }
 ) {
   const [, updateCount] = state
@@ -115,7 +103,7 @@ function subscribeUpdates(
       )
     } catch (e) {
       error = e
-      lastThrownError = e
+      lastThrownError = e as Error | null
     }
 
     if (!error) {

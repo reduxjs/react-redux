@@ -52,7 +52,9 @@ function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
     }
   } catch (err) {
     if (latestSubscriptionCallbackError.current) {
-      err.message += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\n`
+      ;(
+        err as Error
+      ).message += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\n`
     }
 
     throw err
@@ -82,7 +84,7 @@ function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
         // is re-rendered, the selectors are called again, and
         // will throw again, if neither props nor store state
         // changed
-        latestSubscriptionCallbackError.current = err
+        latestSubscriptionCallbackError.current = err as Error
       }
 
       forceRender()
