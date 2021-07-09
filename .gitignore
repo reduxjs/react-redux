@@ -3,6 +3,8 @@ dist
 lib
 coverage
 es
+temp/
+react-redux-*/
 
 .cache
 .yarnrc

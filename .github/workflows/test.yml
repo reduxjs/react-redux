@@ -35,3 +35,57 @@ jobs:
 
       - name: Collect coverage
         run: yarn coverage
+
+  test-types:
+    name: Test Types with TypeScript ${{ matrix.ts }}
+
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['14.x']
+        ts: ['3.9', '4.0', '4.1', '4.2', '4.3', 'next']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Use node ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - uses: actions/cache@v2
+        with:
+          path: .yarn/cache
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+
+      - name: Install deps
+        run: yarn install
+
+      - name: Install TypeScript ${{ matrix.ts }}
+        run: yarn add typescript@${{ matrix.ts }}
+
+      # - uses: actions/download-artifact@v2
+      #   with:
+      #     name: package
+      #     path: packages/toolkit
+
+      # - name: Install build artifact
+      #   run: yarn add ./package.tgz
+
+      # - run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json ./jest.config.js ./src/tests/*.* ./src/query/tests/*.*
+
+      # - name: "@ts-ignore stuff that didn't exist pre-4.1 in the tests"
+      #   if: ${{ matrix.ts < 4.1 }}
+      #   run: sed -i -e 's/@pre41-ts-ignore/@ts-ignore/' -e  '/pre41-remove-start/,/pre41-remove-end/d' ./src/tests/*.* ./src/query/tests/*.ts*
+
+      # - name: 'disable strictOptionalProperties'
+      #   if: ${{ matrix.ts == 'next' }}
+      #   run: sed -i -e 's|//\(.*strictOptionalProperties.*\)$|\1|' tsconfig.base.json
+
+      - name: Test types
+        run: |
+          yarn tsc --version
+          yarn type-tests

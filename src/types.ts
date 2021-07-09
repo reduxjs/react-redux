@@ -45,7 +45,7 @@ export interface DispatchProp<A extends Action = AnyAction> {
 
 export type AdvancedComponentDecorator<TProps, TOwnProps> = (
   component: ComponentType<TProps>
-) => NamedExoticComponent<TOwnProps>
+) => ComponentType<TOwnProps>
 
 /**
  * A property P will be present if:
@@ -98,7 +98,7 @@ export type GetProps<C> = C extends ComponentType<infer P>
 export type ConnectedComponent<
   C extends ComponentType<any>,
   P
-> = NamedExoticComponent<JSX.LibraryManagedAttributes<C, P>> &
+> = ComponentType<P> &
   NonReactStatics<C> & {
     WrappedComponent: C
   }

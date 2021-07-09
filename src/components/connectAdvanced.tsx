@@ -1,16 +1,11 @@
 import hoistStatics from 'hoist-non-react-statics'
-import React, {
-  useContext,
-  useMemo,
-  useRef,
-  useReducer,
-  useLayoutEffect,
-} from 'react'
+import React, { useContext, useMemo, useRef, useReducer } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 import type { Store } from 'redux'
 import type { SelectorFactory } from '../connect/selectorFactory'
 import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import type { AdvancedComponentDecorator, ConnectedComponent } from '../types'
 
 import {
   ReactReduxContext,
@@ -31,7 +26,7 @@ const stringifyComponent = (Comp: unknown) => {
 }
 
 function storeStateUpdatesReducer(
-  state: [payload: unknown, counter: number],
+  state: [unknown, number],
   action: { payload: unknown }
 ) {
   const [, updateCount] = state
@@ -108,7 +103,7 @@ function subscribeUpdates(
       )
     } catch (e) {
       error = e
-      lastThrownError = e
+      lastThrownError = e as Error | null
     }
 
     if (!error) {
@@ -182,16 +177,7 @@ export interface ConnectAdvancedOptions {
   pure?: boolean
 }
 
-interface AnyObject {
-  [x: string]: any
-}
-
-export default function connectAdvanced<
-  S,
-  TProps,
-  TOwnProps,
-  TFactoryOptions extends AnyObject = {}
->(
+function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
   /*
     selectorFactory is a func that is responsible for returning the selector function used to
     compute new props from state, props, and dispatch. For example:
@@ -235,9 +221,19 @@ export default function connectAdvanced<
 ) {
   const Context = context
 
-  return function wrapWithConnect<WC extends React.ComponentType>(
-    WrappedComponent: WC
-  ) {
+  type WrappedComponentProps = TOwnProps & ConnectProps
+
+  /*
+  return function wrapWithConnect<
+    WC extends React.ComponentType<
+      Matching<DispatchProp<AnyAction>, GetProps<WC>>
+    >
+  >(WrappedComponent: WC) {
+    */
+  const wrapWithConnect: AdvancedComponentDecorator<
+    TProps,
+    WrappedComponentProps
+  > = (WrappedComponent) => {
     if (
       process.env.NODE_ENV !== 'production' &&
       !isValidElementType(WrappedComponent)
@@ -483,7 +479,14 @@ export default function connectAdvanced<
     // If we're in "pure" mode, ensure our wrapper component only re-renders when incoming props have changed.
     const _Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
 
-    const Connect = _Connect as typeof _Connect & { WrappedComponent: WC }
+    type ConnectedWrapperComponent = typeof _Connect & {
+      WrappedComponent: typeof WrappedComponent
+    }
+
+    const Connect = _Connect as ConnectedComponent<
+      typeof WrappedComponent,
+      WrappedComponentProps
+    >
     Connect.WrappedComponent = WrappedComponent
     Connect.displayName = ConnectFunction.displayName = displayName
 
@@ -492,12 +495,11 @@ export default function connectAdvanced<
         props,
         ref
       ) {
+        // @ts-ignore
         return <Connect {...props} reactReduxForwardedRef={ref} />
       })
 
-      const forwarded = _forwarded as typeof _forwarded & {
-        WrappedComponent: WC
-      }
+      const forwarded = _forwarded as ConnectedWrapperComponent
       forwarded.displayName = displayName
       forwarded.WrappedComponent = WrappedComponent
       return hoistStatics(forwarded, WrappedComponent)
@@ -505,4 +507,8 @@ export default function connectAdvanced<
 
     return hoistStatics(Connect, WrappedComponent)
   }
+
+  return wrapWithConnect
 }
+
+export default connectAdvanced
