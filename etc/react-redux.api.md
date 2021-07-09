@@ -4,7 +4,6 @@
 
 ```ts
 
-/// <reference types="hoist-non-react-statics" />
 /// <reference types="react" />
 
 import { Action } from 'redux';
@@ -15,18 +14,13 @@ import { ComponentClass } from 'react';
 import { ComponentType } from 'react';
 import { Context } from 'react';
 import { Dispatch } from 'redux';
-import { ForwardRefExoticComponent } from 'react';
-import hoistStatics from 'hoist-non-react-statics';
-import { MemoExoticComponent } from 'react';
-import { NamedExoticComponent } from 'react';
-import { NonReactStatics } from 'hoist-non-react-statics';
+import type { NonReactStatics } from 'hoist-non-react-statics';
 import { default as React_2 } from 'react';
 import { ReactNode } from 'react';
-import { RefAttributes } from 'react';
 import { Store } from 'redux';
 
 // @public (undocumented)
-export type AdvancedComponentDecorator<TProps, TOwnProps> = (component: ComponentType<TProps>) => NamedExoticComponent<TOwnProps>;
+export type AdvancedComponentDecorator<TProps, TOwnProps> = (component: ComponentType<TProps>) => ComponentType<TOwnProps>;
 
 // @public (undocumented)
 export type AnyIfEmpty<T extends object> = keyof T extends never ? any : T;
@@ -34,30 +28,26 @@ export type AnyIfEmpty<T extends object> = keyof T extends never ? any : T;
 export { batch }
 
 // @public (undocumented)
-export const connect: (mapStateToProps: MapStateToPropsParam<unknown, unknown, DefaultRootState>, mapDispatchToProps: unknown, mergeProps: MergeProps<unknown, unknown, unknown, unknown>, { pure, areStatesEqual, areOwnPropsEqual, areStatePropsEqual, areMergedPropsEqual, ...extraOptions }?: ConnectOptions<DefaultRootState, {}, {}, {}>) => <WC extends ComponentType<    {}>>(WrappedComponent: WC) => (ForwardRefExoticComponent<RefAttributes<unknown>> & {
-    WrappedComponent: WC;
-} & NonReactStatics<WC, {}>) | ((({
-    <TOwnProps>(props: ConnectProps & TOwnProps): JSX.Element;
-    displayName: string;
-} | MemoExoticComponent<    {
-<TOwnProps>(props: ConnectProps & TOwnProps): JSX.Element;
-displayName: string;
-}>) & {
-    WrappedComponent: WC;
-}) & NonReactStatics<WC, {}>);
+export const connect: {
+    (): InferableComponentEnhancer<DispatchProp>;
+    <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>): InferableComponentEnhancerWithProps<TStateProps & DispatchProp<AnyAction>, TOwnProps>;
+    <no_state = {}, TDispatchProps = {}, TOwnProps_1 = {}>(mapStateToProps: null | undefined, mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps_1>): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps_1>;
+    <no_state_1 = {}, TDispatchProps_1 = {}, TOwnProps_2 = {}>(mapStateToProps: null | undefined, mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps_1, TOwnProps_2>): InferableComponentEnhancerWithProps<ResolveThunks<TDispatchProps_1>, TOwnProps_2>;
+    <TStateProps_1 = {}, TDispatchProps_2 = {}, TOwnProps_3 = {}, State_1 = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps_1, TOwnProps_3, State_1>, mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps_2, TOwnProps_3>): InferableComponentEnhancerWithProps<TStateProps_1 & TDispatchProps_2, TOwnProps_3>;
+    <TStateProps_2 = {}, TDispatchProps_3 = {}, TOwnProps_4 = {}, State_2 = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps_2, TOwnProps_4, State_2>, mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps_3, TOwnProps_4>): InferableComponentEnhancerWithProps<TStateProps_2 & ResolveThunks<TDispatchProps_3>, TOwnProps_4>;
+    <no_state_2 = {}, no_dispatch_1 = {}, TOwnProps_5 = {}, TMergedProps = {}>(mapStateToProps: null | undefined, mapDispatchToProps: null | undefined, mergeProps: MergeProps<undefined, undefined, TOwnProps_5, TMergedProps>): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps_5>;
+    <TStateProps_3 = {}, no_dispatch_2 = {}, TOwnProps_6 = {}, TMergedProps_1 = {}, State_3 = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps_3, TOwnProps_6, State_3>, mapDispatchToProps: null | undefined, mergeProps: MergeProps<TStateProps_3, undefined, TOwnProps_6, TMergedProps_1>): InferableComponentEnhancerWithProps<TMergedProps_1, TOwnProps_6>;
+    <no_state_3 = {}, TDispatchProps_4 = {}, TOwnProps_7 = {}, TMergedProps_2 = {}>(mapStateToProps: null | undefined, mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps_4, TOwnProps_7>, mergeProps: MergeProps<undefined, TDispatchProps_4, TOwnProps_7, TMergedProps_2>): InferableComponentEnhancerWithProps<TMergedProps_2, TOwnProps_7>;
+    <TStateProps_4 = {}, no_dispatch_3 = {}, TOwnProps_8 = {}, State_4 = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps_4, TOwnProps_8, State_4>, mapDispatchToProps: null | undefined, mergeProps: null | undefined, options: ConnectOptions<State_4, TStateProps_4, TOwnProps_8, {}>): InferableComponentEnhancerWithProps<DispatchProp<AnyAction> & TStateProps_4, TOwnProps_8>;
+    <TStateProps_5 = {}, TDispatchProps_5 = {}, TOwnProps_9 = {}>(mapStateToProps: null | undefined, mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps_5, TOwnProps_9>, mergeProps: null | undefined, options: ConnectOptions<{}, TStateProps_5, TOwnProps_9, {}>): InferableComponentEnhancerWithProps<TDispatchProps_5, TOwnProps_9>;
+    <TStateProps_6 = {}, TDispatchProps_6 = {}, TOwnProps_10 = {}>(mapStateToProps: null | undefined, mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps_6, TOwnProps_10>, mergeProps: null | undefined, options: ConnectOptions<{}, TStateProps_6, TOwnProps_10, {}>): InferableComponentEnhancerWithProps<ResolveThunks<TDispatchProps_6>, TOwnProps_10>;
+    <TStateProps_7 = {}, TDispatchProps_7 = {}, TOwnProps_11 = {}, State_5 = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps_7, TOwnProps_11, State_5>, mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps_7, TOwnProps_11>, mergeProps: null | undefined, options: ConnectOptions<State_5, TStateProps_7, TOwnProps_11, {}>): InferableComponentEnhancerWithProps<TStateProps_7 & TDispatchProps_7, TOwnProps_11>;
+    <TStateProps_8 = {}, TDispatchProps_8 = {}, TOwnProps_12 = {}, State_6 = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps_8, TOwnProps_12, State_6>, mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps_8, TOwnProps_12>, mergeProps: null | undefined, options: ConnectOptions<State_6, TStateProps_8, TOwnProps_12, {}>): InferableComponentEnhancerWithProps<TStateProps_8 & ResolveThunks<TDispatchProps_8>, TOwnProps_12>;
+    <TStateProps_9 = {}, TDispatchProps_9 = {}, TOwnProps_13 = {}, TMergedProps_3 = {}, State_7 = DefaultRootState>(mapStateToProps: MapStateToPropsParam<TStateProps_9, TOwnProps_13, State_7>, mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps_9, TOwnProps_13>, mergeProps: MergeProps<TStateProps_9, TDispatchProps_9, TOwnProps_13, TMergedProps_3>, options?: ConnectOptions<State_7, TStateProps_9, TOwnProps_13, TMergedProps_3> | undefined): InferableComponentEnhancerWithProps<TMergedProps_3, TOwnProps_13>;
+};
 
 // @public (undocumented)
-export function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions extends AnyObject = {}>(selectorFactory: SelectorFactory<S, TProps, unknown, unknown>, { getDisplayName, methodName, shouldHandleStateChanges, forwardRef, context, ...connectOptions }?: ConnectAdvancedOptions & Partial<TFactoryOptions>): <WC extends React_2.ComponentType<{}>>(WrappedComponent: WC) => (React_2.ForwardRefExoticComponent<React_2.RefAttributes<unknown>> & {
-    WrappedComponent: WC;
-} & hoistStatics.NonReactStatics<WC, {}>) | ((({
-    <TOwnProps_1>(props: ConnectProps & TOwnProps_1): JSX.Element;
-    displayName: string;
-} | React_2.MemoExoticComponent<{
-    <TOwnProps_1>(props: ConnectProps & TOwnProps_1): JSX.Element;
-    displayName: string;
-}>) & {
-    WrappedComponent: WC;
-}) & hoistStatics.NonReactStatics<WC, {}>);
+export function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(selectorFactory: SelectorFactory<S, TProps, unknown, unknown>, { getDisplayName, methodName, shouldHandleStateChanges, forwardRef, context, ...connectOptions }?: ConnectAdvancedOptions & Partial<TFactoryOptions>): AdvancedComponentDecorator<TProps, TOwnProps & ConnectProps>;
 
 // @public (undocumented)
 export interface ConnectAdvancedOptions {
@@ -76,9 +66,12 @@ export interface ConnectAdvancedOptions {
 }
 
 // @public (undocumented)
-export type ConnectedComponent<C extends ComponentType<any>, P> = NamedExoticComponent<JSX.LibraryManagedAttributes<C, P>> & NonReactStatics<C> & {
+export type ConnectedComponent<C extends ComponentType<any>, P> = ComponentType<P> & NonReactStatics<C> & {
     WrappedComponent: C;
 };
+
+// @public
+export type ConnectedProps<TConnector> = TConnector extends InferableComponentEnhancerWithProps<infer TInjectedProps, any> ? unknown extends TInjectedProps ? TConnector extends InferableComponentEnhancer<infer TInjectedProps> ? TInjectedProps : never : TInjectedProps : never;
 
 // @public (undocumented)
 export interface ConnectProps {

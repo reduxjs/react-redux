@@ -3,7 +3,8 @@ import { Component, ReactElement } from 'react'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 import { Store, Dispatch, bindActionCreators, AnyAction } from 'redux'
-import { connect, Provider } from '../../src/index'
+import { connect, Provider, ConnectedProps } from '../../src/index'
+import { expectType } from '../typeTestHelpers'
 
 import objectAssign from 'object-assign'
 
@@ -38,8 +39,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>) {
 
 connect(mapStateToProps, mapDispatchToProps)(Counter)
 
-@connect(mapStateToProps)
 class CounterContainer extends Component<any, any> {}
+const ConnectedCounterContainer = connect(mapStateToProps)(CounterContainer)
 
 // Ensure connect's first two arguments can be replaced by wrapper functions
 interface ICounterStateProps {
@@ -48,19 +49,21 @@ interface ICounterStateProps {
 interface ICounterDispatchProps {
   onIncrement: () => void
 }
-connect<ICounterStateProps, ICounterDispatchProps, {}>(
+connect<ICounterStateProps, ICounterDispatchProps, {}, CounterState>(
   () => mapStateToProps,
   () => mapDispatchToProps
 )(Counter)
 // only first argument
-connect<ICounterStateProps, {}, {}>(() => mapStateToProps)(Counter)
+connect<ICounterStateProps, {}, {}, CounterState>(() => mapStateToProps)(
+  Counter
+)
 // wrap only one argument
-connect<ICounterStateProps, ICounterDispatchProps, {}>(
+connect<ICounterStateProps, ICounterDispatchProps, {}, CounterState>(
   mapStateToProps,
   () => mapDispatchToProps
 )(Counter)
 // with extra arguments
-connect<ICounterStateProps, ICounterDispatchProps, {}>(
+connect<ICounterStateProps, ICounterDispatchProps, {}, {}, CounterState>(
   () => mapStateToProps,
   () => mapDispatchToProps,
   (s: ICounterStateProps, d: ICounterDispatchProps) => objectAssign({}, s, d),
@@ -240,7 +243,7 @@ class TestComponent extends Component<TestProp, TestState> {}
 const WrappedTestComponent = connect()(TestComponent)
 
 // return value of the connect()(TestComponent) is of the type TestComponent
-let ATestComponent: typeof TestComponent
+let ATestComponent: React.ComponentType<TestProp>
 ATestComponent = TestComponent
 ATestComponent = WrappedTestComponent
 
@@ -248,6 +251,9 @@ let anElement: ReactElement<TestProp>
 ;<TestComponent property1={42} />
 ;<WrappedTestComponent property1={42} />
 ;<ATestComponent property1={42} />
+
+// @ts-expect-error
+;<ATestComponent property1={42} dummyField={123} />
 
 class NonComponent {}
 // this doesn't compile
@@ -358,4 +364,41 @@ namespace TestTOwnPropsInference {
   // This should not compile, which is good.
   // @ts-expect-error
   React.createElement(ConnectedWithTypeHint, { missingOwn: true })
+}
+
+namespace ConnectedPropsTest {
+  interface RootState {
+    isOn: boolean
+  }
+
+  const mapState1 = (state: RootState) => ({
+    isOn: state.isOn,
+  })
+
+  const mapDispatch1 = {
+    toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
+  }
+
+  const connector1 = connect(mapState1, mapDispatch1)
+
+  // The inferred type will look like:
+  // {isOn: boolean, toggleOn: () => void}
+  type PropsFromRedux1 = ConnectedProps<typeof connector1>
+
+  expectType<{ isOn: boolean; toggleOn: () => void }>({} as PropsFromRedux1)
+
+  const exampleThunk = (id: number) => async (dispatch: Dispatch) => {
+    return 'test'
+  }
+
+  const mapDispatch2 = { exampleThunk }
+
+  // Connect should "resolve thunks", so that instead of typing the return value of the
+  // prop as the thunk function, it dives down and uses the return value of the thunk function itself
+  const connector2 = connect(null, mapDispatch2)
+  type PropsFromRedux2 = ConnectedProps<typeof connector2>
+
+  expectType<{ exampleThunk: (id: number) => Promise<string> }>(
+    {} as PropsFromRedux2
+  )
 }
