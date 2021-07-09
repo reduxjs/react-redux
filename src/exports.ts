@@ -20,7 +20,7 @@ import type {
 } from './connect/selectorFactory'
 import { ReactReduxContext } from './components/Context'
 import type { ReactReduxContextValue } from './components/Context'
-import connect from './connect/connect'
+import connect, { ConnectedProps } from './connect/connect'
 
 import { useDispatch, createDispatchHook } from './hooks/useDispatch'
 import { useSelector, createSelectorHook } from './hooks/useSelector'
@@ -37,6 +37,7 @@ export type {
   MapStateToPropsFactory,
   MapStateToPropsParam,
   ConnectProps,
+  ConnectedProps,
   ConnectAdvancedOptions,
   MapDispatchToPropsFunction,
   MapDispatchToProps,
