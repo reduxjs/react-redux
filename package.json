@@ -83,6 +83,7 @@
     "@types/object-assign": "^4.0.30",
     "@types/react": "^17.0.14",
     "@types/react-dom": "^17.0.9",
+    "@types/react-redux": "^7.1.18",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
     "@typescript-eslint/parser": "^4.28.0",
     "babel-eslint": "^10.1.0",
