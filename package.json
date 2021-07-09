@@ -30,6 +30,7 @@
     "build:types": "tsc",
     "build": "yarn build:types && yarn build:commonjs && yarn build:es && yarn build:umd && yarn build:umd:min",
     "clean": "rimraf lib dist es coverage",
+    "api-types": "api-extractor --local",
     "format": "prettier --write \"{src,test}/**/*.{js,ts}\" \"docs/**/*.md\"",
     "lint": "eslint src --ext ts,js test/utils test/components test/hooks",
     "prepare": "yarn clean && yarn build",
