@@ -37,9 +37,10 @@
     "react/jsx-no-undef": 2,
     "react/jsx-wrap-multilines": 2,
     "react/no-string-refs": 0,
-      // note you must disable the base rule as it can report incorrect errors
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error"]
+    "@typescript-eslint/no-unused-vars": ["error"],
+    "no-redeclare": "off",
+    "@typescript-eslint/no-redeclare": ["error"]
   },
   "plugins": ["@typescript-eslint", "import", "react"],
   "globals": {
