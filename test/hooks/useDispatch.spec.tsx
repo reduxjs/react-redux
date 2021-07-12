@@ -6,16 +6,20 @@ import {
   useDispatch,
   createDispatchHook,
 } from '../../src/index'
+import type { ProviderProps } from '../../src/'
 
-const store = createStore((c) => c + 1)
-const store2 = createStore((c) => c + 2)
+const store = createStore((c: number): number => c + 1)
+const store2 = createStore((c: number): number => c + 2)
 
 describe('React', () => {
   describe('hooks', () => {
     describe('useDispatch', () => {
       it("returns the store's dispatch function", () => {
+        type PropsType = Omit<ProviderProps, 'store'>
         const { result } = renderHook(() => useDispatch(), {
-          wrapper: (props) => <ProviderMock {...props} store={store} />,
+          wrapper: (props: PropsType) => (
+            <ProviderMock {...props} store={store} />
+          ),
         })
 
         expect(result.current).toBe(store.dispatch)
@@ -27,7 +31,7 @@ describe('React', () => {
         const useCustomDispatch = createDispatchHook(nestedContext)
         const { result } = renderHook(() => useDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }) => (
+          wrapper: ({ children, ...props }: ProviderProps) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}
@@ -40,7 +44,7 @@ describe('React', () => {
 
         const { result: result2 } = renderHook(() => useCustomDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }) => (
+          wrapper: ({ children, ...props }: ProviderProps) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}

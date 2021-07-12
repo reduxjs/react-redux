@@ -11,18 +11,31 @@ import {
   connect,
   createSelectorHook,
 } from '../../src/index'
+import type { FunctionComponent } from 'react'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
+import type { Store } from 'redux'
+import type { ProviderProps } from '../../src/'
+import type { Subscription } from '../../src/utils/Subscription'
 
+type PropsTypeDelStore = Omit<ProviderProps, 'store'>
+type DefaultRootState = {
+  count: number
+}
 describe('React', () => {
   describe('hooks', () => {
     describe('useSelector', () => {
-      let store
+      let store: Store
       let renderedItems = []
 
       beforeEach(() => {
-        store = createStore(({ count } = { count: -1 }) => ({
-          count: count + 1,
-        }))
+        interface ReducerState {
+          count: number
+        }
+        store = createStore(
+          ({ count }: ReducerState = { count: -1 }): ReducerState => ({
+            count: count + 1,
+          })
+        )
         renderedItems = []
       })
 
@@ -30,9 +43,14 @@ describe('React', () => {
 
       describe('core subscription behavior', () => {
         it('selects the state on initial render', () => {
-          const { result } = renderHook(() => useSelector((s) => s.count), {
-            wrapper: (props) => <ProviderMock {...props} store={store} />,
-          })
+          const { result } = renderHook(
+            () => useSelector<DefaultRootState>((s) => s.count),
+            {
+              wrapper: (props: PropsTypeDelStore) => (
+                <ProviderMock {...props} store={store} />
+              ),
+            }
+          )
 
           expect(result.current).toEqual(0)
         })
@@ -41,7 +59,9 @@ describe('React', () => {
           const selector = jest.fn((s) => s.count)
 
           const { result } = renderHook(() => useSelector(selector), {
-            wrapper: (props) => <ProviderMock {...props} store={store} />,
+            wrapper: (props: PropsTypeDelStore) => (
+              <ProviderMock {...props} store={store} />
+            ),
           })
 
           expect(result.current).toEqual(0)
@@ -58,7 +78,7 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          store = createStore((c) => c + 1, -1)
+          store = createStore((c: number): number => c + 1, -1)
 
           const Comp = () => {
             const selector = useCallback((c) => c + 1, [])
@@ -81,17 +101,17 @@ describe('React', () => {
         })
 
         it('subscribes to the store synchronously', () => {
-          let rootSubscription
+          let rootSubscription: Subscription
 
           const Parent = () => {
             const { subscription } = useReduxContext()
             rootSubscription = subscription
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState>((s) => s.count)
             return count === 1 ? <Child /> : null
           }
 
           const Child = () => {
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState>((s) => s.count)
             return <div>{count}</div>
           }
 
@@ -109,17 +129,17 @@ describe('React', () => {
         })
 
         it('unsubscribes when the component is unmounted', () => {
-          let rootSubscription
+          let rootSubscription: Subscription
 
           const Parent = () => {
             const { subscription } = useReduxContext()
             rootSubscription = subscription
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState>((s) => s.count)
             return count === 0 ? <Child /> : null
           }
 
           const Child = () => {
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState>((s) => s.count)
             return <div>{count}</div>
           }
 
@@ -138,7 +158,7 @@ describe('React', () => {
 
         it('notices store updates between render and store subscription effect', () => {
           const Comp = () => {
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState>((s) => s.count)
             renderedItems.push(count)
 
             // I don't know a better way to trigger a store update before the
@@ -161,7 +181,7 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        store = createStore((c) => c + 1, -1)
+        store = createStore((c: number) => c + 1, -1)
 
         const Comp = () => {
           const selector = useCallback((c) => c, [])
@@ -221,8 +241,14 @@ describe('React', () => {
         })
 
         it('allows other equality functions to prevent unnecessary updates', () => {
+          interface ReducerParamsType {
+            count: number
+            stable: any
+          }
           store = createStore(
-            ({ count, stable } = { count: -1, stable: {} }) => ({
+            (
+              { count, stable }: ReducerParamsType = { count: -1, stable: {} }
+            ) => ({
               count: count + 1,
               stable,
             })
@@ -286,12 +312,12 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState>((s) => s.count)
             return <Child parentCount={count} />
           }
 
           const Child = ({ parentCount }) => {
-            const result = useSelector(({ count }) => {
+            const result = useSelector<DefaultRootState>(({ count }) => {
               if (count !== parentCount) {
                 throw new Error()
               }
@@ -328,7 +354,7 @@ describe('React', () => {
             return <div>{result}</div>
           }
 
-          const store = createStore((count = -1) => count + 1)
+          const store = createStore((count: number = -1) => count + 1)
 
           const App = () => (
             <ProviderMock store={store}>
@@ -349,12 +375,12 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState>((s) => s.count)
             return <Child parentCount={count} />
           }
 
           const Child = ({ parentCount }) => {
-            const result = useSelector(({ count }) => {
+            const result = useSelector<DefaultRootState>(({ count }) => {
               if (parentCount > 0) {
                 throw new Error()
               }
@@ -380,20 +406,30 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector((s) => s.count)
+            const count = useSelector<DefaultRootState, number>((s) => s.count)
             return <ConnectedWrapper parentCount={count} />
           }
-
-          const ConnectedWrapper = connect(({ count }) => ({ count }))(
-            ({ parentCount }) => {
-              return <Child parentCount={parentCount} />
-            }
-          )
+          interface ParentContentProps {
+            parentCount: number
+          }
+          const ConnectedWrapper = connect<
+            DefaultRootState,
+            undefined,
+            ParentContentProps,
+            DefaultRootState
+          >(({ count }) => ({
+            count,
+          }))<FunctionComponent<ParentContentProps>>(({ parentCount }) => {
+            return <Child parentCount={parentCount} />
+          })
 
           let sawInconsistentState = false
 
-          const Child = ({ parentCount }) => {
-            const result = useSelector(({ count }) => {
+          interface ChildPropsType {
+            parentCount: number
+          }
+          const Child = ({ parentCount }: ChildPropsType) => {
+            const result = useSelector<DefaultRootState>(({ count }) => {
               if (count !== parentCount) {
                 sawInconsistentState = true
               }
@@ -418,15 +454,17 @@ describe('React', () => {
         })
 
         it('reuse latest selected state on selector re-run', () => {
-          store = createStore(({ count } = { count: -1 }) => ({
-            count: count + 1,
-          }))
+          store = createStore(
+            ({ count }: DefaultRootState = { count: -1 }) => ({
+              count: count + 1,
+            })
+          )
 
           const alwaysEqual = () => true
 
           const Comp = () => {
             // triggers render on store change
-            useSelector((s) => s.count)
+            useSelector<DefaultRootState>((s) => s.count)
             const array = useSelector(() => [1, 2, 3], alwaysEqual)
             renderedItems.push(array)
             return <div />
@@ -449,15 +487,20 @@ describe('React', () => {
 
       describe('error handling for invalid arguments', () => {
         it('throws if no selector is passed', () => {
+          //@ts-expect-error
           expect(() => useSelector()).toThrow()
         })
 
         it('throws if selector is not a function', () => {
+          //@ts-expect-error
           expect(() => useSelector(1)).toThrow()
         })
 
         it('throws if equality function is not a function', () => {
-          expect(() => useSelector((s) => s.count, 1)).toThrow()
+          expect(() =>
+            //@ts-expect-error
+            useSelector<DefaultRootState>((s) => s.count, 1)
+          ).toThrow()
         })
       })
     })
@@ -467,12 +510,16 @@ describe('React', () => {
       let customStore
 
       beforeEach(() => {
-        defaultStore = createStore(({ count } = { count: -1 }) => ({
-          count: count + 1,
-        }))
-        customStore = createStore(({ count } = { count: 10 }) => ({
-          count: count + 2,
-        }))
+        defaultStore = createStore(
+          ({ count }: DefaultRootState = { count: -1 }) => ({
+            count: count + 1,
+          })
+        )
+        customStore = createStore(
+          ({ count }: DefaultRootState = { count: 10 }) => ({
+            count: count + 2,
+          })
+        )
       })
 
       it('subscribes to the correct store', () => {
@@ -481,15 +528,15 @@ describe('React', () => {
         let defaultCount = null
         let customCount = null
 
-        const getCount = (s) => s.count
+        const getCount = (s: DefaultRootState) => s.count
 
         const DisplayDefaultCount = ({ children = null }) => {
-          const count = useSelector(getCount)
+          const count = useSelector<DefaultRootState>(getCount)
           defaultCount = count
           return <>{children}</>
         }
         const DisplayCustomCount = ({ children = null }) => {
-          const count = useCustomSelector(getCount)
+          const count = useCustomSelector<DefaultRootState>(getCount)
           customCount = count
           return <>{children}</>
         }
