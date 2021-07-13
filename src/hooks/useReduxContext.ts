@@ -1,5 +1,6 @@
 import { useContext } from 'react'
 import { ReactReduxContext } from '../components/Context'
+import type { ReactReduxContextValue } from '../components/Context'
 
 /**
  * A hook to access the value of the `ReactReduxContext`. This is a low-level
@@ -17,7 +18,7 @@ import { ReactReduxContext } from '../components/Context'
  *   return <div>{store.getState()}</div>
  * }
  */
-export function useReduxContext() {
+export function useReduxContext(): ReactReduxContextValue | null {
   const contextValue = useContext(ReactReduxContext)
 
   if (process.env.NODE_ENV !== 'production' && !contextValue) {
