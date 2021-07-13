@@ -13,26 +13,24 @@ import {
 } from '../../src/index'
 import type { FunctionComponent } from 'react'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
-import type { Store } from 'redux'
-import type { ProviderProps } from '../../src/'
+import type { Store, AnyAction } from 'redux'
+import type { ProviderProps, TypedUseSelectorHook } from '../../src/'
 import type { Subscription } from '../../src/utils/Subscription'
 
-type PropsTypeDelStore = Omit<ProviderProps, 'store'>
-type DefaultRootState = {
-  count: number
-}
 describe('React', () => {
   describe('hooks', () => {
     describe('useSelector', () => {
-      let store: Store
+      type NormalStateType = {
+        count: number
+      }
+      let normalStore: Store<NormalStateType, AnyAction>
       let renderedItems = []
+      type RootState = ReturnType<typeof normalStore.getState>
+      let useNormalSelector: TypedUseSelectorHook<RootState> = useSelector
 
       beforeEach(() => {
-        interface ReducerState {
-          count: number
-        }
-        store = createStore(
-          ({ count }: ReducerState = { count: -1 }): ReducerState => ({
+        normalStore = createStore(
+          ({ count }: NormalStateType = { count: -1 }): NormalStateType => ({
             count: count + 1,
           })
         )
@@ -42,12 +40,14 @@ describe('React', () => {
       afterEach(() => rtl.cleanup())
 
       describe('core subscription behavior', () => {
+        type PropsTypeDelStore = Omit<ProviderProps, 'store'>
+
         it('selects the state on initial render', () => {
           const { result } = renderHook(
-            () => useSelector<DefaultRootState>((s) => s.count),
+            () => useNormalSelector((s) => s.count),
             {
               wrapper: (props: PropsTypeDelStore) => (
-                <ProviderMock {...props} store={store} />
+                <ProviderMock {...props} store={normalStore} />
               ),
             }
           )
@@ -56,11 +56,13 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const selector = jest.fn((s) => s.count)
+          const selector: jest.Mock<number, [s: NormalStateType]> = jest.fn(
+            (s) => s.count
+          )
 
-          const { result } = renderHook(() => useSelector(selector), {
+          const { result } = renderHook(() => useNormalSelector(selector), {
             wrapper: (props: PropsTypeDelStore) => (
-              <ProviderMock {...props} store={store} />
+              <ProviderMock {...props} store={normalStore} />
             ),
           })
 
@@ -68,7 +70,7 @@ describe('React', () => {
           expect(selector).toHaveBeenCalledTimes(2)
 
           act(() => {
-            store.dispatch({ type: '' })
+            normalStore.dispatch({ type: '' })
           })
 
           expect(result.current).toEqual(1)
@@ -78,10 +80,10 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          store = createStore((c: number): number => c + 1, -1)
+          const store = createStore((c: number): number => c + 1, -1)
 
           const Comp = () => {
-            const selector = useCallback((c) => c + 1, [])
+            const selector = useCallback((c: number): number => c + 1, [])
             const value = useSelector(selector)
             renderedItems.push(value)
             return <div />
@@ -106,24 +108,24 @@ describe('React', () => {
           const Parent = () => {
             const { subscription } = useReduxContext()
             rootSubscription = subscription
-            const count = useSelector<DefaultRootState>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             return count === 1 ? <Child /> : null
           }
 
           const Child = () => {
-            const count = useSelector<DefaultRootState>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             return <div>{count}</div>
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Parent />
             </ProviderMock>
           )
 
           expect(rootSubscription.getListeners().get().length).toBe(1)
 
-          store.dispatch({ type: '' })
+          normalStore.dispatch({ type: '' })
 
           expect(rootSubscription.getListeners().get().length).toBe(2)
         })
@@ -134,44 +136,44 @@ describe('React', () => {
           const Parent = () => {
             const { subscription } = useReduxContext()
             rootSubscription = subscription
-            const count = useSelector<DefaultRootState>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             return count === 0 ? <Child /> : null
           }
 
           const Child = () => {
-            const count = useSelector<DefaultRootState>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             return <div>{count}</div>
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Parent />
             </ProviderMock>
           )
 
           expect(rootSubscription.getListeners().get().length).toBe(2)
 
-          store.dispatch({ type: '' })
+          normalStore.dispatch({ type: '' })
 
           expect(rootSubscription.getListeners().get().length).toBe(1)
         })
 
         it('notices store updates between render and store subscription effect', () => {
           const Comp = () => {
-            const count = useSelector<DefaultRootState>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             renderedItems.push(count)
 
             // I don't know a better way to trigger a store update before the
             // store subscription effect happens
             if (count === 0) {
-              store.dispatch({ type: '' })
+              normalStore.dispatch({ type: '' })
             }
 
             return <div>{count}</div>
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Comp />
             </ProviderMock>
           )
@@ -181,16 +183,20 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        store = createStore((c: number) => c + 1, -1)
+        const store = createStore((c: number): number => c + 1, -1)
 
         const Comp = () => {
-          const selector = useCallback((c) => c, [])
+          const selector = useCallback((c: number): number => c, [])
           const count = useSelector(selector)
           renderedItems.push(count)
           return <Child parentCount={count} />
         }
 
-        const Child = ({ parentCount }) => {
+        interface ChildPropsType {
+          parentCount: number
+        }
+
+        const Child = ({ parentCount }: ChildPropsType) => {
           useLayoutEffect(() => {
             if (parentCount === 1) {
               store.dispatch({ type: '' })
@@ -219,7 +225,7 @@ describe('React', () => {
       describe('performance optimizations and bail-outs', () => {
         it('defaults to ref-equality to prevent unnecessary updates', () => {
           const state = {}
-          store = createStore(() => state)
+          const store = createStore(() => state)
 
           const Comp = () => {
             const value = useSelector((s) => s)
@@ -241,21 +247,21 @@ describe('React', () => {
         })
 
         it('allows other equality functions to prevent unnecessary updates', () => {
-          interface ReducerParamsType {
+          interface StateType {
             count: number
-            stable: any
+            stable: {}
           }
-          store = createStore(
-            (
-              { count, stable }: ReducerParamsType = { count: -1, stable: {} }
-            ) => ({
+          const store = createStore(
+            ({ count, stable }: StateType = { count: -1, stable: {} }) => ({
               count: count + 1,
               stable,
             })
           )
 
           const Comp = () => {
-            const value = useSelector((s) => Object.keys(s), shallowEqual)
+            const value = useSelector<StateType, string[]>((s) => {
+              return Object.keys(s)
+            }, shallowEqual)
             renderedItems.push(value)
             return <div />
           }
@@ -288,7 +294,7 @@ describe('React', () => {
         }
 
         rtl.render(
-          <ProviderMock store={store}>
+          <ProviderMock store={normalStore}>
             <Comp />
           </ProviderMock>
         )
@@ -299,7 +305,7 @@ describe('React', () => {
         expect(renderedItems).toEqual([0, 1])
 
         rtl.act(() => {
-          store.dispatch({ type: '' })
+          normalStore.dispatch({ type: '' })
         })
         expect(renderedItems).toEqual([0, 1])
 
@@ -308,16 +314,18 @@ describe('React', () => {
       })
 
       describe('edge cases', () => {
+        interface ChildPropsType {
+          parentCount: number
+        }
         it('ignores transient errors in selector (e.g. due to stale props)', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector<DefaultRootState>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             return <Child parentCount={count} />
           }
-
-          const Child = ({ parentCount }) => {
-            const result = useSelector<DefaultRootState>(({ count }) => {
+          const Child = ({ parentCount }: ChildPropsType) => {
+            const result = useNormalSelector(({ count }) => {
               if (count !== parentCount) {
                 throw new Error()
               }
@@ -329,12 +337,12 @@ describe('React', () => {
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Parent />
             </ProviderMock>
           )
 
-          expect(() => store.dispatch({ type: '' })).not.toThrowError()
+          expect(() => normalStore.dispatch({ type: '' })).not.toThrowError()
 
           spy.mockRestore()
         })
@@ -343,7 +351,7 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
-            const result = useSelector((count) => {
+            const result = useSelector((count: number) => {
               if (count > 0) {
                 throw new Error('foo')
               }
@@ -354,7 +362,7 @@ describe('React', () => {
             return <div>{result}</div>
           }
 
-          const store = createStore((count: number = -1) => count + 1)
+          const store = createStore((count: number = -1): number => count + 1)
 
           const App = () => (
             <ProviderMock store={store}>
@@ -375,12 +383,12 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector<DefaultRootState>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             return <Child parentCount={count} />
           }
 
-          const Child = ({ parentCount }) => {
-            const result = useSelector<DefaultRootState>(({ count }) => {
+          const Child = ({ parentCount }: ChildPropsType) => {
+            const result = useNormalSelector(({ count }) => {
               if (parentCount > 0) {
                 throw new Error()
               }
@@ -392,12 +400,12 @@ describe('React', () => {
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Parent />
             </ProviderMock>
           )
 
-          expect(() => store.dispatch({ type: '' })).toThrowError()
+          expect(() => normalStore.dispatch({ type: '' })).toThrowError()
 
           spy.mockRestore()
         })
@@ -406,30 +414,25 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
-            const count = useSelector<DefaultRootState, number>((s) => s.count)
+            const count = useNormalSelector((s) => s.count)
             return <ConnectedWrapper parentCount={count} />
           }
-          interface ParentContentProps {
-            parentCount: number
-          }
+
           const ConnectedWrapper = connect<
-            DefaultRootState,
+            NormalStateType,
             undefined,
-            ParentContentProps,
-            DefaultRootState
+            ChildPropsType,
+            NormalStateType
           >(({ count }) => ({
             count,
-          }))<FunctionComponent<ParentContentProps>>(({ parentCount }) => {
+          }))<FunctionComponent<ChildPropsType>>(({ parentCount }) => {
             return <Child parentCount={parentCount} />
           })
 
           let sawInconsistentState = false
 
-          interface ChildPropsType {
-            parentCount: number
-          }
           const Child = ({ parentCount }: ChildPropsType) => {
-            const result = useSelector<DefaultRootState>(({ count }) => {
+            const result = useNormalSelector(({ count }) => {
               if (count !== parentCount) {
                 sawInconsistentState = true
               }
@@ -441,12 +444,12 @@ describe('React', () => {
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Parent />
             </ProviderMock>
           )
 
-          store.dispatch({ type: '' })
+          normalStore.dispatch({ type: '' })
 
           expect(sawInconsistentState).toBe(false)
 
@@ -454,31 +457,25 @@ describe('React', () => {
         })
 
         it('reuse latest selected state on selector re-run', () => {
-          store = createStore(
-            ({ count }: DefaultRootState = { count: -1 }) => ({
-              count: count + 1,
-            })
-          )
-
           const alwaysEqual = () => true
 
           const Comp = () => {
             // triggers render on store change
-            useSelector<DefaultRootState>((s) => s.count)
+            useNormalSelector((s) => s.count)
             const array = useSelector(() => [1, 2, 3], alwaysEqual)
             renderedItems.push(array)
             return <div />
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Comp />
             </ProviderMock>
           )
 
           expect(renderedItems.length).toBe(1)
 
-          store.dispatch({ type: '' })
+          normalStore.dispatch({ type: '' })
 
           expect(renderedItems.length).toBe(2)
           expect(renderedItems[0]).toBe(renderedItems[1])
@@ -499,7 +496,7 @@ describe('React', () => {
         it('throws if equality function is not a function', () => {
           expect(() =>
             //@ts-expect-error
-            useSelector<DefaultRootState>((s) => s.count, 1)
+            useNormalSelector((s) => s.count, 1)
           ).toThrow()
         })
       })
@@ -508,18 +505,17 @@ describe('React', () => {
     describe('createSelectorHook', () => {
       let defaultStore
       let customStore
+      type StateType = {
+        count: number
+      }
 
       beforeEach(() => {
-        defaultStore = createStore(
-          ({ count }: DefaultRootState = { count: -1 }) => ({
-            count: count + 1,
-          })
-        )
-        customStore = createStore(
-          ({ count }: DefaultRootState = { count: 10 }) => ({
-            count: count + 2,
-          })
-        )
+        defaultStore = createStore(({ count }: StateType = { count: -1 }) => ({
+          count: count + 1,
+        }))
+        customStore = createStore(({ count }: StateType = { count: 10 }) => ({
+          count: count + 2,
+        }))
       })
 
       it('subscribes to the correct store', () => {
@@ -528,15 +524,15 @@ describe('React', () => {
         let defaultCount = null
         let customCount = null
 
-        const getCount = (s: DefaultRootState) => s.count
+        const getCount = (s: StateType) => s.count
 
         const DisplayDefaultCount = ({ children = null }) => {
-          const count = useSelector<DefaultRootState>(getCount)
+          const count = useSelector<StateType>(getCount)
           defaultCount = count
           return <>{children}</>
         }
         const DisplayCustomCount = ({ children = null }) => {
-          const count = useCustomSelector<DefaultRootState>(getCount)
+          const count = useCustomSelector<StateType>(getCount)
           customCount = count
           return <>{children}</>
         }
