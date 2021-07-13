@@ -48,7 +48,7 @@ body:
       required: false
   - type: checkboxes
     attributes:
-      label: Did this work in previous versions of React Redux?options:
+      label: Did this work in previous versions of React Redux?
       options:
       - label: Yes
     validations:
