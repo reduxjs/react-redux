@@ -5,38 +5,52 @@ import { createStore } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
+import type { AnyAction } from 'redux'
 
 describe('React', () => {
   describe('connect', () => {
     afterEach(() => rtl.cleanup())
 
     it('should render on useEffect hook state update', () => {
-      const store = createStore((state, action) => {
-        let newState =
-          state !== undefined
-            ? state
-            : {
-                byId: {},
-                list: [],
-              }
-        switch (action.type) {
-          case 'FOO':
-            newState = {
-              ...newState,
-              list: [1],
-              byId: { 1: 'foo' },
-            }
-            break
+      interface RootStateType {
+        byId: {
+          [x: string]: string
         }
-        return newState
-      })
+        list: Array<number>
+      }
+      const store = createStore<RootStateType, AnyAction, unknown, unknown>(
+        (state, action) => {
+          let newState =
+            state !== undefined
+              ? state
+              : {
+                  byId: {},
+                  list: [],
+                }
+          switch (action.type) {
+            case 'FOO':
+              newState = {
+                ...newState,
+                list: [1],
+                byId: { 1: 'foo' },
+              }
+              break
+          }
+          return newState
+        }
+      )
 
       const mapStateSpy1 = jest.fn()
       const renderSpy1 = jest.fn()
 
       let component1StateList
 
-      const component1Decorator = connect((state) => {
+      const component1Decorator = connect<
+        Omit<RootStateType, 'byId'>,
+        unknown,
+        unknown,
+        RootStateType
+      >((state) => {
         mapStateSpy1()
 
         return {
@@ -44,7 +58,7 @@ describe('React', () => {
         }
       })
 
-      const component1 = (props) => {
+      const component1 = (props: Omit<RootStateType, 'byId'>) => {
         const [state, setState] = React.useState({ list: props.list })
 
         component1StateList = state.list
@@ -63,7 +77,15 @@ describe('React', () => {
       const mapStateSpy2 = jest.fn()
       const renderSpy2 = jest.fn()
 
-      const component2Decorator = connect((state, ownProps) => {
+      interface Component2PropsType {
+        mappedProp: Array<string>
+      }
+      const component2Decorator = connect<
+        Component2PropsType,
+        unknown,
+        Omit<RootStateType, 'byId'>,
+        RootStateType
+      >((state, ownProps) => {
         mapStateSpy2()
 
         return {
