@@ -272,6 +272,6 @@ export type ResolveArrayThunks<TDispatchProps extends ReadonlyArray<any>> =
 export interface TypedUseSelectorHook<TState> {
   <TSelected>(
     selector: (state: TState) => TSelected,
-    equalityFn?: (left: TSelected, right: TSelected) => boolean
+    equalityFn?: EqualityFn<TSelected>
   ): TSelected
 }

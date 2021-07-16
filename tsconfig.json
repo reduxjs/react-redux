@@ -11,8 +11,8 @@
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "./es",
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
   },
-  "include": ["src/**/*", "types"],
+  "include": ["src/**/*", "test/**/*", "types"],
   "exclude": ["node_modules", "dist"]
 }

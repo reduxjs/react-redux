@@ -1,14 +1,9 @@
-const { default: tsJestPreset } = require('ts-jest')
-
 const defaults = {
-  ...tsJestPreset,
   coverageDirectory: './coverage/',
   collectCoverage: true,
   testURL: 'http://localhost',
 }
-
-const testFolderPath = (folderName) =>
-  `<rootDir>/test/${folderName}/**/*.{js,ts,tsx}`
+const testFolderPath = (folderName) => `<rootDir>/test/${folderName}/**/*.js`
 
 const NORMAL_TEST_FOLDERS = ['components', 'hooks', 'integration', 'utils']
 
@@ -16,6 +11,16 @@ const standardConfig = {
   ...defaults,
   displayName: 'ReactDOM',
   testMatch: NORMAL_TEST_FOLDERS.map(testFolderPath),
+}
+
+const tsTestFolderPath = (folderName) =>
+  `<rootDir>/test/${folderName}/**/*.{ts,tsx}`
+
+const tsStandardConfig = {
+  ...defaults,
+  displayName: 'ReactDOM',
+  preset: 'ts-jest',
+  testMatch: NORMAL_TEST_FOLDERS.map(tsTestFolderPath),
 }
 
 const rnConfig = {
@@ -29,5 +34,5 @@ const rnConfig = {
 }
 
 module.exports = {
-  projects: [standardConfig, rnConfig],
+  projects: [tsStandardConfig, standardConfig, rnConfig],
 }
