@@ -185,7 +185,6 @@ export interface ConnectProps {
 
 export interface ConnectAdvancedOptions {
   getDisplayName?: (name: string) => string
-  methodName?: string
   shouldHandleStateChanges?: boolean
   forwardRef?: boolean
   context?: typeof ReactReduxContext
@@ -217,10 +216,6 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
     // probably overridden by wrapper functions such as connect()
     getDisplayName = (name) => `ConnectAdvanced(${name})`,
 
-    // shown in error messages
-    // probably overridden by wrapper functions such as connect()
-    methodName = 'connectAdvanced',
-
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
@@ -247,10 +242,9 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
       !isValidElementType(WrappedComponent)
     ) {
       throw new Error(
-        `You must pass a component to the function returned by ` +
-          `${methodName}. Instead received ${stringifyComponent(
-            WrappedComponent
-          )}`
+        `You must pass a component to the function returned by connect. Instead received ${stringifyComponent(
+          WrappedComponent
+        )}`
       )
     }
 
@@ -262,7 +256,6 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
     const selectorFactoryOptions = {
       ...connectOptions,
       getDisplayName,
-      methodName,
       shouldHandleStateChanges,
       displayName,
       wrappedComponentName,

@@ -316,9 +316,6 @@ function connect(
   return connectAdvanced(
     defaultSelectorFactory as SelectorFactory<any, any, any, any>,
     {
-      // used in error messages
-      methodName: 'connect',
-
       // used to compute Connect's displayName from the wrapped component's displayName.
       getDisplayName: (name) => `Connect(${name})`,
 
