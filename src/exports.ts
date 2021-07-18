@@ -1,10 +1,6 @@
 import Provider from './components/Provider'
 import type { ProviderProps } from './components/Provider'
-import connectAdvanced from './components/connectAdvanced'
-import type {
-  ConnectAdvancedOptions,
-  ConnectProps,
-} from './components/connectAdvanced'
+import type { ConnectProps } from './components/connectAdvanced'
 import type {
   SelectorFactory,
   Selector,
@@ -38,7 +34,6 @@ export type {
   MapStateToPropsParam,
   ConnectProps,
   ConnectedProps,
-  ConnectAdvancedOptions,
   MapDispatchToPropsFunction,
   MapDispatchToProps,
   MapDispatchToPropsFactory,
@@ -49,7 +44,6 @@ export type {
 }
 export {
   Provider,
-  connectAdvanced,
   ReactReduxContext,
   connect,
   useDispatch,
