@@ -17,6 +17,8 @@ import {
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
 const NO_SUBSCRIPTION_ARRAY = [null, null]
 
+// Attempts to stringify whatever not-really-a-component value we were given
+// for logging in an error message
 const stringifyComponent = (Comp: unknown) => {
   try {
     return JSON.stringify(Comp)
@@ -25,6 +27,11 @@ const stringifyComponent = (Comp: unknown) => {
   }
 }
 
+// Reducer for our "forceUpdate" equivalent.
+// This primarily stores the current error, if any,
+// but also an update counter.
+// Since we're returning a new array anyway, in theory the counter isn't needed.
+// Or for that matter, since the dispatch gets a new object, we don't even need an array.
 function storeStateUpdatesReducer(
   state: [unknown, number],
   action: { payload: unknown }
@@ -35,6 +42,10 @@ function storeStateUpdatesReducer(
 
 type EffectFunc = (...args: any[]) => void | ReturnType<React.EffectCallback>
 
+// This is "just" a `useLayoutEffect`, but with two modifications:
+// - we need to fall back to `useEffect` in SSR to avoid annoying warnings
+// - we extract this to a separate function to avoid closing over values
+//   and causing memory leaks
 function useIsomorphicLayoutEffectWithArgs(
   effectFunc: EffectFunc,
   effectArgs: any[],
@@ -43,6 +54,7 @@ function useIsomorphicLayoutEffectWithArgs(
   useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies)
 }
 
+// Effect callback, extracted: assign the latest props values to refs for later usage
 function captureWrapperProps(
   lastWrapperProps: React.MutableRefObject<unknown>,
   lastChildProps: React.MutableRefObject<unknown>,
@@ -64,6 +76,8 @@ function captureWrapperProps(
   }
 }
 
+// Effect callback, extracted: subscribe to the Redux store or nearest connected ancestor,
+// check for updates after dispatched actions, and trigger re-renders.
 function subscribeUpdates(
   shouldHandleStateChanges: boolean,
   store: Store,
@@ -160,6 +174,7 @@ function subscribeUpdates(
   return unsubscribeWrapper
 }
 
+// Reducer initial state creation for our update reducer
 const initStateUpdates = () => EMPTY_ARRAY
 
 export interface ConnectProps {
