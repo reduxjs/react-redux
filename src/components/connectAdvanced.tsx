@@ -238,13 +238,6 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
 
   type WrappedComponentProps = TOwnProps & ConnectProps
 
-  /*
-  return function wrapWithConnect<
-    WC extends React.ComponentType<
-      Matching<DispatchProp<AnyAction>, GetProps<WC>>
-    >
-  >(WrappedComponent: WC) {
-    */
   const wrapWithConnect: AdvancedComponentDecorator<
     TProps,
     WrappedComponentProps
