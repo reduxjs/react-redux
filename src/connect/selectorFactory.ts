@@ -96,6 +96,7 @@ interface PureSelectorFactoryComparisonOptions<
   areStatesEqual: EqualityFn<State>
   areOwnPropsEqual: EqualityFn<TOwnProps>
   areStatePropsEqual: EqualityFn<unknown>
+  displayName: string
   pure?: boolean
 }
 
@@ -222,7 +223,7 @@ export interface SelectorFactoryOptions<
 // TODO: Add more comments
 
 // If pure is true, the selector returned by selectorFactory will memoize its results,
-// allowing connectAdvanced's shouldComponentUpdate to return false if final
+// allowing connect's shouldComponentUpdate to return false if final
 // props have not changed. If false, the selector will always return a new
 // object and shouldComponentUpdate will always return true.
 
