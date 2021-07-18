@@ -82,8 +82,8 @@ export interface ConnectOptions<
   TOwnProps = {},
   TMergedProps = {}
 > extends ConnectAdvancedOptions {
-  pure?: boolean | undefined
-  areStatesEqual?: ((nextState: State, prevState: State) => boolean) | undefined
+  pure?: boolean
+  areStatesEqual?: (nextState: State, prevState: State) => boolean
 
   areOwnPropsEqual?: (
     nextOwnProps: TOwnProps,
@@ -98,7 +98,7 @@ export interface ConnectOptions<
     nextMergedProps: TMergedProps,
     prevMergedProps: TMergedProps
   ) => boolean
-  forwardRef?: boolean | undefined
+  forwardRef?: boolean
 }
 
 /* @public */
@@ -316,9 +316,6 @@ function connect(
   return connectAdvanced(
     defaultSelectorFactory as SelectorFactory<any, any, any, any>,
     {
-      // used to compute Connect's displayName from the wrapped component's displayName.
-      getDisplayName: (name) => `Connect(${name})`,
-
       // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
       shouldHandleStateChanges: Boolean(mapStateToProps),
 

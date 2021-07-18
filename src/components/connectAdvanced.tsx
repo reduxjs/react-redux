@@ -184,7 +184,6 @@ export interface ConnectProps {
 }
 
 export interface ConnectAdvancedOptions {
-  getDisplayName?: (name: string) => string
   shouldHandleStateChanges?: boolean
   forwardRef?: boolean
   context?: typeof ReactReduxContext
@@ -212,10 +211,6 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
   selectorFactory: SelectorFactory<S, TProps, unknown, unknown>,
   // options object:
   {
-    // the func used to compute this HOC's displayName from the wrapped component's displayName.
-    // probably overridden by wrapper functions such as connect()
-    getDisplayName = (name) => `ConnectAdvanced(${name})`,
-
     // determines whether this HOC subscribes to store changes
     shouldHandleStateChanges = true,
 
@@ -251,11 +246,10 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
     const wrappedComponentName =
       WrappedComponent.displayName || WrappedComponent.name || 'Component'
 
-    const displayName = getDisplayName(wrappedComponentName)
+    const displayName = `Connect(${wrappedComponentName})`
 
     const selectorFactoryOptions = {
       ...connectOptions,
-      getDisplayName,
       shouldHandleStateChanges,
       displayName,
       wrappedComponentName,
@@ -263,10 +257,6 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
     }
 
     const { pure } = connectOptions
-
-    function createChildSelector(store: Store) {
-      return selectorFactory(store.dispatch, selectorFactoryOptions)
-    }
 
     // If we aren't running in "pure" mode, we don't want to memoize values.
     // To avoid conditionally calling hooks, we fall back to a tiny wrapper
@@ -330,7 +320,7 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
       const childPropsSelector = useMemo(() => {
         // The child props selector needs the store reference as an input.
         // Re-create this selector whenever the store changes.
-        return createChildSelector(store)
+        return selectorFactory(store.dispatch, selectorFactoryOptions)
       }, [store])
 
       const [subscription, notifyNestedSubs] = useMemo(() => {

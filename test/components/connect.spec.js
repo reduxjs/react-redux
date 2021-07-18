@@ -1729,19 +1729,6 @@ describe('React', () => {
         ).toBe('Connect(Component)')
       })
 
-      it('should allow custom displayName', () => {
-        @connect(null, null, null, {
-          getDisplayName: (name) => `Custom(${name})`,
-        })
-        class MyComponent extends React.Component {
-          render() {
-            return <div />
-          }
-        }
-
-        expect(MyComponent.displayName).toEqual('Custom(MyComponent)')
-      })
-
       it('should expose the wrapped component as WrappedComponent', () => {
         class Container extends Component {
           render() {
