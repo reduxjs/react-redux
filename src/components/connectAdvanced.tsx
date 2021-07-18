@@ -59,8 +59,8 @@ function captureWrapperProps(
   lastWrapperProps: React.MutableRefObject<unknown>,
   lastChildProps: React.MutableRefObject<unknown>,
   renderIsScheduled: React.MutableRefObject<boolean>,
-  wrapperProps: React.MutableRefObject<unknown>,
-  actualChildProps: React.MutableRefObject<unknown>,
+  wrapperProps: unknown,
+  actualChildProps: unknown,
   childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
   notifyNestedSubs: () => void
 ) {
