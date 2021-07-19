@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 import { Component, ReactElement } from 'react'
-import * as React from 'react'
-import * as ReactDOM from 'react-dom'
+import React from 'react'
+import ReactDOM from 'react-dom'
 import { Store, Dispatch, bindActionCreators, AnyAction } from 'redux'
 import { connect, Provider, ConnectedProps } from '../../src/index'
 import { expectType } from '../typeTestHelpers'
