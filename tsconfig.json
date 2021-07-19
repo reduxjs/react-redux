@@ -12,6 +12,7 @@
     "emitDeclarationOnly": true,
     "outDir": "./es",
     "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators":true
   },
   "include": ["src/**/*", "test/**/*", "types"],
   "exclude": ["node_modules", "dist"]
