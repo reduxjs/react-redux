@@ -57,8 +57,7 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          type MockParams = [NormalStateType]
-          const selector: jest.Mock<number, MockParams> = jest.fn(
+          const selector: jest.Mock<number, [s: NormalStateType]> = jest.fn(
             (s) => s.count
           )
 
