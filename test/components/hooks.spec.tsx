@@ -43,7 +43,7 @@ describe('React', () => {
       const mapStateSpy1 = jest.fn()
       const renderSpy1 = jest.fn()
 
-      let component1StateList
+      let component1StateList: number[]
 
       const component1Decorator = connect<
         Omit<RootStateType, 'byId'>,
@@ -77,23 +77,31 @@ describe('React', () => {
       const mapStateSpy2 = jest.fn()
       const renderSpy2 = jest.fn()
 
-      interface Component2PropsType {
-        mappedProp: Array<string>
+      interface Component2Tstate {
+        mappedProp: string[]
       }
       const component2Decorator = connect<
-        Component2PropsType,
+        Component2Tstate,
         unknown,
         Omit<RootStateType, 'byId'>,
         RootStateType
-      >((state, ownProps) => {
-        mapStateSpy2()
+      >(
+        (
+          state: RootStateType,
+          ownProps: Omit<RootStateType, 'byId'>
+        ): Component2Tstate => {
+          mapStateSpy2()
 
-        return {
-          mappedProp: ownProps.list.map((id) => state.byId[id]),
+          return {
+            mappedProp: ownProps.list.map((id) => state.byId[id]),
+          }
         }
-      })
+      )
+      interface Component2PropsType {
+        list: number[]
+      }
 
-      const component2 = (props) => {
+      const component2 = (props: Component2PropsType) => {
         renderSpy2()
 
         expect(props.list).toBe(component1StateList)

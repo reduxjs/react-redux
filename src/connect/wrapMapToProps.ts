@@ -47,7 +47,7 @@ export function wrapMapToPropsConstant(
 // A length of zero is assumed to mean mapToProps is getting args via arguments or ...args and
 // therefore not reporting its length accurately..
 export function getDependsOnOwnProps(mapToProps: MapToProps) {
-  return mapToProps?.dependsOnOwnProps
+  return mapToProps.dependsOnOwnProps
     ? Boolean(mapToProps.dependsOnOwnProps)
     : mapToProps.length !== 1
 }

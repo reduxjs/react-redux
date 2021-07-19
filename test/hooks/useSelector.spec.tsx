@@ -11,11 +11,12 @@ import {
   connect,
   createSelectorHook,
 } from '../../src/index'
-import type { FunctionComponent } from 'react'
 import { useReduxContext } from '../../src/hooks/useReduxContext'
+import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
 import type { ProviderProps, TypedUseSelectorHook } from '../../src/'
 import type { Subscription } from '../../src/utils/Subscription'
+import type { ReactReduxContextValue } from '../../src/components/Context'
 
 describe('React', () => {
   describe('hooks', () => {
@@ -24,7 +25,7 @@ describe('React', () => {
         count: number
       }
       let normalStore: Store<NormalStateType, AnyAction>
-      let renderedItems = []
+      let renderedItems: any[] = []
       type RootState = ReturnType<typeof normalStore.getState>
       let useNormalSelector: TypedUseSelectorHook<RootState> = useSelector
 
@@ -80,7 +81,7 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          const store = createStore((c: number): number => c + 1, -1)
+          const store = createStore((c: number = 1): number => c + 1, -1)
 
           const Comp = () => {
             const selector = useCallback((c: number): number => c + 1, [])
@@ -106,7 +107,7 @@ describe('React', () => {
           let rootSubscription: Subscription
 
           const Parent = () => {
-            const { subscription } = useReduxContext()
+            const { subscription } = useReduxContext() as ReactReduxContextValue
             rootSubscription = subscription
             const count = useNormalSelector((s) => s.count)
             return count === 1 ? <Child /> : null
@@ -122,11 +123,11 @@ describe('React', () => {
               <Parent />
             </ProviderMock>
           )
-
+          // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(1)
 
           normalStore.dispatch({ type: '' })
-
+          // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(2)
         })
 
@@ -134,7 +135,7 @@ describe('React', () => {
           let rootSubscription: Subscription
 
           const Parent = () => {
-            const { subscription } = useReduxContext()
+            const { subscription } = useReduxContext() as ReactReduxContextValue
             rootSubscription = subscription
             const count = useNormalSelector((s) => s.count)
             return count === 0 ? <Child /> : null
@@ -150,11 +151,11 @@ describe('React', () => {
               <Parent />
             </ProviderMock>
           )
-
+          // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(2)
 
           normalStore.dispatch({ type: '' })
-
+          // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(1)
         })
 
@@ -183,7 +184,7 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        const store = createStore((c: number): number => c + 1, -1)
+        const store = createStore((c: number = 1): number => c + 1, -1)
 
         const Comp = () => {
           const selector = useCallback((c: number): number => c, [])
@@ -282,7 +283,7 @@ describe('React', () => {
 
       it('uses the latest selector', () => {
         let selectorId = 0
-        let forceRender
+        let forceRender: DispatchWithoutAction
 
         const Comp = () => {
           const [, f] = useReducer((c) => c + 1, 0)
@@ -301,7 +302,9 @@ describe('React', () => {
 
         expect(renderedItems).toEqual([0])
 
-        rtl.act(forceRender)
+        rtl.act(() => {
+          forceRender()
+        })
         expect(renderedItems).toEqual([0, 1])
 
         rtl.act(() => {
@@ -309,7 +312,9 @@ describe('React', () => {
         })
         expect(renderedItems).toEqual([0, 1])
 
-        rtl.act(forceRender)
+        rtl.act(() => {
+          forceRender()
+        })
         expect(renderedItems).toEqual([0, 1, 2])
       })
 
@@ -503,8 +508,8 @@ describe('React', () => {
     })
 
     describe('createSelectorHook', () => {
-      let defaultStore
-      let customStore
+      let defaultStore: Store
+      let customStore: Store
       type StateType = {
         count: number
       }
@@ -519,7 +524,8 @@ describe('React', () => {
       })
 
       it('subscribes to the correct store', () => {
-        const nestedContext = React.createContext(null)
+        const nestedContext =
+          React.createContext<ReactReduxContextValue | null>(null)
         const useCustomSelector = createSelectorHook(nestedContext)
         let defaultCount = null
         let customCount = null
@@ -531,7 +537,10 @@ describe('React', () => {
           defaultCount = count
           return <>{children}</>
         }
-        const DisplayCustomCount = ({ children = null }) => {
+        interface DisplayCustomCountType {
+          children: ReactNode
+        }
+        const DisplayCustomCount = ({ children }: DisplayCustomCountType) => {
           const count = useCustomSelector<StateType>(getCount)
           customCount = count
           return <>{children}</>
