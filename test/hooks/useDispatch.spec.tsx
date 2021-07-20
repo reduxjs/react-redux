@@ -6,8 +6,7 @@ import {
   useDispatch,
   createDispatchHook,
 } from '../../src/index'
-import type { ProviderProps } from '../../src/'
-import type { ReactReduxContextValue } from '../../src/components/Context'
+import type { ProviderProps, ReactReduxContextValue } from '../../src/'
 
 const store = createStore((c: number = 1): number => c + 1)
 const store2 = createStore((c: number = 1): number => c + 2)
