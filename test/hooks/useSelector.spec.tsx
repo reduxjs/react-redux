@@ -14,9 +14,12 @@ import {
 import { useReduxContext } from '../../src/hooks/useReduxContext'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
-import type { ProviderProps, TypedUseSelectorHook } from '../../src/'
-import type { Subscription } from '../../src/utils/Subscription'
-import type { ReactReduxContextValue } from '../../src/components/Context'
+import type {
+  ProviderProps,
+  TypedUseSelectorHook,
+  ReactReduxContextValue,
+  Subscription,
+} from '../../src/'
 
 describe('React', () => {
   describe('hooks', () => {
