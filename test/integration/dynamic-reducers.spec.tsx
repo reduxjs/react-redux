@@ -43,7 +43,9 @@ describe('React', () => {
       children: ReactNode
       reducers: ReducersType
     }
-
+    interface ReduxContextType extends ReactReduxContextValue {
+      storeState?: any
+    }
     function ExtraReducersProvider({
       children,
       reducers,
@@ -53,13 +55,9 @@ describe('React', () => {
           {(injectReducers) => (
             <ReactReduxContext.Consumer>
               {(reduxContext) => {
-                interface ReduxContextType extends ReactReduxContextValue {
-                  storeState?: any
-                }
-                const latestState =
-                  reduxContext && reduxContext.store.getState()
-                const contextState =
-                  reduxContext && (reduxContext as ReduxContextType).storeState
+                const latestState = reduxContext!.store.getState()
+                const contextState = (reduxContext as ReduxContextType)
+                  .storeState
 
                 let shouldInject = false
                 let shouldPatch = false
@@ -80,7 +78,7 @@ describe('React', () => {
                 }
 
                 if (shouldInject) {
-                  injectReducers && injectReducers(reducers)
+                  injectReducers!(reducers)
                 }
 
                 if (shouldPatch && reduxContext) {
@@ -89,7 +87,7 @@ describe('React', () => {
                   // this would better avoid tearing in a future concurrent world
                   const patchedReduxContext = {
                     ...reduxContext,
-                    storeState: reduxContext && reduxContext.store.getState(),
+                    storeState: reduxContext!.store.getState(),
                   }
                   return (
                     <ReactReduxContext.Provider value={patchedReduxContext}>
