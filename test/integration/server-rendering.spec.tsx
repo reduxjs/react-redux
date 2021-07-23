@@ -8,28 +8,64 @@
 
 /*eslint-disable react/prop-types*/
 
-import React from 'react'
+import React, { FunctionComponent } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createStore } from 'redux'
 import { Provider, connect } from '../../src/index'
+import type { Dispatch, Store } from 'redux'
 
 describe('React', () => {
   describe('server rendering', () => {
-    function greetingReducer(state = { greeting: 'Hello' }, action) {
+    interface ActionType {
+      type: string
+      payload: {
+        greeting: string
+      }
+    }
+    function greetingReducer(
+      state = { greeting: 'Hello' },
+      action: ActionType
+    ) {
       return action && action.payload ? action.payload : state
     }
+    interface GreetingProps {
+      greeting: string
+      greeted: string
+    }
+    const Greeting: FunctionComponent<GreetingProps> = ({
+      greeting,
+      greeted,
+    }) => {
+      return <span>{greeting + ' ' + greeted}</span>
+    }
 
-    const Greeting = ({ greeting, greeted }) => greeting + ' ' + greeted
-    const ConnectedGreeting = connect((state) => state)(Greeting)
+    interface RootType {
+      greeting: string
+    }
+    interface Props {
+      greeted: string
+    }
 
-    const Greeter = (props) => (
+    const ConnectedGreeting = connect<RootType, unknown, Props, RootType>(
+      (state) => state
+    )(Greeting)
+
+    const Greeter = (props: any) => (
       <div>
         <ConnectedGreeting {...props} />
       </div>
     )
 
-    class Dispatcher extends React.Component {
-      constructor(props) {
+    interface DispatcherProps {
+      constructAction?: ActionType
+      willMountAction?: ActionType
+      renderAction?: ActionType
+      dispatch: Dispatch
+      greeted: string
+    }
+
+    class Dispatcher extends React.Component<DispatcherProps> {
+      constructor(props: DispatcherProps) {
         super(props)
         if (props.constructAction) {
           props.dispatch(props.constructAction)
@@ -51,23 +87,22 @@ describe('React', () => {
     const ConnectedDispatcher = connect()(Dispatcher)
 
     it('should be able to render connected component with props and state from store', () => {
-      const store = createStore(greetingReducer)
+      const store: Store = createStore(greetingReducer)
 
       const markup = renderToString(
         <Provider store={store}>
           <Greeter greeted="world" />
         </Provider>
       )
-
       expect(markup).toContain('Hello world')
     })
 
     it('should run in an SSR environment without logging warnings about useLayoutEffect', () => {
-      const store = createStore(greetingReducer)
+      const store: Store = createStore(greetingReducer)
 
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-      const markup = renderToString(
+      renderToString(
         <Provider store={store}>
           <Greeter greeted="world" />
         </Provider>
@@ -79,7 +114,7 @@ describe('React', () => {
     })
 
     it('should render with updated state if actions are dispatched before render', () => {
-      const store = createStore(greetingReducer)
+      const store: Store = createStore(greetingReducer)
 
       store.dispatch({ type: 'Update', payload: { greeting: 'Hi' } })
 
@@ -106,7 +141,7 @@ describe('React', () => {
           In all other versions, including v7, the store state may change as actions are dispatched
           during lifecycle methods, and components will see that new state immediately as they read it.
       */
-      const store = createStore(greetingReducer)
+      const store: Store = createStore(greetingReducer)
 
       const constructAction = { type: 'Update', payload: { greeting: 'Hi' } }
       const willMountAction = { type: 'Update', payload: { greeting: 'Hiya' } }
@@ -143,7 +178,7 @@ describe('React', () => {
           This test works both when state is fetched directly in connected
           components and when it is fetched in a Provider and placed on context
       */
-      const store = createStore(greetingReducer)
+      const store: Store = createStore(greetingReducer)
 
       const constructAction = { type: 'Update', payload: { greeting: 'Hi' } }
       const willMountAction = { type: 'Update', payload: { greeting: 'Hiya' } }
