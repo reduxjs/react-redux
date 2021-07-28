@@ -103,7 +103,7 @@
     "prettier": "^2.1.2",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
-    "react-native": "^0.63.3",
+    "react-native": "^0.64.1",
     "react-test-renderer": "^16.14.0",
     "redux": "^4.0.5",
     "rimraf": "^3.0.2",
