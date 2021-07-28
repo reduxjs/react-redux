@@ -382,7 +382,6 @@ describe('React', () => {
           x?: boolean
         }
         let props: OwnerPropsType = { x: true }
-        let container: Component
 
         class ConnectContainer extends Component {
           render() {
@@ -399,18 +398,18 @@ describe('React', () => {
             return <ConnectedInnerContainer {...props} />
           }
         }
+        let container = React.createRef<HolderContainer>()
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <HolderContainer ref={(instance) => (container = instance!)} />
+            <HolderContainer ref={container} />
           </ProviderMock>
         )
 
         expect(tester.getByTestId('x')).toHaveTextContent('true')
 
         props = {}
-        //@ts-ignore Variable 'container' is used before being assigned.
-        container.forceUpdate()
+        container.current!.forceUpdate()
 
         expect(tester.queryByTestId('x')).toBe(null)
       })
@@ -421,7 +420,6 @@ describe('React', () => {
           x?: boolean
         }
         let props: OwnerPropsType = { x: true }
-        let container
 
         class Inner extends Component<OwnerPropsType> {
           render() {
@@ -435,10 +433,10 @@ describe('React', () => {
             return <ConnectedInner {...props} />
           }
         }
-
+        let container = React.createRef<HolderContainer>()
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <HolderContainer ref={(instance) => (container = instance)} />
+            <HolderContainer ref={container} />
           </ProviderMock>
         )
 
@@ -449,8 +447,7 @@ describe('React', () => {
         expect(tester.getByTestId('x')).toHaveTextContent('true')
 
         props = {}
-        //@ts-ignore Variable 'container' is used before being assigned.
-        container.forceUpdate()
+        container.current!.forceUpdate()
 
         expect(tester.getAllByTitle('prop').length).toBe(1)
         expect(tester.getByTestId('dispatch')).toHaveTextContent(
@@ -804,301 +801,306 @@ describe('React', () => {
       })
     })
 
-    // describe('Invocation behavior for mapState/mapDispatch based on number of arguments', () => {
-    //   it('should not invoke mapState when props change if it only has one argument', () => {
-    //     const store = createStore(stringBuilder)
+    describe('Invocation behavior for mapState/mapDispatch based on number of arguments', () => {
+      it('should not invoke mapState when props change if it only has one argument', () => {
+        const store: Store = createStore(stringBuilder)
 
-    //     let invocationCount = 0
+        let invocationCount = 0
 
-    //     /*eslint-disable no-unused-vars */
-    //     @connect((arg1) => {
-    //       invocationCount++
-    //       return {}
-    //     })
-    //     /*eslint-enable no-unused-vars */
-    //     class WithoutProps extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+        interface InnerPropsType {
+          foo: string
+        }
+        class Inner extends Component<InnerPropsType, {}> {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const ConnectedInner = connect((argv) => {
+          invocationCount++
+          return {}
+        })(Inner)
 
-    //     class OuterComponent extends Component {
-    //       constructor() {
-    //         super()
-    //         this.state = { foo: 'FOO' }
-    //       }
+        interface OuterComponentStateType {
+          foo: string
+        }
+        class OuterComponent extends Component<{}, OuterComponentStateType> {
+          constructor(props: {}) {
+            super(props)
+            this.state = { foo: 'FOO' }
+          }
 
-    //       setFoo(foo) {
-    //         this.setState({ foo })
-    //       }
+          setFoo(foo: string) {
+            this.setState({ foo })
+          }
 
-    //       render() {
-    //         return (
-    //           <div>
-    //             <WithoutProps {...this.state} />
-    //           </div>
-    //         )
-    //       }
-    //     }
+          render() {
+            return (
+              <div>
+                <ConnectedInner {...this.state} />
+              </div>
+            )
+          }
+        }
 
-    //     let outerComponent
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <OuterComponent ref={(c) => (outerComponent = c)} />
-    //       </ProviderMock>
-    //     )
-    //     outerComponent.setFoo('BAR')
-    //     outerComponent.setFoo('DID')
+        let outerComponent = React.createRef<OuterComponent>()
+        rtl.render(
+          <ProviderMock store={store}>
+            <OuterComponent ref={outerComponent} />
+          </ProviderMock>
+        )
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
-    //     expect(invocationCount).toEqual(1)
-    //   })
+        expect(invocationCount).toEqual(1)
+      })
 
-    //   it('should invoke mapState every time props are changed if it has zero arguments', () => {
-    //     const store = createStore(stringBuilder)
+      // it('should invoke mapState every time props are changed if it has zero arguments', () => {
+      //   const store = createStore(stringBuilder)
 
-    //     let invocationCount = 0
+      //   let invocationCount = 0
 
-    //     @connect(() => {
-    //       invocationCount++
-    //       return {}
-    //     })
-    //     class WithoutProps extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      //   @connect(() => {
+      //     invocationCount++
+      //     return {}
+      //   })
+      //   class WithoutProps extends Component {
+      //     render() {
+      //       return <Passthrough {...this.props} />
+      //     }
+      //   }
 
-    //     class OuterComponent extends Component {
-    //       constructor() {
-    //         super()
-    //         this.state = { foo: 'FOO' }
-    //       }
+      //   class OuterComponent extends Component {
+      //     constructor() {
+      //       super()
+      //       this.state = { foo: 'FOO' }
+      //     }
 
-    //       setFoo(foo) {
-    //         this.setState({ foo })
-    //       }
+      //     setFoo(foo) {
+      //       this.setState({ foo })
+      //     }
 
-    //       render() {
-    //         return (
-    //           <div>
-    //             <WithoutProps {...this.state} />
-    //           </div>
-    //         )
-    //       }
-    //     }
+      //     render() {
+      //       return (
+      //         <div>
+      //           <WithoutProps {...this.state} />
+      //         </div>
+      //       )
+      //     }
+      //   }
 
-    //     let outerComponent
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <OuterComponent ref={(c) => (outerComponent = c)} />
-    //       </ProviderMock>
-    //     )
-    //     outerComponent.setFoo('BAR')
-    //     outerComponent.setFoo('DID')
+      //   let outerComponent
+      //   rtl.render(
+      //     <ProviderMock store={store}>
+      //       <OuterComponent ref={(c) => (outerComponent = c)} />
+      //     </ProviderMock>
+      //   )
+      //   outerComponent.setFoo('BAR')
+      //   outerComponent.setFoo('DID')
 
-    //     expect(invocationCount).toEqual(3)
-    //   })
+      //   expect(invocationCount).toEqual(3)
+      // })
 
-    //   it('should invoke mapState every time props are changed if it has a second argument', () => {
-    //     const store = createStore(stringBuilder)
+      // it('should invoke mapState every time props are changed if it has a second argument', () => {
+      //   const store = createStore(stringBuilder)
 
-    //     let propsPassedIn
-    //     let invocationCount = 0
+      //   let propsPassedIn
+      //   let invocationCount = 0
 
-    //     @connect((state, props) => {
-    //       invocationCount++
-    //       propsPassedIn = props
-    //       return {}
-    //     })
-    //     class WithProps extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      //   @connect((state, props) => {
+      //     invocationCount++
+      //     propsPassedIn = props
+      //     return {}
+      //   })
+      //   class WithProps extends Component {
+      //     render() {
+      //       return <Passthrough {...this.props} />
+      //     }
+      //   }
 
-    //     class OuterComponent extends Component {
-    //       constructor() {
-    //         super()
-    //         this.state = { foo: 'FOO' }
-    //       }
+      //   class OuterComponent extends Component {
+      //     constructor() {
+      //       super()
+      //       this.state = { foo: 'FOO' }
+      //     }
 
-    //       setFoo(foo) {
-    //         this.setState({ foo })
-    //       }
+      //     setFoo(foo) {
+      //       this.setState({ foo })
+      //     }
 
-    //       render() {
-    //         return (
-    //           <div>
-    //             <WithProps {...this.state} />
-    //           </div>
-    //         )
-    //       }
-    //     }
+      //     render() {
+      //       return (
+      //         <div>
+      //           <WithProps {...this.state} />
+      //         </div>
+      //       )
+      //     }
+      //   }
 
-    //     let outerComponent
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <OuterComponent ref={(c) => (outerComponent = c)} />
-    //       </ProviderMock>
-    //     )
+      //   let outerComponent
+      //   rtl.render(
+      //     <ProviderMock store={store}>
+      //       <OuterComponent ref={(c) => (outerComponent = c)} />
+      //     </ProviderMock>
+      //   )
 
-    //     outerComponent.setFoo('BAR')
-    //     outerComponent.setFoo('BAZ')
+      //   outerComponent.setFoo('BAR')
+      //   outerComponent.setFoo('BAZ')
 
-    //     expect(invocationCount).toEqual(3)
-    //     expect(propsPassedIn).toEqual({
-    //       foo: 'BAZ',
-    //     })
-    //   })
+      //   expect(invocationCount).toEqual(3)
+      //   expect(propsPassedIn).toEqual({
+      //     foo: 'BAZ',
+      //   })
+      // })
 
-    //   it('should not invoke mapDispatch when props change if it only has one argument', () => {
-    //     const store = createStore(stringBuilder)
+      // it('should not invoke mapDispatch when props change if it only has one argument', () => {
+      //   const store = createStore(stringBuilder)
 
-    //     let invocationCount = 0
+      //   let invocationCount = 0
 
-    //     /*eslint-disable no-unused-vars */
-    //     @connect(null, (arg1) => {
-    //       invocationCount++
-    //       return {}
-    //     })
-    //     /*eslint-enable no-unused-vars */
-    //     class WithoutProps extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      //   /*eslint-disable no-unused-vars */
+      //   @connect(null, (arg1) => {
+      //     invocationCount++
+      //     return {}
+      //   })
+      //   /*eslint-enable no-unused-vars */
+      //   class WithoutProps extends Component {
+      //     render() {
+      //       return <Passthrough {...this.props} />
+      //     }
+      //   }
 
-    //     class OuterComponent extends Component {
-    //       constructor() {
-    //         super()
-    //         this.state = { foo: 'FOO' }
-    //       }
+      //   class OuterComponent extends Component {
+      //     constructor() {
+      //       super()
+      //       this.state = { foo: 'FOO' }
+      //     }
 
-    //       setFoo(foo) {
-    //         this.setState({ foo })
-    //       }
+      //     setFoo(foo) {
+      //       this.setState({ foo })
+      //     }
 
-    //       render() {
-    //         return (
-    //           <div>
-    //             <WithoutProps {...this.state} />
-    //           </div>
-    //         )
-    //       }
-    //     }
+      //     render() {
+      //       return (
+      //         <div>
+      //           <WithoutProps {...this.state} />
+      //         </div>
+      //       )
+      //     }
+      //   }
 
-    //     let outerComponent
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <OuterComponent ref={(c) => (outerComponent = c)} />
-    //       </ProviderMock>
-    //     )
+      //   let outerComponent
+      //   rtl.render(
+      //     <ProviderMock store={store}>
+      //       <OuterComponent ref={(c) => (outerComponent = c)} />
+      //     </ProviderMock>
+      //   )
 
-    //     outerComponent.setFoo('BAR')
-    //     outerComponent.setFoo('DID')
+      //   outerComponent.setFoo('BAR')
+      //   outerComponent.setFoo('DID')
 
-    //     expect(invocationCount).toEqual(1)
-    //   })
+      //   expect(invocationCount).toEqual(1)
+      // })
 
-    //   it('should invoke mapDispatch every time props are changed if it has zero arguments', () => {
-    //     const store = createStore(stringBuilder)
+      // it('should invoke mapDispatch every time props are changed if it has zero arguments', () => {
+      //   const store = createStore(stringBuilder)
 
-    //     let invocationCount = 0
+      //   let invocationCount = 0
 
-    //     @connect(null, () => {
-    //       invocationCount++
-    //       return {}
-    //     })
-    //     class WithoutProps extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      //   @connect(null, () => {
+      //     invocationCount++
+      //     return {}
+      //   })
+      //   class WithoutProps extends Component {
+      //     render() {
+      //       return <Passthrough {...this.props} />
+      //     }
+      //   }
 
-    //     class OuterComponent extends Component {
-    //       constructor() {
-    //         super()
-    //         this.state = { foo: 'FOO' }
-    //       }
+      //   class OuterComponent extends Component {
+      //     constructor() {
+      //       super()
+      //       this.state = { foo: 'FOO' }
+      //     }
 
-    //       setFoo(foo) {
-    //         this.setState({ foo })
-    //       }
+      //     setFoo(foo) {
+      //       this.setState({ foo })
+      //     }
 
-    //       render() {
-    //         return (
-    //           <div>
-    //             <WithoutProps {...this.state} />
-    //           </div>
-    //         )
-    //       }
-    //     }
+      //     render() {
+      //       return (
+      //         <div>
+      //           <WithoutProps {...this.state} />
+      //         </div>
+      //       )
+      //     }
+      //   }
 
-    //     let outerComponent
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <OuterComponent ref={(c) => (outerComponent = c)} />
-    //       </ProviderMock>
-    //     )
+      //   let outerComponent
+      //   rtl.render(
+      //     <ProviderMock store={store}>
+      //       <OuterComponent ref={(c) => (outerComponent = c)} />
+      //     </ProviderMock>
+      //   )
 
-    //     outerComponent.setFoo('BAR')
-    //     outerComponent.setFoo('DID')
+      //   outerComponent.setFoo('BAR')
+      //   outerComponent.setFoo('DID')
 
-    //     expect(invocationCount).toEqual(3)
-    //   })
+      //   expect(invocationCount).toEqual(3)
+      // })
 
-    //   it('should invoke mapDispatch every time props are changed if it has a second argument', () => {
-    //     const store = createStore(stringBuilder)
+      // it('should invoke mapDispatch every time props are changed if it has a second argument', () => {
+      //   const store = createStore(stringBuilder)
 
-    //     let propsPassedIn
-    //     let invocationCount = 0
+      //   let propsPassedIn
+      //   let invocationCount = 0
 
-    //     @connect(null, (dispatch, props) => {
-    //       invocationCount++
-    //       propsPassedIn = props
-    //       return {}
-    //     })
-    //     class WithProps extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      //   @connect(null, (dispatch, props) => {
+      //     invocationCount++
+      //     propsPassedIn = props
+      //     return {}
+      //   })
+      //   class WithProps extends Component {
+      //     render() {
+      //       return <Passthrough {...this.props} />
+      //     }
+      //   }
 
-    //     class OuterComponent extends Component {
-    //       constructor() {
-    //         super()
-    //         this.state = { foo: 'FOO' }
-    //       }
+      //   class OuterComponent extends Component {
+      //     constructor() {
+      //       super()
+      //       this.state = { foo: 'FOO' }
+      //     }
 
-    //       setFoo(foo) {
-    //         this.setState({ foo })
-    //       }
+      //     setFoo(foo) {
+      //       this.setState({ foo })
+      //     }
 
-    //       render() {
-    //         return (
-    //           <div>
-    //             <WithProps {...this.state} />
-    //           </div>
-    //         )
-    //       }
-    //     }
+      //     render() {
+      //       return (
+      //         <div>
+      //           <WithProps {...this.state} />
+      //         </div>
+      //       )
+      //     }
+      //   }
 
-    //     let outerComponent
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <OuterComponent ref={(c) => (outerComponent = c)} />
-    //       </ProviderMock>
-    //     )
+      //   let outerComponent
+      //   rtl.render(
+      //     <ProviderMock store={store}>
+      //       <OuterComponent ref={(c) => (outerComponent = c)} />
+      //     </ProviderMock>
+      //   )
 
-    //     outerComponent.setFoo('BAR')
-    //     outerComponent.setFoo('BAZ')
+      //   outerComponent.setFoo('BAR')
+      //   outerComponent.setFoo('BAZ')
 
-    //     expect(invocationCount).toEqual(3)
-    //     expect(propsPassedIn).toEqual({
-    //       foo: 'BAZ',
-    //     })
-    //   })
-    // })
+      //   expect(invocationCount).toEqual(3)
+      //   expect(propsPassedIn).toEqual({
+      //     foo: 'BAZ',
+      //   })
+      // })
+    })
 
     // describe('React lifeycle interactions', () => {
     //   it('should handle dispatches before componentDidMount', () => {
