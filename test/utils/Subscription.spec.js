@@ -1,4 +1,4 @@
-import Subscription from '../../src/utils/Subscription'
+import { createSubscription } from '../../src/utils/Subscription'
 
 describe('Subscription', () => {
   let notifications
@@ -9,13 +9,13 @@ describe('Subscription', () => {
     notifications = []
     store = { subscribe: () => jest.fn() }
 
-    parent = new Subscription(store)
+    parent = createSubscription(store)
     parent.onStateChange = () => {}
     parent.trySubscribe()
   })
 
   function subscribeChild(name) {
-    const child = new Subscription(store, parent)
+    const child = createSubscription(store, parent)
     child.onStateChange = () => notifications.push(name)
     child.trySubscribe()
     return child

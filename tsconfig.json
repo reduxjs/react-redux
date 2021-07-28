@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "jsx": "react",
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./es",
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators":true
+  },
+  "include": ["src/**/*", "test/**/*", "types"],
+  "exclude": ["node_modules", "dist"]
+}
