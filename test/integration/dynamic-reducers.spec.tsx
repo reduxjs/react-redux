@@ -5,6 +5,9 @@ import ReactDOMServer from 'react-dom/server'
 import { createStore, combineReducers } from 'redux'
 import { connect, Provider, ReactReduxContext } from '../../src/index'
 import * as rtl from '@testing-library/react'
+import type { Store } from 'redux'
+import type { ReactNode } from 'react'
+import type { ReactReduxContextValue } from '../../src/index'
 
 describe('React', () => {
   /*
@@ -26,16 +29,35 @@ describe('React', () => {
     because it's the popular approach, this test targets nr 3.
   */
   describe('dynamic reducers', () => {
-    const InjectReducersContext = React.createContext(null)
+    const InjectReducersContext = React.createContext<
+      ((r: any) => void) | null
+    >(null)
 
-    function ExtraReducersProvider({ children, reducers }) {
+    type Reducer = (s: any) => any
+
+    interface ReducersType {
+      [x: string]: Reducer
+    }
+
+    interface ExtraReducersProviderPropsType {
+      children: ReactNode
+      reducers: ReducersType
+    }
+    interface ReduxContextType extends ReactReduxContextValue {
+      storeState?: any
+    }
+    function ExtraReducersProvider({
+      children,
+      reducers,
+    }: ExtraReducersProviderPropsType) {
       return (
         <InjectReducersContext.Consumer>
           {(injectReducers) => (
             <ReactReduxContext.Consumer>
               {(reduxContext) => {
-                const latestState = reduxContext.store.getState()
-                const contextState = reduxContext.storeState
+                const latestState = reduxContext!.store.getState()
+                const contextState = (reduxContext as ReduxContextType)
+                  .storeState
 
                 let shouldInject = false
                 let shouldPatch = false
@@ -56,16 +78,16 @@ describe('React', () => {
                 }
 
                 if (shouldInject) {
-                  injectReducers(reducers)
+                  injectReducers!(reducers)
                 }
 
-                if (shouldPatch) {
+                if (shouldPatch && reduxContext) {
                   // A safer way to do this would be to patch the storeState
                   // manually with the state from the new reducers, since
                   // this would better avoid tearing in a future concurrent world
                   const patchedReduxContext = {
                     ...reduxContext,
-                    storeState: reduxContext.store.getState(),
+                    storeState: reduxContext!.store.getState(),
                   }
                   return (
                     <ReactReduxContext.Provider value={patchedReduxContext}>
@@ -88,28 +110,46 @@ describe('React', () => {
     const dynamicReducer = {
       dynamic: (state = { greeting: 'Hello dynamic world' }) => state,
     }
+    interface StateType {
+      initial: GreeterTStateProps
+      dynamic: GreeterTStateProps
+    }
+    interface GreeterTStateProps {
+      greeting: string
+    }
 
-    function Greeter({ greeting }) {
+    function Greeter({ greeting }: GreeterTStateProps) {
       return <div>{greeting}</div>
     }
 
-    const InitialGreeting = connect((state) => ({
+    const InitialGreeting = connect<
+      GreeterTStateProps,
+      unknown,
+      unknown,
+      StateType
+    >((state) => ({
       greeting: state.initial.greeting,
     }))(Greeter)
-    const DynamicGreeting = connect((state) => ({
+
+    const DynamicGreeting = connect<
+      GreeterTStateProps,
+      unknown,
+      unknown,
+      StateType
+    >((state) => ({
       greeting: state.dynamic.greeting,
     }))(Greeter)
 
-    function createInjectReducers(store, initialReducer) {
+    function createInjectReducers(store: Store, initialReducer: ReducersType) {
       let reducers = initialReducer
-      return function injectReducers(newReducers) {
+      return function injectReducers(newReducers: ReducersType) {
         reducers = { ...reducers, ...newReducers }
         store.replaceReducer(combineReducers(reducers))
       }
     }
 
-    let store
-    let injectReducers
+    let store: Store
+    let injectReducers: (r: any) => void
 
     beforeEach(() => {
       // These could be singletons on the client, but
@@ -142,6 +182,7 @@ describe('React', () => {
 
       jest.spyOn(console, 'error')
       // eslint-disable-next-line no-console
+      // @ts-ignore
       console.error.mockImplementation(() => {})
 
       const markup = ReactDOMServer.renderToString(
@@ -159,6 +200,7 @@ describe('React', () => {
       expect(markup).toContain('Hello dynamic world')
 
       // eslint-disable-next-line no-console
+      // @ts-ignore
       console.error.mockRestore()
     })
   })

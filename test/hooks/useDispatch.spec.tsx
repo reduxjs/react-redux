@@ -6,10 +6,10 @@ import {
   useDispatch,
   createDispatchHook,
 } from '../../src/index'
-import type { ProviderProps } from '../../src/'
+import type { ProviderProps, ReactReduxContextValue } from '../../src/'
 
-const store = createStore((c: number): number => c + 1)
-const store2 = createStore((c: number): number => c + 2)
+const store = createStore((c: number = 1): number => c + 1)
+const store2 = createStore((c: number = 1): number => c + 2)
 
 describe('React', () => {
   describe('hooks', () => {
@@ -27,7 +27,8 @@ describe('React', () => {
     })
     describe('createDispatchHook', () => {
       it("returns the correct store's dispatch function", () => {
-        const nestedContext = React.createContext(null)
+        const nestedContext =
+          React.createContext<ReactReduxContextValue | null>(null)
         const useCustomDispatch = createDispatchHook(nestedContext)
         const { result } = renderHook(() => useDispatch(), {
           // eslint-disable-next-line react/prop-types

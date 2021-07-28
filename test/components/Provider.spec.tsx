@@ -1,10 +1,13 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component } from 'react'
+import React, { Component, Dispatch } from 'react'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
 import { Provider, connect, ReactReduxContext } from '../../src/index'
 import * as rtl from '@testing-library/react'
+import type { ReactReduxContextValue } from '../../src'
+import type { Store } from 'redux'
+
 import '@testing-library/jest-dom/extend-expect'
 
 const createExampleTextReducer =
@@ -21,7 +24,8 @@ describe('React', () => {
         render() {
           return (
             <ReactReduxContext.Consumer>
-              {({ store }) => {
+              {(props) => {
+                let { store } = props as ReactReduxContextValue
                 let text = ''
 
                 if (store) {
@@ -46,10 +50,6 @@ describe('React', () => {
     it('should not enforce a single child', () => {
       const store = createStore(() => ({}))
 
-      // Ignore propTypes warnings
-      const propTypes = Provider.propTypes
-      Provider.propTypes = {}
-
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       expect(() =>
@@ -59,7 +59,7 @@ describe('React', () => {
           </Provider>
         )
       ).not.toThrow()
-
+      //@ts-expect-error
       expect(() => rtl.render(<Provider store={store} />)).not.toThrow(
         /children with exactly one child/
       )
@@ -73,7 +73,6 @@ describe('React', () => {
         )
       ).not.toThrow(/a single React element child/)
       spy.mockRestore()
-      Provider.propTypes = propTypes
     })
 
     it('should add the store to context', () => {
@@ -94,14 +93,18 @@ describe('React', () => {
     })
 
     it('accepts new store in props', () => {
-      const store1 = createStore((state = 10) => state + 1)
-      const store2 = createStore((state = 10) => state * 2)
-      const store3 = createStore((state = 10) => state * state + 1)
+      const store1 = createStore((state: number = 10) => state + 1)
+      const store2 = createStore((state: number = 10) => state * 2)
+      const store3 = createStore((state: number = 10) => state * state + 1)
 
-      let externalSetState
-      class ProviderContainer extends Component {
-        constructor() {
-          super()
+      interface StateType {
+        store: Store
+      }
+
+      let externalSetState: Dispatch<StateType>
+      class ProviderContainer extends Component<unknown, StateType> {
+        constructor(props: {}) {
+          super(props)
           this.state = { store: store1 }
           externalSetState = this.setState.bind(this)
         }
@@ -156,33 +159,47 @@ describe('React', () => {
     })
 
     it('should handle subscriptions correctly when there is nested Providers', () => {
-      const reducer = (state = 0, action) =>
+      interface ActionType {
+        type: string
+      }
+      interface TStateProps {
+        count: number
+      }
+      const reducer = (state = 0, action: ActionType) =>
         action.type === 'INC' ? state + 1 : state
 
       const innerStore = createStore(reducer)
-      const innerMapStateToProps = jest.fn((state) => ({ count: state }))
-      @connect(innerMapStateToProps)
-      class Inner extends Component {
-        render() {
+      const innerMapStateToProps = jest.fn<TStateProps, [number]>((state) => ({
+        count: state,
+      }))
+      class Inner extends Component<TStateProps> {
+        render(): JSX.Element {
           return <div>{this.props.count}</div>
         }
       }
 
+      const WrapperInner = connect<TStateProps, unknown, unknown, number>(
+        innerMapStateToProps
+      )(Inner)
+
       const outerStore = createStore(reducer)
-      @connect((state) => ({ count: state }))
       class Outer extends Component {
         render() {
           return (
             <Provider store={innerStore}>
-              <Inner />
+              <WrapperInner />
             </Provider>
           )
         }
       }
 
+      const WrapperOuter = connect<TStateProps, unknown, unknown, number>(
+        (state) => ({ count: state })
+      )(Outer)
+
       rtl.render(
         <Provider store={outerStore}>
-          <Outer />
+          <WrapperOuter />
         </Provider>
       )
       expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
@@ -195,11 +212,15 @@ describe('React', () => {
     })
 
     it('should pass state consistently to mapState', () => {
-      function stringBuilder(prev = '', action) {
+      interface ActionType {
+        type: string
+        body: string
+      }
+      function stringBuilder(prev = '', action: ActionType) {
         return action.type === 'APPEND' ? prev + action.body : prev
       }
 
-      const store = createStore(stringBuilder)
+      const store: Store = createStore(stringBuilder)
 
       rtl.act(() => {
         store.dispatch({ type: 'APPEND', body: 'a' })
@@ -207,8 +228,33 @@ describe('React', () => {
 
       let childMapStateInvokes = 0
 
-      @connect((state) => ({ state }))
-      class Container extends Component {
+      const childCalls: Array<Array<string>> = []
+
+      interface ChildContainerProps {
+        parentState: string
+      }
+      class ChildContainer extends Component<ChildContainerProps> {
+        render() {
+          return <div />
+        }
+      }
+
+      const WrapperChildrenContainer = connect<
+        {},
+        unknown,
+        ChildContainerProps,
+        string
+      >((state, parentProps) => {
+        childMapStateInvokes++
+        childCalls.push([state, parentProps.parentState])
+        // The state from parent props should always be consistent with the current state
+        return {}
+      })(ChildContainer)
+
+      interface TStateProps {
+        state: string
+      }
+      class Container extends Component<TStateProps> {
         emitChange() {
           store.dispatch({ type: 'APPEND', body: 'b' })
         }
@@ -217,28 +263,18 @@ describe('React', () => {
           return (
             <div>
               <button onClick={this.emitChange.bind(this)}>change</button>
-              <ChildContainer parentState={this.props.state} />
+              <WrapperChildrenContainer parentState={this.props.state} />
             </div>
           )
         }
       }
-
-      const childCalls = []
-      @connect((state, parentProps) => {
-        childMapStateInvokes++
-        childCalls.push([state, parentProps.parentState])
-        // The state from parent props should always be consistent with the current state
-        return {}
-      })
-      class ChildContainer extends Component {
-        render() {
-          return <div />
-        }
-      }
+      const WrapperContainer = connect<TStateProps, unknown, unknown, string>(
+        (state) => ({ state })
+      )(Container)
 
       const tester = rtl.render(
         <Provider store={store}>
-          <Container />
+          <WrapperContainer />
         </Provider>
       )
 
@@ -320,29 +356,44 @@ describe('React', () => {
     })
 
     it('should handle store and children change in a the same render', () => {
+      interface PropsType {
+        value: string
+      }
+      interface StateType {
+        nestedA: PropsType
+        nestedB: PropsType
+      }
       const reducerA = (state = { nestedA: { value: 'expectedA' } }) => state
       const reducerB = (state = { nestedB: { value: 'expectedB' } }) => state
 
       const storeA = createStore(reducerA)
       const storeB = createStore(reducerB)
 
-      @connect((state) => ({ value: state.nestedA.value }))
-      class ComponentA extends Component {
+      class ComponentA extends Component<PropsType> {
         render() {
           return <div data-testid="value">{this.props.value}</div>
         }
       }
 
-      @connect((state) => ({ value: state.nestedB.value }))
-      class ComponentB extends Component {
+      const WrapperComponentA = connect<PropsType, unknown, unknown, StateType>(
+        (state) => ({
+          value: state.nestedA.value,
+        })
+      )(ComponentA)
+
+      class ComponentB extends Component<PropsType> {
         render() {
           return <div data-testid="value">{this.props.value}</div>
         }
       }
+
+      const WrapperComponentB = connect<PropsType, unknown, unknown, StateType>(
+        (state) => ({ value: state.nestedB.value })
+      )(ComponentB)
 
       const { getByTestId, rerender } = rtl.render(
         <Provider store={storeA}>
-          <ComponentA />
+          <WrapperComponentA />
         </Provider>
       )
 
@@ -350,7 +401,7 @@ describe('React', () => {
 
       rerender(
         <Provider store={storeB}>
-          <ComponentB />
+          <WrapperComponentB />
         </Provider>
       )
 
