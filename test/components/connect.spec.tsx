@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component } from 'react'
+import React, { Component, MouseEvent, useEffect } from 'react'
 // import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
@@ -855,552 +855,560 @@ describe('React', () => {
         expect(invocationCount).toEqual(1)
       })
 
-      // it('should invoke mapState every time props are changed if it has zero arguments', () => {
-      //   const store = createStore(stringBuilder)
+      it('should invoke mapState every time props are changed if it has zero arguments', () => {
+        const store: Store = createStore(stringBuilder)
 
-      //   let invocationCount = 0
+        let invocationCount = 0
 
-      //   @connect(() => {
-      //     invocationCount++
-      //     return {}
-      //   })
-      //   class WithoutProps extends Component {
-      //     render() {
-      //       return <Passthrough {...this.props} />
-      //     }
-      //   }
+        class Inner extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedInner = connect(() => {
+          invocationCount++
+          return {}
+        })(Inner)
 
-      //   class OuterComponent extends Component {
-      //     constructor() {
-      //       super()
-      //       this.state = { foo: 'FOO' }
-      //     }
+        class OuterComponent extends Component {
+          constructor(props: {}) {
+            super(props)
+            this.state = { foo: 'FOO' }
+          }
 
-      //     setFoo(foo) {
-      //       this.setState({ foo })
-      //     }
+          setFoo(foo: string) {
+            this.setState({ foo })
+          }
 
-      //     render() {
-      //       return (
-      //         <div>
-      //           <WithoutProps {...this.state} />
-      //         </div>
-      //       )
-      //     }
-      //   }
+          render() {
+            return (
+              <div>
+                <ConnectedInner {...this.state} />
+              </div>
+            )
+          }
+        }
 
-      //   let outerComponent
-      //   rtl.render(
-      //     <ProviderMock store={store}>
-      //       <OuterComponent ref={(c) => (outerComponent = c)} />
-      //     </ProviderMock>
-      //   )
-      //   outerComponent.setFoo('BAR')
-      //   outerComponent.setFoo('DID')
+        let outerComponent = React.createRef<OuterComponent>()
+        rtl.render(
+          <ProviderMock store={store}>
+            <OuterComponent ref={outerComponent} />
+          </ProviderMock>
+        )
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
-      //   expect(invocationCount).toEqual(3)
-      // })
+        expect(invocationCount).toEqual(3)
+      })
 
-      // it('should invoke mapState every time props are changed if it has a second argument', () => {
-      //   const store = createStore(stringBuilder)
+      it('should invoke mapState every time props are changed if it has a second argument', () => {
+        const store: Store = createStore(stringBuilder)
 
-      //   let propsPassedIn
-      //   let invocationCount = 0
+        let propsPassedIn
+        let invocationCount = 0
 
-      //   @connect((state, props) => {
-      //     invocationCount++
-      //     propsPassedIn = props
-      //     return {}
-      //   })
-      //   class WithProps extends Component {
-      //     render() {
-      //       return <Passthrough {...this.props} />
-      //     }
-      //   }
+        class Inner extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedInner = connect((state, props) => {
+          invocationCount++
+          propsPassedIn = props
+          return {}
+        })(Inner)
 
-      //   class OuterComponent extends Component {
-      //     constructor() {
-      //       super()
-      //       this.state = { foo: 'FOO' }
-      //     }
+        class OuterComponent extends Component {
+          constructor(props: {}) {
+            super(props)
+            this.state = { foo: 'FOO' }
+          }
 
-      //     setFoo(foo) {
-      //       this.setState({ foo })
-      //     }
+          setFoo(foo: string) {
+            this.setState({ foo })
+          }
 
-      //     render() {
-      //       return (
-      //         <div>
-      //           <WithProps {...this.state} />
-      //         </div>
-      //       )
-      //     }
-      //   }
+          render() {
+            return (
+              <div>
+                <ConnectedInner {...this.state} />
+              </div>
+            )
+          }
+        }
 
-      //   let outerComponent
-      //   rtl.render(
-      //     <ProviderMock store={store}>
-      //       <OuterComponent ref={(c) => (outerComponent = c)} />
-      //     </ProviderMock>
-      //   )
+        let outerComponent = React.createRef<OuterComponent>()
+        rtl.render(
+          <ProviderMock store={store}>
+            <OuterComponent ref={outerComponent} />
+          </ProviderMock>
+        )
 
-      //   outerComponent.setFoo('BAR')
-      //   outerComponent.setFoo('BAZ')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('BAZ')
 
-      //   expect(invocationCount).toEqual(3)
-      //   expect(propsPassedIn).toEqual({
-      //     foo: 'BAZ',
-      //   })
-      // })
+        expect(invocationCount).toEqual(3)
+        expect(propsPassedIn).toEqual({
+          foo: 'BAZ',
+        })
+      })
 
-      // it('should not invoke mapDispatch when props change if it only has one argument', () => {
-      //   const store = createStore(stringBuilder)
+      it('should not invoke mapDispatch when props change if it only has one argument', () => {
+        const store: Store = createStore(stringBuilder)
 
-      //   let invocationCount = 0
+        let invocationCount = 0
 
-      //   /*eslint-disable no-unused-vars */
-      //   @connect(null, (arg1) => {
-      //     invocationCount++
-      //     return {}
-      //   })
-      //   /*eslint-enable no-unused-vars */
-      //   class WithoutProps extends Component {
-      //     render() {
-      //       return <Passthrough {...this.props} />
-      //     }
-      //   }
+        class Inner extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const ConnectedInner = connect(null, (arg1) => {
+          invocationCount++
+          return {}
+        })(Inner)
 
-      //   class OuterComponent extends Component {
-      //     constructor() {
-      //       super()
-      //       this.state = { foo: 'FOO' }
-      //     }
+        class OuterComponent extends Component {
+          constructor(props: {}) {
+            super(props)
+            this.state = { foo: 'FOO' }
+          }
 
-      //     setFoo(foo) {
-      //       this.setState({ foo })
-      //     }
+          setFoo(foo: string) {
+            this.setState({ foo })
+          }
 
-      //     render() {
-      //       return (
-      //         <div>
-      //           <WithoutProps {...this.state} />
-      //         </div>
-      //       )
-      //     }
-      //   }
+          render() {
+            return (
+              <div>
+                <ConnectedInner {...this.state} />
+              </div>
+            )
+          }
+        }
 
-      //   let outerComponent
-      //   rtl.render(
-      //     <ProviderMock store={store}>
-      //       <OuterComponent ref={(c) => (outerComponent = c)} />
-      //     </ProviderMock>
-      //   )
+        let outerComponent = React.createRef<OuterComponent>()
+        rtl.render(
+          <ProviderMock store={store}>
+            <OuterComponent ref={outerComponent} />
+          </ProviderMock>
+        )
 
-      //   outerComponent.setFoo('BAR')
-      //   outerComponent.setFoo('DID')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
-      //   expect(invocationCount).toEqual(1)
-      // })
+        expect(invocationCount).toEqual(1)
+      })
 
-      // it('should invoke mapDispatch every time props are changed if it has zero arguments', () => {
-      //   const store = createStore(stringBuilder)
+      it('should invoke mapDispatch every time props are changed if it has zero arguments', () => {
+        const store: Store = createStore(stringBuilder)
 
-      //   let invocationCount = 0
+        let invocationCount = 0
 
-      //   @connect(null, () => {
-      //     invocationCount++
-      //     return {}
-      //   })
-      //   class WithoutProps extends Component {
-      //     render() {
-      //       return <Passthrough {...this.props} />
-      //     }
-      //   }
+        class Inner extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedInner = connect(null, () => {
+          invocationCount++
+          return {}
+        })(Inner)
 
-      //   class OuterComponent extends Component {
-      //     constructor() {
-      //       super()
-      //       this.state = { foo: 'FOO' }
-      //     }
+        class OuterComponent extends Component {
+          constructor(props: {}) {
+            super(props)
+            this.state = { foo: 'FOO' }
+          }
 
-      //     setFoo(foo) {
-      //       this.setState({ foo })
-      //     }
+          setFoo(foo: string) {
+            this.setState({ foo })
+          }
 
-      //     render() {
-      //       return (
-      //         <div>
-      //           <WithoutProps {...this.state} />
-      //         </div>
-      //       )
-      //     }
-      //   }
+          render() {
+            return (
+              <div>
+                <ConnectedInner {...this.state} />
+              </div>
+            )
+          }
+        }
 
-      //   let outerComponent
-      //   rtl.render(
-      //     <ProviderMock store={store}>
-      //       <OuterComponent ref={(c) => (outerComponent = c)} />
-      //     </ProviderMock>
-      //   )
+        let outerComponent = React.createRef<OuterComponent>()
+        rtl.render(
+          <ProviderMock store={store}>
+            <OuterComponent ref={outerComponent} />
+          </ProviderMock>
+        )
 
-      //   outerComponent.setFoo('BAR')
-      //   outerComponent.setFoo('DID')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
-      //   expect(invocationCount).toEqual(3)
-      // })
+        expect(invocationCount).toEqual(3)
+      })
 
-      // it('should invoke mapDispatch every time props are changed if it has a second argument', () => {
-      //   const store = createStore(stringBuilder)
+      it('should invoke mapDispatch every time props are changed if it has a second argument', () => {
+        const store: Store = createStore(stringBuilder)
 
-      //   let propsPassedIn
-      //   let invocationCount = 0
+        let propsPassedIn
+        let invocationCount = 0
 
-      //   @connect(null, (dispatch, props) => {
-      //     invocationCount++
-      //     propsPassedIn = props
-      //     return {}
-      //   })
-      //   class WithProps extends Component {
-      //     render() {
-      //       return <Passthrough {...this.props} />
-      //     }
-      //   }
+        class Inner extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedInner = connect(null, (dispatch, props) => {
+          invocationCount++
+          propsPassedIn = props
+          return {}
+        })(Inner)
 
-      //   class OuterComponent extends Component {
-      //     constructor() {
-      //       super()
-      //       this.state = { foo: 'FOO' }
-      //     }
+        class OuterComponent extends Component {
+          constructor(props: {}) {
+            super(props)
+            this.state = { foo: 'FOO' }
+          }
 
-      //     setFoo(foo) {
-      //       this.setState({ foo })
-      //     }
+          setFoo(foo: string) {
+            this.setState({ foo })
+          }
 
-      //     render() {
-      //       return (
-      //         <div>
-      //           <WithProps {...this.state} />
-      //         </div>
-      //       )
-      //     }
-      //   }
+          render() {
+            return (
+              <div>
+                <ConnectedInner {...this.state} />
+              </div>
+            )
+          }
+        }
 
-      //   let outerComponent
-      //   rtl.render(
-      //     <ProviderMock store={store}>
-      //       <OuterComponent ref={(c) => (outerComponent = c)} />
-      //     </ProviderMock>
-      //   )
+        let outerComponent = React.createRef<OuterComponent>()
+        rtl.render(
+          <ProviderMock store={store}>
+            <OuterComponent ref={outerComponent} />
+          </ProviderMock>
+        )
 
-      //   outerComponent.setFoo('BAR')
-      //   outerComponent.setFoo('BAZ')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('BAZ')
 
-      //   expect(invocationCount).toEqual(3)
-      //   expect(propsPassedIn).toEqual({
-      //     foo: 'BAZ',
-      //   })
-      // })
+        expect(invocationCount).toEqual(3)
+        expect(propsPassedIn).toEqual({
+          foo: 'BAZ',
+        })
+      })
     })
 
-    // describe('React lifeycle interactions', () => {
-    //   it('should handle dispatches before componentDidMount', () => {
-    //     const store = createStore(stringBuilder)
+    describe('React lifeycle interactions', () => {
+      it('should handle dispatches before componentDidMount', () => {
+        const store: Store = createStore(stringBuilder)
 
-    //     @connect((state) => ({ string: state }))
-    //     class Container extends Component {
-    //       componentDidMount() {
-    //         store.dispatch({ type: 'APPEND', body: 'a' })
-    //       }
+        class Container extends Component {
+          componentDidMount() {
+            store.dispatch({ type: 'APPEND', body: 'a' })
+          }
 
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
-    //     const tester = rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Container />
-    //       </ProviderMock>
-    //     )
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //   })
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainer = connect((state) => ({ string: state }))(
+          Container
+        )
+        const tester = rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainer />
+          </ProviderMock>
+        )
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+      })
 
-    //   it('should not attempt to notify unmounted child of state change', () => {
-    //     const store = createStore(stringBuilder)
+      it('should not attempt to notify unmounted child of state change', () => {
+        const store: Store = createStore(stringBuilder)
 
-    //     @connect((state) => ({ hide: state === 'AB' }))
-    //     class App extends Component {
-    //       render() {
-    //         return this.props.hide ? null : <Container />
-    //       }
-    //     }
+        interface AppProps {
+          hide: boolean
+        }
+        class App extends Component<AppProps> {
+          render() {
+            return this.props.hide ? null : <ConnectedContainer />
+          }
+        }
+        const ConnectedApp = connect<AppProps, unknown, unknown, string>(
+          (state) => ({ hide: state === 'AB' })
+        )(App)
 
-    //     @connect(() => ({}))
-    //     class Container extends Component {
-    //       render() {
-    //         return <Child />
-    //       }
-    //     }
+        class Container extends Component {
+          render() {
+            return <ConnectedChildren />
+          }
+        }
+        const ConnectedContainer = connect(() => ({}))(Container)
 
-    //     @connect((state) => ({ state }))
-    //     class Child extends Component {
-    //       componentDidMount() {
-    //         if (this.props.state === 'A') {
-    //           store.dispatch({ type: 'APPEND', body: 'B' })
-    //         }
-    //       }
-    //       render() {
-    //         return null
-    //       }
-    //     }
+        interface ChildrenPropsType {
+          state: string
+        }
+        class Child extends Component<ChildrenPropsType> {
+          componentDidMount() {
+            if (this.props.state === 'A') {
+              store.dispatch({ type: 'APPEND', body: 'B' })
+            }
+          }
+          render() {
+            return null
+          }
+        }
+        const ConnectedChildren = connect<
+          ChildrenPropsType,
+          unknown,
+          unknown,
+          string
+        >((state) => ({ state }))(Child)
 
-    //     const div = document.createElement('div')
-    //     ReactDOM.render(
-    //       <ProviderMock store={store}>
-    //         <App />
-    //       </ProviderMock>,
-    //       div
-    //     )
+        const div = document.createElement('div')
+        ReactDOM.render(
+          <ProviderMock store={store}>
+            <ConnectedApp />
+          </ProviderMock>,
+          div
+        )
 
-    //     try {
-    //       rtl.act(() => {
-    //         store.dispatch({ type: 'APPEND', body: 'A' })
-    //       })
-    //     } finally {
-    //       ReactDOM.unmountComponentAtNode(div)
-    //     }
-    //   })
+        try {
+          rtl.act(() => {
+            store.dispatch({ type: 'APPEND', body: 'A' })
+          })
+        } finally {
+          ReactDOM.unmountComponentAtNode(div)
+        }
+      })
 
-    //   it('should not attempt to set state after unmounting nested components', () => {
-    //     const store = createStore(() => ({}))
-    //     let mapStateToPropsCalls = 0
+      it('should not attempt to set state after unmounting nested components', () => {
+        const store = createStore(() => ({}))
+        let mapStateToPropsCalls = 0
 
-    //     let linkA, linkB
+        let linkA = React.createRef<HTMLAnchorElement>()
+        let linkB = React.createRef<HTMLAnchorElement>()
 
-    //     let App = ({ children, setLocation }) => {
-    //       const onClick = (to) => (event) => {
-    //         event.preventDefault()
-    //         setLocation(to)
-    //       }
-    //       /* eslint-disable react/jsx-no-bind */
-    //       return (
-    //         <div>
-    //           <a
-    //             href="#"
-    //             onClick={onClick('a')}
-    //             ref={(c) => {
-    //               linkA = c
-    //             }}
-    //           >
-    //             A
-    //           </a>
-    //           <a
-    //             href="#"
-    //             onClick={onClick('b')}
-    //             ref={(c) => {
-    //               linkB = c
-    //             }}
-    //           >
-    //             B
-    //           </a>
-    //           {children}
-    //         </div>
-    //       )
-    //       /* eslint-enable react/jsx-no-bind */
-    //     }
-    //     App = connect(() => ({}))(App)
+        interface AppPropsType {
+          children: ReactNode
+          setLocation: (s: string) => void
+        }
+        const App = ({ children, setLocation }: AppPropsType) => {
+          const onClick = (to: string) => (event: MouseEvent) => {
+            event.preventDefault()
+            setLocation(to)
+          }
+          /* eslint-disable react/jsx-no-bind */
+          return (
+            <div>
+              <a href="#" onClick={onClick('a')} ref={linkA}>
+                A
+              </a>
+              <a href="#" onClick={onClick('b')} ref={linkB}>
+                B
+              </a>
+              {children}
+            </div>
+          )
+          /* eslint-enable react/jsx-no-bind */
+        }
+        const ConnectedApp = connect(() => ({}))(App)
 
-    //     let A = () => <h1>A</h1>
-    //     function mapState(state) {
-    //       const calls = ++mapStateToPropsCalls
-    //       return { calls, state }
-    //     }
-    //     A = connect(mapState)(A)
+        const A = () => <h1>A</h1>
+        function mapState(state: {}) {
+          const calls = ++mapStateToPropsCalls
+          return { calls, state }
+        }
+        const ConnectedA = connect(mapState)(A)
 
-    //     const B = () => <h1>B</h1>
+        const B = () => <h1>B</h1>
+        class RouterMock extends React.Component<
+          {},
+          { location: { pathname: string } }
+        > {
+          constructor(props: {}) {
+            super(props)
+            this.state = { location: { pathname: 'a' } }
+            this.setLocation = this.setLocation.bind(this)
+          }
 
-    //     class RouterMock extends React.Component {
-    //       constructor(...args) {
-    //         super(...args)
-    //         this.state = { location: { pathname: 'a' } }
-    //         this.setLocation = this.setLocation.bind(this)
-    //       }
+          setLocation(pathname: string) {
+            this.setState({ location: { pathname } })
+            store.dispatch({ type: 'TEST' })
+          }
 
-    //       setLocation(pathname) {
-    //         this.setState({ location: { pathname } })
-    //         store.dispatch({ type: 'TEST' })
-    //       }
+          getChildComponent(pathname: string) {
+            switch (pathname) {
+              case 'a':
+                return <ConnectedA />
+              case 'b':
+                return <B />
+              default:
+                throw new Error('Unknown location: ' + location)
+            }
+          }
 
-    //       getChildComponent(location) {
-    //         switch (location) {
-    //           case 'a':
-    //             return <A />
-    //           case 'b':
-    //             return <B />
-    //           default:
-    //             throw new Error('Unknown location: ' + location)
-    //         }
-    //       }
+          render() {
+            return (
+              <ConnectedApp setLocation={this.setLocation}>
+                {this.getChildComponent(this.state.location.pathname)}
+              </ConnectedApp>
+            )
+          }
+        }
 
-    //       render() {
-    //         return (
-    //           <App setLocation={this.setLocation}>
-    //             {this.getChildComponent(this.state.location.pathname)}
-    //           </App>
-    //         )
-    //       }
-    //     }
+        const div = document.createElement('div')
+        document.body.appendChild(div)
+        ReactDOM.render(
+          <ProviderMock store={store}>
+            <RouterMock />
+          </ProviderMock>,
+          div
+        )
 
-    //     const div = document.createElement('div')
-    //     document.body.appendChild(div)
-    //     ReactDOM.render(
-    //       <ProviderMock store={store}>
-    //         <RouterMock />
-    //       </ProviderMock>,
-    //       div
-    //     )
+        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        linkA.current!.click()
+        linkB.current!.click()
+        linkB.current!.click()
+        document.body.removeChild(div)
 
-    //     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        // Called 3 times:
+        // - Initial mount
+        // - After first link click, stil mounted
+        // - After second link click, but the queued state update is discarded due to batching as it's unmounted
+        expect(mapStateToPropsCalls).toBe(3)
+        expect(spy).toHaveBeenCalledTimes(0)
+        spy.mockRestore()
+      })
 
-    //     linkA.click()
-    //     linkB.click()
-    //     linkB.click()
+      // it('should not attempt to set state when dispatching in componentWillUnmount', () => {
+      //   const store = createStore(stringBuilder)
+      //   let mapStateToPropsCalls = 0
 
-    //     document.body.removeChild(div)
-    //     // Called 3 times:
-    //     // - Initial mount
-    //     // - After first link click, stil mounted
-    //     // - After second link click, but the queued state update is discarded due to batching as it's unmounted
-    //     expect(mapStateToPropsCalls).toBe(3)
-    //     expect(spy).toHaveBeenCalledTimes(0)
-    //     spy.mockRestore()
-    //   })
+      //   /*eslint-disable no-unused-vars */
+      //   @connect(
+      //     (state) => ({ calls: mapStateToPropsCalls++ }),
+      //     (dispatch) => ({ dispatch })
+      //   )
+      //   /*eslint-enable no-unused-vars */
+      //   class Container extends Component {
+      //     componentWillUnmount() {
+      //       this.props.dispatch({ type: 'APPEND', body: 'a' })
+      //     }
+      //     render() {
+      //       return <Passthrough {...this.props} />
+      //     }
+      //   }
 
-    //   it('should not attempt to set state when dispatching in componentWillUnmount', () => {
-    //     const store = createStore(stringBuilder)
-    //     let mapStateToPropsCalls = 0
+      //   const div = document.createElement('div')
+      //   ReactDOM.render(
+      //     <ProviderMock store={store}>
+      //       <Container />
+      //     </ProviderMock>,
+      //     div
+      //   )
+      //   expect(mapStateToPropsCalls).toBe(1)
 
-    //     /*eslint-disable no-unused-vars */
-    //     @connect(
-    //       (state) => ({ calls: mapStateToPropsCalls++ }),
-    //       (dispatch) => ({ dispatch })
-    //     )
-    //     /*eslint-enable no-unused-vars */
-    //     class Container extends Component {
-    //       componentWillUnmount() {
-    //         this.props.dispatch({ type: 'APPEND', body: 'a' })
-    //       }
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      //   const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      //   ReactDOM.unmountComponentAtNode(div)
+      //   expect(spy).toHaveBeenCalledTimes(0)
+      //   expect(mapStateToPropsCalls).toBe(1)
+      //   spy.mockRestore()
+      // })
 
-    //     const div = document.createElement('div')
-    //     ReactDOM.render(
-    //       <ProviderMock store={store}>
-    //         <Container />
-    //       </ProviderMock>,
-    //       div
-    //     )
-    //     expect(mapStateToPropsCalls).toBe(1)
+      // it('should not attempt to set state after unmounting', () => {
+      //   const store = createStore(stringBuilder)
+      //   let mapStateToPropsCalls = 0
 
-    //     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    //     ReactDOM.unmountComponentAtNode(div)
-    //     expect(spy).toHaveBeenCalledTimes(0)
-    //     expect(mapStateToPropsCalls).toBe(1)
-    //     spy.mockRestore()
-    //   })
+      //   @connect(
+      //     () => ({ calls: ++mapStateToPropsCalls }),
+      //     (dispatch) => ({ dispatch })
+      //   )
+      //   class Container extends Component {
+      //     render() {
+      //       return <Passthrough {...this.props} />
+      //     }
+      //   }
 
-    //   it('should not attempt to set state after unmounting', () => {
-    //     const store = createStore(stringBuilder)
-    //     let mapStateToPropsCalls = 0
+      //   const div = document.createElement('div')
+      //   store.subscribe(() => {
+      //     ReactDOM.unmountComponentAtNode(div)
+      //   })
 
-    //     @connect(
-    //       () => ({ calls: ++mapStateToPropsCalls }),
-    //       (dispatch) => ({ dispatch })
-    //     )
-    //     class Container extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      //   rtl.act(() => {
+      //     ReactDOM.render(
+      //       <ProviderMock store={store}>
+      //         <Container />
+      //       </ProviderMock>,
+      //       div
+      //     )
+      //   })
 
-    //     const div = document.createElement('div')
-    //     store.subscribe(() => {
-    //       ReactDOM.unmountComponentAtNode(div)
-    //     })
+      //   expect(mapStateToPropsCalls).toBe(1)
+      //   const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      //   rtl.act(() => {
+      //     store.dispatch({ type: 'APPEND', body: 'a' })
+      //   })
 
-    //     rtl.act(() => {
-    //       ReactDOM.render(
-    //         <ProviderMock store={store}>
-    //           <Container />
-    //         </ProviderMock>,
-    //         div
-    //       )
-    //     })
+      //   expect(spy).toHaveBeenCalledTimes(0)
+      //   expect(mapStateToPropsCalls).toBe(1)
+      //   spy.mockRestore()
+      // })
 
-    //     expect(mapStateToPropsCalls).toBe(1)
-    //     const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+      // it('should allow to clean up child state in parent componentWillUnmount', () => {
+      //   function reducer(state = { data: null }, action) {
+      //     switch (action.type) {
+      //       case 'fetch':
+      //         return { data: { profile: { name: 'April' } } }
+      //       case 'clean':
+      //         return { data: null }
+      //       default:
+      //         return state
+      //     }
+      //   }
 
-    //     expect(spy).toHaveBeenCalledTimes(0)
-    //     expect(mapStateToPropsCalls).toBe(1)
-    //     spy.mockRestore()
-    //   })
+      //   @connect(null)
+      //   class Parent extends React.Component {
+      //     componentWillUnmount() {
+      //       this.props.dispatch({ type: 'clean' })
+      //     }
 
-    //   it('should allow to clean up child state in parent componentWillUnmount', () => {
-    //     function reducer(state = { data: null }, action) {
-    //       switch (action.type) {
-    //         case 'fetch':
-    //           return { data: { profile: { name: 'April' } } }
-    //         case 'clean':
-    //           return { data: null }
-    //         default:
-    //           return state
-    //       }
-    //     }
+      //     render() {
+      //       return <Child />
+      //     }
+      //   }
 
-    //     @connect(null)
-    //     class Parent extends React.Component {
-    //       componentWillUnmount() {
-    //         this.props.dispatch({ type: 'clean' })
-    //       }
+      //   function mapState(state) {
+      //     return {
+      //       profile: state.data.profile,
+      //     }
+      //   }
 
-    //       render() {
-    //         return <Child />
-    //       }
-    //     }
+      //   @connect(mapState)
+      //   class Child extends React.Component {
+      //     render() {
+      //       return null
+      //     }
+      //   }
 
-    //     function mapState(state) {
-    //       return {
-    //         profile: state.data.profile,
-    //       }
-    //     }
+      //   const store = createStore(reducer)
+      //   rtl.act(() => {
+      //     store.dispatch({ type: 'fetch' })
+      //   })
 
-    //     @connect(mapState)
-    //     class Child extends React.Component {
-    //       render() {
-    //         return null
-    //       }
-    //     }
+      //   const div = document.createElement('div')
+      //   ReactDOM.render(
+      //     <ProviderMock store={store}>
+      //       <Parent />
+      //     </ProviderMock>,
+      //     div
+      //   )
 
-    //     const store = createStore(reducer)
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'fetch' })
-    //     })
-
-    //     const div = document.createElement('div')
-    //     ReactDOM.render(
-    //       <ProviderMock store={store}>
-    //         <Parent />
-    //       </ProviderMock>,
-    //       div
-    //     )
-
-    //     ReactDOM.unmountComponentAtNode(div)
-    //   })
-    // })
+      //   ReactDOM.unmountComponentAtNode(div)
+      // })
+    })
 
     // describe('Performance optimizations and bail-outs', () => {
     //   it('should shallowly compare the selected state to prevent unnecessary updates', () => {
