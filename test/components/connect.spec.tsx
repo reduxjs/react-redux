@@ -1,6 +1,12 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component, MouseEvent, useEffect } from 'react'
+import React, {
+  Component,
+  MouseEvent,
+  useEffect,
+  ComponentClass,
+  ComponentType,
+} from 'react'
 // import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
@@ -75,18 +81,22 @@ describe('React', () => {
       return action.type === 'APPEND' ? prev + action.body : prev
     }
 
-    // function imitateHotReloading(TargetClass, SourceClass, container) {
-    //   // Crude imitation of hot reloading that does the job
-    //   Object.getOwnPropertyNames(SourceClass.prototype)
-    //     .filter((key) => typeof SourceClass.prototype[key] === 'function')
-    //     .forEach((key) => {
-    //       if (key !== 'render' && key !== 'constructor') {
-    //         TargetClass.prototype[key] = SourceClass.prototype[key]
-    //       }
-    //     })
+    function imitateHotReloading(
+      TargetClass: ComponentType,
+      SourceClass: ComponentType,
+      container: Component
+    ) {
+      // Crude imitation of hot reloading that does the job
+      Object.getOwnPropertyNames(SourceClass.prototype)
+        .filter((key) => typeof SourceClass.prototype[key] === 'function')
+        .forEach((key) => {
+          if (key !== 'render' && key !== 'constructor') {
+            TargetClass.prototype[key] = SourceClass.prototype[key]
+          }
+        })
 
-    //   container.forceUpdate()
-    // }
+      container.forceUpdate()
+    }
 
     afterEach(() => rtl.cleanup())
 
@@ -1751,94 +1761,140 @@ describe('React', () => {
       })
     })
 
-    // describe('HMR handling', () => {
-    //   it.skip('should recalculate the state and rebind the actions on hot update', () => {
-    //     const store = createStore(() => {})
-    //     @connect(null, () => ({ scooby: 'doo' }))
-    //     class ContainerBefore extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
-    //     @connect(() => ({ foo: 'baz' }), () => ({ scooby: 'foo' }))
-    //     class ContainerAfter extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
-    //     @connect(() => ({ foo: 'bar' }), () => ({ scooby: 'boo' }))
-    //     class ContainerNext extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
-    //     let container
-    //     const tester = rtl.render(
-    //       <ProviderMock store={store}>
-    //         <ContainerBefore ref={(instance) => (container = instance)} />
-    //       </ProviderMock>
-    //     )
-    //     expect(tester.queryByTestId('foo')).toBe(null)
-    //     expect(tester.getByTestId('scooby')).toHaveTextContent('doo')
-    //     imitateHotReloading(ContainerBefore, ContainerAfter, container)
-    //     expect(tester.getByTestId('foo')).toHaveTextContent('baz')
-    //     expect(tester.getByTestId('scooby')).toHaveTextContent('foo')
-    //     imitateHotReloading(ContainerBefore, ContainerNext, container)
-    //     expect(tester.getByTestId('foo')).toHaveTextContent('bar')
-    //     expect(tester.getByTestId('scooby')).toHaveTextContent('boo')
-    //   })
+    describe('HMR handling', () => {
+      it.skip('should recalculate the state and rebind the actions on hot update', () => {
+        const store = createStore(() => {})
+        class ContainerBefore extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainerBefore = connect(null, () => ({
+          scooby: 'doo',
+        }))(ContainerBefore)
+        class ContainerAfter extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainerAfter = connect(
+          () => ({ foo: 'baz' }),
+          () => ({ scooby: 'foo' })
+        )(ContainerAfter)
+        class ContainerNext extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainerNext = connect(
+          () => ({ foo: 'bar' }),
+          () => ({ scooby: 'boo' })
+        )(ContainerNext)
 
-    //   it.skip('should persist listeners through hot update', () => {
-    //     const ACTION_TYPE = 'ACTION'
-    //     const store = createStore((state = { actions: 0 }, action) => {
-    //       switch (action.type) {
-    //         case ACTION_TYPE: {
-    //           return {
-    //             actions: state.actions + 1,
-    //           }
-    //         }
-    //         default:
-    //           return state
-    //       }
-    //     })
+        let container = React.createRef<ContainerBefore>()
+        const tester = rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainerBefore ref={container} />
+          </ProviderMock>
+        )
+        expect(tester.queryByTestId('foo')).toBe(null)
+        expect(tester.getByTestId('scooby')).toHaveTextContent('doo')
+        imitateHotReloading(
+          ConnectedContainerBefore,
+          ConnectedContainerAfter,
+          container.current!
+        )
+        expect(tester.getByTestId('foo')).toHaveTextContent('baz')
+        expect(tester.getByTestId('scooby')).toHaveTextContent('foo')
+        imitateHotReloading(
+          ConnectedContainerBefore,
+          ConnectedContainerNext,
+          container.current!
+        )
+        expect(tester.getByTestId('foo')).toHaveTextContent('bar')
+        expect(tester.getByTestId('scooby')).toHaveTextContent('boo')
+      })
 
-    //     @connect((state) => ({ actions: state.actions }))
-    //     class Child extends Component {
-    //       render() {
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+      it.skip('should persist listeners through hot update', () => {
+        const ACTION_TYPE = 'ACTION'
+        interface RootStateType {
+          actions: number
+        }
+        interface ActionType {
+          type: string
+        }
+        const store = createStore(
+          (state: RootStateType = { actions: 0 }, action: ActionType) => {
+            switch (action.type) {
+              case ACTION_TYPE: {
+                return {
+                  actions: state.actions + 1,
+                }
+              }
+              default:
+                return state
+            }
+          }
+        )
 
-    //     @connect(() => ({ scooby: 'doo' }))
-    //     class ParentBefore extends Component {
-    //       render() {
-    //         return <Child />
-    //       }
-    //     }
+        class Child extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        interface ChildrenTStateProps {
+          actions: number
+        }
+        type ChildrenNoDispatch = {}
+        type ChildrenTOwnProps = {}
+        type ChildrenRootState = RootStateType
+        const ConnectedChild = connect<
+          ChildrenTStateProps,
+          ChildrenNoDispatch,
+          ChildrenTOwnProps,
+          ChildrenRootState
+        >((state) => ({
+          actions: state.actions,
+        }))(Child)
 
-    //     @connect(() => ({ scooby: 'boo' }))
-    //     class ParentAfter extends Component {
-    //       render() {
-    //         return <Child />
-    //       }
-    //     }
+        class ParentBefore extends Component {
+          render() {
+            return <ConnectedChild />
+          }
+        }
+        const ConnectedParentBefore = connect(() => ({ scooby: 'doo' }))(
+          ParentBefore
+        )
 
-    //     let container
-    //     const tester = rtl.render(
-    //       <ProviderMock store={store}>
-    //         <ParentBefore ref={(instance) => (container = instance)} />
-    //       </ProviderMock>
-    //     )
+        class ParentAfter extends Component {
+          render() {
+            return <Child />
+          }
+        }
+        const ConnectedParentAfter = connect(() => ({ scooby: 'boo' }))(
+          ParentAfter
+        )
 
-    //     imitateHotReloading(ParentBefore, ParentAfter, container)
+        let container = React.createRef<ParentBefore>()
+        const tester = rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedParentBefore ref={container} />
+          </ProviderMock>
+        )
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: ACTION_TYPE })
-    //     })
+        imitateHotReloading(
+          ConnectedParentBefore,
+          ConnectedParentAfter,
+          container.current!
+        )
 
-    //     expect(tester.getByTestId('actions')).toHaveTextContent('1')
-    //   })
-    // })
+        rtl.act(() => {
+          store.dispatch({ type: ACTION_TYPE })
+        })
+
+        expect(tester.getByTestId('actions')).toHaveTextContent('1')
+      })
+    })
 
     // describe('Wrapped component and HOC handling', () => {
     //   it('should throw an error if a component is not passed to the function returned by connect', () => {
