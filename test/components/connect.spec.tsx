@@ -9,7 +9,7 @@ import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 import type { ReactNode, Dispatch } from 'react'
-import type { Store } from 'redux'
+import type { Store, Dispatch as ReduxDispatch } from 'redux'
 
 describe('React', () => {
   describe('connect', () => {
@@ -1283,404 +1283,473 @@ describe('React', () => {
         spy.mockRestore()
       })
 
-      // it('should not attempt to set state when dispatching in componentWillUnmount', () => {
-      //   const store = createStore(stringBuilder)
-      //   let mapStateToPropsCalls = 0
+      it('should not attempt to set state when dispatching in componentWillUnmount', () => {
+        const store: Store = createStore(stringBuilder)
+        let mapStateToPropsCalls = 0
 
-      //   /*eslint-disable no-unused-vars */
-      //   @connect(
-      //     (state) => ({ calls: mapStateToPropsCalls++ }),
-      //     (dispatch) => ({ dispatch })
-      //   )
-      //   /*eslint-enable no-unused-vars */
-      //   class Container extends Component {
-      //     componentWillUnmount() {
-      //       this.props.dispatch({ type: 'APPEND', body: 'a' })
-      //     }
-      //     render() {
-      //       return <Passthrough {...this.props} />
-      //     }
-      //   }
+        interface ContainerProps {
+          dispatch: ReduxDispatch
+        }
 
-      //   const div = document.createElement('div')
-      //   ReactDOM.render(
-      //     <ProviderMock store={store}>
-      //       <Container />
-      //     </ProviderMock>,
-      //     div
-      //   )
-      //   expect(mapStateToPropsCalls).toBe(1)
+        class Container extends Component<ContainerProps> {
+          componentWillUnmount() {
+            this.props.dispatch({ type: 'APPEND', body: 'a' })
+          }
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const Connected = connect(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          (state) => ({ calls: mapStateToPropsCalls++ }),
+          (dispatch) => ({ dispatch })
+        )(Container)
+        const div = document.createElement('div')
+        ReactDOM.render(
+          <ProviderMock store={store}>
+            <Connected />
+          </ProviderMock>,
+          div
+        )
+        expect(mapStateToPropsCalls).toBe(1)
 
-      //   const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      //   ReactDOM.unmountComponentAtNode(div)
-      //   expect(spy).toHaveBeenCalledTimes(0)
-      //   expect(mapStateToPropsCalls).toBe(1)
-      //   spy.mockRestore()
-      // })
+        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        ReactDOM.unmountComponentAtNode(div)
+        expect(spy).toHaveBeenCalledTimes(0)
+        expect(mapStateToPropsCalls).toBe(1)
+        spy.mockRestore()
+      })
 
-      // it('should not attempt to set state after unmounting', () => {
-      //   const store = createStore(stringBuilder)
-      //   let mapStateToPropsCalls = 0
+      it('should not attempt to set state after unmounting', () => {
+        const store: Store = createStore(stringBuilder)
+        let mapStateToPropsCalls = 0
 
-      //   @connect(
-      //     () => ({ calls: ++mapStateToPropsCalls }),
-      //     (dispatch) => ({ dispatch })
-      //   )
-      //   class Container extends Component {
-      //     render() {
-      //       return <Passthrough {...this.props} />
-      //     }
-      //   }
+        class Inner extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedInner = connect(
+          () => ({ calls: ++mapStateToPropsCalls }),
+          (dispatch) => ({ dispatch })
+        )(Inner)
 
-      //   const div = document.createElement('div')
-      //   store.subscribe(() => {
-      //     ReactDOM.unmountComponentAtNode(div)
-      //   })
+        const div = document.createElement('div')
+        store.subscribe(() => {
+          ReactDOM.unmountComponentAtNode(div)
+        })
 
-      //   rtl.act(() => {
-      //     ReactDOM.render(
-      //       <ProviderMock store={store}>
-      //         <Container />
-      //       </ProviderMock>,
-      //       div
-      //     )
-      //   })
+        rtl.act(() => {
+          ReactDOM.render(
+            <ProviderMock store={store}>
+              <ConnectedInner />
+            </ProviderMock>,
+            div
+          )
+        })
 
-      //   expect(mapStateToPropsCalls).toBe(1)
-      //   const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-      //   rtl.act(() => {
-      //     store.dispatch({ type: 'APPEND', body: 'a' })
-      //   })
+        expect(mapStateToPropsCalls).toBe(1)
+        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-      //   expect(spy).toHaveBeenCalledTimes(0)
-      //   expect(mapStateToPropsCalls).toBe(1)
-      //   spy.mockRestore()
-      // })
+        expect(spy).toHaveBeenCalledTimes(0)
+        expect(mapStateToPropsCalls).toBe(1)
+        spy.mockRestore()
+      })
 
-      // it('should allow to clean up child state in parent componentWillUnmount', () => {
-      //   function reducer(state = { data: null }, action) {
-      //     switch (action.type) {
-      //       case 'fetch':
-      //         return { data: { profile: { name: 'April' } } }
-      //       case 'clean':
-      //         return { data: null }
-      //       default:
-      //         return state
-      //     }
-      //   }
+      it('should allow to clean up child state in parent componentWillUnmount', () => {
+        interface ActionType {
+          type: string
+        }
+        interface StateType {
+          data: {
+            profile: { name: string }
+          } | null
+        }
+        function reducer(
+          state: StateType = { data: null },
+          action: ActionType
+        ) {
+          switch (action.type) {
+            case 'fetch':
+              return { data: { profile: { name: 'April' } } }
+            case 'clean':
+              return { data: null }
+            default:
+              return state
+          }
+        }
+        function mapState(state: StateType) {
+          return {
+            profile: state.data!.profile,
+          }
+        }
+        class Child extends React.Component {
+          render() {
+            return null
+          }
+        }
+        const ConnectedChildren = connect(mapState)(Child)
 
-      //   @connect(null)
-      //   class Parent extends React.Component {
-      //     componentWillUnmount() {
-      //       this.props.dispatch({ type: 'clean' })
-      //     }
+        interface ParentPropsType {
+          dispatch: ReduxDispatch
+        }
+        class Parent extends React.Component<ParentPropsType> {
+          componentWillUnmount() {
+            this.props.dispatch({ type: 'clean' })
+          }
 
-      //     render() {
-      //       return <Child />
-      //     }
-      //   }
+          render() {
+            return <ConnectedChildren />
+          }
+        }
+        const ConnectedParent = connect(null)(Parent)
 
-      //   function mapState(state) {
-      //     return {
-      //       profile: state.data.profile,
-      //     }
-      //   }
+        const store = createStore(reducer)
+        rtl.act(() => {
+          store.dispatch({ type: 'fetch' })
+        })
 
-      //   @connect(mapState)
-      //   class Child extends React.Component {
-      //     render() {
-      //       return null
-      //     }
-      //   }
+        const div = document.createElement('div')
+        ReactDOM.render(
+          <ProviderMock store={store}>
+            <ConnectedParent />
+          </ProviderMock>,
+          div
+        )
 
-      //   const store = createStore(reducer)
-      //   rtl.act(() => {
-      //     store.dispatch({ type: 'fetch' })
-      //   })
-
-      //   const div = document.createElement('div')
-      //   ReactDOM.render(
-      //     <ProviderMock store={store}>
-      //       <Parent />
-      //     </ProviderMock>,
-      //     div
-      //   )
-
-      //   ReactDOM.unmountComponentAtNode(div)
-      // })
+        ReactDOM.unmountComponentAtNode(div)
+      })
     })
 
-    // describe('Performance optimizations and bail-outs', () => {
-    //   it('should shallowly compare the selected state to prevent unnecessary updates', () => {
-    //     const store = createStore(stringBuilder)
-    //     const spy = jest.fn(() => ({}))
-    //     function render({ string }) {
-    //       spy()
-    //       return <Passthrough string={string} />
-    //     }
+    describe('Performance optimizations and bail-outs', () => {
+      it('should shallowly compare the selected state to prevent unnecessary updates', () => {
+        const store: Store = createStore(stringBuilder)
+        const spy = jest.fn(() => ({}))
+        interface RenderProps {
+          string: string
+        }
+        function render({ string }: RenderProps) {
+          spy()
+          return <Passthrough string={string} />
+        }
+        interface ContainerProps {
+          string: string
+          dispatch: ReduxDispatch
+        }
+        class Container extends Component<ContainerProps> {
+          render() {
+            return render(this.props)
+          }
+        }
+        type TStateProps = RenderProps
+        type TDispatchProps = { dispatch: ReduxDispatch }
+        const ConnectedContainer = connect<
+          TStateProps,
+          TDispatchProps,
+          {},
+          string
+        >(
+          (state) => ({ string: state }),
+          (dispatch) => ({ dispatch })
+        )(Container)
 
-    //     @connect((state) => ({ string: state }), (dispatch) => ({ dispatch }))
-    //     class Container extends Component {
-    //       render() {
-    //         return render(this.props)
-    //       }
-    //     }
+        const tester = rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainer />
+          </ProviderMock>
+        )
+        expect(spy).toHaveBeenCalledTimes(1)
+        expect(tester.getByTestId('string')).toHaveTextContent('')
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-    //     const tester = rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Container />
-    //       </ProviderMock>
-    //     )
-    //     expect(spy).toHaveBeenCalledTimes(1)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('')
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+        expect(spy).toHaveBeenCalledTimes(2)
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'b' })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(2)
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'b' })
-    //     })
+        expect(spy).toHaveBeenCalledTimes(3)
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: '' })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(3)
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: '' })
-    //     })
+        expect(spy).toHaveBeenCalledTimes(3)
+      })
 
-    //     expect(spy).toHaveBeenCalledTimes(3)
-    //   })
+      it('should shallowly compare the merged state to prevent unnecessary updates', () => {
+        const store: Store = createStore(stringBuilder)
+        const spy = jest.fn(() => ({}))
+        interface PassObjType {
+          val?: string
+          prop?: string
+        }
+        type PassType = string | PassObjType
+        interface RenderPropsType {
+          string: string
+          pass: PassType
+        }
+        function render({ string, pass }: RenderPropsType) {
+          spy()
+          if (typeof pass === 'string') {
+            return <Passthrough string={string} pass={pass} />
+          }
+          return <Passthrough string={string} pass={pass} passVal={pass.val} />
+        }
 
-    //   it('should shallowly compare the merged state to prevent unnecessary updates', () => {
-    //     const store = createStore(stringBuilder)
-    //     const spy = jest.fn(() => ({}))
-    //     const tree = {}
-    //     function render({ string, pass }) {
-    //       spy()
-    //       return <Passthrough string={string} pass={pass} passVal={pass.val} />
-    //     }
+        interface ContainerPropsType {
+          pass: PassType
+        }
+        interface TStateProps {
+          string: string
+        }
+        interface TDispatchProps {
+          dispatch: ReduxDispatch
+        }
+        type TOwnProps = ContainerPropsType
+        type TMergedProps = TOwnProps & TDispatchProps & TStateProps
+        type RootState = string
 
-    //     @connect(
-    //       (state) => ({ string: state }),
-    //       (dispatch) => ({ dispatch }),
-    //       (stateProps, dispatchProps, parentProps) => ({
-    //         ...dispatchProps,
-    //         ...stateProps,
-    //         ...parentProps,
-    //       })
-    //     )
-    //     class Container extends Component {
-    //       render() {
-    //         return render(this.props)
-    //       }
-    //     }
+        class Container extends Component<TMergedProps> {
+          render() {
+            return render(this.props)
+          }
+        }
+        const Connected = connect<
+          TStateProps,
+          TDispatchProps,
+          TOwnProps,
+          TMergedProps,
+          RootState
+        >(
+          (state) => ({ string: state }),
+          (dispatch: ReduxDispatch) => ({ dispatch }),
+          (
+            stateProps: { string: string },
+            dispatchProps: { dispatch: ReduxDispatch },
+            parentProps
+          ) => ({
+            ...dispatchProps,
+            ...stateProps,
+            ...parentProps,
+          })
+        )(Container)
 
-    //     class Root extends Component {
-    //       constructor(props) {
-    //         super(props)
-    //         this.state = { pass: '' }
-    //         tree.setState = this.setState.bind(this)
-    //       }
+        const tree: { setState?: Dispatch<{ pass: PassType }> } = {}
+        class Root extends Component<{}, { pass: PassType }> {
+          constructor(props: {}) {
+            super(props)
+            this.state = { pass: '' }
+            tree.setState = this.setState.bind(this)
+          }
 
-    //       render() {
-    //         return (
-    //           <ProviderMock store={store}>
-    //             <Container pass={this.state.pass} />
-    //           </ProviderMock>
-    //         )
-    //       }
-    //     }
+          render() {
+            return (
+              <ProviderMock store={store}>
+                <Connected pass={this.state.pass} />
+              </ProviderMock>
+            )
+          }
+        }
 
-    //     const tester = rtl.render(<Root />)
-    //     expect(spy).toHaveBeenCalledTimes(1)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent('')
+        const tester = rtl.render(<Root />)
+        expect(spy).toHaveBeenCalledTimes(1)
+        expect(tester.getByTestId('string')).toHaveTextContent('')
+        expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(2)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent('')
+        expect(spy).toHaveBeenCalledTimes(2)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-    //     rtl.act(() => {
-    //       tree.setState({ pass: '' })
-    //     })
+        rtl.act(() => {
+          tree.setState!({ pass: '' })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(2)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent('')
+        expect(spy).toHaveBeenCalledTimes(2)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent('')
 
-    //     rtl.act(() => {
-    //       tree.setState({ pass: 'through' })
-    //     })
+        rtl.act(() => {
+          tree.setState!({ pass: 'through' })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(3)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent('through')
+        expect(spy).toHaveBeenCalledTimes(3)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
-    //     rtl.act(() => {
-    //       tree.setState({ pass: 'through' })
-    //     })
+        rtl.act(() => {
+          tree.setState!({ pass: 'through' })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(3)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent('through')
+        expect(spy).toHaveBeenCalledTimes(3)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
-    //     const obj = { prop: 'val' }
-    //     rtl.act(() => {
-    //       tree.setState({ pass: obj })
-    //     })
+        const obj = { prop: 'val' }
+        rtl.act(() => {
+          tree.setState!({ pass: obj })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(4)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
+        expect(spy).toHaveBeenCalledTimes(4)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
-    //     rtl.act(() => {
-    //       tree.setState({ pass: obj })
-    //     })
+        rtl.act(() => {
+          tree.setState!({ pass: obj })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(4)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
+        expect(spy).toHaveBeenCalledTimes(4)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
-    //     const obj2 = Object.assign({}, obj, { val: 'otherval' })
-    //     rtl.act(() => {
-    //       tree.setState({ pass: obj2 })
-    //     })
+        const obj2 = Object.assign({}, obj, { val: 'otherval' })
+        rtl.act(() => {
+          tree.setState!({ pass: obj2 })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(5)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent(
-    //       '{"prop":"val","val":"otherval"}'
-    //     )
+        expect(spy).toHaveBeenCalledTimes(5)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent(
+          '{"prop":"val","val":"otherval"}'
+        )
 
-    //     obj2.val = 'mutation'
-    //     rtl.act(() => {
-    //       tree.setState({ pass: obj2 })
-    //     })
+        obj2.val = 'mutation'
+        rtl.act(() => {
+          tree.setState!({ pass: obj2 })
+        })
 
-    //     expect(spy).toHaveBeenCalledTimes(5)
-    //     expect(tester.getByTestId('string')).toHaveTextContent('a')
-    //     expect(tester.getByTestId('pass')).toHaveTextContent(
-    //       '{"prop":"val","val":"otherval"}'
-    //     )
-    //   })
+        expect(spy).toHaveBeenCalledTimes(5)
+        expect(tester.getByTestId('string')).toHaveTextContent('a')
+        expect(tester.getByTestId('pass')).toHaveTextContent(
+          '{"prop":"val","val":"otherval"}'
+        )
+      })
 
-    //   it('should not render the wrapped component when mapState does not produce change', () => {
-    //     const store = createStore(stringBuilder)
-    //     let renderCalls = 0
-    //     let mapStateCalls = 0
+      it('should not render the wrapped component when mapState does not produce change', () => {
+        const store: Store = createStore(stringBuilder)
+        let renderCalls = 0
+        let mapStateCalls = 0
 
-    //     @connect(() => {
-    //       mapStateCalls++
-    //       return {} // no change!
-    //     })
-    //     class Container extends Component {
-    //       render() {
-    //         renderCalls++
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+        class Container extends Component {
+          render() {
+            renderCalls++
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainer = connect(() => {
+          mapStateCalls++
+          return {} // no change!
+        })(Container)
 
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Container />
-    //       </ProviderMock>
-    //     )
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainer />
+          </ProviderMock>
+        )
 
-    //     expect(renderCalls).toBe(1)
-    //     expect(mapStateCalls).toBe(1)
+        expect(renderCalls).toBe(1)
+        expect(mapStateCalls).toBe(1)
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-    //     // After store a change mapState has been called
-    //     expect(mapStateCalls).toBe(2)
-    //     // But render is not because it did not make any actual changes
-    //     expect(renderCalls).toBe(1)
-    //   })
+        // After store a change mapState has been called
+        expect(mapStateCalls).toBe(2)
+        // But render is not because it did not make any actual changes
+        expect(renderCalls).toBe(1)
+      })
 
-    //   it('should bail out early if mapState does not depend on props', () => {
-    //     const store = createStore(stringBuilder)
-    //     let renderCalls = 0
-    //     let mapStateCalls = 0
+      it('should bail out early if mapState does not depend on props', () => {
+        const store: Store = createStore(stringBuilder)
+        let renderCalls = 0
+        let mapStateCalls = 0
 
-    //     @connect((state) => {
-    //       mapStateCalls++
-    //       return state === 'aaa' ? { change: 1 } : {}
-    //     })
-    //     class Container extends Component {
-    //       render() {
-    //         renderCalls++
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+        class Container extends Component {
+          render() {
+            renderCalls++
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainer = connect((state) => {
+          mapStateCalls++
+          return state === 'aaa' ? { change: 1 } : {}
+        })(Container)
 
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Container />
-    //       </ProviderMock>
-    //     )
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainer />
+          </ProviderMock>
+        )
 
-    //     expect(renderCalls).toBe(1)
-    //     expect(mapStateCalls).toBe(1)
+        expect(renderCalls).toBe(1)
+        expect(mapStateCalls).toBe(1)
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-    //     expect(mapStateCalls).toBe(2)
-    //     expect(renderCalls).toBe(1)
+        expect(mapStateCalls).toBe(2)
+        expect(renderCalls).toBe(1)
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-    //     expect(mapStateCalls).toBe(3)
-    //     expect(renderCalls).toBe(1)
+        expect(mapStateCalls).toBe(3)
+        expect(renderCalls).toBe(1)
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-    //     expect(mapStateCalls).toBe(4)
-    //     expect(renderCalls).toBe(2)
-    //   })
+        expect(mapStateCalls).toBe(4)
+        expect(renderCalls).toBe(2)
+      })
 
-    //   it('should not call update if mergeProps return value has not changed', () => {
-    //     let mapStateCalls = 0
-    //     let renderCalls = 0
-    //     const store = createStore(stringBuilder)
+      it('should not call update if mergeProps return value has not changed', () => {
+        let mapStateCalls = 0
+        let renderCalls = 0
+        const store: Store = createStore(stringBuilder)
 
-    //     @connect(() => ({ a: ++mapStateCalls }), null, () => ({
-    //       changed: false,
-    //     }))
-    //     class Container extends Component {
-    //       render() {
-    //         renderCalls++
-    //         return <Passthrough {...this.props} />
-    //       }
-    //     }
+        class Container extends Component {
+          render() {
+            renderCalls++
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainer = connect(
+          () => ({ a: ++mapStateCalls }),
+          null,
+          () => ({
+            changed: false,
+          })
+        )(Container)
 
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Container />
-    //       </ProviderMock>
-    //     )
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainer />
+          </ProviderMock>
+        )
 
-    //     expect(renderCalls).toBe(1)
-    //     expect(mapStateCalls).toBe(1)
+        expect(renderCalls).toBe(1)
+        expect(mapStateCalls).toBe(1)
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'APPEND', body: 'a' })
-    //     })
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
 
-    //     expect(mapStateCalls).toBe(2)
-    //     expect(renderCalls).toBe(1)
-    //   })
-    // })
+        expect(mapStateCalls).toBe(2)
+        expect(renderCalls).toBe(1)
+      })
+    })
 
     // describe('HMR handling', () => {
     //   it.skip('should recalculate the state and rebind the actions on hot update', () => {
