@@ -3381,6 +3381,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/create-react-class@npm:^15.6.3":
+  version: 15.6.3
+  resolution: "@types/create-react-class@npm:15.6.3"
+  dependencies:
+    "@types/react": "*"
+  checksum: 020720b37d031abeaeaa97b33d3fc021ad53754dcc4ce4d723f6ee10587463b7d853d084e76332ff35a275f883413b39975adbfe943926b7dfb97c0005caa5ee
+  languageName: node
+  linkType: hard
+
 "@types/eslint-scope@npm:^3.7.0":
   version: 3.7.0
   resolution: "@types/eslint-scope@npm:3.7.0"
@@ -14503,6 +14512,7 @@ __metadata:
     "@testing-library/react": ^12.0.0
     "@testing-library/react-hooks": ^3.4.2
     "@testing-library/react-native": ^7.1.0
+    "@types/create-react-class": ^15.6.3
     "@types/object-assign": ^4.0.30
     "@types/react": ^17.0.14
     "@types/react-dom": ^17.0.9
