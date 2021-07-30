@@ -7,7 +7,7 @@ import React, {
   ComponentClass,
   ComponentType,
 } from 'react'
-// import createClass from 'create-react-class'
+import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
 import { createStore, applyMiddleware } from 'redux'
@@ -1896,273 +1896,382 @@ describe('React', () => {
       })
     })
 
-    // describe('Wrapped component and HOC handling', () => {
-    //   it('should throw an error if a component is not passed to the function returned by connect', () => {
-    //     expect(connect()).toThrow(/You must pass a component to the function/)
-    //   })
+    describe('Wrapped component and HOC handling', () => {
+      it('should throw an error if a component is not passed to the function returned by connect', () => {
+        expect(connect()).toThrow(/You must pass a component to the function/)
+      })
 
-    //   it('should not error on valid component with circular structure', () => {
-    //     const createComp = (Tag) => {
-    //       const Comp = React.forwardRef(function Comp(props, ref) {
-    //         return <Tag ref={ref}>{props.count}</Tag>
-    //       })
-    //       Comp.__real = Comp
-    //       return Comp
-    //     }
+      it('should not error on valid component with circular structure', () => {
+        const createComp = (A: React.ElementType) => {
+          type PropsType = {
+            count: any
+          }
 
-    //     expect(() => {
-    //       connect()(createComp('div'))
-    //     }).not.toThrow()
-    //   })
+          const Comp = React.forwardRef<HTMLDivElement, PropsType>(
+            function Comp(props: PropsType, ref) {
+              return <A ref={ref}>{props.count}</A>
+            }
+          )
+          return Comp
+        }
 
-    //   it('Should work with a memo component, if it exists', () => {
-    //     if (React.memo) {
-    //       const store = createStore(() => ({ hi: 'there' }))
+        expect(() => {
+          connect()(createComp('div'))
+        }).not.toThrow()
+      })
 
-    //       const Container = React.memo((props) => <Passthrough {...props} />) // eslint-disable-line
-    //       Container.displayName = 'Container'
-    //       const WrappedContainer = connect((state) => state)(Container)
+      it('Should work with a memo component, if it exists', () => {
+        if (React.memo) {
+          const store = createStore(() => ({ hi: 'there' }))
 
-    //       const tester = rtl.render(
-    //         <ProviderMock store={store}>
-    //           <WrappedContainer pass="through" />
-    //         </ProviderMock>
-    //       )
+          const Container = React.memo((props) => <Passthrough {...props} />) // eslint-disable-line
+          Container.displayName = 'Container'
+          type RootState = {
+            hi: string
+          }
+          type TStateProps = RootState
+          type NoDisPatch = {}
+          type TOwnProps = {
+            pass: string
+          }
+          const WrappedContainer = connect<
+            TStateProps,
+            NoDisPatch,
+            TOwnProps,
+            RootState
+          >((state) => state)(Container)
 
-    //       expect(tester.getByTestId('hi')).toHaveTextContent('there')
-    //     }
-    //   })
+          const tester = rtl.render(
+            <ProviderMock store={store}>
+              <WrappedContainer pass="through" />
+            </ProviderMock>
+          )
 
-    //   it('should set the displayName correctly', () => {
-    //     expect(
-    //       connect((state) => state)(
-    //         class Foo extends Component {
-    //           render() {
-    //             return <div />
-    //           }
-    //         }
-    //       ).displayName
-    //     ).toBe('Connect(Foo)')
+          expect(tester.getByTestId('hi')).toHaveTextContent('there')
+        }
+      })
 
-    //     expect(
-    //       connect((state) => state)(
-    //         createClass({
-    //           displayName: 'Bar',
-    //           render() {
-    //             return <div />
-    //           },
-    //         })
-    //       ).displayName
-    //     ).toBe('Connect(Bar)')
+      it('should set the displayName correctly', () => {
+        expect(
+          connect((state) => state)(
+            class Foo extends Component {
+              render() {
+                return <div />
+              }
+            }
+          ).displayName
+        ).toBe('Connect(Foo)')
 
-    //     expect(
-    //       connect((state) => state)(
-    //         // eslint: In this case, we don't want to specify a displayName because we're testing what
-    //         // happens when one isn't defined.
-    //         /* eslint-disable react/display-name */
-    //         createClass({
-    //           render() {
-    //             return <div />
-    //           },
-    //         })
-    //         /* eslint-enable react/display-name */
-    //       ).displayName
-    //     ).toBe('Connect(Component)')
-    //   })
+        expect(
+          connect((state) => state)(
+            createClass({
+              displayName: 'Bar',
+              render() {
+                return <div />
+              },
+            })
+          ).displayName
+        ).toBe('Connect(Bar)')
 
-    //   it('should allow custom displayName', () => {
-    //     @connect(null, null, null, {
-    //       getDisplayName: (name) => `Custom(${name})`,
-    //     })
-    //     class MyComponent extends React.Component {
-    //       render() {
-    //         return <div />
-    //       }
-    //     }
+        expect(
+          connect((state) => state)(
+            // eslint: In this case, we don't want to specify a displayName because we're testing what
+            // happens when one isn't defined.
+            /* eslint-disable react/display-name */
+            createClass({
+              render() {
+                return <div />
+              },
+            })
+            /* eslint-enable react/display-name */
+          ).displayName
+        ).toBe('Connect(Component)')
+      })
 
-    //     expect(MyComponent.displayName).toEqual('Custom(MyComponent)')
-    //   })
+      it('should allow custom displayName', () => {
+        class MyComponent extends React.Component {
+          render() {
+            return <div />
+          }
+        }
+        const ConnectedMyComponent = connect(null, null, null, {
+          getDisplayName: (name) => `Custom(${name})`,
+        })(MyComponent)
 
-    //   it('should expose the wrapped component as WrappedComponent', () => {
-    //     class Container extends Component {
-    //       render() {
-    //         return <Passthrough />
-    //       }
-    //     }
+        expect(ConnectedMyComponent.displayName).toEqual('Custom(MyComponent)')
+      })
 
-    //     const decorator = connect((state) => state)
-    //     const decorated = decorator(Container)
+      it('should expose the wrapped component as WrappedComponent', () => {
+        class Container extends Component {
+          render() {
+            return <Passthrough />
+          }
+        }
 
-    //     expect(decorated.WrappedComponent).toBe(Container)
-    //   })
+        const decorator = connect((state) => state)
+        const decorated = decorator(Container)
 
-    //   it('should hoist non-react statics from wrapped component', () => {
-    //     class Container extends Component {
-    //       render() {
-    //         return <Passthrough />
-    //       }
-    //     }
+        expect(decorated.WrappedComponent).toBe(Container)
+      })
 
-    //     Container.howIsRedux = () => 'Awesome!'
-    //     Container.foo = 'bar'
+      it('should hoist non-react statics from wrapped component', () => {
+        class Container extends Component {
+          static howIsRedux: () => string
+          static foo: string
+          render() {
+            return <Passthrough />
+          }
+        }
 
-    //     const decorator = connect((state) => state)
-    //     const decorated = decorator(Container)
+        Container.howIsRedux = () => 'Awesome!'
+        Container.foo = 'bar'
 
-    //     expect(decorated.howIsRedux).toBeInstanceOf(Function)
-    //     expect(decorated.howIsRedux()).toBe('Awesome!')
-    //     expect(decorated.foo).toBe('bar')
-    //   })
-    // })
+        const decorator = connect((state) => state)
+        const decorated = decorator(Container)
 
-    // describe('Store subscriptions and nesting', () => {
-    //   it('should pass dispatch and avoid subscription if arguments are falsy', () => {
-    //     const store = createStore(() => ({
-    //       foo: 'bar',
-    //     }))
+        expect(decorated.howIsRedux).toBeInstanceOf(Function)
+        expect(decorated.howIsRedux()).toBe('Awesome!')
+        expect(decorated.foo).toBe('bar')
+      })
+    })
 
-    //     function runCheck(...connectArgs) {
-    //       @connect(...connectArgs)
-    //       class Container extends Component {
-    //         render() {
-    //           return <Passthrough {...this.props} />
-    //         }
-    //       }
+    describe('Store subscriptions and nesting', () => {
+      it('should pass dispatch and avoid subscription if arguments are falsy', () => {
+        const store = createStore(() => ({
+          foo: 'bar',
+        }))
+        type ConnectArgsType = [
+          (null | boolean)?,
+          (null | boolean)?,
+          (null | boolean)?
+        ]
+        function runCheck(...connectArgs: ConnectArgsType) {
+          class Container extends Component {
+            render() {
+              return <Passthrough {...this.props} />
+            }
+          }
+          type TOwnProps = {
+            pass: string
+          }
+          type RootStateType = {
+            foo: string
+          }
+          const ConnectedContainer = connect<
+            unknown,
+            unknown,
+            TOwnProps,
+            RootStateType
+            // @ts-ignore
+          >(...connectArgs)(Container)
 
-    //       const tester = rtl.render(
-    //         <ProviderMock store={store}>
-    //           <Container pass="through" />
-    //         </ProviderMock>
-    //       )
-    //       expect(tester.getAllByTestId('dispatch')[0]).toHaveTextContent(
-    //         '[function dispatch]'
-    //       )
-    //       expect(tester.queryByTestId('foo')).toBe(null)
-    //       expect(tester.getAllByTestId('pass')[0]).toHaveTextContent('through')
-    //     }
+          const tester = rtl.render(
+            <ProviderMock store={store}>
+              <ConnectedContainer pass="through" />
+            </ProviderMock>
+          )
+          expect(tester.getAllByTestId('dispatch')[0]).toHaveTextContent(
+            '[function dispatch]'
+          )
+          expect(tester.queryByTestId('foo')).toBe(null)
+          expect(tester.getAllByTestId('pass')[0]).toHaveTextContent('through')
+        }
 
-    //     runCheck()
-    //     runCheck(null, null, null)
-    //     runCheck(false, false, false)
-    //   })
+        runCheck()
+        runCheck(null, null, null)
+        runCheck(false, false, false)
+      })
 
-    //   it('should subscribe properly when a middle connected component does not subscribe', () => {
-    //     @connect((state) => ({ count: state }))
-    //     class A extends React.Component {
-    //       render() {
-    //         return <B {...this.props} />
-    //       }
-    //     }
+      it('should subscribe properly when a middle connected component does not subscribe', () => {
+        type RootState = number
+        interface ActionType {
+          type: string
+        }
 
-    //     @connect() // no mapStateToProps. therefore it should be transparent for subscriptions
-    //     class B extends React.Component {
-    //       render() {
-    //         return <C {...this.props} />
-    //       }
-    //     }
+        interface ATStateProps {
+          count: RootState
+        }
+        type ANoDispatch = {}
+        type AOwnProps = {}
 
-    //     @connect((state, props) => {
-    //       expect(props.count).toBe(state)
-    //       return { count: state * 10 + props.count }
-    //     })
-    //     class C extends React.Component {
-    //       render() {
-    //         return <div>{this.props.count}</div>
-    //       }
-    //     }
+        class A extends React.Component<ATStateProps> {
+          render() {
+            return <ConnectedB {...this.props} />
+          }
+        }
+        const ConnectedA = connect<
+          ATStateProps,
+          ANoDispatch,
+          AOwnProps,
+          RootState
+        >((state) => ({ count: state }))(A)
 
-    //     const store = createStore((state = 0, action) =>
-    //       action.type === 'INC' ? (state += 1) : state
-    //     )
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <A />
-    //       </ProviderMock>
-    //     )
+        interface BProps {
+          count: number
+        }
+        class B extends React.Component<BProps> {
+          render() {
+            return <ConnectedC {...this.props} />
+          }
+        }
+        // no mapStateToProps. therefore it should be transparent for subscriptions
+        const ConnectedB = connect()(B)
 
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'INC' })
-    //     })
-    //   })
+        interface CTStateProps {
+          count: number
+        }
+        type CNoDispatch = {}
+        type COwnProps = ATStateProps
+        class C extends React.Component<CTStateProps> {
+          render() {
+            return <div>{this.props.count}</div>
+          }
+        }
+        const ConnectedC = connect<
+          CTStateProps,
+          CNoDispatch,
+          COwnProps,
+          RootState
+        >((state, props) => {
+          expect(props.count).toBe(state)
+          return { count: state * 10 + props.count }
+        })(C)
 
-    //   it('should notify nested components through a blocking component', () => {
-    //     @connect((state) => ({ count: state }))
-    //     class Parent extends Component {
-    //       render() {
-    //         return (
-    //           <BlockUpdates>
-    //             <Child />
-    //           </BlockUpdates>
-    //         )
-    //       }
-    //     }
+        const store = createStore((state: RootState = 0, action: ActionType) =>
+          action.type === 'INC' ? (state += 1) : state
+        )
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedA />
+          </ProviderMock>
+        )
 
-    //     class BlockUpdates extends Component {
-    //       shouldComponentUpdate() {
-    //         return false
-    //       }
-    //       render() {
-    //         return this.props.children
-    //       }
-    //     }
+        rtl.act(() => {
+          store.dispatch({ type: 'INC' })
+        })
+      })
 
-    //     const mapStateToProps = jest.fn((state) => ({ count: state }))
-    //     @connect(mapStateToProps)
-    //     class Child extends Component {
-    //       render() {
-    //         return <div>{this.props.count}</div>
-    //       }
-    //     }
+      it('should notify nested components through a blocking component', () => {
+        type RootStateType = number
+        interface ActionType {
+          type: string
+        }
+        class Parent extends Component {
+          render() {
+            return (
+              <BlockUpdates>
+                <ConnectedChildren />
+              </BlockUpdates>
+            )
+          }
+        }
+        const ConnectedParent = connect((state) => ({ count: state }))(Parent)
 
-    //     const store = createStore((state = 0, action) =>
-    //       action.type === 'INC' ? state + 1 : state
-    //     )
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Parent />
-    //       </ProviderMock>
-    //     )
+        class BlockUpdates extends Component {
+          shouldComponentUpdate() {
+            return false
+          }
+          render() {
+            return this.props.children
+          }
+        }
 
-    //     expect(mapStateToProps).toHaveBeenCalledTimes(1)
-    //     rtl.act(() => {
-    //       store.dispatch({ type: 'INC' })
-    //     })
+        const mapStateToProps = jest.fn((state) => ({ count: state }))
 
-    //     expect(mapStateToProps).toHaveBeenCalledTimes(2)
-    //   })
+        interface ChildrenTStateProps {
+          count: RootStateType
+        }
+        type ChildrenNoDispatch = {}
+        type ChildrenOwnProps = {}
 
-    //   it('should not notify nested components after they are unmounted', () => {
-    //     @connect((state) => ({ count: state }))
-    //     class Parent extends Component {
-    //       render() {
-    //         return this.props.count === 1 ? <Child /> : null
-    //       }
-    //     }
+        class Child extends Component<ChildrenTStateProps> {
+          render() {
+            return <div>{this.props.count}</div>
+          }
+        }
+        const ConnectedChildren = connect<
+          ChildrenTStateProps,
+          ChildrenNoDispatch,
+          ChildrenOwnProps,
+          RootStateType
+        >(mapStateToProps)(Child)
 
-    //     const mapStateToProps = jest.fn((state) => ({ count: state }))
-    //     @connect(mapStateToProps)
-    //     class Child extends Component {
-    //       render() {
-    //         return <div>{this.props.count}</div>
-    //       }
-    //     }
+        const store = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
+        )
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedParent />
+          </ProviderMock>
+        )
 
-    //     const store = createStore((state = 0, action) =>
-    //       action.type === 'INC' ? state + 1 : state
-    //     )
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Parent />
-    //       </ProviderMock>
-    //     )
+        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+        rtl.act(() => {
+          store.dispatch({ type: 'INC' })
+        })
 
-    //     expect(mapStateToProps).toHaveBeenCalledTimes(0)
-    //     store.dispatch({ type: 'INC' })
-    //     expect(mapStateToProps).toHaveBeenCalledTimes(1)
-    //     store.dispatch({ type: 'INC' })
-    //     expect(mapStateToProps).toHaveBeenCalledTimes(1)
-    //   })
-    // })
+        expect(mapStateToProps).toHaveBeenCalledTimes(2)
+      })
+
+      it('should not notify nested components after they are unmounted', () => {
+        type RootStateType = number
+        interface ActionType {
+          type: string
+        }
+
+        interface ParentTStateProps {
+          count: number
+        }
+        type ParentNoDisPatch = {}
+        type ParentOwnProps = {}
+        class Parent extends Component<ParentTStateProps> {
+          render() {
+            return this.props.count === 1 ? <ConnectedChildren /> : null
+          }
+        }
+        const ConnectedParent = connect<
+          ParentTStateProps,
+          ParentNoDisPatch,
+          ParentOwnProps,
+          RootStateType
+        >((state) => ({ count: state }))(Parent)
+
+        interface ChildTStateProps {
+          count: number
+        }
+        type ChildNoDisPatch = {}
+        type ChildOwnProps = {}
+        const mapStateToProps = jest.fn((state) => ({ count: state }))
+        class Child extends Component<ChildTStateProps> {
+          render() {
+            return <div>{this.props.count}</div>
+          }
+        }
+        const ConnectedChildren = connect<
+          ChildTStateProps,
+          ChildNoDisPatch,
+          ChildOwnProps,
+          RootStateType
+        >(mapStateToProps)(Child)
+
+        const store = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
+        )
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedParent />
+          </ProviderMock>
+        )
+
+        expect(mapStateToProps).toHaveBeenCalledTimes(0)
+        store.dispatch({ type: 'INC' })
+        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+        store.dispatch({ type: 'INC' })
+        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+      })
+    })
 
     // describe('Custom context and store-as-prop', () => {
     //   it('should use a custom context provider and consumer if given as an option to connect', () => {
