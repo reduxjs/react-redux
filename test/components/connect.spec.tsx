@@ -3270,7 +3270,8 @@ describe('React', () => {
             </ProviderMock>
           )
           return null
-        } catch (error) {
+          //@ts-ignore before typescript4.0, a catch could not have type annotations
+        } catch (error: any) {
           return error.message
         } finally {
           spy.mockRestore()
