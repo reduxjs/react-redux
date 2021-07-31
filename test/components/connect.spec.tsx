@@ -2445,7 +2445,7 @@ describe('React', () => {
         type Comp3NoDispatchType = NoDispatchType
         type Comp3OwnPropsType = {}
         interface Comp1Props extends Comp1TStatePropsType {
-          children: JSX.Element
+          children: JSX.Element | JSX.Element[]
         }
         const Comp3 = ({ first }: Comp3TStatePropsType) => {
           c3Spy()
@@ -2473,7 +2473,7 @@ describe('React', () => {
         type Comp1NoDispatchType = NoDispatchType
         type Comp1OwnPropsType = {}
         interface Comp1Props extends Comp1TStatePropsType {
-          children: JSX.Element
+          children: JSX.Element | JSX.Element[]
         }
         const Comp1 = ({ children, first }: Comp1Props) => {
           c1Spy()
