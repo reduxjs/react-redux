@@ -1,12 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, {
-  Component,
-  MouseEvent,
-  useEffect,
-  ComponentClass,
-  ComponentType,
-} from 'react'
+import React, { Component, MouseEvent, ComponentType } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
@@ -2350,6 +2344,9 @@ describe('React', () => {
         rtl.render(
           <ProviderMock context={context} store={store1}>
             <ProviderMock store={store2}>
+              {/*TODO: Since the connect type does not support this advanced usage, 
+                we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
+                https://github.com/reduxjs/react-redux/pull/1781 */}
               {/*// @ts-ignore */}
               <Decorated context={context} />
             </ProviderMock>
@@ -2382,6 +2379,9 @@ describe('React', () => {
 
         rtl.render(
           <ProviderMock store={store}>
+            {/*TODO: Since the connect type does not support this advanced usage, 
+              we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
+              https://github.com/reduxjs/react-redux/pull/1781 */}
             {/*// @ts-ignore */}
             <Decorated context={nonContext} />
           </ProviderMock>
@@ -2526,6 +2526,9 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store1}>
             <ConnectedComp1>
+              {/*TODO: Since the connect type does not support this advanced usage, 
+                we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
+                https://github.com/reduxjs/react-redux/pull/1781 */}
               {/*// @ts-ignore */}
               <ConnectedComp2 store={store2} />
             </ConnectedComp1>
