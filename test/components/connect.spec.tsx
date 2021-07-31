@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component } from 'react'
+import React, { Component, MouseEvent, ComponentType } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
@@ -8,10 +8,18 @@ import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
+import type { ReactNode, Dispatch, ElementType } from 'react'
+import type {
+  Store,
+  Dispatch as ReduxDispatch,
+  AnyAction,
+  MiddlewareAPI,
+} from 'redux'
+import type { ReactReduxContextValue } from '../../src/index'
 
 describe('React', () => {
   describe('connect', () => {
-    const propMapper = (prop) => {
+    const propMapper = (prop: any): ReactNode => {
       switch (typeof prop) {
         case 'object':
         case 'boolean':
@@ -22,22 +30,28 @@ describe('React', () => {
           return prop
       }
     }
-    class Passthrough extends Component {
-      render() {
-        return (
-          <ul>
-            {Object.keys(this.props).map((prop) => (
-              <li title="prop" data-testid={prop} key={prop}>
-                {propMapper(this.props[prop])}
-              </li>
-            ))}
-          </ul>
-        )
-      }
+
+    interface PassthroughPropsType {
+      [x: string]: any
+    }
+
+    function Passthrough(props: PassthroughPropsType) {
+      return (
+        <ul>
+          {Object.keys(props).map((prop) => (
+            <li title="prop" data-testid={prop} key={prop}>
+              {propMapper(props[prop])}
+            </li>
+          ))}
+        </ul>
+      )
     }
 
     class ContextBoundStore {
-      constructor(reducer) {
+      listeners: Array<() => void>
+      state: any
+      reducer: (s: any, a: any) => any
+      constructor(reducer: (s: any, a: any) => any) {
         this.reducer = reducer
         this.listeners = []
         this.state = undefined
@@ -48,23 +62,30 @@ describe('React', () => {
         return this.state
       }
 
-      subscribe(listener) {
+      subscribe(listener: () => void) {
         this.listeners.push(listener)
         return () => this.listeners.filter((l) => l !== listener)
       }
 
-      dispatch(action) {
+      dispatch(action: any) {
         this.state = this.reducer(this.getState(), action)
         this.listeners.forEach((l) => l())
         return action
       }
     }
-
-    function stringBuilder(prev = '', action) {
+    interface ActionType {
+      type: string
+      body: any
+    }
+    function stringBuilder(prev = '', action: ActionType) {
       return action.type === 'APPEND' ? prev + action.body : prev
     }
 
-    function imitateHotReloading(TargetClass, SourceClass, container) {
+    function imitateHotReloading(
+      TargetClass: ComponentType,
+      SourceClass: ComponentType,
+      container: Component
+    ) {
       // Crude imitation of hot reloading that does the job
       Object.getOwnPropertyNames(SourceClass.prototype)
         .filter((key) => typeof SourceClass.prototype[key] === 'function')
@@ -83,16 +104,16 @@ describe('React', () => {
       it('should receive the store state in the context', () => {
         const store = createStore(() => ({ hi: 'there' }))
 
-        @connect((state) => state)
         class Container extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect((state) => state)(Container)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container pass="through" />
+            <ConnectedContainer />
           </ProviderMock>
         )
 
@@ -106,16 +127,35 @@ describe('React', () => {
           hello: 'world',
         }))
 
-        @connect(({ foo, baz }) => ({ foo, baz }), {})
-        class Container extends Component {
+        interface ContainerPropsType {
+          pass: string
+          baz: number
+        }
+        class Container extends Component<ContainerPropsType> {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        interface TStateProps {
+          foo: string
+          baz: number
+        }
+        interface StateType {
+          foo: string
+          baz: number
+          hello: string
+        }
+
+        const ConnectedContainer = connect<
+          TStateProps,
+          unknown,
+          ContainerPropsType,
+          StateType
+        >(({ foo, baz }) => ({ foo, baz }))(Container)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container pass="through" baz={50} />
+            <ConnectedContainer pass="through" baz={50} />
           </ProviderMock>
         )
 
@@ -126,18 +166,20 @@ describe('React', () => {
       })
 
       it('should subscribe class components to the store changes', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
-        @connect((state) => ({ string: state }))
         class Container extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect((state) => ({ string: state }))(
+          Container
+        )
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
         expect(tester.getByTestId('string')).toHaveTextContent('')
@@ -154,19 +196,30 @@ describe('React', () => {
       })
 
       it('should subscribe pure function components to the store changes', () => {
-        const store = createStore(stringBuilder)
-
-        const Container = connect((state) => ({ string: state }))(
-          function Container(props) {
-            return <Passthrough {...props} />
-          }
-        )
+        const store: Store = createStore(stringBuilder)
+        interface ContainerProps {
+          string: string
+        }
+        function Container(props: ContainerProps) {
+          return <Passthrough {...props} />
+        }
+        interface TStateProps {
+          string: string
+        }
+        const ConnectedContainer = connect<
+          TStateProps,
+          unknown,
+          unknown,
+          string
+        >((state) => ({
+          string: state,
+        }))(Container)
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
         expect(spy).toHaveBeenCalledTimes(0)
@@ -188,16 +241,28 @@ describe('React', () => {
       it("should retain the store's context", () => {
         const store = new ContextBoundStore(stringBuilder)
 
-        let Container = connect((state) => ({ string: state }))(
-          function Container(props) {
-            return <Passthrough {...props} />
-          }
-        )
+        interface ContainerProps {
+          string: string
+        }
+        function Container(props: ContainerProps) {
+          return <Passthrough {...props} />
+        }
+        interface TStateProps {
+          string: string
+        }
+        const ConnectedContainer = connect<
+          TStateProps,
+          unknown,
+          unknown,
+          string
+        >((state) => ({
+          string: state,
+        }))(Container)
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
         const tester = rtl.render(
-          <ProviderMock store={store}>
-            <Container />
+          <ProviderMock store={store as unknown as Store}>
+            <ConnectedContainer />
           </ProviderMock>
         )
         expect(spy).toHaveBeenCalledTimes(0)
@@ -237,16 +302,22 @@ describe('React', () => {
           foo: 'bar',
         }))
 
-        @connect((state) => state)
-        class ConnectContainer extends Component {
+        interface InnerProps {
+          bar: {
+            baz: string
+          }
+        }
+
+        class Inner extends Component<InnerProps> {
           render() {
             return <Passthrough {...this.props} pass={this.props.bar.baz} />
           }
         }
+        const ConnectedInner = connect((state) => state)(Inner)
 
-        class Container extends Component {
-          constructor() {
-            super()
+        class Container extends Component<{}, { bar: { baz: string } }> {
+          constructor(props: {}) {
+            super(props)
             this.state = {
               bar: {
                 baz: '',
@@ -263,7 +334,7 @@ describe('React', () => {
           render() {
             return (
               <ProviderMock store={store}>
-                <ConnectContainer bar={this.state.bar} />
+                <ConnectedInner bar={this.state.bar} />
               </ProviderMock>
             )
           }
@@ -278,16 +349,21 @@ describe('React', () => {
       it('should handle unexpected prop changes with forceUpdate()', () => {
         const store = createStore(() => ({}))
 
-        @connect((state) => state)
-        class ConnectContainer extends Component {
+        interface InnerPropsType {
+          bar: string
+        }
+
+        class Inner extends Component<InnerPropsType> {
           render() {
             return <Passthrough {...this.props} pass={this.props.bar} />
           }
         }
+        const ConnectedInner = connect((state) => state)(Inner)
 
         class Container extends Component {
-          constructor() {
-            super()
+          bar: string
+          constructor(props: {}) {
+            super(props)
             this.bar = 'baz'
           }
 
@@ -299,7 +375,7 @@ describe('React', () => {
           render() {
             return (
               <ProviderMock store={store}>
-                <ConnectContainer bar={this.bar} />
+                <ConnectedInner bar={this.bar} />
               </ProviderMock>
             )
           }
@@ -312,57 +388,65 @@ describe('React', () => {
 
       it('should remove undefined props', () => {
         const store = createStore(() => ({}))
-        let props = { x: true }
-        let container
+        interface OwnerPropsType {
+          x?: boolean
+        }
+        let props: OwnerPropsType = { x: true }
 
-        @connect(() => ({}), () => ({}))
         class ConnectContainer extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInnerContainer = connect<{}, {}, OwnerPropsType, {}>(
+          () => ({}),
+          () => ({})
+        )(ConnectContainer)
 
-        class HolderContainer extends Component {
+        class HolderContainer extends Component<OwnerPropsType> {
           render() {
-            return <ConnectContainer {...props} />
+            return <ConnectedInnerContainer {...props} />
           }
         }
+        let container = React.createRef<HolderContainer>()
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <HolderContainer ref={(instance) => (container = instance)} />
+            <HolderContainer ref={container} />
           </ProviderMock>
         )
 
         expect(tester.getByTestId('x')).toHaveTextContent('true')
 
         props = {}
-        container.forceUpdate()
+        container.current!.forceUpdate()
 
         expect(tester.queryByTestId('x')).toBe(null)
       })
 
       it('should remove undefined props without mapDispatch', () => {
         const store = createStore(() => ({}))
-        let props = { x: true }
-        let container
+        interface OwnerPropsType {
+          x?: boolean
+        }
+        let props: OwnerPropsType = { x: true }
 
-        @connect(() => ({}))
-        class ConnectContainer extends Component {
+        class Inner extends Component<OwnerPropsType> {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInner = connect(() => ({}))(Inner)
 
         class HolderContainer extends Component {
           render() {
-            return <ConnectContainer {...props} />
+            return <ConnectedInner {...props} />
           }
         }
-
+        let container = React.createRef<HolderContainer>()
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <HolderContainer ref={(instance) => (container = instance)} />
+            <HolderContainer ref={container} />
           </ProviderMock>
         )
 
@@ -373,7 +457,7 @@ describe('React', () => {
         expect(tester.getByTestId('x')).toHaveTextContent('true')
 
         props = {}
-        container.forceUpdate()
+        container.current!.forceUpdate()
 
         expect(tester.getAllByTitle('prop').length).toBe(1)
         expect(tester.getByTestId('dispatch')).toHaveTextContent(
@@ -386,16 +470,22 @@ describe('React', () => {
           foo: 'bar',
         }))
 
-        @connect((state) => state)
-        class ConnectContainer extends Component {
+        interface InnerPropsType {
+          bar: {
+            baz: string
+          }
+        }
+
+        class Inner extends Component<InnerPropsType> {
           render() {
             return <Passthrough {...this.props} pass={this.props.bar.baz} />
           }
         }
+        const ConnectedInner = connect((state) => state)(Inner)
 
-        class Container extends Component {
-          constructor() {
-            super()
+        class Container extends Component<{}, InnerPropsType> {
+          constructor(props: {}) {
+            super(props)
             this.state = {
               bar: {
                 baz: '',
@@ -415,7 +505,7 @@ describe('React', () => {
           render() {
             return (
               <ProviderMock store={store}>
-                <ConnectContainer bar={this.state.bar} />
+                <ConnectedInner bar={this.state.bar} />
               </ProviderMock>
             )
           }
@@ -427,43 +517,52 @@ describe('React', () => {
       })
 
       it('should allow for merge to incorporate state and prop changes', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
-        function doSomething(thing) {
+        interface OuterContainerStateType {
+          extra: string
+        }
+
+        function doSomething(thing: any) {
           return {
             type: 'APPEND',
             body: thing,
           }
         }
 
-        let merged
-        let externalSetState
-        @connect(
+        let merged: (s: string) => void
+        let externalSetState: Dispatch<OuterContainerStateType>
+
+        interface InnerPropsType {
+          extra: string
+        }
+        class Inner extends Component<InnerPropsType> {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+
+        const ConnectedInner = connect(
           (state) => ({ stateThing: state }),
           (dispatch) => ({
-            doSomething: (whatever) => dispatch(doSomething(whatever)),
+            doSomething: (whatever: any) => dispatch(doSomething(whatever)),
           }),
-          (stateProps, actionProps, parentProps) => ({
+          (stateProps, actionProps, parentProps: InnerPropsType) => ({
             ...stateProps,
             ...actionProps,
             mergedDoSomething: (() => {
-              merged = function mergedDoSomething(thing) {
+              merged = function mergedDoSomething(thing: any) {
                 const seed = stateProps.stateThing === '' ? 'HELLO ' : ''
                 actionProps.doSomething(seed + thing + parentProps.extra)
               }
               return merged
             })(),
           })
-        )
-        class Container extends Component {
-          render() {
-            return <Passthrough {...this.props} />
-          }
-        }
+        )(Inner)
 
-        class OuterContainer extends Component {
-          constructor() {
-            super()
+        class OuterContainer extends Component<{}, OuterContainerStateType> {
+          constructor(props: {}) {
+            super(props)
             this.state = { extra: 'z' }
             externalSetState = this.setState.bind(this)
           }
@@ -471,7 +570,7 @@ describe('React', () => {
           render() {
             return (
               <ProviderMock store={store}>
-                <Container extra={this.state.extra} />
+                <ConnectedInner extra={this.state.extra} />
               </ProviderMock>
             )
           }
@@ -510,16 +609,23 @@ describe('React', () => {
 
         const exampleActionCreator = () => {}
 
-        @connect((state) => state, () => ({ exampleActionCreator }))
-        class Container extends Component {
+        interface ContainerPropsType {
+          pass: string
+        }
+
+        class Container extends Component<ContainerPropsType> {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect(
+          (state) => state,
+          () => ({ exampleActionCreator })
+        )(Container)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container pass="through" />
+            <ConnectedContainer pass="through" />
           </ProviderMock>
         )
 
@@ -532,17 +638,24 @@ describe('React', () => {
       it('should throw an error if mapState, mapDispatch, or mergeProps returns anything but a plain object', () => {
         const store = createStore(() => ({}))
 
-        function makeContainer(mapState, mapDispatch, mergeProps) {
-          @connect(mapState, mapDispatch, mergeProps)
+        function makeContainer(
+          mapState: any,
+          mapDispatch: any,
+          mergeProps: any
+        ) {
           class Container extends Component {
             render() {
               return <Passthrough />
             }
           }
-          return React.createElement(Container)
+          const ConnectedContainer = connect(
+            mapState,
+            mapDispatch,
+            mergeProps
+          )(Container)
+          return React.createElement(ConnectedContainer)
         }
-
-        function AwesomeMap() {}
+        class AwesomeMap {}
 
         let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
@@ -700,144 +813,149 @@ describe('React', () => {
 
     describe('Invocation behavior for mapState/mapDispatch based on number of arguments', () => {
       it('should not invoke mapState when props change if it only has one argument', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
         let invocationCount = 0
 
-        /*eslint-disable no-unused-vars */
-        @connect((arg1) => {
-          invocationCount++
-          return {}
-        })
-        /*eslint-enable no-unused-vars */
-        class WithoutProps extends Component {
+        interface InnerPropsType {
+          foo: string
+        }
+        class Inner extends Component<InnerPropsType, {}> {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const ConnectedInner = connect((argv) => {
+          invocationCount++
+          return {}
+        })(Inner)
 
-        class OuterComponent extends Component {
-          constructor() {
-            super()
+        interface OuterComponentStateType {
+          foo: string
+        }
+        class OuterComponent extends Component<{}, OuterComponentStateType> {
+          constructor(props: {}) {
+            super(props)
             this.state = { foo: 'FOO' }
           }
 
-          setFoo(foo) {
+          setFoo(foo: string) {
             this.setState({ foo })
           }
 
           render() {
             return (
               <div>
-                <WithoutProps {...this.state} />
+                <ConnectedInner {...this.state} />
               </div>
             )
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
-        outerComponent.setFoo('BAR')
-        outerComponent.setFoo('DID')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
         expect(invocationCount).toEqual(1)
       })
 
       it('should invoke mapState every time props are changed if it has zero arguments', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
         let invocationCount = 0
 
-        @connect(() => {
-          invocationCount++
-          return {}
-        })
-        class WithoutProps extends Component {
+        class Inner extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInner = connect(() => {
+          invocationCount++
+          return {}
+        })(Inner)
 
         class OuterComponent extends Component {
-          constructor() {
-            super()
+          constructor(props: {}) {
+            super(props)
             this.state = { foo: 'FOO' }
           }
 
-          setFoo(foo) {
+          setFoo(foo: string) {
             this.setState({ foo })
           }
 
           render() {
             return (
               <div>
-                <WithoutProps {...this.state} />
+                <ConnectedInner {...this.state} />
               </div>
             )
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
-        outerComponent.setFoo('BAR')
-        outerComponent.setFoo('DID')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
         expect(invocationCount).toEqual(3)
       })
 
       it('should invoke mapState every time props are changed if it has a second argument', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
         let propsPassedIn
         let invocationCount = 0
 
-        @connect((state, props) => {
-          invocationCount++
-          propsPassedIn = props
-          return {}
-        })
-        class WithProps extends Component {
+        class Inner extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInner = connect((state, props) => {
+          invocationCount++
+          propsPassedIn = props
+          return {}
+        })(Inner)
 
         class OuterComponent extends Component {
-          constructor() {
-            super()
+          constructor(props: {}) {
+            super(props)
             this.state = { foo: 'FOO' }
           }
 
-          setFoo(foo) {
+          setFoo(foo: string) {
             this.setState({ foo })
           }
 
           render() {
             return (
               <div>
-                <WithProps {...this.state} />
+                <ConnectedInner {...this.state} />
               </div>
             )
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
 
-        outerComponent.setFoo('BAR')
-        outerComponent.setFoo('BAZ')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('BAZ')
 
         expect(invocationCount).toEqual(3)
         expect(propsPassedIn).toEqual({
@@ -846,146 +964,145 @@ describe('React', () => {
       })
 
       it('should not invoke mapDispatch when props change if it only has one argument', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
         let invocationCount = 0
 
-        /*eslint-disable no-unused-vars */
-        @connect(null, (arg1) => {
-          invocationCount++
-          return {}
-        })
-        /*eslint-enable no-unused-vars */
-        class WithoutProps extends Component {
+        class Inner extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const ConnectedInner = connect(null, (arg1) => {
+          invocationCount++
+          return {}
+        })(Inner)
 
         class OuterComponent extends Component {
-          constructor() {
-            super()
+          constructor(props: {}) {
+            super(props)
             this.state = { foo: 'FOO' }
           }
 
-          setFoo(foo) {
+          setFoo(foo: string) {
             this.setState({ foo })
           }
 
           render() {
             return (
               <div>
-                <WithoutProps {...this.state} />
+                <ConnectedInner {...this.state} />
               </div>
             )
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
 
-        outerComponent.setFoo('BAR')
-        outerComponent.setFoo('DID')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
         expect(invocationCount).toEqual(1)
       })
 
       it('should invoke mapDispatch every time props are changed if it has zero arguments', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
         let invocationCount = 0
 
-        @connect(null, () => {
-          invocationCount++
-          return {}
-        })
-        class WithoutProps extends Component {
+        class Inner extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInner = connect(null, () => {
+          invocationCount++
+          return {}
+        })(Inner)
 
         class OuterComponent extends Component {
-          constructor() {
-            super()
+          constructor(props: {}) {
+            super(props)
             this.state = { foo: 'FOO' }
           }
 
-          setFoo(foo) {
+          setFoo(foo: string) {
             this.setState({ foo })
           }
 
           render() {
             return (
               <div>
-                <WithoutProps {...this.state} />
+                <ConnectedInner {...this.state} />
               </div>
             )
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
 
-        outerComponent.setFoo('BAR')
-        outerComponent.setFoo('DID')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('DID')
 
         expect(invocationCount).toEqual(3)
       })
 
       it('should invoke mapDispatch every time props are changed if it has a second argument', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
         let propsPassedIn
         let invocationCount = 0
 
-        @connect(null, (dispatch, props) => {
-          invocationCount++
-          propsPassedIn = props
-          return {}
-        })
-        class WithProps extends Component {
+        class Inner extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInner = connect(null, (dispatch, props) => {
+          invocationCount++
+          propsPassedIn = props
+          return {}
+        })(Inner)
 
         class OuterComponent extends Component {
-          constructor() {
-            super()
+          constructor(props: {}) {
+            super(props)
             this.state = { foo: 'FOO' }
           }
 
-          setFoo(foo) {
+          setFoo(foo: string) {
             this.setState({ foo })
           }
 
           render() {
             return (
               <div>
-                <WithProps {...this.state} />
+                <ConnectedInner {...this.state} />
               </div>
             )
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
 
-        outerComponent.setFoo('BAR')
-        outerComponent.setFoo('BAZ')
+        outerComponent.current!.setFoo('BAR')
+        outerComponent.current!.setFoo('BAZ')
 
         expect(invocationCount).toEqual(3)
         expect(propsPassedIn).toEqual({
@@ -996,9 +1113,8 @@ describe('React', () => {
 
     describe('React lifeycle interactions', () => {
       it('should handle dispatches before componentDidMount', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
-        @connect((state) => ({ string: state }))
         class Container extends Component {
           componentDidMount() {
             store.dispatch({ type: 'APPEND', body: 'a' })
@@ -1008,33 +1124,43 @@ describe('React', () => {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect((state) => ({ string: state }))(
+          Container
+        )
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
         expect(tester.getByTestId('string')).toHaveTextContent('a')
       })
 
       it('should not attempt to notify unmounted child of state change', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
-        @connect((state) => ({ hide: state === 'AB' }))
-        class App extends Component {
+        interface AppProps {
+          hide: boolean
+        }
+        class App extends Component<AppProps> {
           render() {
-            return this.props.hide ? null : <Container />
+            return this.props.hide ? null : <ConnectedContainer />
           }
         }
+        const ConnectedApp = connect<AppProps, unknown, unknown, string>(
+          (state) => ({ hide: state === 'AB' })
+        )(App)
 
-        @connect(() => ({}))
         class Container extends Component {
           render() {
-            return <Child />
+            return <ConnectedChildren />
           }
         }
+        const ConnectedContainer = connect(() => ({}))(Container)
 
-        @connect((state) => ({ state }))
-        class Child extends Component {
+        interface ChildrenPropsType {
+          state: string
+        }
+        class Child extends Component<ChildrenPropsType> {
           componentDidMount() {
             if (this.props.state === 'A') {
               store.dispatch({ type: 'APPEND', body: 'B' })
@@ -1044,11 +1170,17 @@ describe('React', () => {
             return null
           }
         }
+        const ConnectedChildren = connect<
+          ChildrenPropsType,
+          unknown,
+          unknown,
+          string
+        >((state) => ({ state }))(Child)
 
         const div = document.createElement('div')
         ReactDOM.render(
           <ProviderMock store={store}>
-            <App />
+            <ConnectedApp />
           </ProviderMock>,
           div
         )
@@ -1066,32 +1198,25 @@ describe('React', () => {
         const store = createStore(() => ({}))
         let mapStateToPropsCalls = 0
 
-        let linkA, linkB
+        let linkA = React.createRef<HTMLAnchorElement>()
+        let linkB = React.createRef<HTMLAnchorElement>()
 
-        let App = ({ children, setLocation }) => {
-          const onClick = (to) => (event) => {
+        interface AppPropsType {
+          children: ReactNode
+          setLocation: (s: string) => void
+        }
+        const App = ({ children, setLocation }: AppPropsType) => {
+          const onClick = (to: string) => (event: MouseEvent) => {
             event.preventDefault()
             setLocation(to)
           }
           /* eslint-disable react/jsx-no-bind */
           return (
             <div>
-              <a
-                href="#"
-                onClick={onClick('a')}
-                ref={(c) => {
-                  linkA = c
-                }}
-              >
+              <a href="#" onClick={onClick('a')} ref={linkA}>
                 A
               </a>
-              <a
-                href="#"
-                onClick={onClick('b')}
-                ref={(c) => {
-                  linkB = c
-                }}
-              >
+              <a href="#" onClick={onClick('b')} ref={linkB}>
                 B
               </a>
               {children}
@@ -1099,33 +1224,35 @@ describe('React', () => {
           )
           /* eslint-enable react/jsx-no-bind */
         }
-        App = connect(() => ({}))(App)
+        const ConnectedApp = connect(() => ({}))(App)
 
-        let A = () => <h1>A</h1>
-        function mapState(state) {
+        const A = () => <h1>A</h1>
+        function mapState(state: {}) {
           const calls = ++mapStateToPropsCalls
           return { calls, state }
         }
-        A = connect(mapState)(A)
+        const ConnectedA = connect(mapState)(A)
 
         const B = () => <h1>B</h1>
-
-        class RouterMock extends React.Component {
-          constructor(...args) {
-            super(...args)
+        class RouterMock extends React.Component<
+          {},
+          { location: { pathname: string } }
+        > {
+          constructor(props: {}) {
+            super(props)
             this.state = { location: { pathname: 'a' } }
             this.setLocation = this.setLocation.bind(this)
           }
 
-          setLocation(pathname) {
+          setLocation(pathname: string) {
             this.setState({ location: { pathname } })
             store.dispatch({ type: 'TEST' })
           }
 
-          getChildComponent(location) {
-            switch (location) {
+          getChildComponent(pathname: string) {
+            switch (pathname) {
               case 'a':
-                return <A />
+                return <ConnectedA />
               case 'b':
                 return <B />
               default:
@@ -1135,9 +1262,9 @@ describe('React', () => {
 
           render() {
             return (
-              <App setLocation={this.setLocation}>
+              <ConnectedApp setLocation={this.setLocation}>
                 {this.getChildComponent(this.state.location.pathname)}
-              </App>
+              </ConnectedApp>
             )
           }
         }
@@ -1152,12 +1279,11 @@ describe('React', () => {
         )
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-
-        linkA.click()
-        linkB.click()
-        linkB.click()
-
+        linkA.current!.click()
+        linkB.current!.click()
+        linkB.current!.click()
         document.body.removeChild(div)
+
         // Called 3 times:
         // - Initial mount
         // - After first link click, stil mounted
@@ -1168,16 +1294,14 @@ describe('React', () => {
       })
 
       it('should not attempt to set state when dispatching in componentWillUnmount', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
         let mapStateToPropsCalls = 0
 
-        /*eslint-disable no-unused-vars */
-        @connect(
-          (state) => ({ calls: mapStateToPropsCalls++ }),
-          (dispatch) => ({ dispatch })
-        )
-        /*eslint-enable no-unused-vars */
-        class Container extends Component {
+        interface ContainerProps {
+          dispatch: ReduxDispatch
+        }
+
+        class Container extends Component<ContainerProps> {
           componentWillUnmount() {
             this.props.dispatch({ type: 'APPEND', body: 'a' })
           }
@@ -1185,11 +1309,15 @@ describe('React', () => {
             return <Passthrough {...this.props} />
           }
         }
-
+        const Connected = connect(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          (state) => ({ calls: mapStateToPropsCalls++ }),
+          (dispatch) => ({ dispatch })
+        )(Container)
         const div = document.createElement('div')
         ReactDOM.render(
           <ProviderMock store={store}>
-            <Container />
+            <Connected />
           </ProviderMock>,
           div
         )
@@ -1203,18 +1331,18 @@ describe('React', () => {
       })
 
       it('should not attempt to set state after unmounting', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
         let mapStateToPropsCalls = 0
 
-        @connect(
-          () => ({ calls: ++mapStateToPropsCalls }),
-          (dispatch) => ({ dispatch })
-        )
-        class Container extends Component {
+        class Inner extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInner = connect(
+          () => ({ calls: ++mapStateToPropsCalls }),
+          (dispatch) => ({ dispatch })
+        )(Inner)
 
         const div = document.createElement('div')
         store.subscribe(() => {
@@ -1224,7 +1352,7 @@ describe('React', () => {
         rtl.act(() => {
           ReactDOM.render(
             <ProviderMock store={store}>
-              <Container />
+              <ConnectedInner />
             </ProviderMock>,
             div
           )
@@ -1242,7 +1370,18 @@ describe('React', () => {
       })
 
       it('should allow to clean up child state in parent componentWillUnmount', () => {
-        function reducer(state = { data: null }, action) {
+        interface ActionType {
+          type: string
+        }
+        interface StateType {
+          data: {
+            profile: { name: string }
+          } | null
+        }
+        function reducer(
+          state: StateType = { data: null },
+          action: ActionType
+        ) {
           switch (action.type) {
             case 'fetch':
               return { data: { profile: { name: 'April' } } }
@@ -1252,30 +1391,31 @@ describe('React', () => {
               return state
           }
         }
-
-        @connect(null)
-        class Parent extends React.Component {
-          componentWillUnmount() {
-            this.props.dispatch({ type: 'clean' })
-          }
-
-          render() {
-            return <Child />
-          }
-        }
-
-        function mapState(state) {
+        function mapState(state: StateType) {
           return {
-            profile: state.data.profile,
+            profile: state.data!.profile,
           }
         }
-
-        @connect(mapState)
         class Child extends React.Component {
           render() {
             return null
           }
         }
+        const ConnectedChildren = connect(mapState)(Child)
+
+        interface ParentPropsType {
+          dispatch: ReduxDispatch
+        }
+        class Parent extends React.Component<ParentPropsType> {
+          componentWillUnmount() {
+            this.props.dispatch({ type: 'clean' })
+          }
+
+          render() {
+            return <ConnectedChildren />
+          }
+        }
+        const ConnectedParent = connect(null)(Parent)
 
         const store = createStore(reducer)
         rtl.act(() => {
@@ -1285,7 +1425,7 @@ describe('React', () => {
         const div = document.createElement('div')
         ReactDOM.render(
           <ProviderMock store={store}>
-            <Parent />
+            <ConnectedParent />
           </ProviderMock>,
           div
         )
@@ -1296,23 +1436,39 @@ describe('React', () => {
 
     describe('Performance optimizations and bail-outs', () => {
       it('should shallowly compare the selected state to prevent unnecessary updates', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
         const spy = jest.fn(() => ({}))
-        function render({ string }) {
+        interface RenderProps {
+          string: string
+        }
+        function render({ string }: RenderProps) {
           spy()
           return <Passthrough string={string} />
         }
-
-        @connect((state) => ({ string: state }), (dispatch) => ({ dispatch }))
-        class Container extends Component {
+        interface ContainerProps {
+          string: string
+          dispatch: ReduxDispatch
+        }
+        class Container extends Component<ContainerProps> {
           render() {
             return render(this.props)
           }
         }
+        type TStateProps = RenderProps
+        type TDispatchProps = { dispatch: ReduxDispatch }
+        const ConnectedContainer = connect<
+          TStateProps,
+          TDispatchProps,
+          {},
+          string
+        >(
+          (state) => ({ string: state }),
+          (dispatch) => ({ dispatch })
+        )(Container)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
         expect(spy).toHaveBeenCalledTimes(1)
@@ -1335,31 +1491,66 @@ describe('React', () => {
       })
 
       it('should shallowly compare the merged state to prevent unnecessary updates', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
         const spy = jest.fn(() => ({}))
-        const tree = {}
-        function render({ string, pass }) {
+        interface PassObjType {
+          val?: string
+          prop?: string
+        }
+        type PassType = string | PassObjType
+        interface RenderPropsType {
+          string: string
+          pass: PassType
+        }
+        function render({ string, pass }: RenderPropsType) {
           spy()
+          if (typeof pass === 'string') {
+            return <Passthrough string={string} pass={pass} />
+          }
           return <Passthrough string={string} pass={pass} passVal={pass.val} />
         }
 
-        @connect(
-          (state) => ({ string: state }),
-          (dispatch) => ({ dispatch }),
-          (stateProps, dispatchProps, parentProps) => ({
-            ...dispatchProps,
-            ...stateProps,
-            ...parentProps,
-          })
-        )
-        class Container extends Component {
+        interface ContainerPropsType {
+          pass: PassType
+        }
+        interface TStateProps {
+          string: string
+        }
+        interface TDispatchProps {
+          dispatch: ReduxDispatch
+        }
+        type TOwnProps = ContainerPropsType
+        type TMergedProps = TOwnProps & TDispatchProps & TStateProps
+        type RootState = string
+
+        class Container extends Component<TMergedProps> {
           render() {
             return render(this.props)
           }
         }
+        const Connected = connect<
+          TStateProps,
+          TDispatchProps,
+          TOwnProps,
+          TMergedProps,
+          RootState
+        >(
+          (state) => ({ string: state }),
+          (dispatch: ReduxDispatch) => ({ dispatch }),
+          (
+            stateProps: { string: string },
+            dispatchProps: { dispatch: ReduxDispatch },
+            parentProps
+          ) => ({
+            ...dispatchProps,
+            ...stateProps,
+            ...parentProps,
+          })
+        )(Container)
 
-        class Root extends Component {
-          constructor(props) {
+        const tree: { setState?: Dispatch<{ pass: PassType }> } = {}
+        class Root extends Component<{}, { pass: PassType }> {
+          constructor(props: {}) {
             super(props)
             this.state = { pass: '' }
             tree.setState = this.setState.bind(this)
@@ -1368,7 +1559,7 @@ describe('React', () => {
           render() {
             return (
               <ProviderMock store={store}>
-                <Container pass={this.state.pass} />
+                <Connected pass={this.state.pass} />
               </ProviderMock>
             )
           }
@@ -1388,7 +1579,7 @@ describe('React', () => {
         expect(tester.getByTestId('pass')).toHaveTextContent('')
 
         rtl.act(() => {
-          tree.setState({ pass: '' })
+          tree.setState!({ pass: '' })
         })
 
         expect(spy).toHaveBeenCalledTimes(2)
@@ -1396,7 +1587,7 @@ describe('React', () => {
         expect(tester.getByTestId('pass')).toHaveTextContent('')
 
         rtl.act(() => {
-          tree.setState({ pass: 'through' })
+          tree.setState!({ pass: 'through' })
         })
 
         expect(spy).toHaveBeenCalledTimes(3)
@@ -1404,7 +1595,7 @@ describe('React', () => {
         expect(tester.getByTestId('pass')).toHaveTextContent('through')
 
         rtl.act(() => {
-          tree.setState({ pass: 'through' })
+          tree.setState!({ pass: 'through' })
         })
 
         expect(spy).toHaveBeenCalledTimes(3)
@@ -1413,7 +1604,7 @@ describe('React', () => {
 
         const obj = { prop: 'val' }
         rtl.act(() => {
-          tree.setState({ pass: obj })
+          tree.setState!({ pass: obj })
         })
 
         expect(spy).toHaveBeenCalledTimes(4)
@@ -1421,7 +1612,7 @@ describe('React', () => {
         expect(tester.getByTestId('pass')).toHaveTextContent('{"prop":"val"}')
 
         rtl.act(() => {
-          tree.setState({ pass: obj })
+          tree.setState!({ pass: obj })
         })
 
         expect(spy).toHaveBeenCalledTimes(4)
@@ -1430,7 +1621,7 @@ describe('React', () => {
 
         const obj2 = Object.assign({}, obj, { val: 'otherval' })
         rtl.act(() => {
-          tree.setState({ pass: obj2 })
+          tree.setState!({ pass: obj2 })
         })
 
         expect(spy).toHaveBeenCalledTimes(5)
@@ -1441,7 +1632,7 @@ describe('React', () => {
 
         obj2.val = 'mutation'
         rtl.act(() => {
-          tree.setState({ pass: obj2 })
+          tree.setState!({ pass: obj2 })
         })
 
         expect(spy).toHaveBeenCalledTimes(5)
@@ -1452,24 +1643,24 @@ describe('React', () => {
       })
 
       it('should not render the wrapped component when mapState does not produce change', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
         let renderCalls = 0
         let mapStateCalls = 0
 
-        @connect(() => {
-          mapStateCalls++
-          return {} // no change!
-        })
         class Container extends Component {
           render() {
             renderCalls++
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect(() => {
+          mapStateCalls++
+          return {} // no change!
+        })(Container)
 
         rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
 
@@ -1487,24 +1678,24 @@ describe('React', () => {
       })
 
       it('should bail out early if mapState does not depend on props', () => {
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
         let renderCalls = 0
         let mapStateCalls = 0
 
-        @connect((state) => {
-          mapStateCalls++
-          return state === 'aaa' ? { change: 1 } : {}
-        })
         class Container extends Component {
           render() {
             renderCalls++
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect((state) => {
+          mapStateCalls++
+          return state === 'aaa' ? { change: 1 } : {}
+        })(Container)
 
         rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
 
@@ -1536,21 +1727,25 @@ describe('React', () => {
       it('should not call update if mergeProps return value has not changed', () => {
         let mapStateCalls = 0
         let renderCalls = 0
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
-        @connect(() => ({ a: ++mapStateCalls }), null, () => ({
-          changed: false,
-        }))
         class Container extends Component {
           render() {
             renderCalls++
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect(
+          () => ({ a: ++mapStateCalls }),
+          null,
+          () => ({
+            changed: false,
+          })
+        )(Container)
 
         rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
 
@@ -1566,106 +1761,22 @@ describe('React', () => {
       })
     })
 
-    describe('HMR handling', () => {
-      it.skip('should recalculate the state and rebind the actions on hot update', () => {
-        const store = createStore(() => {})
-        @connect(null, () => ({ scooby: 'doo' }))
-        class ContainerBefore extends Component {
-          render() {
-            return <Passthrough {...this.props} />
-          }
-        }
-        @connect(() => ({ foo: 'baz' }), () => ({ scooby: 'foo' }))
-        class ContainerAfter extends Component {
-          render() {
-            return <Passthrough {...this.props} />
-          }
-        }
-        @connect(() => ({ foo: 'bar' }), () => ({ scooby: 'boo' }))
-        class ContainerNext extends Component {
-          render() {
-            return <Passthrough {...this.props} />
-          }
-        }
-        let container
-        const tester = rtl.render(
-          <ProviderMock store={store}>
-            <ContainerBefore ref={(instance) => (container = instance)} />
-          </ProviderMock>
-        )
-        expect(tester.queryByTestId('foo')).toBe(null)
-        expect(tester.getByTestId('scooby')).toHaveTextContent('doo')
-        imitateHotReloading(ContainerBefore, ContainerAfter, container)
-        expect(tester.getByTestId('foo')).toHaveTextContent('baz')
-        expect(tester.getByTestId('scooby')).toHaveTextContent('foo')
-        imitateHotReloading(ContainerBefore, ContainerNext, container)
-        expect(tester.getByTestId('foo')).toHaveTextContent('bar')
-        expect(tester.getByTestId('scooby')).toHaveTextContent('boo')
-      })
-
-      it.skip('should persist listeners through hot update', () => {
-        const ACTION_TYPE = 'ACTION'
-        const store = createStore((state = { actions: 0 }, action) => {
-          switch (action.type) {
-            case ACTION_TYPE: {
-              return {
-                actions: state.actions + 1,
-              }
-            }
-            default:
-              return state
-          }
-        })
-
-        @connect((state) => ({ actions: state.actions }))
-        class Child extends Component {
-          render() {
-            return <Passthrough {...this.props} />
-          }
-        }
-
-        @connect(() => ({ scooby: 'doo' }))
-        class ParentBefore extends Component {
-          render() {
-            return <Child />
-          }
-        }
-
-        @connect(() => ({ scooby: 'boo' }))
-        class ParentAfter extends Component {
-          render() {
-            return <Child />
-          }
-        }
-
-        let container
-        const tester = rtl.render(
-          <ProviderMock store={store}>
-            <ParentBefore ref={(instance) => (container = instance)} />
-          </ProviderMock>
-        )
-
-        imitateHotReloading(ParentBefore, ParentAfter, container)
-
-        rtl.act(() => {
-          store.dispatch({ type: ACTION_TYPE })
-        })
-
-        expect(tester.getByTestId('actions')).toHaveTextContent('1')
-      })
-    })
-
     describe('Wrapped component and HOC handling', () => {
       it('should throw an error if a component is not passed to the function returned by connect', () => {
         expect(connect()).toThrow(/You must pass a component to the function/)
       })
 
       it('should not error on valid component with circular structure', () => {
-        const createComp = (Tag) => {
-          const Comp = React.forwardRef(function Comp(props, ref) {
-            return <Tag ref={ref}>{props.count}</Tag>
-          })
-          Comp.__real = Comp
+        const createComp = (A: ElementType) => {
+          type PropsType = {
+            count: any
+          }
+
+          const Comp = React.forwardRef<HTMLDivElement, PropsType>(
+            function Comp(props: PropsType, ref) {
+              return <A ref={ref}>{props.count}</A>
+            }
+          )
           return Comp
         }
 
@@ -1680,7 +1791,20 @@ describe('React', () => {
 
           const Container = React.memo((props) => <Passthrough {...props} />) // eslint-disable-line
           Container.displayName = 'Container'
-          const WrappedContainer = connect((state) => state)(Container)
+          type RootState = {
+            hi: string
+          }
+          type TStateProps = RootState
+          type NoDisPatch = {}
+          type TOwnProps = {
+            pass: string
+          }
+          const WrappedContainer = connect<
+            TStateProps,
+            NoDisPatch,
+            TOwnProps,
+            RootState
+          >((state) => state)(Container)
 
           const tester = rtl.render(
             <ProviderMock store={store}>
@@ -1730,16 +1854,16 @@ describe('React', () => {
       })
 
       it('should allow custom displayName', () => {
-        @connect(null, null, null, {
-          getDisplayName: (name) => `Custom(${name})`,
-        })
         class MyComponent extends React.Component {
           render() {
             return <div />
           }
         }
+        const ConnectedMyComponent = connect(null, null, null, {
+          getDisplayName: (name) => `Custom(${name})`,
+        })(MyComponent)
 
-        expect(MyComponent.displayName).toEqual('Custom(MyComponent)')
+        expect(ConnectedMyComponent.displayName).toEqual('Custom(MyComponent)')
       })
 
       it('should expose the wrapped component as WrappedComponent', () => {
@@ -1757,6 +1881,8 @@ describe('React', () => {
 
       it('should hoist non-react statics from wrapped component', () => {
         class Container extends Component {
+          static howIsRedux: () => string
+          static foo: string
           render() {
             return <Passthrough />
           }
@@ -1779,18 +1905,34 @@ describe('React', () => {
         const store = createStore(() => ({
           foo: 'bar',
         }))
-
-        function runCheck(...connectArgs) {
-          @connect(...connectArgs)
+        type ConnectArgsType = [
+          (null | boolean)?,
+          (null | boolean)?,
+          (null | boolean)?
+        ]
+        function runCheck(...connectArgs: ConnectArgsType) {
           class Container extends Component {
             render() {
               return <Passthrough {...this.props} />
             }
           }
+          type TOwnProps = {
+            pass: string
+          }
+          type RootStateType = {
+            foo: string
+          }
+          const ConnectedContainer = connect<
+            unknown,
+            unknown,
+            TOwnProps,
+            RootStateType
+            // @ts-ignore
+          >(...connectArgs)(Container)
 
           const tester = rtl.render(
             <ProviderMock store={store}>
-              <Container pass="through" />
+              <ConnectedContainer pass="through" />
             </ProviderMock>
           )
           expect(tester.getAllByTestId('dispatch')[0]).toHaveTextContent(
@@ -1806,36 +1948,66 @@ describe('React', () => {
       })
 
       it('should subscribe properly when a middle connected component does not subscribe', () => {
-        @connect((state) => ({ count: state }))
-        class A extends React.Component {
-          render() {
-            return <B {...this.props} />
-          }
+        type RootState = number
+        interface ActionType {
+          type: string
         }
 
-        @connect() // no mapStateToProps. therefore it should be transparent for subscriptions
-        class B extends React.Component {
+        interface ATStateProps {
+          count: RootState
+        }
+        type ANoDispatch = {}
+        type AOwnProps = {}
+
+        class A extends React.Component<ATStateProps> {
           render() {
-            return <C {...this.props} />
+            return <ConnectedB {...this.props} />
           }
         }
+        const ConnectedA = connect<
+          ATStateProps,
+          ANoDispatch,
+          AOwnProps,
+          RootState
+        >((state) => ({ count: state }))(A)
 
-        @connect((state, props) => {
-          expect(props.count).toBe(state)
-          return { count: state * 10 + props.count }
-        })
-        class C extends React.Component {
+        interface BProps {
+          count: number
+        }
+        class B extends React.Component<BProps> {
+          render() {
+            return <ConnectedC {...this.props} />
+          }
+        }
+        // no mapStateToProps. therefore it should be transparent for subscriptions
+        const ConnectedB = connect()(B)
+
+        interface CTStateProps {
+          count: number
+        }
+        type CNoDispatch = {}
+        type COwnProps = ATStateProps
+        class C extends React.Component<CTStateProps> {
           render() {
             return <div>{this.props.count}</div>
           }
         }
+        const ConnectedC = connect<
+          CTStateProps,
+          CNoDispatch,
+          COwnProps,
+          RootState
+        >((state, props) => {
+          expect(props.count).toBe(state)
+          return { count: state * 10 + props.count }
+        })(C)
 
-        const store = createStore((state = 0, action) =>
+        const store = createStore((state: RootState = 0, action: ActionType) =>
           action.type === 'INC' ? (state += 1) : state
         )
         rtl.render(
           <ProviderMock store={store}>
-            <A />
+            <ConnectedA />
           </ProviderMock>
         )
 
@@ -1845,16 +2017,20 @@ describe('React', () => {
       })
 
       it('should notify nested components through a blocking component', () => {
-        @connect((state) => ({ count: state }))
+        type RootStateType = number
+        interface ActionType {
+          type: string
+        }
         class Parent extends Component {
           render() {
             return (
               <BlockUpdates>
-                <Child />
+                <ConnectedChildren />
               </BlockUpdates>
             )
           }
         }
+        const ConnectedParent = connect((state) => ({ count: state }))(Parent)
 
         class BlockUpdates extends Component {
           shouldComponentUpdate() {
@@ -1866,19 +2042,32 @@ describe('React', () => {
         }
 
         const mapStateToProps = jest.fn((state) => ({ count: state }))
-        @connect(mapStateToProps)
-        class Child extends Component {
+
+        interface ChildrenTStateProps {
+          count: RootStateType
+        }
+        type ChildrenNoDispatch = {}
+        type ChildrenOwnProps = {}
+
+        class Child extends Component<ChildrenTStateProps> {
           render() {
             return <div>{this.props.count}</div>
           }
         }
+        const ConnectedChildren = connect<
+          ChildrenTStateProps,
+          ChildrenNoDispatch,
+          ChildrenOwnProps,
+          RootStateType
+        >(mapStateToProps)(Child)
 
-        const store = createStore((state = 0, action) =>
-          action.type === 'INC' ? state + 1 : state
+        const store = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
         )
         rtl.render(
           <ProviderMock store={store}>
-            <Parent />
+            <ConnectedParent />
           </ProviderMock>
         )
 
@@ -1891,27 +2080,53 @@ describe('React', () => {
       })
 
       it('should not notify nested components after they are unmounted', () => {
-        @connect((state) => ({ count: state }))
-        class Parent extends Component {
-          render() {
-            return this.props.count === 1 ? <Child /> : null
-          }
+        type RootStateType = number
+        interface ActionType {
+          type: string
         }
 
+        interface ParentTStateProps {
+          count: number
+        }
+        type ParentNoDisPatch = {}
+        type ParentOwnProps = {}
+        class Parent extends Component<ParentTStateProps> {
+          render() {
+            return this.props.count === 1 ? <ConnectedChildren /> : null
+          }
+        }
+        const ConnectedParent = connect<
+          ParentTStateProps,
+          ParentNoDisPatch,
+          ParentOwnProps,
+          RootStateType
+        >((state) => ({ count: state }))(Parent)
+
+        interface ChildTStateProps {
+          count: number
+        }
+        type ChildNoDisPatch = {}
+        type ChildOwnProps = {}
         const mapStateToProps = jest.fn((state) => ({ count: state }))
-        @connect(mapStateToProps)
-        class Child extends Component {
+        class Child extends Component<ChildTStateProps> {
           render() {
             return <div>{this.props.count}</div>
           }
         }
+        const ConnectedChildren = connect<
+          ChildTStateProps,
+          ChildNoDisPatch,
+          ChildOwnProps,
+          RootStateType
+        >(mapStateToProps)(Child)
 
-        const store = createStore((state = 0, action) =>
-          action.type === 'INC' ? state + 1 : state
+        const store = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
         )
         rtl.render(
           <ProviderMock store={store}>
-            <Parent />
+            <ConnectedParent />
           </ProviderMock>
         )
 
@@ -1931,7 +2146,10 @@ describe('React', () => {
           }
         }
 
-        const context = React.createContext(null)
+        const context = React.createContext<ReactReduxContextValue<
+          any,
+          AnyAction
+        > | null>(null)
 
         let actualState
 
@@ -1970,7 +2188,10 @@ describe('React', () => {
           }
         }
 
-        const context = React.createContext(null)
+        const context = React.createContext<ReactReduxContextValue<
+          any,
+          AnyAction
+        > | null>(null)
 
         let actualState
 
@@ -1985,10 +2206,13 @@ describe('React', () => {
 
         const store1 = createStore(() => expectedState)
         const store2 = createStore(() => ignoredState)
-
         rtl.render(
           <ProviderMock context={context} store={store1}>
             <ProviderMock store={store2}>
+              {/*TODO: Since the connect type does not support this advanced usage, 
+                we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
+                https://github.com/reduxjs/react-redux/pull/1781 */}
+              {/*// @ts-ignore */}
               <Decorated context={context} />
             </ProviderMock>
           </ProviderMock>
@@ -2020,6 +2244,10 @@ describe('React', () => {
 
         rtl.render(
           <ProviderMock store={store}>
+            {/*TODO: Since the connect type does not support this advanced usage, 
+              we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
+              https://github.com/reduxjs/react-redux/pull/1781 */}
+            {/*// @ts-ignore */}
             <Decorated context={nonContext} />
           </ProviderMock>
         )
@@ -2047,7 +2275,7 @@ describe('React', () => {
           subscribe: () => {},
           getState: () => expectedState,
         }
-
+        // @ts-ignore
         rtl.render(<Decorated store={mockStore} />)
 
         expect(actualState).toEqual(expectedState)
@@ -2069,17 +2297,38 @@ describe('React', () => {
       })
 
       it('should pass through ancestor subscription when store is given as a prop', () => {
+        interface Store1State1Type {
+          first: string
+        }
+        interface Store2State1Type {
+          second: string
+        }
+        interface ActionType {
+          type: string
+        }
+        type NoDispatchType = {}
         const c3Spy = jest.fn()
         const c2Spy = jest.fn()
         const c1Spy = jest.fn()
 
-        const Comp3 = ({ first }) => {
+        type Comp3TStatePropsType = Store1State1Type
+        type Comp3NoDispatchType = NoDispatchType
+        type Comp3OwnPropsType = {}
+        interface Comp1Props extends Comp1TStatePropsType {
+          children: JSX.Element | JSX.Element[]
+        }
+        const Comp3 = ({ first }: Comp3TStatePropsType) => {
           c3Spy()
           return <Passthrough c={first} />
         }
-        const ConnectedComp3 = connect((state) => state)(Comp3)
+        const ConnectedComp3 = connect<
+          Comp3TStatePropsType,
+          Comp3NoDispatchType,
+          Comp3OwnPropsType,
+          Store1State1Type
+        >((state) => state)(Comp3)
 
-        const Comp2 = ({ second }) => {
+        const Comp2 = ({ second }: Store2State1Type) => {
           c2Spy()
           return (
             <div>
@@ -2090,7 +2339,13 @@ describe('React', () => {
         }
         const ConnectedComp2 = connect((state) => state)(Comp2)
 
-        const Comp1 = ({ children, first }) => {
+        type Comp1TStatePropsType = Store1State1Type
+        type Comp1NoDispatchType = NoDispatchType
+        type Comp1OwnPropsType = {}
+        interface Comp1Props extends Comp1TStatePropsType {
+          children: JSX.Element | JSX.Element[]
+        }
+        const Comp1 = ({ children, first }: Comp1Props) => {
           c1Spy()
           return (
             <div>
@@ -2099,9 +2354,17 @@ describe('React', () => {
             </div>
           )
         }
-        const ConnectedComp1 = connect((state) => state)(Comp1)
+        const ConnectedComp1 = connect<
+          Comp1TStatePropsType,
+          Comp1NoDispatchType,
+          Comp1OwnPropsType,
+          Store1State1Type
+        >((state) => state)(Comp1)
 
-        const reducer1 = (state = { first: '1' }, action) => {
+        const reducer1 = (
+          state: Store1State1Type = { first: '1' },
+          action: ActionType
+        ) => {
           switch (action.type) {
             case 'CHANGE':
               return { first: '2' }
@@ -2110,7 +2373,10 @@ describe('React', () => {
           }
         }
 
-        const reducer2 = (state = { second: '3' }, action) => {
+        const reducer2 = (
+          state: Store2State1Type = { second: '3' },
+          action: ActionType
+        ) => {
           switch (action.type) {
             case 'CHANGE':
               return { second: '4' }
@@ -2125,6 +2391,10 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store1}>
             <ConnectedComp1>
+              {/*TODO: Since the connect type does not support this advanced usage, 
+                we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
+                https://github.com/reduxjs/react-redux/pull/1781 */}
+              {/*// @ts-ignore */}
               <ConnectedComp2 store={store2} />
             </ConnectedComp1>
           </ProviderMock>
@@ -2167,55 +2437,77 @@ describe('React', () => {
       })
 
       it('should subscribe properly when a new store is provided via props', () => {
-        const store1 = createStore((state = 0, action) =>
-          action.type === 'INC' ? state + 1 : state
+        type RootStateType = number
+        interface ActionType {
+          type: string
+        }
+        const store1 = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
         )
-        const store2 = createStore((state = 0, action) =>
-          action.type === 'INC' ? state + 1 : state
+        const store2 = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
         )
-        const customContext = React.createContext()
+        const customContext =
+          React.createContext<ReactReduxContextValue | null>(null)
 
-        @connect((state) => ({ count: state }), undefined, undefined, {
-          context: customContext,
-        })
         class A extends Component {
           render() {
-            return <B />
+            return <ConnectedB />
           }
         }
+        const ConnectedA = connect(
+          (state) => ({ count: state }),
+          undefined,
+          undefined,
+          {
+            context: customContext,
+          }
+        )(A)
 
         const mapStateToPropsB = jest.fn((state) => ({ count: state }))
-        @connect(mapStateToPropsB, undefined, undefined, {
-          context: customContext,
-        })
         class B extends Component {
           render() {
-            return <C {...this.props} />
+            return <ConnectedC {...this.props} />
           }
         }
+        const ConnectedB = connect(mapStateToPropsB, undefined, undefined, {
+          context: customContext,
+        })(B)
 
         const mapStateToPropsC = jest.fn((state) => ({ count: state }))
-        @connect(mapStateToPropsC, undefined, undefined, {
-          context: customContext,
-        })
         class C extends Component {
           render() {
-            return <D />
+            return <ConnectedD />
           }
         }
+        const ConnectedC = connect(mapStateToPropsC, undefined, undefined, {
+          context: customContext,
+        })(C)
 
+        interface DTStatePropsType {
+          count: number
+        }
+        type DNoDispatchType = {}
+        type DOwnPropsType = {}
         const mapStateToPropsD = jest.fn((state) => ({ count: state }))
-        @connect(mapStateToPropsD)
-        class D extends Component {
+        class D extends Component<DTStatePropsType> {
           render() {
             return <div>{this.props.count}</div>
           }
         }
+        const ConnectedD = connect<
+          DTStatePropsType,
+          DNoDispatchType,
+          DOwnPropsType,
+          RootStateType
+        >(mapStateToPropsD)(D)
 
         rtl.render(
           <ProviderMock store={store1}>
             <ProviderMock context={customContext} store={store2}>
-              <A />
+              <ConnectedA />
             </ProviderMock>
           </ProviderMock>
         )
@@ -2241,40 +2533,6 @@ describe('React', () => {
     })
 
     describe('Refs', () => {
-      it.skip('should throw when trying to access the wrapped instance if withRef is not specified', () => {
-        const store = createStore(() => ({}))
-
-        class Container extends Component {
-          render() {
-            return <Passthrough />
-          }
-        }
-
-        const decorator = connect((state) => state)
-        const Decorated = decorator(Container)
-
-        class Wrapper extends Component {
-          render() {
-            return (
-              <Decorated ref={(comp) => comp && comp.getWrappedInstance()} />
-            )
-          }
-        }
-
-        // TODO Remove this when React is fixed, per https://github.com/facebook/react/issues/11098
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-        expect(() =>
-          rtl.render(
-            <ProviderMock store={store}>
-              <Wrapper />
-            </ProviderMock>
-          )
-        ).toThrow(
-          `To access the wrapped instance, you need to specify { withRef: true } in the options argument of the connect() call`
-        )
-        spy.mockRestore()
-      })
-
       it('should return the instance of the wrapped component for use in calling child methods', async (done) => {
         const store = createStore(() => ({}))
 
@@ -2297,7 +2555,7 @@ describe('React', () => {
         })
         const Decorated = decorator(Container)
 
-        const ref = React.createRef()
+        const ref = React.createRef<Container>()
 
         class Wrapper extends Component {
           render() {
@@ -2313,11 +2571,12 @@ describe('React', () => {
 
         await tester.findByTestId('loaded')
 
-        expect(ref.current.someInstanceMethod()).toBe(someData)
+        expect(ref.current!.someInstanceMethod()).toBe(someData)
         done()
       })
 
       it('should correctly separate and pass through props to the wrapped component with a forwarded ref', () => {
+        type RootStateType = {}
         const store = createStore(() => ({}))
 
         class Container extends Component {
@@ -2325,13 +2584,20 @@ describe('React', () => {
             return <Passthrough {...this.props} />
           }
         }
-
-        const decorator = connect((state) => state, null, null, {
+        type ContainerTStatePropsType = {}
+        type ContainerNoDispatchType = null
+        type ContainerOwnPropsType = { a: number }
+        const decorator = connect<
+          ContainerTStatePropsType,
+          ContainerNoDispatchType,
+          ContainerOwnPropsType,
+          RootStateType
+        >((state) => state, null, null, {
           forwardRef: true,
         })
         const Decorated = decorator(Container)
 
-        const ref = React.createRef()
+        const ref = React.createRef<Container>()
 
         class Wrapper extends Component {
           render() {
@@ -2375,7 +2641,7 @@ describe('React', () => {
         })
         const Decorated = decorator(Container)
 
-        const ref = React.createRef()
+        const ref = React.createRef<Container>()
 
         class Wrapper extends Component {
           render() {
@@ -2391,7 +2657,7 @@ describe('React', () => {
 
         await tester.findByTestId('loaded')
 
-        expect(ref.current.someInstanceMethod()).toBe(someData)
+        expect(ref.current!.someInstanceMethod()).toBe(someData)
         done()
       })
 
@@ -2399,6 +2665,7 @@ describe('React', () => {
         const store = createStore(() => ({}))
 
         class ImpureComponent extends Component {
+          static contextTypes: any
           render() {
             return <Passthrough statefulValue={this.context.statefulValue} />
           }
@@ -2410,11 +2677,15 @@ describe('React', () => {
 
         const decorator = connect((state) => state, null, null, { pure: false })
         const Decorated = decorator(ImpureComponent)
+        interface StateFulWrapperStateType {
+          value: number
+        }
+        let externalSetState: Dispatch<StateFulWrapperStateType>
 
-        let externalSetState
-        class StatefulWrapper extends Component {
-          constructor() {
-            super()
+        class StatefulWrapper extends Component<{}, StateFulWrapperStateType> {
+          static childContextTypes: any
+          constructor(props: {}) {
+            super(props)
             this.state = { value: 0 }
             externalSetState = this.setState.bind(this)
           }
@@ -2441,11 +2712,17 @@ describe('React', () => {
         )
 
         expect(tester.getByTestId('statefulValue')).toHaveTextContent('0')
+        //@ts-ignore
         externalSetState({ value: 1 })
         expect(tester.getByTestId('statefulValue')).toHaveTextContent('1')
       })
 
       it('calls mapState and mapDispatch for impure components', () => {
+        type RootStateType = {
+          foo: string
+          bar: string
+          [x: string]: string
+        }
         const store = createStore(() => ({
           foo: 'foo',
           bar: 'bar',
@@ -2455,14 +2732,25 @@ describe('React', () => {
         const mapDispatchSpy = jest.fn().mockReturnValue({})
         const impureRenderSpy = jest.fn()
 
-        class ImpureComponent extends Component {
+        interface ImpureTStatePropsType {
+          value: string
+        }
+        type ImpureNoDispatch = {}
+        interface ImpureOwnProps {
+          storeGetter: { storeKey: string }
+        }
+        class ImpureComponent extends Component<ImpureTStatePropsType> {
           render() {
             impureRenderSpy()
             return <Passthrough statefulValue={this.props.value} />
           }
         }
-
-        const decorator = connect(
+        const decorator = connect<
+          ImpureTStatePropsType,
+          ImpureNoDispatch,
+          ImpureOwnProps,
+          RootStateType
+        >(
           (state, { storeGetter }) => {
             mapStateSpy()
             return { value: state[storeGetter.storeKey] }
@@ -2474,11 +2762,17 @@ describe('React', () => {
         const Decorated = decorator(ImpureComponent)
 
         let externalSetState
-        let storeGetter
-        class StatefulWrapper extends Component {
-          constructor() {
-            super()
-            storeGetter = { storeKey: 'foo' }
+        let storeGetter = { storeKey: 'foo' }
+        type StatefulWrapperStateType = {
+          storeGetter: typeof storeGetter
+        }
+        type StatefulWrapperPropsType = {}
+        class StatefulWrapper extends Component<
+          StatefulWrapperPropsType,
+          StatefulWrapperStateType
+        > {
+          constructor(props: StatefulWrapperPropsType) {
+            super(props)
             this.state = {
               storeGetter,
             }
@@ -2508,6 +2802,7 @@ describe('React', () => {
 
         // Impure update
         storeGetter.storeKey = 'bar'
+        //@ts-ignore
         externalSetState({ storeGetter })
 
         // 4) After the the impure update
@@ -2523,17 +2818,19 @@ describe('React', () => {
         const store = createStore(() => ({}))
         let renderCount = 0
 
-        @connect(() => ({}), null, null, { pure: false })
         class ImpureComponent extends React.Component {
           render() {
             ++renderCount
             return <div />
           }
         }
+        const ConnectedImpure = connect(() => ({}), null, null, {
+          pure: false,
+        })(ImpureComponent)
 
         rtl.render(
           <ProviderMock store={store}>
-            <ImpureComponent />
+            <ConnectedImpure />
           </ProviderMock>
         )
 
@@ -2549,20 +2846,22 @@ describe('React', () => {
         let store = createStore(() => ({}))
         let renderCount = 0
 
-        @connect(null, null, () => ({ a: 1 }), { pure: false })
         class Container extends React.Component {
           render() {
             ++renderCount
             return <div />
           }
         }
+        const ConnectedContainer = connect(null, null, () => ({ a: 1 }), {
+          pure: false,
+        })(Container)
 
         class Parent extends React.Component {
           componentDidMount() {
             this.forceUpdate()
           }
           render() {
-            return <Container />
+            return <ConnectedContainer />
           }
         }
 
@@ -2584,9 +2883,20 @@ describe('React', () => {
         let memoizedReturnCount = 0
         const store = createStore(() => ({ value: 1 }))
 
+        interface RootStateType {
+          value: number
+        }
+        interface TStatePropsType {
+          someObject: { prop: string; stateVal: number }
+        }
+        type NoDispatch = {}
+        interface OnwPropsType {
+          name: string
+        }
+
         const mapStateFactory = () => {
-          let lastProp, lastVal, lastResult
-          return (state, props) => {
+          let lastProp: string, lastVal: number, lastResult: TStatePropsType
+          return (state: RootStateType, props: OnwPropsType) => {
             if (props.name === lastProp && lastVal === state.value) {
               memoizedReturnCount++
               return lastResult
@@ -2599,7 +2909,6 @@ describe('React', () => {
           }
         }
 
-        @connect(mapStateFactory)
         class Container extends Component {
           componentDidUpdate() {
             updatedCount++
@@ -2608,12 +2917,18 @@ describe('React', () => {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect<
+          TStatePropsType,
+          NoDispatch,
+          OnwPropsType,
+          RootStateType
+        >(mapStateFactory)(Container)
 
         rtl.render(
           <ProviderMock store={store}>
             <div>
-              <Container name="a" />
-              <Container name="b" />
+              <ConnectedContainer name="a" />
+              <ConnectedContainer name="b" />
             </div>
           </ProviderMock>
         )
@@ -2627,31 +2942,45 @@ describe('React', () => {
       })
 
       it('should allow a mapStateToProps factory consuming just state to return a function that gets ownProps', () => {
+        interface RootStateType {
+          value: number
+        }
+        type TStateProps = {}
+        type NoDispatch = {}
+        interface OwnProps {
+          name: string
+        }
         const store = createStore(() => ({ value: 1 }))
 
         let initialState
         let initialOwnProps
-        let secondaryOwnProps
-        const mapStateFactory = function (factoryInitialState) {
+        let secondaryOwnProps: OwnProps
+        const mapStateFactory = function (factoryInitialState: RootStateType) {
           initialState = factoryInitialState
           initialOwnProps = arguments[1]
-          return (state, props) => {
+          return (state: RootStateType, props: OwnProps) => {
             secondaryOwnProps = props
             return {}
           }
         }
 
-        @connect(mapStateFactory)
         class Container extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
 
+        const ConnectedContainer = connect<
+          TStateProps,
+          NoDispatch,
+          OwnProps,
+          RootStateType
+        >(mapStateFactory)(Container)
+
         rtl.render(
           <ProviderMock store={store}>
             <div>
-              <Container name="a" />
+              <ConnectedContainer name="a" />
             </div>
           </ProviderMock>
         )
@@ -2662,18 +2991,32 @@ describe('React', () => {
 
         expect(initialOwnProps).toBe(undefined)
         expect(initialState).not.toBe(undefined)
+        //@ts-ignore
         expect(secondaryOwnProps).not.toBe(undefined)
+        //@ts-ignore
         expect(secondaryOwnProps.name).toBe('a')
       })
 
       it('should allow providing a factory function to mapDispatchToProps', () => {
         let updatedCount = 0
         let memoizedReturnCount = 0
+
         const store = createStore(() => ({ value: 1 }))
+        type PassTStateProps = {}
+        interface TDispatchPropsType {
+          someObject: {
+            dispatchFn: ReduxDispatch
+          }
+        }
+        interface OwnPropsType {
+          count: number
+          name: string
+        }
+        type TMergeProps = Omit<OwnPropsType, 'count'> & TDispatchPropsType
 
         const mapDispatchFactory = () => {
-          let lastProp, lastResult
-          return (dispatch, props) => {
+          let lastProp: string, lastResult: TDispatchPropsType
+          return (dispatch: ReduxDispatch, props: OwnPropsType) => {
             if (props.name === lastProp) {
               memoizedReturnCount++
               return lastResult
@@ -2682,11 +3025,14 @@ describe('React', () => {
             return (lastResult = { someObject: { dispatchFn: dispatch } })
           }
         }
-        function mergeParentDispatch(stateProps, dispatchProps, parentProps) {
+        function mergeParentDispatch(
+          stateProps: PassTStateProps,
+          dispatchProps: TDispatchPropsType,
+          parentProps: OwnPropsType
+        ): TMergeProps {
           return { ...stateProps, ...dispatchProps, name: parentProps.name }
         }
 
-        @connect(null, mapDispatchFactory, mergeParentDispatch)
         class Passthrough extends Component {
           componentDidUpdate() {
             updatedCount++
@@ -2695,9 +3041,26 @@ describe('React', () => {
             return <div />
           }
         }
+        const ConnectedPass = connect<
+          PassTStateProps,
+          TDispatchPropsType,
+          OwnPropsType,
+          TMergeProps
+        >(
+          null,
+          mapDispatchFactory,
+          mergeParentDispatch
+        )(Passthrough)
 
-        class Container extends Component {
-          constructor(props) {
+        type ContainerPropsType = {}
+        interface ContainerStateType {
+          count: number
+        }
+        class Container extends Component<
+          ContainerPropsType,
+          ContainerStateType
+        > {
+          constructor(props: ContainerPropsType) {
             super(props)
             this.state = { count: 0 }
           }
@@ -2708,8 +3071,8 @@ describe('React', () => {
             const { count } = this.state
             return (
               <div>
-                <Passthrough count={count} name="a" />
-                <Passthrough count={count} name="b" />
+                <ConnectedPass count={count} name="a" />
+                <ConnectedPass count={count} name="b" />
               </div>
             )
           }
@@ -2731,7 +3094,7 @@ describe('React', () => {
     })
 
     describe('Error handling for invalid arguments', () => {
-      function renderWithBadConnect(Component) {
+      function renderWithBadConnect(Component: ElementType) {
         const store = createStore(() => ({}))
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -2742,7 +3105,8 @@ describe('React', () => {
             </ProviderMock>
           )
           return null
-        } catch (error) {
+          //@ts-ignore before typescript4.0, a catch could not have type annotations
+        } catch (error: any) {
           return error.message
         } finally {
           spy.mockRestore()
@@ -2750,6 +3114,7 @@ describe('React', () => {
       }
 
       it('should throw a helpful error for invalid mapStateToProps arguments', () => {
+        //@ts-expect-error
         @connect('invalid')
         class InvalidMapState extends React.Component {
           render() {
@@ -2764,6 +3129,7 @@ describe('React', () => {
       })
 
       it('should throw a helpful error for invalid mapDispatchToProps arguments', () => {
+        //@ts-expect-error
         @connect(null, 'invalid')
         class InvalidMapDispatch extends React.Component {
           render() {
@@ -2778,6 +3144,7 @@ describe('React', () => {
       })
 
       it('should throw a helpful error for invalid mergeProps arguments', () => {
+        // @ts-expect-error
         @connect(null, null, 'invalid')
         class InvalidMerge extends React.Component {
           render() {
@@ -2798,19 +3165,21 @@ describe('React', () => {
           return
         }
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-        const store = createStore(stringBuilder)
+        const store: Store = createStore(stringBuilder)
 
-        @connect((state) => ({ string: state }))
         class Container extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedContainer = connect((state) => ({ string: state }))(
+          Container
+        )
 
         rtl.render(
           <React.StrictMode>
             <ProviderMock store={store}>
-              <Container />
+              <ConnectedContainer />
             </ProviderMock>
           </React.StrictMode>
         )
@@ -2821,7 +3190,8 @@ describe('React', () => {
 
     describe('Subscription and update timing correctness', () => {
       it('should pass state consistently to mapState', () => {
-        const store = createStore(stringBuilder)
+        type RootStateType = string
+        const store: Store = createStore(stringBuilder)
 
         rtl.act(() => {
           store.dispatch({ type: 'APPEND', body: 'a' })
@@ -2829,8 +3199,10 @@ describe('React', () => {
 
         let childMapStateInvokes = 0
 
-        @connect((state) => ({ state }))
-        class Container extends Component {
+        type ContainerStateProps = { state: string }
+        type ContainerNoDisPatch = {}
+        type ContainerOwnProps = {}
+        class Container extends Component<ContainerStateProps> {
           emitChange() {
             store.dispatch({ type: 'APPEND', body: 'b' })
           }
@@ -2839,29 +3211,46 @@ describe('React', () => {
             return (
               <div>
                 <button onClick={this.emitChange.bind(this)}>change</button>
-                <ChildContainer parentState={this.props.state} />
+                <ConnectedChildrenContainer parentState={this.props.state} />
               </div>
             )
           }
         }
+        const ConnectedContainer = connect<
+          ContainerStateProps,
+          ContainerNoDisPatch,
+          ContainerOwnProps,
+          RootStateType
+        >((state) => ({ state }))(Container)
 
-        const childCalls = []
-        @connect((state, parentProps) => {
-          childMapStateInvokes++
-          childCalls.push([state, parentProps.parentState])
-          // The state from parent props should always be consistent with the current state
-          expect(state).toEqual(parentProps.parentState)
-          return {}
-        })
+        const childCalls: any[] = []
+
+        type ChildrenTStateProps = {}
+        type ChildrenNoDisPatch = {}
+        type ChildrenOwnProps = {
+          parentState: string
+        }
         class ChildContainer extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedChildrenContainer = connect<
+          ChildrenTStateProps,
+          ChildrenNoDisPatch,
+          ChildrenOwnProps,
+          RootStateType
+        >((state, parentProps) => {
+          childMapStateInvokes++
+          childCalls.push([state, parentProps.parentState])
+          // The state from parent props should always be consistent with the current state
+          expect(state).toEqual(parentProps.parentState)
+          return {}
+        })(ChildContainer)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
-            <Container />
+            <ConnectedContainer />
           </ProviderMock>
         )
 
@@ -2896,51 +3285,76 @@ describe('React', () => {
       })
 
       it('should invoke mapState always with latest props', () => {
-        const store = createStore((state = 0) => state + 1)
+        type RootState = number
+        const store = createStore((state: RootState = 0) => state + 1)
 
-        let propsPassedIn
+        interface InnerTStatePropsType {
+          reduxCount: RootState
+        }
+        type NoDispatchType = {}
+        interface OwnPropsType {
+          count: number
+        }
+        let propsPassedIn: OwnPropsType & InnerTStatePropsType
 
-        @connect((reduxCount) => {
-          return { reduxCount }
-        })
-        class InnerComponent extends Component {
+        class InnerComponent extends Component<
+          OwnPropsType & InnerTStatePropsType
+        > {
           render() {
             propsPassedIn = this.props
             return <Passthrough {...this.props} />
           }
         }
+        const ConnectedInner = connect<
+          InnerTStatePropsType,
+          NoDispatchType,
+          OwnPropsType,
+          RootState
+        >((reduxCount) => {
+          return { reduxCount }
+        })(InnerComponent)
 
-        class OuterComponent extends Component {
-          constructor() {
-            super()
+        interface OuterStateType {
+          count: number
+        }
+        class OuterComponent extends Component<{}, OuterStateType> {
+          constructor(props: {}) {
+            super(props)
             this.state = { count: 0 }
           }
 
           render() {
-            return <InnerComponent {...this.state} />
+            return <ConnectedInner {...this.state} />
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
-        outerComponent.setState(({ count }) => ({ count: count + 1 }))
+        outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
         store.dispatch({ type: '' })
-
+        //@ts-ignore
         expect(propsPassedIn.count).toEqual(1)
+        //@ts-ignore
         expect(propsPassedIn.reduxCount).toEqual(2)
       })
 
       it('should use the latest props when updated between actions', () => {
-        const reactCallbackMiddleware = (store) => {
-          let callback
+        type RootStateType = number
+        type PayloadType = () => void
+        interface ActionType {
+          type: string
+          payload?: PayloadType
+        }
+        const reactCallbackMiddleware = (store: MiddlewareAPI) => {
+          let callback: () => void
 
-          return (next) => (action) => {
+          return (next: ReduxDispatch) => (action: ActionType) => {
             if (action.type === 'SET_COMPONENT_CALLBACK') {
-              callback = action.payload
+              callback = action.payload!
             }
 
             if (callback && action.type === 'INC1') {
@@ -2962,7 +3376,7 @@ describe('React', () => {
           }
         }
 
-        const counter = (state = 0, action) => {
+        const counter = (state: RootStateType = 0, action: ActionType) => {
           if (action.type === 'INC1') {
             return state + 1
           } else if (action.type === 'INC2') {
@@ -2976,7 +3390,21 @@ describe('React', () => {
           applyMiddleware(reactCallbackMiddleware)
         )
 
-        const Child = connect((count) => ({ count }))(function (props) {
+        interface ChildrenTStatePropsType {
+          count: RootStateType
+        }
+        type ChildrenNoDispatchType = {}
+        interface ChildrenOwnProps {
+          prop: string
+        }
+        const Child = connect<
+          ChildrenTStatePropsType,
+          ChildrenNoDispatchType,
+          ChildrenOwnProps,
+          RootStateType
+        >((count) => ({ count }))(function (
+          props: ChildrenTStatePropsType & ChildrenOwnProps
+        ) {
           return (
             <div
               data-testid="child"
@@ -2985,9 +3413,14 @@ describe('React', () => {
             />
           )
         })
-        class Parent extends Component {
-          constructor() {
-            super()
+        type ParentPropsType = {}
+        interface ParentStateType {
+          prop: string
+        }
+        class Parent extends Component<ParentPropsType, ParentStateType> {
+          inc1: () => void
+          constructor(props: {}) {
+            super(props)
             this.state = {
               prop: 'a',
             }
@@ -3007,13 +3440,13 @@ describe('React', () => {
           }
         }
 
-        let parent
-        const rendered = rtl.render(<Parent ref={(ref) => (parent = ref)} />)
+        let parent = React.createRef<Parent>()
+        const rendered = rtl.render(<Parent ref={parent} />)
         expect(rendered.getByTestId('child').dataset.count).toEqual('0')
         expect(rendered.getByTestId('child').dataset.prop).toEqual('a')
 
         // Force the multi-update sequence by running this bound action creator
-        parent.inc1()
+        parent.current!.inc1()
 
         // The connected child component _should_ have rendered with the latest Redux
         // store value (3) _and_ the latest wrapper prop ('b').
@@ -3022,51 +3455,70 @@ describe('React', () => {
       })
 
       it('should invoke mapState always with latest store state', () => {
-        const store = createStore((state = 0) => state + 1)
+        type RootStateType = number
+        const store = createStore((state: RootStateType = 0) => state + 1)
 
         let reduxCountPassedToMapState
 
-        @connect((reduxCount) => {
-          reduxCountPassedToMapState = reduxCount
-          return reduxCount < 2 ? { a: 'a' } : { a: 'b' }
-        })
         class InnerComponent extends Component {
           render() {
             return <Passthrough {...this.props} />
           }
         }
+        interface InnerTPropsStateType {
+          a: string
+        }
+        type InnerNoDispatch = {}
+        type InnerOwnerPropsType = { count: number }
+        const ConnectedInner = connect<
+          InnerTPropsStateType,
+          InnerNoDispatch,
+          InnerOwnerPropsType,
+          RootStateType
+        >((reduxCount) => {
+          reduxCountPassedToMapState = reduxCount
+          return reduxCount < 2 ? { a: 'a' } : { a: 'b' }
+        })(InnerComponent)
 
-        class OuterComponent extends Component {
-          constructor() {
-            super()
+        interface OuterStateType {
+          count: number
+        }
+        class OuterComponent extends Component<{}, OuterStateType> {
+          constructor(props: {}) {
+            super(props)
             this.state = { count: 0 }
           }
 
           render() {
-            return <InnerComponent {...this.state} />
+            return <ConnectedInner {...this.state} />
           }
         }
 
-        let outerComponent
+        let outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
-            <OuterComponent ref={(c) => (outerComponent = c)} />
+            <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
 
         store.dispatch({ type: '' })
         store.dispatch({ type: '' })
-        outerComponent.setState(({ count }) => ({ count: count + 1 }))
+        outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
 
         expect(reduxCountPassedToMapState).toEqual(3)
       })
 
       it('should ensure top-down updates for consecutive batched updates', () => {
+        type RootStateType = number
+        interface ActionType {
+          type: string
+        }
         const INC = 'INC'
-        const reducer = (c = 0, { type }) => (type === INC ? c + 1 : c)
+        const reducer = (c: RootStateType = 0, { type }: ActionType) =>
+          type === INC ? c + 1 : c
         const store = createStore(reducer)
 
-        let executionOrder = []
+        let executionOrder: string[] = []
         let expectedExecutionOrder = [
           'parent map',
           'parent render',
@@ -3116,8 +3568,17 @@ describe('React', () => {
         b: { id: 'b', name: 'Item B' },
         c: { id: 'c', name: 'Item C' },
       }
+      interface ActionType {
+        type: string
+      }
+      type RootStateType = {
+        [x: string]: { id: string; name: string }
+      }
 
-      const reducer = (state = initialState, action) => {
+      const reducer = (
+        state: RootStateType = initialState,
+        action: ActionType
+      ) => {
         switch (action.type) {
           case 'DELETE_B': {
             const newState = { ...state }
@@ -3130,32 +3591,54 @@ describe('React', () => {
       }
 
       const store = createStore(reducer)
-
-      const ListItem = ({ name }) => <div>Name: {name}</div>
+      interface PropsType {
+        name: string | undefined
+      }
+      const ListItem = ({ name }: PropsType) => <div>Name: {name}</div>
 
       let thrownError = null
 
-      const listItemMapState = (state, ownProps) => {
+      type ListItemTStatePropsType = { name: string } | undefined
+      type ListItemNoDispatch = {}
+      type ListItemOwnerProps = {
+        id: string
+      }
+
+      const listItemMapState = (
+        state: RootStateType,
+        ownProps: ListItemOwnerProps
+      ) => {
         try {
           const item = state[ownProps.id]
           // If this line executes when item B has been deleted, it will throw an error.
           // For this test to succeed, we should never execute mapState for item B after the item
           // has been deleted, because the parent should re-render the component out of existence.
-          const { name } = item
+          const { name } = item!
           return { name }
         } catch (e) {
           thrownError = e
         }
       }
 
-      const ConnectedListItem = connect(listItemMapState)(ListItem)
+      const ConnectedListItem = connect<
+        ListItemTStatePropsType,
+        ListItemNoDispatch,
+        ListItemOwnerProps,
+        RootStateType
+      >(listItemMapState)(ListItem)
 
-      const appMapState = (state) => {
+      interface AppTStatePropsType {
+        itemIds: string[]
+      }
+      type AppNoDispatchType = {}
+      type OwnPropsType = {}
+
+      const appMapState = (state: RootStateType) => {
         const itemIds = Object.keys(state)
         return { itemIds }
       }
 
-      function App({ itemIds }) {
+      function App({ itemIds }: AppTStatePropsType) {
         const items = itemIds.map((id) => (
           <ConnectedListItem key={id} id={id} />
         ))
@@ -3168,7 +3651,12 @@ describe('React', () => {
         )
       }
 
-      const ConnectedApp = connect(appMapState)(App)
+      const ConnectedApp = connect<
+        AppTStatePropsType,
+        AppNoDispatchType,
+        OwnPropsType,
+        RootStateType
+      >(appMapState)(App)
 
       rtl.render(
         <ProviderMock store={store}>
