@@ -15,7 +15,8 @@ import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 import type { ReactNode, Dispatch } from 'react'
-import type { Store, Dispatch as ReduxDispatch } from 'redux'
+import type { Store, Dispatch as ReduxDispatch, AnyAction } from 'redux'
+import type { ReactReduxContextValue } from '../../src/index'
 
 describe('React', () => {
   describe('connect', () => {
@@ -2273,322 +2274,390 @@ describe('React', () => {
       })
     })
 
-    // describe('Custom context and store-as-prop', () => {
-    //   it('should use a custom context provider and consumer if given as an option to connect', () => {
-    //     class Container extends Component {
-    //       render() {
-    //         return <Passthrough />
-    //       }
-    //     }
+    describe('Custom context and store-as-prop', () => {
+      it('should use a custom context provider and consumer if given as an option to connect', () => {
+        class Container extends Component {
+          render() {
+            return <Passthrough />
+          }
+        }
 
-    //     const context = React.createContext(null)
+        const context = React.createContext<ReactReduxContextValue<
+          any,
+          AnyAction
+        > | null>(null)
 
-    //     let actualState
+        let actualState
 
-    //     const expectedState = { foos: {} }
-    //     const ignoredState = { bars: {} }
+        const expectedState = { foos: {} }
+        const ignoredState = { bars: {} }
 
-    //     const decorator = connect(
-    //       (state) => {
-    //         actualState = state
-    //         return {}
-    //       },
-    //       undefined,
-    //       undefined,
-    //       { context }
-    //     )
-    //     const Decorated = decorator(Container)
+        const decorator = connect(
+          (state) => {
+            actualState = state
+            return {}
+          },
+          undefined,
+          undefined,
+          { context }
+        )
+        const Decorated = decorator(Container)
 
-    //     const store1 = createStore(() => expectedState)
-    //     const store2 = createStore(() => ignoredState)
+        const store1 = createStore(() => expectedState)
+        const store2 = createStore(() => ignoredState)
 
-    //     rtl.render(
-    //       <ProviderMock context={context} store={store1}>
-    //         <ProviderMock store={store2}>
-    //           <Decorated />
-    //         </ProviderMock>
-    //       </ProviderMock>
-    //     )
+        rtl.render(
+          <ProviderMock context={context} store={store1}>
+            <ProviderMock store={store2}>
+              <Decorated />
+            </ProviderMock>
+          </ProviderMock>
+        )
 
-    //     expect(actualState).toEqual(expectedState)
-    //   })
+        expect(actualState).toEqual(expectedState)
+      })
 
-    //   it('should use a custom context provider and consumer if passed as a prop to the component', () => {
-    //     class Container extends Component {
-    //       render() {
-    //         return <Passthrough />
-    //       }
-    //     }
+      it('should use a custom context provider and consumer if passed as a prop to the component', () => {
+        class Container extends Component {
+          render() {
+            return <Passthrough />
+          }
+        }
 
-    //     const context = React.createContext(null)
+        const context = React.createContext<ReactReduxContextValue<
+          any,
+          AnyAction
+        > | null>(null)
 
-    //     let actualState
+        let actualState
 
-    //     const expectedState = { foos: {} }
-    //     const ignoredState = { bars: {} }
+        const expectedState = { foos: {} }
+        const ignoredState = { bars: {} }
 
-    //     const decorator = connect((state) => {
-    //       actualState = state
-    //       return {}
-    //     })
-    //     const Decorated = decorator(Container)
+        const decorator = connect((state) => {
+          actualState = state
+          return {}
+        })
+        const Decorated = decorator(Container)
 
-    //     const store1 = createStore(() => expectedState)
-    //     const store2 = createStore(() => ignoredState)
+        const store1 = createStore(() => expectedState)
+        const store2 = createStore(() => ignoredState)
+        rtl.render(
+          <ProviderMock context={context} store={store1}>
+            <ProviderMock store={store2}>
+              {/*// @ts-ignore */}
+              <Decorated context={context} />
+            </ProviderMock>
+          </ProviderMock>
+        )
 
-    //     rtl.render(
-    //       <ProviderMock context={context} store={store1}>
-    //         <ProviderMock store={store2}>
-    //           <Decorated context={context} />
-    //         </ProviderMock>
-    //       </ProviderMock>
-    //     )
+        expect(actualState).toEqual(expectedState)
+      })
 
-    //     expect(actualState).toEqual(expectedState)
-    //   })
+      it('should ignore non-react-context values that are passed as a prop to the component', () => {
+        class Container extends Component {
+          render() {
+            return <Passthrough />
+          }
+        }
 
-    //   it('should ignore non-react-context values that are passed as a prop to the component', () => {
-    //     class Container extends Component {
-    //       render() {
-    //         return <Passthrough />
-    //       }
-    //     }
+        const nonContext = { someProperty: {} }
 
-    //     const nonContext = { someProperty: {} }
+        let actualState
 
-    //     let actualState
+        const expectedState = { foos: {} }
 
-    //     const expectedState = { foos: {} }
+        const decorator = connect((state) => {
+          actualState = state
+          return {}
+        })
+        const Decorated = decorator(Container)
 
-    //     const decorator = connect((state) => {
-    //       actualState = state
-    //       return {}
-    //     })
-    //     const Decorated = decorator(Container)
+        const store = createStore(() => expectedState)
 
-    //     const store = createStore(() => expectedState)
+        rtl.render(
+          <ProviderMock store={store}>
+            {/*// @ts-ignore */}
+            <Decorated context={nonContext} />
+          </ProviderMock>
+        )
 
-    //     rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Decorated context={nonContext} />
-    //       </ProviderMock>
-    //     )
+        expect(actualState).toEqual(expectedState)
+      })
 
-    //     expect(actualState).toEqual(expectedState)
-    //   })
+      it('should use the store from the props instead of from the context if present', () => {
+        class Container extends Component {
+          render() {
+            return <Passthrough />
+          }
+        }
 
-    //   it('should use the store from the props instead of from the context if present', () => {
-    //     class Container extends Component {
-    //       render() {
-    //         return <Passthrough />
-    //       }
-    //     }
+        let actualState
 
-    //     let actualState
+        const expectedState = { foos: {} }
+        const decorator = connect((state) => {
+          actualState = state
+          return {}
+        })
+        const Decorated = decorator(Container)
+        const mockStore = {
+          dispatch: () => {},
+          subscribe: () => {},
+          getState: () => expectedState,
+        }
+        // @ts-ignore
+        rtl.render(<Decorated store={mockStore} />)
 
-    //     const expectedState = { foos: {} }
-    //     const decorator = connect((state) => {
-    //       actualState = state
-    //       return {}
-    //     })
-    //     const Decorated = decorator(Container)
-    //     const mockStore = {
-    //       dispatch: () => {},
-    //       subscribe: () => {},
-    //       getState: () => expectedState,
-    //     }
+        expect(actualState).toEqual(expectedState)
+      })
 
-    //     rtl.render(<Decorated store={mockStore} />)
+      it('should pass through a store prop that is not actually a Redux store', () => {
+        const notActuallyAStore = 42
 
-    //     expect(actualState).toEqual(expectedState)
-    //   })
+        const store = createStore(() => 123)
+        const Decorated = connect((state) => ({ state }))(Passthrough)
 
-    //   it('should pass through a store prop that is not actually a Redux store', () => {
-    //     const notActuallyAStore = 42
+        const rendered = rtl.render(
+          <ProviderMock store={store}>
+            <Decorated store={notActuallyAStore} />
+          </ProviderMock>
+        )
 
-    //     const store = createStore(() => 123)
-    //     const Decorated = connect((state) => ({ state }))(Passthrough)
+        expect(rendered.getByTestId('store')).toHaveTextContent('42')
+      })
 
-    //     const rendered = rtl.render(
-    //       <ProviderMock store={store}>
-    //         <Decorated store={notActuallyAStore} />
-    //       </ProviderMock>
-    //     )
+      it('should pass through ancestor subscription when store is given as a prop', () => {
+        interface Store1State1Type {
+          first: string
+        }
+        interface Store2State1Type {
+          second: string
+        }
+        interface ActionType {
+          type: string
+        }
+        type NoDispatchType = {}
+        const c3Spy = jest.fn()
+        const c2Spy = jest.fn()
+        const c1Spy = jest.fn()
 
-    //     expect(rendered.getByTestId('store')).toHaveTextContent('42')
-    //   })
+        type Comp3TStatePropsType = Store1State1Type
+        type Comp3NoDispatchType = NoDispatchType
+        type Comp3OwnPropsType = {}
+        interface Comp1Props extends Comp1TStatePropsType {
+          children: JSX.Element
+        }
+        const Comp3 = ({ first }: Comp3TStatePropsType) => {
+          c3Spy()
+          return <Passthrough c={first} />
+        }
+        const ConnectedComp3 = connect<
+          Comp3TStatePropsType,
+          Comp3NoDispatchType,
+          Comp3OwnPropsType,
+          Store1State1Type
+        >((state) => state)(Comp3)
 
-    //   it('should pass through ancestor subscription when store is given as a prop', () => {
-    //     const c3Spy = jest.fn()
-    //     const c2Spy = jest.fn()
-    //     const c1Spy = jest.fn()
+        const Comp2 = ({ second }: Store2State1Type) => {
+          c2Spy()
+          return (
+            <div>
+              <Passthrough b={second} />
+              <ConnectedComp3 />
+            </div>
+          )
+        }
+        const ConnectedComp2 = connect((state) => state)(Comp2)
 
-    //     const Comp3 = ({ first }) => {
-    //       c3Spy()
-    //       return <Passthrough c={first} />
-    //     }
-    //     const ConnectedComp3 = connect((state) => state)(Comp3)
+        type Comp1TStatePropsType = Store1State1Type
+        type Comp1NoDispatchType = NoDispatchType
+        type Comp1OwnPropsType = {}
+        interface Comp1Props extends Comp1TStatePropsType {
+          children: JSX.Element
+        }
+        const Comp1 = ({ children, first }: Comp1Props) => {
+          c1Spy()
+          return (
+            <div>
+              <Passthrough a={first} />
+              {children}
+            </div>
+          )
+        }
+        const ConnectedComp1 = connect<
+          Comp1TStatePropsType,
+          Comp1NoDispatchType,
+          Comp1OwnPropsType,
+          Store1State1Type
+        >((state) => state)(Comp1)
 
-    //     const Comp2 = ({ second }) => {
-    //       c2Spy()
-    //       return (
-    //         <div>
-    //           <Passthrough b={second} />
-    //           <ConnectedComp3 />
-    //         </div>
-    //       )
-    //     }
-    //     const ConnectedComp2 = connect((state) => state)(Comp2)
+        const reducer1 = (
+          state: Store1State1Type = { first: '1' },
+          action: ActionType
+        ) => {
+          switch (action.type) {
+            case 'CHANGE':
+              return { first: '2' }
+            default:
+              return state
+          }
+        }
 
-    //     const Comp1 = ({ children, first }) => {
-    //       c1Spy()
-    //       return (
-    //         <div>
-    //           <Passthrough a={first} />
-    //           {children}
-    //         </div>
-    //       )
-    //     }
-    //     const ConnectedComp1 = connect((state) => state)(Comp1)
+        const reducer2 = (
+          state: Store2State1Type = { second: '3' },
+          action: ActionType
+        ) => {
+          switch (action.type) {
+            case 'CHANGE':
+              return { second: '4' }
+            default:
+              return state
+          }
+        }
 
-    //     const reducer1 = (state = { first: '1' }, action) => {
-    //       switch (action.type) {
-    //         case 'CHANGE':
-    //           return { first: '2' }
-    //         default:
-    //           return state
-    //       }
-    //     }
+        const store1 = createStore(reducer1)
+        const store2 = createStore(reducer2)
 
-    //     const reducer2 = (state = { second: '3' }, action) => {
-    //       switch (action.type) {
-    //         case 'CHANGE':
-    //           return { second: '4' }
-    //         default:
-    //           return state
-    //       }
-    //     }
+        const tester = rtl.render(
+          <ProviderMock store={store1}>
+            <ConnectedComp1>
+              {/*// @ts-ignore */}
+              <ConnectedComp2 store={store2} />
+            </ConnectedComp1>
+          </ProviderMock>
+        )
 
-    //     const store1 = createStore(reducer1)
-    //     const store2 = createStore(reducer2)
+        // Initial render: C1/C3 read from store 1, C2 reads from store 2, one render each
+        expect(tester.getByTestId('a')).toHaveTextContent('1')
+        expect(tester.getByTestId('b')).toHaveTextContent('3')
+        expect(tester.getByTestId('c')).toHaveTextContent('1')
 
-    //     const tester = rtl.render(
-    //       <ProviderMock store={store1}>
-    //         <ConnectedComp1>
-    //           <ConnectedComp2 store={store2} />
-    //         </ConnectedComp1>
-    //       </ProviderMock>
-    //     )
+        expect(c3Spy).toHaveBeenCalledTimes(1)
+        expect(c2Spy).toHaveBeenCalledTimes(1)
+        expect(c1Spy).toHaveBeenCalledTimes(1)
 
-    //     // Initial render: C1/C3 read from store 1, C2 reads from store 2, one render each
-    //     expect(tester.getByTestId('a')).toHaveTextContent('1')
-    //     expect(tester.getByTestId('b')).toHaveTextContent('3')
-    //     expect(tester.getByTestId('c')).toHaveTextContent('1')
+        rtl.act(() => {
+          store1.dispatch({ type: 'CHANGE' })
+        })
 
-    //     expect(c3Spy).toHaveBeenCalledTimes(1)
-    //     expect(c2Spy).toHaveBeenCalledTimes(1)
-    //     expect(c1Spy).toHaveBeenCalledTimes(1)
+        // Store 1 update: C1 and C3 should re-render, no updates for C2
+        expect(tester.getByTestId('a')).toHaveTextContent('2')
+        expect(tester.getByTestId('b')).toHaveTextContent('3')
+        expect(tester.getByTestId('c')).toHaveTextContent('2')
 
-    //     rtl.act(() => {
-    //       store1.dispatch({ type: 'CHANGE' })
-    //     })
+        expect(c3Spy).toHaveBeenCalledTimes(2)
+        expect(c2Spy).toHaveBeenCalledTimes(1)
+        expect(c1Spy).toHaveBeenCalledTimes(2)
 
-    //     // Store 1 update: C1 and C3 should re-render, no updates for C2
-    //     expect(tester.getByTestId('a')).toHaveTextContent('2')
-    //     expect(tester.getByTestId('b')).toHaveTextContent('3')
-    //     expect(tester.getByTestId('c')).toHaveTextContent('2')
+        rtl.act(() => {
+          store2.dispatch({ type: 'CHANGE' })
+        })
 
-    //     expect(c3Spy).toHaveBeenCalledTimes(2)
-    //     expect(c2Spy).toHaveBeenCalledTimes(1)
-    //     expect(c1Spy).toHaveBeenCalledTimes(2)
+        // Store 2 update: C2 should re-render, no updates for C1 or C3
+        expect(tester.getByTestId('a')).toHaveTextContent('2')
+        expect(tester.getByTestId('b')).toHaveTextContent('4')
+        expect(tester.getByTestId('c')).toHaveTextContent('2')
 
-    //     rtl.act(() => {
-    //       store2.dispatch({ type: 'CHANGE' })
-    //     })
+        expect(c3Spy).toHaveBeenCalledTimes(2)
+        expect(c2Spy).toHaveBeenCalledTimes(2)
+        expect(c1Spy).toHaveBeenCalledTimes(2)
+      })
 
-    //     // Store 2 update: C2 should re-render, no updates for C1 or C3
-    //     expect(tester.getByTestId('a')).toHaveTextContent('2')
-    //     expect(tester.getByTestId('b')).toHaveTextContent('4')
-    //     expect(tester.getByTestId('c')).toHaveTextContent('2')
+      it('should subscribe properly when a new store is provided via props', () => {
+        type RootStateType = number
+        interface ActionType {
+          type: string
+        }
+        const store1 = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
+        )
+        const store2 = createStore(
+          (state: RootStateType = 0, action: ActionType) =>
+            action.type === 'INC' ? state + 1 : state
+        )
+        const customContext =
+          React.createContext<ReactReduxContextValue | null>(null)
 
-    //     expect(c3Spy).toHaveBeenCalledTimes(2)
-    //     expect(c2Spy).toHaveBeenCalledTimes(2)
-    //     expect(c1Spy).toHaveBeenCalledTimes(2)
-    //   })
+        class A extends Component {
+          render() {
+            return <ConnectedB />
+          }
+        }
+        const ConnectedA = connect(
+          (state) => ({ count: state }),
+          undefined,
+          undefined,
+          {
+            context: customContext,
+          }
+        )(A)
 
-    //   it('should subscribe properly when a new store is provided via props', () => {
-    //     const store1 = createStore((state = 0, action) =>
-    //       action.type === 'INC' ? state + 1 : state
-    //     )
-    //     const store2 = createStore((state = 0, action) =>
-    //       action.type === 'INC' ? state + 1 : state
-    //     )
-    //     const customContext = React.createContext()
+        const mapStateToPropsB = jest.fn((state) => ({ count: state }))
+        class B extends Component {
+          render() {
+            return <ConnectedC {...this.props} />
+          }
+        }
+        const ConnectedB = connect(mapStateToPropsB, undefined, undefined, {
+          context: customContext,
+        })(B)
 
-    //     @connect((state) => ({ count: state }), undefined, undefined, {
-    //       context: customContext,
-    //     })
-    //     class A extends Component {
-    //       render() {
-    //         return <B />
-    //       }
-    //     }
+        const mapStateToPropsC = jest.fn((state) => ({ count: state }))
+        class C extends Component {
+          render() {
+            return <ConnectedD />
+          }
+        }
+        const ConnectedC = connect(mapStateToPropsC, undefined, undefined, {
+          context: customContext,
+        })(C)
 
-    //     const mapStateToPropsB = jest.fn((state) => ({ count: state }))
-    //     @connect(mapStateToPropsB, undefined, undefined, {
-    //       context: customContext,
-    //     })
-    //     class B extends Component {
-    //       render() {
-    //         return <C {...this.props} />
-    //       }
-    //     }
+        interface DTStatePropsType {
+          count: number
+        }
+        type DNoDispatchType = {}
+        type DOwnPropsType = {}
+        const mapStateToPropsD = jest.fn((state) => ({ count: state }))
+        class D extends Component<DTStatePropsType> {
+          render() {
+            return <div>{this.props.count}</div>
+          }
+        }
+        const ConnectedD = connect<
+          DTStatePropsType,
+          DNoDispatchType,
+          DOwnPropsType,
+          RootStateType
+        >(mapStateToPropsD)(D)
 
-    //     const mapStateToPropsC = jest.fn((state) => ({ count: state }))
-    //     @connect(mapStateToPropsC, undefined, undefined, {
-    //       context: customContext,
-    //     })
-    //     class C extends Component {
-    //       render() {
-    //         return <D />
-    //       }
-    //     }
+        rtl.render(
+          <ProviderMock store={store1}>
+            <ProviderMock context={customContext} store={store2}>
+              <ConnectedA />
+            </ProviderMock>
+          </ProviderMock>
+        )
+        expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
+        expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
+        expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
 
-    //     const mapStateToPropsD = jest.fn((state) => ({ count: state }))
-    //     @connect(mapStateToPropsD)
-    //     class D extends Component {
-    //       render() {
-    //         return <div>{this.props.count}</div>
-    //       }
-    //     }
+        rtl.act(() => {
+          store1.dispatch({ type: 'INC' })
+        })
 
-    //     rtl.render(
-    //       <ProviderMock store={store1}>
-    //         <ProviderMock context={customContext} store={store2}>
-    //           <A />
-    //         </ProviderMock>
-    //       </ProviderMock>
-    //     )
-    //     expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
-    //     expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
-    //     expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
+        expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
+        expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
+        expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
 
-    //     rtl.act(() => {
-    //       store1.dispatch({ type: 'INC' })
-    //     })
-
-    //     expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
-    //     expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
-    //     expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
-
-    //     rtl.act(() => {
-    //       store2.dispatch({ type: 'INC' })
-    //     })
-    //     expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
-    //     expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
-    //     expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
-    //   })
-    // })
+        rtl.act(() => {
+          store2.dispatch({ type: 'INC' })
+        })
+        expect(mapStateToPropsB).toHaveBeenCalledTimes(2)
+        expect(mapStateToPropsC).toHaveBeenCalledTimes(2)
+        expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
+      })
+    })
 
     // describe('Refs', () => {
     //   it.skip('should throw when trying to access the wrapped instance if withRef is not specified', () => {
