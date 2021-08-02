@@ -584,21 +584,21 @@ describe('React Native', () => {
         rtl.fireEvent.press(button)
       }
 
-      const clickAndRender = (rendered: RenderedType) => {
+      const clickAndRender = (rendered: RenderedType, testId: string) => {
         // Note: Normally we'd wrap this all in act(), but that automatically
         // wraps your code in batchedUpdates(). The point of this bug is that it
         // specifically occurs when you are _not_ batching updates!
-        clickButton(rendered, 'setTimeout')
+        clickButton(rendered, testId)
         jest.advanceTimersByTime(100)
         assertValuesMatch(rendered)
       }
 
       assertValuesMatch(rendered)
 
-      clickAndRender(rendered)
-      clickAndRender(rendered)
-      clickAndRender(rendered)
-      clickAndRender(rendered)
+      clickAndRender(rendered, 'setTimeout')
+      clickAndRender(rendered, 'standardBatching')
+      clickAndRender(rendered, 'unstableBatched')
+      clickAndRender(rendered, 'reactReduxBatch')
 
       spy.mockRestore()
     })
