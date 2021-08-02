@@ -12,8 +12,10 @@ import { useIsomorphicLayoutEffect } from '../../src/utils/useIsomorphicLayoutEf
 import * as rtl from '@testing-library/react-native'
 import '@testing-library/jest-native/extend-expect'
 
+import type { MiddlewareAPI, Dispatch as ReduxDispatch } from 'redux'
+
 describe('React Native', () => {
-  const propMapper = (prop) => {
+  const propMapper = (prop: any) => {
     switch (typeof prop) {
       case 'object':
       case 'boolean':
@@ -24,12 +26,16 @@ describe('React Native', () => {
         return prop
     }
   }
-  class Passthrough extends Component {
+
+  interface PassthroughPropsType {
+    [x: string]: any
+  }
+  class Passthrough extends Component<PassthroughPropsType> {
     render() {
       return (
         <View>
           {Object.keys(this.props).map((prop) => (
-            <View title="prop" testID={prop} key={prop}>
+            <View testID={prop} key={prop}>
               {propMapper(this.props[prop])}
             </View>
           ))}
@@ -37,8 +43,11 @@ describe('React Native', () => {
       )
     }
   }
-
-  function stringBuilder(prev = '', action) {
+  interface ActionType {
+    type: string
+    body?: string
+  }
+  function stringBuilder(prev = '', action: ActionType) {
     return action.type === 'APPEND' ? prev + action.body : prev
   }
 
@@ -58,6 +67,9 @@ describe('React Native', () => {
 
   describe('Subscription and update timing correctness', () => {
     it('should pass state consistently to mapState', () => {
+      type RootStateType = string
+      type NoDispatch = {}
+
       const store = createStore(stringBuilder)
 
       rtl.act(() => {
@@ -65,9 +77,11 @@ describe('React Native', () => {
       })
 
       let childMapStateInvokes = 0
-
-      @connect((state) => ({ state }))
-      class Container extends Component {
+      interface ContainerTStatePropsType {
+        state: RootStateType
+      }
+      type ContainerOwnOwnPropsType = {}
+      class Container extends Component<ContainerTStatePropsType> {
         emitChange() {
           store.dispatch({ type: 'APPEND', body: 'b' })
         }
@@ -80,29 +94,46 @@ describe('React Native', () => {
                 testID="change-button"
                 onPress={this.emitChange.bind(this)}
               />
-              <ChildContainer parentState={this.props.state} />
+              <ConnectedChildrenContainer parentState={this.props.state} />
             </View>
           )
         }
       }
+      const ConnectedContainer = connect<
+        ContainerTStatePropsType,
+        NoDispatch,
+        ContainerOwnOwnPropsType,
+        RootStateType
+      >((state) => ({ state }))(Container)
 
-      const childCalls = []
-      @connect((state, parentProps) => {
-        childMapStateInvokes++
-        childCalls.push([state, parentProps.parentState])
-        // The state from parent props should always be consistent with the current state
-        expect(state).toEqual(parentProps.parentState)
-        return {}
-      })
+      const childCalls: Array<[string, string]> = []
+
+      type ChildrenTStatePropsType = {}
+      type ChildrenOwnPropsType = {
+        parentState: string
+      }
+
       class ChildContainer extends Component {
         render() {
           return <Passthrough {...this.props} />
         }
       }
+      const ConnectedChildrenContainer = connect<
+        ChildrenTStatePropsType,
+        NoDispatch,
+        ChildrenOwnPropsType,
+        RootStateType
+      >((state, parentProps) => {
+        childMapStateInvokes++
+        childCalls.push([state, parentProps.parentState])
+        // The state from parent props should always be consistent with the current state
+        expect(state).toEqual(parentProps.parentState)
+        return {}
+      })(ChildContainer)
 
       const tester = rtl.render(
         <ProviderMock store={store}>
-          <Container />
+          <ConnectedContainer />
         </ProviderMock>
       )
 
@@ -140,42 +171,58 @@ describe('React Native', () => {
       // Explicitly silence "not wrapped in act()" messages for this test
       const spy = jest.spyOn(console, 'error')
       spy.mockImplementation(() => {})
+      type RootStateType = number
+      type NoDispatch = {}
+      const store = createStore((state: RootStateType = 0) => state + 1)
 
-      const store = createStore((state = 0) => state + 1)
+      interface TStatePropsType {
+        reduxCount: number
+      }
+      interface OwnPropsType {
+        count: number
+      }
+      let propsPassedIn: TStatePropsType & OwnPropsType
 
-      let propsPassedIn
-
-      @connect((reduxCount) => {
-        return { reduxCount }
-      })
-      class InnerComponent extends Component {
+      class InnerComponent extends Component<TStatePropsType & OwnPropsType> {
         render() {
           propsPassedIn = this.props
           return <Passthrough {...this.props} />
         }
       }
+      const ConnectedInner = connect<
+        TStatePropsType,
+        NoDispatch,
+        OwnPropsType,
+        RootStateType
+      >((reduxCount) => {
+        return { reduxCount }
+      })(InnerComponent)
 
-      class OuterComponent extends Component {
-        constructor() {
-          super()
+      type OutStateType = {
+        count: number
+      }
+      class OuterComponent extends Component<{}, OutStateType> {
+        constructor(props: {}) {
+          super(props)
           this.state = { count: 0 }
         }
 
         render() {
-          return <InnerComponent {...this.state} />
+          return <ConnectedInner {...this.state} />
         }
       }
 
-      let outerComponent
+      let outerComponent = React.createRef<OuterComponent>()
       rtl.render(
         <ProviderMock store={store}>
-          <OuterComponent ref={(c) => (outerComponent = c)} />
+          <OuterComponent ref={outerComponent} />
         </ProviderMock>
       )
-      outerComponent.setState(({ count }) => ({ count: count + 1 }))
+      outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
       store.dispatch({ type: '' })
-
+      //@ts-ignore
       expect(propsPassedIn.count).toEqual(1)
+      //@ts-ignore
       expect(propsPassedIn.reduxCount).toEqual(2)
 
       spy.mockRestore()
@@ -185,13 +232,16 @@ describe('React Native', () => {
       // Explicitly silence "not wrapped in act()" messages for this test
       const spy = jest.spyOn(console, 'error')
       spy.mockImplementation(() => {})
+      type ActionType = {
+        type: string
+        payload?: () => void
+      }
+      const reactCallbackMiddleware = (store: MiddlewareAPI) => {
+        let callback: () => void
 
-      const reactCallbackMiddleware = (store) => {
-        let callback
-
-        return (next) => (action) => {
+        return (next: ReduxDispatch) => (action: ActionType) => {
           if (action.type === 'SET_COMPONENT_CALLBACK') {
-            callback = action.payload
+            callback = action.payload!
           }
 
           if (callback && action.type === 'INC1') {
@@ -213,7 +263,9 @@ describe('React Native', () => {
         }
       }
 
-      const counter = (state = 0, action) => {
+      type RootStateType = number
+
+      const counter = (state: RootStateType = 0, action: ActionType) => {
         if (action.type === 'INC1') {
           return state + 1
         } else if (action.type === 'INC2') {
@@ -227,7 +279,22 @@ describe('React Native', () => {
         applyMiddleware(reactCallbackMiddleware)
       )
 
-      const Child = connect((count) => ({ count }))(function (props) {
+      interface ChildrenTStatePropsType {
+        count: RootStateType
+      }
+      type NoDispatch = {}
+      type OwnPropsType = {
+        prop: string
+      }
+
+      const Child = connect<
+        ChildrenTStatePropsType,
+        NoDispatch,
+        OwnPropsType,
+        RootStateType
+      >((count) => ({ count }))(function (
+        props: OwnPropsType & ChildrenTStatePropsType
+      ) {
         return (
           <View>
             <Text testID="child-prop">{props.prop}</Text>
@@ -235,9 +302,13 @@ describe('React Native', () => {
           </View>
         )
       })
-      class Parent extends Component {
-        constructor() {
-          super()
+      interface ParentPropsType {
+        prop: string
+      }
+      class Parent extends Component<{}, ParentPropsType> {
+        inc1: () => void
+        constructor(props: {}) {
+          super(props)
           this.state = {
             prop: 'a',
           }
@@ -257,13 +328,13 @@ describe('React Native', () => {
         }
       }
 
-      let parent
-      const rendered = rtl.render(<Parent ref={(ref) => (parent = ref)} />)
+      let parent = React.createRef<Parent>()
+      const rendered = rtl.render(<Parent ref={parent} />)
       expect(rendered.getByTestId('child-count').children).toEqual(['0'])
       expect(rendered.getByTestId('child-prop').children).toEqual(['a'])
 
       // Force the multi-update sequence by running this bound action creator
-      parent.inc1()
+      parent.current!.inc1()
 
       // The connected child component _should_ have rendered with the latest Redux
       // store value (3) _and_ the latest wrapper prop ('b').
@@ -277,53 +348,76 @@ describe('React Native', () => {
       // Explicitly silence "not wrapped in act()" messages for this test
       const spy = jest.spyOn(console, 'error')
       spy.mockImplementation(() => {})
-      const store = createStore((state = 0) => state + 1)
+      type RootStateType = number
+      const store = createStore((state: RootStateType = 0) => state + 1)
 
       let reduxCountPassedToMapState
 
-      @connect((reduxCount) => {
-        reduxCountPassedToMapState = reduxCount
-        return reduxCount < 2 ? { a: 'a' } : { a: 'b' }
-      })
       class InnerComponent extends Component {
         render() {
           return <Passthrough {...this.props} />
         }
       }
 
-      class OuterComponent extends Component {
-        constructor() {
-          super()
+      interface InnerTStatePropsType {
+        a: string
+      }
+      type NoDispatch = {}
+      type InnerOwnPropsType = {
+        count: number
+      }
+
+      const ConnectedInner = connect<
+        InnerTStatePropsType,
+        NoDispatch,
+        InnerOwnPropsType,
+        RootStateType
+      >((reduxCount) => {
+        reduxCountPassedToMapState = reduxCount
+        return reduxCount < 2 ? { a: 'a' } : { a: 'b' }
+      })(InnerComponent)
+
+      interface OuterState {
+        count: number
+      }
+      class OuterComponent extends Component<{}, OuterState> {
+        constructor(props: {}) {
+          super(props)
           this.state = { count: 0 }
         }
 
         render() {
-          return <InnerComponent {...this.state} />
+          return <ConnectedInner {...this.state} />
         }
       }
 
-      let outerComponent
+      let outerComponent = React.createRef<OuterComponent>()
       rtl.render(
         <ProviderMock store={store}>
-          <OuterComponent ref={(c) => (outerComponent = c)} />
+          <OuterComponent ref={outerComponent} />
         </ProviderMock>
       )
 
       store.dispatch({ type: '' })
       store.dispatch({ type: '' })
-      outerComponent.setState(({ count }) => ({ count: count + 1 }))
+      outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
 
       expect(reduxCountPassedToMapState).toEqual(3)
 
       spy.mockRestore()
     })
 
-    it('should ensure top-down updates for consecutive batched updates', () => {
+    it('1should ensure top-down updates for consecutive batched updates', () => {
       const INC = 'INC'
-      const reducer = (c = 0, { type }) => (type === INC ? c + 1 : c)
+      type ActionType = {
+        type: string
+      }
+      type RootStateType = number
+      const reducer = (c: RootStateType = 0, { type }: ActionType) =>
+        type === INC ? c + 1 : c
       const store = createStore(reducer)
 
-      let executionOrder = []
+      let executionOrder: string[] = []
       let expectedExecutionOrder = [
         'parent map',
         'parent render',
@@ -378,8 +472,17 @@ describe('React Native', () => {
       spy.mockImplementation(() => {})
 
       const INIT_STATE = { bool: false }
+      type ActionType = {
+        type: string
+      }
+      interface RootStateType {
+        bool: boolean
+      }
 
-      const reducer = (state = INIT_STATE, action) => {
+      const reducer = (
+        state: RootStateType = INIT_STATE,
+        action: ActionType
+      ) => {
         switch (action.type) {
           case 'TOGGLE':
             return { bool: !state.bool }
@@ -390,7 +493,7 @@ describe('React Native', () => {
 
       const store = createStore(reducer, INIT_STATE)
 
-      const selector = (state) => ({
+      const selector = (state: RootStateType) => ({
         bool: state.bool,
       })
 
@@ -467,33 +570,35 @@ describe('React Native', () => {
 
       const rendered = rtl.render(<ReduxBugDemo />)
 
-      const assertValuesMatch = (rendered) => {
+      type RenderedType = typeof rendered
+
+      const assertValuesMatch = (rendered: RenderedType) => {
         const [, boolFromSelector] =
           rendered.getByTestId('boolFromSelector').children
         const [, boolFromStore] = rendered.getByTestId('boolFromStore').children
         expect(boolFromSelector).toBe(boolFromStore)
       }
 
-      const clickButton = (rendered, testID) => {
+      const clickButton = (rendered: RenderedType, testID: string) => {
         const button = rendered.getByTestId(testID)
         rtl.fireEvent.press(button)
       }
 
-      const clickAndRender = (rendered, testID) => {
+      const clickAndRender = (rendered: RenderedType) => {
         // Note: Normally we'd wrap this all in act(), but that automatically
         // wraps your code in batchedUpdates(). The point of this bug is that it
         // specifically occurs when you are _not_ batching updates!
         clickButton(rendered, 'setTimeout')
         jest.advanceTimersByTime(100)
-        assertValuesMatch(rendered, testID)
+        assertValuesMatch(rendered)
       }
 
       assertValuesMatch(rendered)
 
-      clickAndRender(rendered, 'setTimeout')
-      clickAndRender(rendered, 'standardBatching')
-      clickAndRender(rendered, 'unstableBatched')
-      clickAndRender(rendered, 'reactReduxBatch')
+      clickAndRender(rendered)
+      clickAndRender(rendered)
+      clickAndRender(rendered)
+      clickAndRender(rendered)
 
       spy.mockRestore()
     })
