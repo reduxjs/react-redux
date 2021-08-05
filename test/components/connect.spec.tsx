@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component, MouseEvent, ComponentType } from 'react'
+import React, { Component, MouseEvent } from 'react'
 import createClass from 'create-react-class'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
@@ -79,23 +79,6 @@ describe('React', () => {
     }
     function stringBuilder(prev = '', action: ActionType) {
       return action.type === 'APPEND' ? prev + action.body : prev
-    }
-
-    function imitateHotReloading(
-      TargetClass: ComponentType,
-      SourceClass: ComponentType,
-      container: Component
-    ) {
-      // Crude imitation of hot reloading that does the job
-      Object.getOwnPropertyNames(SourceClass.prototype)
-        .filter((key) => typeof SourceClass.prototype[key] === 'function')
-        .forEach((key) => {
-          if (key !== 'render' && key !== 'constructor') {
-            TargetClass.prototype[key] = SourceClass.prototype[key]
-          }
-        })
-
-      container.forceUpdate()
     }
 
     afterEach(() => rtl.cleanup())
