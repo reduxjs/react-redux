@@ -1,20 +1,22 @@
 import { createSubscription } from '../../src/utils/Subscription'
+import type { Subscription } from '../../src/utils/Subscription'
+import type { Store } from 'redux'
 
 describe('Subscription', () => {
-  let notifications
-  let store
-  let parent
+  let notifications: string[]
+  let store: Store
+  let parent: Subscription
 
   beforeEach(() => {
     notifications = []
-    store = { subscribe: () => jest.fn() }
+    store = { subscribe: () => jest.fn() } as unknown as Store
 
     parent = createSubscription(store)
     parent.onStateChange = () => {}
     parent.trySubscribe()
   })
 
-  function subscribeChild(name) {
+  function subscribeChild(name: string) {
     const child = createSubscription(store, parent)
     child.onStateChange = () => notifications.push(name)
     child.trySubscribe()
