@@ -342,16 +342,19 @@ describe('React', () => {
         }
       }
 
-      const div = document.createElement('div')
-      ReactDOM.render(
-        <Provider store={store}>
-          <div />
-        </Provider>,
-        div
-      )
+      const root = ReactDOM.createRoot(document.createElement('div'))
+      rtl.act(() => {
+        root.render(
+          <Provider store={store}>
+            <div />
+          </Provider>
+        )
+      })
 
       expect(spy).toHaveBeenCalledTimes(0)
-      ReactDOM.unmountComponentAtNode(div)
+      rtl.act(() => {
+        root.unmount()
+      })
       expect(spy).toHaveBeenCalledTimes(1)
     })
 

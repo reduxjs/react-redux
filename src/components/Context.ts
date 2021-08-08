@@ -1,14 +1,13 @@
-import React from 'react'
+import React, { MutableSource } from 'react'
 import { Action, AnyAction, Store } from 'redux'
 import type { FixTypeLater } from '../types'
-import type { Subscription } from '../utils/Subscription'
 
 export interface ReactReduxContextValue<
   SS = FixTypeLater,
   A extends Action = AnyAction
 > {
+  storeSource: MutableSource<Store<SS, A>>
   store: Store<SS, A>
-  subscription: Subscription
 }
 
 export const ReactReduxContext =

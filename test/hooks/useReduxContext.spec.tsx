@@ -9,7 +9,7 @@ describe('React', () => {
 
         const { result } = renderHook(() => useReduxContext())
 
-        expect(result.error.message).toMatch(
+        expect(result.error?.message).toMatch(
           /could not find react-redux context value/
         )
 

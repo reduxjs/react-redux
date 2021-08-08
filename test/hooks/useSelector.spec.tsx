@@ -2,7 +2,7 @@
 
 import React, { useCallback, useReducer, useLayoutEffect } from 'react'
 import { createStore } from 'redux'
-import { renderHook, act } from '@testing-library/react-hooks'
+import { renderHook } from '@testing-library/react-hooks'
 import * as rtl from '@testing-library/react'
 import {
   Provider as ProviderMock,
@@ -11,14 +11,12 @@ import {
   connect,
   createSelectorHook,
 } from '../../src/index'
-import { useReduxContext } from '../../src/hooks/useReduxContext'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
 import type {
   ProviderProps,
   TypedUseSelectorHook,
   ReactReduxContextValue,
-  Subscription,
 } from '../../src/'
 
 describe('React', () => {
@@ -74,7 +72,7 @@ describe('React', () => {
           expect(result.current).toEqual(0)
           expect(selector).toHaveBeenCalledTimes(2)
 
-          act(() => {
+          rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
@@ -102,65 +100,11 @@ describe('React', () => {
 
           expect(renderedItems).toEqual([1])
 
-          store.dispatch({ type: '' })
+          rtl.act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems).toEqual([1, 2])
-        })
-
-        it('subscribes to the store synchronously', () => {
-          let rootSubscription: Subscription
-
-          const Parent = () => {
-            const { subscription } = useReduxContext() as ReactReduxContextValue
-            rootSubscription = subscription
-            const count = useNormalSelector((s) => s.count)
-            return count === 1 ? <Child /> : null
-          }
-
-          const Child = () => {
-            const count = useNormalSelector((s) => s.count)
-            return <div>{count}</div>
-          }
-
-          rtl.render(
-            <ProviderMock store={normalStore}>
-              <Parent />
-            </ProviderMock>
-          )
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(1)
-
-          normalStore.dispatch({ type: '' })
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(2)
-        })
-
-        it('unsubscribes when the component is unmounted', () => {
-          let rootSubscription: Subscription
-
-          const Parent = () => {
-            const { subscription } = useReduxContext() as ReactReduxContextValue
-            rootSubscription = subscription
-            const count = useNormalSelector((s) => s.count)
-            return count === 0 ? <Child /> : null
-          }
-
-          const Child = () => {
-            const count = useNormalSelector((s) => s.count)
-            return <div>{count}</div>
-          }
-
-          rtl.render(
-            <ProviderMock store={normalStore}>
-              <Parent />
-            </ProviderMock>
-          )
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(2)
-
-          normalStore.dispatch({ type: '' })
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(1)
         })
 
         it('notices store updates between render and store subscription effect', () => {
@@ -279,7 +223,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          store.dispatch({ type: '' })
+          rtl.act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(1)
         })
@@ -458,7 +404,9 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          normalStore.dispatch({ type: '' })
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
 
           expect(sawInconsistentState).toBe(false)
 
@@ -484,7 +432,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          normalStore.dispatch({ type: '' })
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(2)
           expect(renderedItems[0]).toBe(renderedItems[1])

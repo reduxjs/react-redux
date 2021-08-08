@@ -402,7 +402,9 @@ describe('React', () => {
         expect(tester.getByTestId('x')).toHaveTextContent('true')
 
         props = {}
-        container.current!.forceUpdate()
+        rtl.act(() => {
+          container.current!.forceUpdate()
+        })
 
         expect(tester.queryByTestId('x')).toBe(null)
       })
@@ -440,7 +442,9 @@ describe('React', () => {
         expect(tester.getByTestId('x')).toHaveTextContent('true')
 
         props = {}
-        container.current!.forceUpdate()
+        rtl.act(() => {
+          container.current!.forceUpdate()
+        })
 
         expect(tester.getAllByTitle('prop').length).toBe(1)
         expect(tester.getByTestId('dispatch')).toHaveTextContent(
@@ -842,8 +846,12 @@ describe('React', () => {
             <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
-        outerComponent.current!.setFoo('BAR')
-        outerComponent.current!.setFoo('DID')
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAR')
+        })
+        rtl.act(() => {
+          outerComponent.current!.setFoo('DID')
+        })
 
         expect(invocationCount).toEqual(1)
       })
@@ -888,8 +896,12 @@ describe('React', () => {
             <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
-        outerComponent.current!.setFoo('BAR')
-        outerComponent.current!.setFoo('DID')
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAR')
+        })
+        rtl.act(() => {
+          outerComponent.current!.setFoo('DID')
+        })
 
         expect(invocationCount).toEqual(3)
       })
@@ -937,8 +949,12 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        outerComponent.current!.setFoo('BAR')
-        outerComponent.current!.setFoo('BAZ')
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAR')
+        })
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAZ')
+        })
 
         expect(invocationCount).toEqual(3)
         expect(propsPassedIn).toEqual({
@@ -988,8 +1004,12 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        outerComponent.current!.setFoo('BAR')
-        outerComponent.current!.setFoo('DID')
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAR')
+        })
+        rtl.act(() => {
+          outerComponent.current!.setFoo('DID')
+        })
 
         expect(invocationCount).toEqual(1)
       })
@@ -1034,9 +1054,12 @@ describe('React', () => {
             <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
-
-        outerComponent.current!.setFoo('BAR')
-        outerComponent.current!.setFoo('DID')
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAR')
+        })
+        rtl.act(() => {
+          outerComponent.current!.setFoo('DID')
+        })
 
         expect(invocationCount).toEqual(3)
       })
@@ -1084,8 +1107,12 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        outerComponent.current!.setFoo('BAR')
-        outerComponent.current!.setFoo('BAZ')
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAR')
+        })
+        rtl.act(() => {
+          outerComponent.current!.setFoo('BAZ')
+        })
 
         expect(invocationCount).toEqual(3)
         expect(propsPassedIn).toEqual({
@@ -1160,20 +1187,23 @@ describe('React', () => {
           string
         >((state) => ({ state }))(Child)
 
-        const div = document.createElement('div')
-        ReactDOM.render(
-          <ProviderMock store={store}>
-            <ConnectedApp />
-          </ProviderMock>,
-          div
-        )
+        const root = ReactDOM.createRoot(document.createElement('div'))
+        rtl.act(() => {
+          root.render(
+            <ProviderMock store={store}>
+              <ConnectedApp />
+            </ProviderMock>
+          )
+        })
 
         try {
           rtl.act(() => {
             store.dispatch({ type: 'APPEND', body: 'A' })
           })
         } finally {
-          ReactDOM.unmountComponentAtNode(div)
+          rtl.act(() => {
+            root.unmount()
+          })
         }
       })
 
@@ -1254,17 +1284,28 @@ describe('React', () => {
 
         const div = document.createElement('div')
         document.body.appendChild(div)
-        ReactDOM.render(
-          <ProviderMock store={store}>
-            <RouterMock />
-          </ProviderMock>,
-          div
-        )
+
+        const root = ReactDOM.createRoot(div)
+        rtl.act(() => {
+          root.render(
+            <ProviderMock store={store}>
+              <RouterMock />
+            </ProviderMock>
+          )
+        })
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-        linkA.current!.click()
-        linkB.current!.click()
-        linkB.current!.click()
+        rtl.act(() => {
+          linkA.current!.click()
+        })
+        rtl.act(() => {
+          linkB.current!.click()
+        })
+        rtl.act(() => {
+          linkB.current!.click()})
+        rtl.act(() => {
+          root.unmount()
+        })
         document.body.removeChild(div)
 
         // Called 3 times:
@@ -1297,17 +1338,20 @@ describe('React', () => {
           (state) => ({ calls: mapStateToPropsCalls++ }),
           (dispatch) => ({ dispatch })
         )(Container)
-        const div = document.createElement('div')
-        ReactDOM.render(
-          <ProviderMock store={store}>
-            <Connected />
-          </ProviderMock>,
-          div
-        )
+        const root = ReactDOM.createRoot(document.createElement('div'))
+        rtl.act(() => {
+          root.render(
+            <ProviderMock store={store}>
+              <Connected />
+            </ProviderMock>
+          )
+        })
         expect(mapStateToPropsCalls).toBe(1)
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-        ReactDOM.unmountComponentAtNode(div)
+        rtl.act(() => {
+          root.unmount()
+        })
         expect(spy).toHaveBeenCalledTimes(0)
         expect(mapStateToPropsCalls).toBe(1)
         spy.mockRestore()
@@ -1327,18 +1371,19 @@ describe('React', () => {
           (dispatch) => ({ dispatch })
         )(Inner)
 
-        const div = document.createElement('div')
-        store.subscribe(() => {
-          ReactDOM.unmountComponentAtNode(div)
-        })
-
+        const root = ReactDOM.createRoot(document.createElement('div'))
         rtl.act(() => {
-          ReactDOM.render(
+          root.render(
             <ProviderMock store={store}>
               <ConnectedInner />
-            </ProviderMock>,
-            div
+            </ProviderMock>
           )
+        })
+
+        store.subscribe(() => {
+          rtl.act(() => {
+            root.unmount()
+          });
         })
 
         expect(mapStateToPropsCalls).toBe(1)
@@ -1405,15 +1450,18 @@ describe('React', () => {
           store.dispatch({ type: 'fetch' })
         })
 
-        const div = document.createElement('div')
-        ReactDOM.render(
-          <ProviderMock store={store}>
-            <ConnectedParent />
-          </ProviderMock>,
-          div
-        )
+        const root = ReactDOM.createRoot(document.createElement('div'))
+        rtl.act(() => {
+          root.render(
+            <ProviderMock store={store}>
+              <ConnectedParent />
+            </ProviderMock>
+          )
+        })
 
-        ReactDOM.unmountComponentAtNode(div)
+        rtl.act(() => {
+          root.unmount()
+        })
       })
     })
 
@@ -2101,9 +2149,16 @@ describe('React', () => {
         )
 
         expect(mapStateToProps).toHaveBeenCalledTimes(0)
-        store.dispatch({ type: 'INC' })
+        rtl.act(() => {
+          store.dispatch({ type: 'INC' })
+        })
         expect(mapStateToProps).toHaveBeenCalledTimes(1)
-        store.dispatch({ type: 'INC' })
+        rtl.act(() => {
+          store.dispatch({ type: 'INC' })
+        })
+        rtl.act(() => {
+          store.dispatch({ type: 'INC' })
+        })
         expect(mapStateToProps).toHaveBeenCalledTimes(1)
       })
     })
@@ -2682,8 +2737,10 @@ describe('React', () => {
         )
 
         expect(tester.getByTestId('statefulValue')).toHaveTextContent('0')
-        //@ts-ignore
-        externalSetState({ value: 1 })
+        rtl.act(() => {
+          //@ts-ignore
+          externalSetState({ value: 1 })
+        })
         expect(tester.getByTestId('statefulValue')).toHaveTextContent('1')
       })
 
@@ -2731,12 +2788,12 @@ describe('React', () => {
         )
         const Decorated = decorator(ImpureComponent)
 
-        let externalSetState
-        let storeGetter = { storeKey: 'foo' }
         type StatefulWrapperStateType = {
           storeGetter: typeof storeGetter
         }
         type StatefulWrapperPropsType = {}
+        let storeGetter = { storeKey: 'foo' }
+        let externalSetState: Dispatch<StatefulWrapperStateType>
         class StatefulWrapper extends Component<
           StatefulWrapperPropsType,
           StatefulWrapperStateType
@@ -2772,8 +2829,10 @@ describe('React', () => {
 
         // Impure update
         storeGetter.storeKey = 'bar'
-        //@ts-ignore
-        externalSetState({ storeGetter })
+        rtl.act(() => {
+          //@ts-ignore
+          externalSetState({ storeGetter })
+        })
 
         // 4) After the the impure update
         expect(mapStateSpy).toHaveBeenCalledTimes(3)
@@ -3304,8 +3363,12 @@ describe('React', () => {
             <OuterComponent ref={outerComponent} />
           </ProviderMock>
         )
-        outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
-        store.dispatch({ type: '' })
+        rtl.act(() => {
+          outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
+        })
+        rtl.act(() => {
+          store.dispatch({ type: '' })
+          })
         //@ts-ignore
         expect(propsPassedIn.count).toEqual(1)
         //@ts-ignore
@@ -3471,8 +3534,10 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        store.dispatch({ type: '' })
-        store.dispatch({ type: '' })
+        rtl.act(() => {
+          store.dispatch({ type: '' })
+          store.dispatch({ type: '' })
+        })
         outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
 
         expect(reduxCountPassedToMapState).toEqual(3)

@@ -1,7 +1,10 @@
-import React, { Context, ReactNode, useMemo } from 'react'
+import React, {
+  Context,
+  ReactNode,
+  unstable_createMutableSource as createMutableSource,
+  useMemo,
+} from 'react'
 import { ReactReduxContext, ReactReduxContextValue } from './Context'
-import { createSubscription } from '../utils/Subscription'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { FixTypeLater } from '../types'
 import { Action, AnyAction, Store } from 'redux'
 
@@ -19,31 +22,18 @@ export interface ProviderProps<A extends Action = AnyAction> {
   children: ReactNode
 }
 
+export function createReduxContext(store: Store) {
+  return {
+    storeSource: createMutableSource(store, () => store.getState()),
+    store,
+  }
+}
+
 function Provider({ store, context, children }: ProviderProps) {
-  const contextValue = useMemo(() => {
-    const subscription = createSubscription(store)
-    subscription.onStateChange = subscription.notifyNestedSubs
-    return {
-      store,
-      subscription,
-    }
-  }, [store])
-
-  const previousState = useMemo(() => store.getState(), [store])
-
-  useIsomorphicLayoutEffect(() => {
-    const { subscription } = contextValue
-    subscription.trySubscribe()
-
-    if (previousState !== store.getState()) {
-      subscription.notifyNestedSubs()
-    }
-    return () => {
-      subscription.tryUnsubscribe()
-      subscription.onStateChange = undefined
-    }
-  }, [contextValue, previousState])
-
+  const contextValue: ReactReduxContextValue = useMemo(
+    () => createReduxContext(store),
+    [store]
+  )
   const Context = context || ReactReduxContext
 
   return <Context.Provider value={contextValue}>{children}</Context.Provider>

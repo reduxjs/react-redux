@@ -12,7 +12,8 @@
     "emitDeclarationOnly": true,
     "outDir": "./es",
     "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators":true
+    "experimentalDecorators":true,
+    "types": ["react/next", "react-dom/next", "jest", "node", "@testing-library/jest-dom"]
   },
   "include": ["src/**/*", "test/**/*", "types"],
   "exclude": ["node_modules", "dist"]
