@@ -72,14 +72,14 @@ describe('React', () => {
           })
 
           expect(result.current).toEqual(0)
-          expect(selector).toHaveBeenCalledTimes(2)
+          expect(selector).toHaveBeenCalledTimes(1)
 
           act(() => {
             normalStore.dispatch({ type: '' })
           })
 
           expect(result.current).toEqual(1)
-          expect(selector).toHaveBeenCalledTimes(3)
+          expect(selector).toHaveBeenCalledTimes(2)
         })
       })
 
@@ -282,6 +282,42 @@ describe('React', () => {
           store.dispatch({ type: '' })
 
           expect(renderedItems.length).toBe(1)
+        })
+
+        it('calls selector exactly once on mount and on update', () => {
+          interface StateType {
+            count: number
+          }
+          const store = createStore(({ count }: StateType = { count: 0 }) => ({
+            count: count + 1,
+          }))
+
+          let numCalls = 0
+          const selector = (s: StateType) => {
+            numCalls += 1
+            return s.count
+          }
+          const renderedItems = []
+
+          const Comp = () => {
+            const value = useSelector(selector)
+            renderedItems.push(value)
+            return <div />
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(numCalls).toBe(1)
+          expect(renderedItems.length).toEqual(1)
+
+          store.dispatch({ type: '' })
+
+          expect(numCalls).toBe(2)
+          expect(renderedItems.length).toEqual(2)
         })
       })
 
