@@ -206,7 +206,7 @@ const makeSelectCompletedTodosCount = () =>
   )
 
 export const CompletedTodosCount = ({ completed }) => {
-  const selectCompletedTodosCount = useMemo(makeSelectCompletedTodosCount, [])
+  const selectCompletedTodosCount = useMemo(makeSelectCompletedTodosCount(), [])
 
   const matchingCount = useSelector((state) =>
     selectCompletedTodosCount(state, completed)
