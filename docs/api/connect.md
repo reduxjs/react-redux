@@ -230,7 +230,7 @@ connect(mapStateToProps, mapDispatchToProps, null, { context: MyContext })(
 
 - default value: `true`
 
-Assumes that the wrapped component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state.
+Assumes that the wrapper component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state.
 
 When `options.pure` is true, `connect` performs several equality checks that are used to avoid unnecessary calls to `mapStateToProps`, `mapDispatchToProps`, `mergeProps`, and ultimately to `render`. These include `areStatesEqual`, `areOwnPropsEqual`, `areStatePropsEqual`, and `areMergedPropsEqual`. While the defaults are probably appropriate 99% of the time, you may wish to override them with custom implementations for performance or other reasons.
 
