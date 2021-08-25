@@ -279,6 +279,46 @@ describe('React', () => {
           expect(numCalls).toBe(2)
           expect(renderedItems.length).toEqual(2)
         })
+
+        it('calls selector twice once on mount when state changes during render', () => {
+          store = createStore(({ count } = { count: 0 }) => ({
+            count: count + 1,
+          }))
+
+          let numCalls = 0
+          const selector = (s) => {
+            numCalls += 1
+            return s.count
+          }
+          const renderedItems = []
+
+          const Child = () => {
+            useLayoutEffect(() => {
+              store.dispatch({ type: '', count: 1 })
+            }, [])
+            return <div />
+          }
+
+          const Comp = () => {
+            const value = useSelector(selector)
+            renderedItems.push(value)
+            return (
+              <div>
+                <Child />
+              </div>
+            )
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
+          expect(numCalls).toBe(2)
+          expect(renderedItems.length).toEqual(2)
+        })
       })
 
       it('uses the latest selector', () => {
