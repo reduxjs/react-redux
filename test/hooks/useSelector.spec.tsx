@@ -102,7 +102,9 @@ describe('React', () => {
 
           expect(renderedItems).toEqual([1])
 
-          store.dispatch({ type: '' })
+          act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems).toEqual([1, 2])
         })
@@ -130,7 +132,10 @@ describe('React', () => {
           // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(1)
 
-          normalStore.dispatch({ type: '' })
+          act(() => {
+            normalStore.dispatch({ type: '' })
+          })
+
           // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(2)
         })
@@ -158,7 +163,10 @@ describe('React', () => {
           // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(2)
 
-          normalStore.dispatch({ type: '' })
+          act(() => {
+            normalStore.dispatch({ type: '' })
+          })
+
           // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(1)
         })
@@ -246,7 +254,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          store.dispatch({ type: '' })
+          act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(1)
         })
@@ -279,7 +289,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          store.dispatch({ type: '' })
+          act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(1)
         })
@@ -314,7 +326,9 @@ describe('React', () => {
           expect(numCalls).toBe(1)
           expect(renderedItems.length).toEqual(1)
 
-          store.dispatch({ type: '' })
+          act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(numCalls).toBe(2)
           expect(renderedItems.length).toEqual(2)
@@ -460,9 +474,11 @@ describe('React', () => {
 
           rtl.render(<App />)
 
-          expect(() => store.dispatch({ type: '' })).toThrow(
-            /The error may be correlated/
-          )
+          expect(() => {
+            act(() => {
+              store.dispatch({ type: '' })
+            })
+          }).toThrow(/The error may be correlated/)
 
           spy.mockRestore()
         })
@@ -493,7 +509,11 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(() => normalStore.dispatch({ type: '' })).toThrowError()
+          expect(() => {
+            act(() => {
+              normalStore.dispatch({ type: '' })
+            })
+          }).toThrowError()
 
           spy.mockRestore()
         })
@@ -563,7 +583,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          normalStore.dispatch({ type: '' })
+          act(() => {
+            normalStore.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(2)
           expect(renderedItems[0]).toBe(renderedItems[1])
