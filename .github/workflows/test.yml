@@ -5,6 +5,7 @@ on:
     branches: [master, typescript-port]
   pull_request:
     branches: [master, typescript-port]
+  workflow_dispatch:
 
 jobs:
   build:
