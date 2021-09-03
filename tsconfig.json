@@ -12,7 +12,11 @@
     "emitDeclarationOnly": true,
     "outDir": "./es",
     "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators":true
+    "experimentalDecorators": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
+    ]
   },
   "include": ["src/**/*", "test/**/*", "types"],
   "exclude": ["node_modules", "dist"]
