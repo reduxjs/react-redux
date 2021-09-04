@@ -77,6 +77,16 @@
   --ifm-hero-background-color: #593d88;
   --ifm-hero-text-color: #ffffff;
 }
+
+.admonition a,
+blockquote a {
+  color: var(--ifm-color-primary-darkest);
+}
+.admonition a:hover,
+blockquote a:hover {
+  color: var(--blockquote-text-color);
+}
+
 blockquote {
   color: var(--blockquote-text-color);
   background-color: var(--ifm-blockquote-color);
