@@ -9,8 +9,8 @@
     "serve": "docusaurus serve"
   },
   "dependencies": {
-    "@docusaurus/core": "^2.0.0-beta.2",
-    "@docusaurus/preset-classic": "^2.0.0-beta.2",
+    "@docusaurus/core": "^2.0.0-beta.6",
+    "@docusaurus/preset-classic": "^2.0.0-beta.6",
     "classnames": "^2.2.6",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
