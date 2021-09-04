@@ -280,19 +280,25 @@ function connect<
   State = DefaultRootState
 >(
   mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>
-): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  TStateProps & DispatchProp,
+  TOwnProps & ConnectProps
+>
 
 /* @public */
 function connect<no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
   mapStateToProps: null | undefined,
   mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>
-): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps & ConnectProps>
 
 /* @public */
 function connect<no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
   mapStateToProps: null | undefined,
   mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>
-): InferableComponentEnhancerWithProps<ResolveThunks<TDispatchProps>, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  ResolveThunks<TDispatchProps>,
+  TOwnProps & ConnectProps
+>
 
 /* @public */
 function connect<
@@ -303,7 +309,10 @@ function connect<
 >(
   mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
   mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>
-): InferableComponentEnhancerWithProps<TStateProps & TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  TStateProps & TDispatchProps,
+  TOwnProps & ConnectProps
+>
 
 /* @public */
 function connect<
@@ -316,7 +325,7 @@ function connect<
   mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>
 ): InferableComponentEnhancerWithProps<
   TStateProps & ResolveThunks<TDispatchProps>,
-  TOwnProps
+  TOwnProps & ConnectProps
 >
 
 /* @public */
@@ -329,7 +338,7 @@ function connect<
   mapStateToProps: null | undefined,
   mapDispatchToProps: null | undefined,
   mergeProps: MergeProps<undefined, undefined, TOwnProps, TMergedProps>
-): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps & ConnectProps>
 
 /* @public */
 function connect<
@@ -342,7 +351,7 @@ function connect<
   mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
   mapDispatchToProps: null | undefined,
   mergeProps: MergeProps<TStateProps, undefined, TOwnProps, TMergedProps>
-): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps & ConnectProps>
 
 /* @public */
 function connect<
@@ -354,7 +363,7 @@ function connect<
   mapStateToProps: null | undefined,
   mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
   mergeProps: MergeProps<undefined, TDispatchProps, TOwnProps, TMergedProps>
-): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps & ConnectProps>
 
 /* @public */
 // @ts-ignore
@@ -368,7 +377,10 @@ function connect<
   mapDispatchToProps: null | undefined,
   mergeProps: null | undefined,
   options: ConnectOptions<State, TStateProps, TOwnProps>
-): InferableComponentEnhancerWithProps<DispatchProp & TStateProps, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  DispatchProp & TStateProps,
+  TOwnProps & ConnectProps
+>
 
 /* @public */
 function connect<TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
@@ -376,7 +388,7 @@ function connect<TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
   mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
   mergeProps: null | undefined,
   options: ConnectOptions<{}, TStateProps, TOwnProps>
-): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps & ConnectProps>
 
 /* @public */
 function connect<TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
@@ -384,7 +396,10 @@ function connect<TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
   mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
   mergeProps: null | undefined,
   options: ConnectOptions<{}, TStateProps, TOwnProps>
-): InferableComponentEnhancerWithProps<ResolveThunks<TDispatchProps>, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  ResolveThunks<TDispatchProps>,
+  TOwnProps & ConnectProps
+>
 
 /* @public */
 function connect<
@@ -397,7 +412,10 @@ function connect<
   mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
   mergeProps: null | undefined,
   options: ConnectOptions<State, TStateProps, TOwnProps>
-): InferableComponentEnhancerWithProps<TStateProps & TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  TStateProps & TDispatchProps,
+  TOwnProps & ConnectProps
+>
 
 /* @public */
 function connect<
@@ -412,7 +430,7 @@ function connect<
   options: ConnectOptions<State, TStateProps, TOwnProps>
 ): InferableComponentEnhancerWithProps<
   TStateProps & ResolveThunks<TDispatchProps>,
-  TOwnProps
+  TOwnProps & ConnectProps
 >
 
 /* @public */
@@ -427,7 +445,7 @@ function connect<
   mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
   mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
   options?: ConnectOptions<State, TStateProps, TOwnProps, TMergedProps>
-): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps & ConnectProps>
 
 /**
  * Connects a React component to a Redux store.

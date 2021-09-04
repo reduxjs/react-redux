@@ -2179,10 +2179,6 @@ describe('React', () => {
         rtl.render(
           <ProviderMock context={context} store={store1}>
             <ProviderMock store={store2}>
-              {/*TODO: Since the connect type does not support this advanced usage, 
-                we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
-                https://github.com/reduxjs/react-redux/pull/1781 */}
-              {/*// @ts-ignore */}
               <Decorated context={context} />
             </ProviderMock>
           </ProviderMock>
@@ -2211,13 +2207,9 @@ describe('React', () => {
         const Decorated = decorator(Container)
 
         const store = createStore(() => expectedState)
-
         rtl.render(
           <ProviderMock store={store}>
-            {/*TODO: Since the connect type does not support this advanced usage, 
-              we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
-              https://github.com/reduxjs/react-redux/pull/1781 */}
-            {/*// @ts-ignore */}
+            {/*@ts-expect-error*/}
             <Decorated context={nonContext} />
           </ProviderMock>
         )
@@ -2259,6 +2251,7 @@ describe('React', () => {
 
         const rendered = rtl.render(
           <ProviderMock store={store}>
+            {/*@ts-expect-error*/}
             <Decorated store={notActuallyAStore} />
           </ProviderMock>
         )
@@ -2307,7 +2300,6 @@ describe('React', () => {
             </div>
           )
         }
-        const ConnectedComp2 = connect((state) => state)(Comp2)
 
         type Comp1TStatePropsType = Store1State1Type
         type Comp1NoDispatchType = NoDispatchType
@@ -2354,6 +2346,12 @@ describe('React', () => {
               return state
           }
         }
+        const ConnectedComp2 = connect<
+          Store2State1Type,
+          unknown,
+          unknown,
+          Store2State1Type
+        >((state) => state)(Comp2)
 
         const store1 = createStore(reducer1)
         const store2 = createStore(reducer2)
@@ -2361,10 +2359,6 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store1}>
             <ConnectedComp1>
-              {/*TODO: Since the connect type does not support this advanced usage, 
-                we will ignore it for the time being and resolve it after merging connect and connectAdvanced 
-                https://github.com/reduxjs/react-redux/pull/1781 */}
-              {/*// @ts-ignore */}
               <ConnectedComp2 store={store2} />
             </ConnectedComp1>
           </ProviderMock>
