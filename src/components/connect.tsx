@@ -1,11 +1,33 @@
+/* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
 import hoistStatics from 'hoist-non-react-statics'
 import React, { useContext, useMemo, useRef, useReducer } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
-import type { Store } from 'redux'
-import type { SelectorFactory } from '../connect/selectorFactory'
+import type { Store, Dispatch, Action, AnyAction } from 'redux'
+
+import type {
+  AdvancedComponentDecorator,
+  ConnectedComponent,
+  DefaultRootState,
+  InferableComponentEnhancer,
+  InferableComponentEnhancerWithProps,
+  ResolveThunks,
+  DispatchProp,
+} from '../types'
+
+import defaultSelectorFactory, {
+  MapStateToPropsParam,
+  MapDispatchToPropsParam,
+  MergeProps,
+  MapDispatchToPropsNonObject,
+  SelectorFactoryOptions,
+} from '../connect/selectorFactory'
+import defaultMapDispatchToPropsFactories from '../connect/mapDispatchToProps'
+import defaultMapStateToPropsFactories from '../connect/mapStateToProps'
+import defaultMergePropsFactories from '../connect/mergeProps'
+
 import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import type { AdvancedComponentDecorator, ConnectedComponent } from '../types'
+import shallowEqual from '../utils/shallowEqual'
 
 import {
   ReactReduxContext,
@@ -17,6 +39,8 @@ import {
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
 const NO_SUBSCRIPTION_ARRAY = [null, null]
 
+// Attempts to stringify whatever not-really-a-component value we were given
+// for logging in an error message
 const stringifyComponent = (Comp: unknown) => {
   try {
     return JSON.stringify(Comp)
@@ -25,6 +49,11 @@ const stringifyComponent = (Comp: unknown) => {
   }
 }
 
+// Reducer for our "forceUpdate" equivalent.
+// This primarily stores the current error, if any,
+// but also an update counter.
+// Since we're returning a new array anyway, in theory the counter isn't needed.
+// Or for that matter, since the dispatch gets a new object, we don't even need an array.
 function storeStateUpdatesReducer(
   state: [unknown, number],
   action: { payload: unknown }
@@ -35,6 +64,10 @@ function storeStateUpdatesReducer(
 
 type EffectFunc = (...args: any[]) => void | ReturnType<React.EffectCallback>
 
+// This is "just" a `useLayoutEffect`, but with two modifications:
+// - we need to fall back to `useEffect` in SSR to avoid annoying warnings
+// - we extract this to a separate function to avoid closing over values
+//   and causing memory leaks
 function useIsomorphicLayoutEffectWithArgs(
   effectFunc: EffectFunc,
   effectArgs: any[],
@@ -43,12 +76,13 @@ function useIsomorphicLayoutEffectWithArgs(
   useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies)
 }
 
+// Effect callback, extracted: assign the latest props values to refs for later usage
 function captureWrapperProps(
   lastWrapperProps: React.MutableRefObject<unknown>,
   lastChildProps: React.MutableRefObject<unknown>,
   renderIsScheduled: React.MutableRefObject<boolean>,
-  wrapperProps: React.MutableRefObject<unknown>,
-  actualChildProps: React.MutableRefObject<unknown>,
+  wrapperProps: unknown,
+  actualChildProps: unknown,
   childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
   notifyNestedSubs: () => void
 ) {
@@ -64,6 +98,8 @@ function captureWrapperProps(
   }
 }
 
+// Effect callback, extracted: subscribe to the Redux store or nearest connected ancestor,
+// check for updates after dispatched actions, and trigger re-renders.
 function subscribeUpdates(
   shouldHandleStateChanges: boolean,
   store: Store,
@@ -160,6 +196,7 @@ function subscribeUpdates(
   return unsubscribeWrapper
 }
 
+// Reducer initial state creation for our update reducer
 const initStateUpdates = () => EMPTY_ARRAY
 
 export interface ConnectProps {
@@ -168,70 +205,301 @@ export interface ConnectProps {
   store?: Store
 }
 
-export interface ConnectAdvancedOptions {
-  getDisplayName?: (name: string) => string
-  methodName?: string
-  shouldHandleStateChanges?: boolean
+function match<T>(
+  arg: unknown,
+  factories: ((value: unknown) => T)[],
+  name: string
+): T {
+  for (let i = factories.length - 1; i >= 0; i--) {
+    const result = factories[i](arg)
+    if (result) return result
+  }
+
+  return ((dispatch: Dispatch, options: { wrappedComponentName: string }) => {
+    throw new Error(
+      `Invalid value of type ${typeof arg} for ${name} argument when connecting component ${
+        options.wrappedComponentName
+      }.`
+    )
+  }) as any
+}
+
+function strictEqual(a: unknown, b: unknown) {
+  return a === b
+}
+
+/**
+ * Infers the type of props that a connector will inject into a component.
+ */
+export type ConnectedProps<TConnector> =
+  TConnector extends InferableComponentEnhancerWithProps<
+    infer TInjectedProps,
+    any
+  >
+    ? unknown extends TInjectedProps
+      ? TConnector extends InferableComponentEnhancer<infer TInjectedProps>
+        ? TInjectedProps
+        : never
+      : TInjectedProps
+    : never
+
+export interface ConnectOptions<
+  State = DefaultRootState,
+  TStateProps = {},
+  TOwnProps = {},
+  TMergedProps = {}
+> {
   forwardRef?: boolean
   context?: typeof ReactReduxContext
   pure?: boolean
+  areStatesEqual?: (nextState: State, prevState: State) => boolean
+
+  areOwnPropsEqual?: (
+    nextOwnProps: TOwnProps,
+    prevOwnProps: TOwnProps
+  ) => boolean
+
+  areStatePropsEqual?: (
+    nextStateProps: TStateProps,
+    prevStateProps: TStateProps
+  ) => boolean
+  areMergedPropsEqual?: (
+    nextMergedProps: TMergedProps,
+    prevMergedProps: TMergedProps
+  ) => boolean
 }
 
-function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
-  /*
-    selectorFactory is a func that is responsible for returning the selector function used to
-    compute new props from state, props, and dispatch. For example:
+/* @public */
+function connect(): InferableComponentEnhancer<DispatchProp>
 
-      export default connectAdvanced((dispatch, options) => (state, props) => ({
-        thing: state.things[props.thingId],
-        saveThing: fields => dispatch(actionCreators.saveThing(props.thingId, fields)),
-      }))(YourComponent)
+/* @public */
+function connect<
+  TStateProps = {},
+  no_dispatch = {},
+  TOwnProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>
+): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>
 
-    Access to dispatch is provided to the factory so selectorFactories can bind actionCreators
-    outside of their selector as an optimization. Options passed to connectAdvanced are passed to
-    the selectorFactory, along with displayName and WrappedComponent, as the second argument.
+/* @public */
+function connect<no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
+  mapStateToProps: null | undefined,
+  mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
 
-    Note that selectorFactory is responsible for all caching/memoization of inbound and outbound
-    props. Do not use connectAdvanced directly without memoizing results between calls to your
-    selector, otherwise the Connect component will re-render on every state or props change.
-  */
-  selectorFactory: SelectorFactory<S, TProps, unknown, unknown>,
-  // options object:
+/* @public */
+function connect<no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
+  mapStateToProps: null | undefined,
+  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<ResolveThunks<TDispatchProps>, TOwnProps>
+
+/* @public */
+function connect<
+  TStateProps = {},
+  TDispatchProps = {},
+  TOwnProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TStateProps & TDispatchProps, TOwnProps>
+
+/* @public */
+function connect<
+  TStateProps = {},
+  TDispatchProps = {},
+  TOwnProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  TStateProps & ResolveThunks<TDispatchProps>,
+  TOwnProps
+>
+
+/* @public */
+function connect<
+  no_state = {},
+  no_dispatch = {},
+  TOwnProps = {},
+  TMergedProps = {}
+>(
+  mapStateToProps: null | undefined,
+  mapDispatchToProps: null | undefined,
+  mergeProps: MergeProps<undefined, undefined, TOwnProps, TMergedProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+
+/* @public */
+function connect<
+  TStateProps = {},
+  no_dispatch = {},
+  TOwnProps = {},
+  TMergedProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps: null | undefined,
+  mergeProps: MergeProps<TStateProps, undefined, TOwnProps, TMergedProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+
+/* @public */
+function connect<
+  no_state = {},
+  TDispatchProps = {},
+  TOwnProps = {},
+  TMergedProps = {}
+>(
+  mapStateToProps: null | undefined,
+  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+  mergeProps: MergeProps<undefined, TDispatchProps, TOwnProps, TMergedProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+
+/* @public */
+// @ts-ignore
+function connect<
+  TStateProps = {},
+  no_dispatch = {},
+  TOwnProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps: null | undefined,
+  mergeProps: null | undefined,
+  options: ConnectOptions<State, TStateProps, TOwnProps>
+): InferableComponentEnhancerWithProps<DispatchProp & TStateProps, TOwnProps>
+
+/* @public */
+function connect<TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
+  mapStateToProps: null | undefined,
+  mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+  mergeProps: null | undefined,
+  options: ConnectOptions<{}, TStateProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
+
+/* @public */
+function connect<TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
+  mapStateToProps: null | undefined,
+  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+  mergeProps: null | undefined,
+  options: ConnectOptions<{}, TStateProps, TOwnProps>
+): InferableComponentEnhancerWithProps<ResolveThunks<TDispatchProps>, TOwnProps>
+
+/* @public */
+function connect<
+  TStateProps = {},
+  TDispatchProps = {},
+  TOwnProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+  mergeProps: null | undefined,
+  options: ConnectOptions<State, TStateProps, TOwnProps>
+): InferableComponentEnhancerWithProps<TStateProps & TDispatchProps, TOwnProps>
+
+/* @public */
+function connect<
+  TStateProps = {},
+  TDispatchProps = {},
+  TOwnProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+  mergeProps: null | undefined,
+  options: ConnectOptions<State, TStateProps, TOwnProps>
+): InferableComponentEnhancerWithProps<
+  TStateProps & ResolveThunks<TDispatchProps>,
+  TOwnProps
+>
+
+/* @public */
+function connect<
+  TStateProps = {},
+  TDispatchProps = {},
+  TOwnProps = {},
+  TMergedProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
+  options?: ConnectOptions<State, TStateProps, TOwnProps, TMergedProps>
+): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+
+/**
+ * Connects a React component to a Redux store.
+ *
+ * - Without arguments, just wraps the component, without changing the behavior / props
+ *
+ * - If 2 params are passed (3rd param, mergeProps, is skipped), default behavior
+ * is to override ownProps (as stated in the docs), so what remains is everything that's
+ * not a state or dispatch prop
+ *
+ * - When 3rd param is passed, we don't know if ownProps propagate and whether they
+ * should be valid component props, because it depends on mergeProps implementation.
+ * As such, it is the user's responsibility to extend ownProps interface from state or
+ * dispatch props or both when applicable
+ *
+ * @param mapStateToProps A function that extracts values from state
+ * @param mapDispatchToProps Setup for dispatching actions
+ * @param mergeProps Optional callback to merge state and dispatch props together
+ * @param options Options for configuring the connection
+ *
+ */
+function connect<
+  TStateProps = {},
+  TDispatchProps = {},
+  TOwnProps = {},
+  TMergedProps = {},
+  State = DefaultRootState
+>(
+  mapStateToProps?: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps?: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+  mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
   {
-    // the func used to compute this HOC's displayName from the wrapped component's displayName.
-    // probably overridden by wrapper functions such as connect()
-    getDisplayName = (name) => `ConnectAdvanced(${name})`,
-
-    // shown in error messages
-    // probably overridden by wrapper functions such as connect()
-    methodName = 'connectAdvanced',
-
-    // determines whether this HOC subscribes to store changes
-    shouldHandleStateChanges = true,
+    pure = true,
+    areStatesEqual = strictEqual,
+    areOwnPropsEqual = shallowEqual,
+    areStatePropsEqual = shallowEqual,
+    areMergedPropsEqual = shallowEqual,
 
     // use React's forwardRef to expose a ref of the wrapped component
     forwardRef = false,
 
     // the context consumer to use
     context = ReactReduxContext,
-
-    // additional options are passed through to the selectorFactory
-    ...connectOptions
-  }: ConnectAdvancedOptions & Partial<TFactoryOptions> = {}
-) {
+  }: ConnectOptions<unknown, unknown, unknown, unknown> = {}
+): unknown {
   const Context = context
 
   type WrappedComponentProps = TOwnProps & ConnectProps
 
-  /*
-  return function wrapWithConnect<
-    WC extends React.ComponentType<
-      Matching<DispatchProp<AnyAction>, GetProps<WC>>
-    >
-  >(WrappedComponent: WC) {
-    */
+  const initMapStateToProps = match(
+    mapStateToProps,
+    // @ts-ignore
+    defaultMapStateToPropsFactories,
+    'mapStateToProps'
+  )!
+  const initMapDispatchToProps = match(
+    mapDispatchToProps,
+    // @ts-ignore
+    defaultMapDispatchToPropsFactories,
+    'mapDispatchToProps'
+  )!
+  const initMergeProps = match(
+    mergeProps,
+    // @ts-ignore
+    defaultMergePropsFactories,
+    'mergeProps'
+  )!
+
+  const shouldHandleStateChanges = Boolean(mapStateToProps)
+
   const wrapWithConnect: AdvancedComponentDecorator<
-    TProps,
+    TOwnProps,
     WrappedComponentProps
   > = (WrappedComponent) => {
     if (
@@ -239,32 +507,31 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
       !isValidElementType(WrappedComponent)
     ) {
       throw new Error(
-        `You must pass a component to the function returned by ` +
-          `${methodName}. Instead received ${stringifyComponent(
-            WrappedComponent
-          )}`
+        `You must pass a component to the function returned by connect. Instead received ${stringifyComponent(
+          WrappedComponent
+        )}`
       )
     }
 
     const wrappedComponentName =
       WrappedComponent.displayName || WrappedComponent.name || 'Component'
 
-    const displayName = getDisplayName(wrappedComponentName)
+    const displayName = `Connect(${wrappedComponentName})`
 
-    const selectorFactoryOptions = {
-      ...connectOptions,
-      getDisplayName,
-      methodName,
+    const selectorFactoryOptions: SelectorFactoryOptions<any, any, any, any> = {
+      pure,
       shouldHandleStateChanges,
       displayName,
       wrappedComponentName,
       WrappedComponent,
-    }
-
-    const { pure } = connectOptions
-
-    function createChildSelector(store: Store) {
-      return selectorFactory(store.dispatch, selectorFactoryOptions)
+      initMapStateToProps,
+      initMapDispatchToProps,
+      // @ts-ignore
+      initMergeProps,
+      areStatesEqual,
+      areStatePropsEqual,
+      areOwnPropsEqual,
+      areMergedPropsEqual,
     }
 
     // If we aren't running in "pure" mode, we don't want to memoize values.
@@ -329,7 +596,7 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
       const childPropsSelector = useMemo(() => {
         // The child props selector needs the store reference as an input.
         // Re-create this selector whenever the store changes.
-        return createChildSelector(store)
+        return defaultSelectorFactory(store.dispatch, selectorFactoryOptions)
       }, [store])
 
       const [subscription, notifyNestedSubs] = useMemo(() => {
@@ -511,4 +778,4 @@ function connectAdvanced<S, TProps, TOwnProps, TFactoryOptions = {}>(
   return wrapWithConnect
 }
 
-export default connectAdvanced
+export default connect

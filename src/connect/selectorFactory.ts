@@ -96,6 +96,7 @@ interface PureSelectorFactoryComparisonOptions<
   areStatesEqual: EqualityFn<State>
   areOwnPropsEqual: EqualityFn<TOwnProps>
   areStatePropsEqual: EqualityFn<unknown>
+  displayName: string
   pure?: boolean
 }
 
@@ -207,29 +208,22 @@ export interface SelectorFactoryOptions<
 > extends PureSelectorFactoryComparisonOptions<TOwnProps, State> {
   initMapStateToProps: (
     dispatch: Dispatch,
-    options: PureSelectorFactoryComparisonOptions<TOwnProps, State> & {
-      displayName: string
-    }
+    options: PureSelectorFactoryComparisonOptions<TOwnProps, State>
   ) => MapStateToPropsParam<TStateProps, TOwnProps, State>
   initMapDispatchToProps: (
     dispatch: Dispatch,
-    options: PureSelectorFactoryComparisonOptions<TOwnProps, State> & {
-      displayName: string
-    }
+    options: PureSelectorFactoryComparisonOptions<TOwnProps, State>
   ) => MapDispatchToPropsParam<TDispatchProps, TOwnProps>
   initMergeProps: (
     dispatch: Dispatch,
-    options: PureSelectorFactoryComparisonOptions<TOwnProps, State> & {
-      displayName: string
-    }
+    options: PureSelectorFactoryComparisonOptions<TOwnProps, State>
   ) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
-  displayName: string
 }
 
 // TODO: Add more comments
 
 // If pure is true, the selector returned by selectorFactory will memoize its results,
-// allowing connectAdvanced's shouldComponentUpdate to return false if final
+// allowing connect's shouldComponentUpdate to return false if final
 // props have not changed. If false, the selector will always return a new
 // object and shouldComponentUpdate will always return true.
 
@@ -259,12 +253,7 @@ export default function finalPropsSelectorFactory<
   const mergeProps = initMergeProps(dispatch, options)
 
   if (process.env.NODE_ENV !== 'production') {
-    verifySubselectors(
-      mapStateToProps,
-      mapDispatchToProps,
-      mergeProps,
-      options.displayName
-    )
+    verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps)
   }
 
   const selectorFactory = options.pure

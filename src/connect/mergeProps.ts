@@ -1,19 +1,37 @@
 import { Dispatch } from 'redux'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
-type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (stateProps: TStateProps, dispatchProps: TDispatchProps, ownProps: TOwnProps) => TMergedProps
+type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (
+  stateProps: TStateProps,
+  dispatchProps: TDispatchProps,
+  ownProps: TOwnProps
+) => TMergedProps
 
-export function defaultMergeProps<TStateProps, TDispatchProps, TOwnProps>(stateProps: TStateProps, dispatchProps: TDispatchProps, ownProps: TOwnProps) {
+export function defaultMergeProps<TStateProps, TDispatchProps, TOwnProps>(
+  stateProps: TStateProps,
+  dispatchProps: TDispatchProps,
+  ownProps: TOwnProps
+) {
   return { ...ownProps, ...stateProps, ...dispatchProps }
 }
 
-interface InitMergeOptions { 
-  displayName: string;
-  pure?: boolean;
-  areMergedPropsEqual: (a: any, b: any) => boolean;
+interface InitMergeOptions {
+  displayName: string
+  pure?: boolean
+  areMergedPropsEqual: (a: any, b: any) => boolean
 }
 
-export function wrapMergePropsFunc<TStateProps, TDispatchProps, TOwnProps, TMergedProps>(mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>): (dispatch: Dispatch, options: InitMergeOptions) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> {
+export function wrapMergePropsFunc<
+  TStateProps,
+  TDispatchProps,
+  TOwnProps,
+  TMergedProps
+>(
+  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
+): (
+  dispatch: Dispatch,
+  options: InitMergeOptions
+) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> {
   return function initMergePropsProxy(
     dispatch,
     { displayName, pure, areMergedPropsEqual }
@@ -21,7 +39,11 @@ export function wrapMergePropsFunc<TStateProps, TDispatchProps, TOwnProps, TMerg
     let hasRunOnce = false
     let mergedProps: TMergedProps
 
-    return function mergePropsProxy(stateProps: TStateProps, dispatchProps: TDispatchProps, ownProps: TOwnProps) {
+    return function mergePropsProxy(
+      stateProps: TStateProps,
+      dispatchProps: TDispatchProps,
+      ownProps: TOwnProps
+    ) {
       const nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
 
       if (hasRunOnce) {
@@ -40,13 +62,27 @@ export function wrapMergePropsFunc<TStateProps, TDispatchProps, TOwnProps, TMerg
   }
 }
 
-export function whenMergePropsIsFunction<TStateProps, TDispatchProps, TOwnProps, TMergedProps>(mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>) {
+export function whenMergePropsIsFunction<
+  TStateProps,
+  TDispatchProps,
+  TOwnProps,
+  TMergedProps
+>(
+  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
+) {
   return typeof mergeProps === 'function'
     ? wrapMergePropsFunc(mergeProps)
     : undefined
 }
 
-export function whenMergePropsIsOmitted<TStateProps, TDispatchProps, TOwnProps, TMergedProps>(mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>) {
+export function whenMergePropsIsOmitted<
+  TStateProps,
+  TDispatchProps,
+  TOwnProps,
+  TMergedProps
+>(
+  mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
+) {
   return !mergeProps ? () => defaultMergeProps : undefined
 }
 
