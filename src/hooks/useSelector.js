@@ -1,6 +1,6 @@
 import { useReducer, useRef, useMemo, useContext, useDebugValue } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
-import Subscription from '../utils/Subscription'
+import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
 
@@ -14,7 +14,7 @@ function useSelectorWithStoreAndSubscription(
 ) {
   const [, forceRender] = useReducer((s) => s + 1, 0)
 
-  const subscription = useMemo(() => new Subscription(store, contextSub), [
+  const subscription = useMemo(() => createSubscription(store, contextSub), [
     store,
     contextSub,
   ])
