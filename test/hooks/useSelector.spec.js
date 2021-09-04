@@ -45,14 +45,14 @@ describe('React', () => {
           })
 
           expect(result.current).toEqual(0)
-          expect(selector).toHaveBeenCalledTimes(2)
+          expect(selector).toHaveBeenCalledTimes(1)
 
           act(() => {
             store.dispatch({ type: '' })
           })
 
           expect(result.current).toEqual(1)
-          expect(selector).toHaveBeenCalledTimes(3)
+          expect(selector).toHaveBeenCalledTimes(2)
         })
       })
 
@@ -245,6 +245,79 @@ describe('React', () => {
           store.dispatch({ type: '' })
 
           expect(renderedItems.length).toBe(1)
+        })
+
+        it('calls selector exactly once on mount and on update', () => {
+          store = createStore(({ count } = { count: 0 }) => ({
+            count: count + 1,
+          }))
+
+          let numCalls = 0
+          const selector = (s) => {
+            numCalls += 1
+            return s.count
+          }
+          const renderedItems = []
+
+          const Comp = () => {
+            const value = useSelector(selector)
+            renderedItems.push(value)
+            return <div />
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(numCalls).toBe(1)
+          expect(renderedItems.length).toEqual(1)
+
+          store.dispatch({ type: '' })
+
+          expect(numCalls).toBe(2)
+          expect(renderedItems.length).toEqual(2)
+        })
+
+        it('calls selector twice once on mount when state changes during render', () => {
+          store = createStore(({ count } = { count: 0 }) => ({
+            count: count + 1,
+          }))
+
+          let numCalls = 0
+          const selector = (s) => {
+            numCalls += 1
+            return s.count
+          }
+          const renderedItems = []
+
+          const Child = () => {
+            useLayoutEffect(() => {
+              store.dispatch({ type: '', count: 1 })
+            }, [])
+            return <div />
+          }
+
+          const Comp = () => {
+            const value = useSelector(selector)
+            renderedItems.push(value)
+            return (
+              <div>
+                <Child />
+              </div>
+            )
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
+          expect(numCalls).toBe(2)
+          expect(renderedItems.length).toEqual(2)
         })
       })
 
