@@ -71,6 +71,11 @@ function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
     function checkForUpdates() {
       try {
         const newStoreState = store.getState()
+        // Avoid calling selector multiple times if the store's state has not changed
+        if (newStoreState === latestStoreState.current) {
+          return
+        }
+
         const newSelectedState = latestSelector.current!(newStoreState)
 
         if (equalityFn(newSelectedState, latestSelectedState.current)) {
