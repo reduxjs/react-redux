@@ -236,7 +236,6 @@ export interface ConnectOptions<
 > {
   forwardRef?: boolean
   context?: typeof ReactReduxContext
-  pure?: boolean
   areStatesEqual?: (nextState: State, prevState: State) => boolean
 
   areOwnPropsEqual?: (
@@ -463,7 +462,9 @@ function connect<
   mapDispatchToProps?: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
   mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
   {
-    pure = true,
+    // The `pure` option has been removed, so TS doesn't like us destructuring this to check its existence.
+    // @ts-ignore
+    pure,
     areStatesEqual = strictEqual,
     areOwnPropsEqual = shallowEqual,
     areStatePropsEqual = shallowEqual,
@@ -476,6 +477,14 @@ function connect<
     context = ReactReduxContext,
   }: ConnectOptions<unknown, unknown, unknown, unknown> = {}
 ): unknown {
+  if (process.env.NODE_ENV !== 'production') {
+    if (pure !== undefined) {
+      throw new Error(
+        'The `pure` option has been removed. `connect` is now always a "pure/memoized" component'
+      )
+    }
+  }
+
   const Context = context
 
   type WrappedComponentProps = TOwnProps & ConnectProps
@@ -773,13 +782,14 @@ function connect<
     }
 
     // If we're in "pure" mode, ensure our wrapper component only re-renders when incoming props have changed.
-    const _Connect = pure ? React.memo(ConnectFunction) : ConnectFunction
+    const _Connect = React.memo(ConnectFunction)
 
     type ConnectedWrapperComponent = typeof _Connect & {
       WrappedComponent: typeof WrappedComponent
     }
 
-    const Connect = _Connect as ConnectedComponent<
+    // Add a hacky cast to get the right output type
+    const Connect = _Connect as unknown as ConnectedComponent<
       typeof WrappedComponent,
       WrappedComponentProps
     >

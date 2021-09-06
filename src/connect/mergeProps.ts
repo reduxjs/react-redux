@@ -17,7 +17,6 @@ export function defaultMergeProps<TStateProps, TDispatchProps, TOwnProps>(
 
 interface InitMergeOptions {
   displayName: string
-  pure?: boolean
   areMergedPropsEqual: (a: any, b: any) => boolean
 }
 
@@ -34,7 +33,7 @@ export function wrapMergePropsFunc<
 ) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> {
   return function initMergePropsProxy(
     dispatch,
-    { displayName, pure, areMergedPropsEqual }
+    { displayName, areMergedPropsEqual }
   ) {
     let hasRunOnce = false
     let mergedProps: TMergedProps
@@ -47,7 +46,7 @@ export function wrapMergePropsFunc<
       const nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
 
       if (hasRunOnce) {
-        if (!pure || !areMergedPropsEqual(nextMergedProps, mergedProps))
+        if (!areMergedPropsEqual(nextMergedProps, mergedProps))
           mergedProps = nextMergedProps
       } else {
         hasRunOnce = true

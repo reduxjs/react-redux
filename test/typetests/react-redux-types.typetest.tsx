@@ -67,7 +67,7 @@ connect<ICounterStateProps, ICounterDispatchProps, {}, {}, CounterState>(
   () => mapStateToProps,
   () => mapDispatchToProps,
   (s: ICounterStateProps, d: ICounterDispatchProps) => objectAssign({}, s, d),
-  { pure: true }
+  { forwardRef: true }
 )(Counter)
 
 class App extends Component<any, any> {
