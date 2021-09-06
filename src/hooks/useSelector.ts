@@ -26,7 +26,11 @@ function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
       subscription.onStateChange = reactListener
       subscription.trySubscribe()
 
-      return () => subscription.tryUnsubscribe()
+      return () => {
+        subscription.tryUnsubscribe()
+
+        subscription.onStateChange = null
+      }
     }
 
     return subscribe
