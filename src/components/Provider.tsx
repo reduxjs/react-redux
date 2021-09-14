@@ -22,7 +22,6 @@ export interface ProviderProps<A extends Action = AnyAction> {
 function Provider({ store, context, children }: ProviderProps) {
   const contextValue = useMemo(() => {
     const subscription = createSubscription(store)
-    subscription.onStateChange = subscription.notifyNestedSubs
     return {
       store,
       subscription,
@@ -33,6 +32,7 @@ function Provider({ store, context, children }: ProviderProps) {
 
   useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue
+    subscription.onStateChange = subscription.notifyNestedSubs
     subscription.trySubscribe()
 
     if (previousState !== store.getState()) {
