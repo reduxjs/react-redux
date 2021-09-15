@@ -2,7 +2,6 @@
 
 import React, { useCallback, useReducer, useLayoutEffect } from 'react'
 import { createStore } from 'redux'
-import { renderHook, act } from '@testing-library/react-hooks'
 import * as rtl from '@testing-library/react'
 import {
   Provider as ProviderMock,
@@ -15,7 +14,6 @@ import { useReduxContext } from '../../src/hooks/useReduxContext'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
 import type {
-  ProviderProps,
   TypedUseSelectorHook,
   ReactReduxContextValue,
   Subscription,
@@ -44,19 +42,24 @@ describe('React', () => {
       afterEach(() => rtl.cleanup())
 
       describe('core subscription behavior', () => {
-        type PropsTypeDelStore = Omit<ProviderProps, 'store'>
-
         it('selects the state on initial render', () => {
-          const { result } = renderHook(
-            () => useNormalSelector((s) => s.count),
-            {
-              wrapper: (props: PropsTypeDelStore) => (
-                <ProviderMock {...props} store={normalStore} />
-              ),
-            }
+          let result: number | undefined
+          const Comp = () => {
+            const count = useNormalSelector((state) => state.count)
+
+            useLayoutEffect(() => {
+              result = count
+            }, [])
+            return <div>{count}</div>
+          }
+
+          rtl.render(
+            <ProviderMock store={normalStore}>
+              <Comp />
+            </ProviderMock>
           )
 
-          expect(result.current).toEqual(0)
+          expect(result).toEqual(0)
         })
 
         it('selects the state and renders the component when the store updates', () => {
@@ -64,21 +67,30 @@ describe('React', () => {
           const selector: jest.Mock<number, MockParams> = jest.fn(
             (s) => s.count
           )
+          let result: number | undefined
+          const Comp = () => {
+            const count = useNormalSelector(selector)
 
-          const { result } = renderHook(() => useNormalSelector(selector), {
-            wrapper: (props: PropsTypeDelStore) => (
-              <ProviderMock {...props} store={normalStore} />
-            ),
-          })
+            useLayoutEffect(() => {
+              result = count
+            })
+            return <div>{count}</div>
+          }
 
-          expect(result.current).toEqual(0)
+          rtl.render(
+            <ProviderMock store={normalStore}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(result).toEqual(0)
           expect(selector).toHaveBeenCalledTimes(1)
 
-          act(() => {
+          rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
-          expect(result.current).toEqual(1)
+          expect(result).toEqual(1)
           expect(selector).toHaveBeenCalledTimes(2)
         })
       })
@@ -102,7 +114,7 @@ describe('React', () => {
 
           expect(renderedItems).toEqual([1])
 
-          act(() => {
+          rtl.act(() => {
             store.dispatch({ type: '' })
           })
 
@@ -132,7 +144,7 @@ describe('React', () => {
           // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(1)
 
-          act(() => {
+          rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
@@ -163,7 +175,7 @@ describe('React', () => {
           // @ts-ignore   ts(2454)
           expect(rootSubscription.getListeners().get().length).toBe(2)
 
-          act(() => {
+          rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
@@ -210,8 +222,7 @@ describe('React', () => {
           // With `useSyncExternalStore`, we get three renders of `<Comp>`:
           // 1) Initial render, count is 0
           // 2) Render due to dispatch, still sync in the initial render's commit phase
-          // TODO 3) ??
-          expect(renderedItems).toEqual([0, 1, 1])
+          expect(renderedItems).toEqual([0, 1])
         })
       })
 
@@ -274,7 +285,7 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          act(() => {
+          rtl.act(() => {
             store.dispatch({ type: '' })
           })
 
@@ -309,7 +320,7 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          act(() => {
+          rtl.act(() => {
             store.dispatch({ type: '' })
           })
 
@@ -346,7 +357,7 @@ describe('React', () => {
           expect(numCalls).toBe(1)
           expect(renderedItems.length).toEqual(1)
 
-          act(() => {
+          rtl.act(() => {
             store.dispatch({ type: '' })
           })
 
@@ -398,9 +409,7 @@ describe('React', () => {
 
           // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
           expect(numCalls).toBe(2)
-          // TODO As with "notice store updates" above, we're now getting _3_ renders here
-          // expect(renderedItems.length).toEqual(2)
-          expect(renderedItems.length).toEqual(3)
+          expect(renderedItems.length).toEqual(2)
         })
       })
 
@@ -504,7 +513,7 @@ describe('React', () => {
           // TODO We can no longer catch errors in selectors after dispatch ourselves, as `uSES` swallows them.
           // The test selector will happen to re-throw while rendering and we do see that.
           expect(() => {
-            act(() => {
+            rtl.act(() => {
               store.dispatch({ type: '' })
             })
           }).toThrow(/Panic!/)
@@ -539,7 +548,7 @@ describe('React', () => {
           )
 
           expect(() => {
-            act(() => {
+            rtl.act(() => {
               normalStore.dispatch({ type: '' })
             })
           }).toThrowError()
@@ -614,7 +623,7 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          act(() => {
+          rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
