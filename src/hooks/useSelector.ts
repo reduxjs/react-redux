@@ -39,6 +39,8 @@ function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
   return useSyncExternalStoreExtra(
     subscribe,
     store.getState,
+    // TODO Need a server-side snapshot here
+    store.getState,
     selector,
     equalityFn
   )
