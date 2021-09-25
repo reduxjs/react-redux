@@ -1,50 +1,12 @@
-import { useRef, useMemo, useContext, useDebugValue } from 'react'
+import { useContext, useDebugValue } from 'react'
 
 import { useSyncExternalStoreExtra } from 'use-sync-external-store/extra'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
-import { createSubscription, Subscription } from '../utils/Subscription'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { ReactReduxContext } from '../components/Context'
-import { AnyAction, Store } from 'redux'
 import { DefaultRootState, EqualityFn } from '../types'
 
 const refEquality: EqualityFn<any> = (a, b) => a === b
-
-type TSelector<S, R> = (state: S) => R
-
-function useSelectorWithStoreAndSubscription<TStoreState, TSelectedState>(
-  selector: TSelector<TStoreState, TSelectedState>,
-  equalityFn: EqualityFn<TSelectedState>,
-  store: Store<TStoreState, AnyAction>,
-  contextSub: Subscription
-): TSelectedState {
-  const subscribe = useMemo(() => {
-    const subscription = createSubscription(store, contextSub)
-    const subscribe = (reactListener: () => void) => {
-      // React provides its own subscription handler - trigger that on dispatch
-      subscription.onStateChange = reactListener
-      subscription.trySubscribe()
-
-      return () => {
-        subscription.tryUnsubscribe()
-
-        subscription.onStateChange = null
-      }
-    }
-
-    return subscribe
-  }, [store, contextSub])
-
-  return useSyncExternalStoreExtra(
-    subscribe,
-    store.getState,
-    // TODO Need a server-side snapshot here
-    store.getState,
-    selector,
-    equalityFn
-  )
-}
 
 /**
  * Hook factory, which creates a `useSelector` hook bound to a given context.
@@ -80,13 +42,16 @@ export function createSelectorHook(
         )
       }
     }
-    const { store, subscription: contextSub } = useReduxContext()!
 
-    const selectedState = useSelectorWithStoreAndSubscription(
+    const { store } = useReduxContext()!
+
+    const selectedState = useSyncExternalStoreExtra(
+      store.subscribe,
+      store.getState,
+      // TODO Need a server-side snapshot here
+      store.getState,
       selector,
-      equalityFn,
-      store,
-      contextSub
+      equalityFn
     )
 
     useDebugValue(selectedState)
