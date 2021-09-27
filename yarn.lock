@@ -10577,7 +10577,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest@npm:^27.0.4":
+"jest@npm:^27.2.2":
   version: 27.2.2
   resolution: "jest@npm:27.2.2"
   dependencies:
@@ -14313,7 +14313,7 @@ __metadata:
     eslint-plugin-react: ^7.21.5
     glob: ^7.1.6
     hoist-non-react-statics: ^3.3.2
-    jest: ^27.0.4
+    jest: ^27.2.2
     loose-envify: ^1.4.0
     prettier: ^2.1.2
     prop-types: ^15.7.2
