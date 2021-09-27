@@ -51,7 +51,10 @@ describe('React Native', () => {
     return action.type === 'APPEND' ? prev + action.body : prev
   }
 
-  afterEach(() => rtl.cleanup())
+  afterEach(() => {
+    // Restore timers for tests that called `jest.useFakeTimers()`
+    jest.useRealTimers()
+  })
 
   describe('batch', () => {
     it('batch should be RN unstable_batchedUpdates', () => {

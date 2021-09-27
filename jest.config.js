@@ -3,7 +3,6 @@ const { defaults: tsjPreset } = require('ts-jest/presets')
 const defaults = {
   coverageDirectory: './coverage/',
   collectCoverage: true,
-  testEnvironment: 'jsdom',
   testURL: 'http://localhost',
 }
 
@@ -16,6 +15,7 @@ const tsStandardConfig = {
   ...defaults,
   displayName: 'ReactDOM',
   preset: 'ts-jest',
+  testEnvironment: 'jsdom',
   testMatch: NORMAL_TEST_FOLDERS.map(tsTestFolderPath),
 }
 
