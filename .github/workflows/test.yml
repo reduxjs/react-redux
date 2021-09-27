@@ -2,9 +2,10 @@ name: Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [master, typescript-port]
   pull_request:
-    branches: [ master ]
+    branches: [master, typescript-port]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,29 +13,80 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
 
-    - name: Set up Node
-      uses: actions/setup-node@v1
-      with:
-        node-version: 14.x
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: .yarn/cache
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
 
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: ~/.npm 
-        key: ${{ runner.OS }}-npm-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.OS }}-npm-
-          ${{ runner.OS }}-
+      - name: Install dependencies
+        run: yarn install
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Run test suite
+        run: yarn test
 
-    - name: Run test suite
-      run: npm test
+      - name: Collect coverage
+        run: yarn coverage
 
-    - name: Collect coverage
-      run: npm run coverage
+  test-types:
+    name: Test Types with TypeScript ${{ matrix.ts }}
+
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['14.x']
+        ts: ['3.9', '4.0', '4.1', '4.2', '4.3', 'next']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Use node ${{ matrix.node }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+
+      - uses: actions/cache@v2
+        with:
+          path: .yarn/cache
+          key: yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: yarn-
+
+      - name: Install deps
+        run: yarn install
+
+      - name: Install TypeScript ${{ matrix.ts }}
+        run: yarn add typescript@${{ matrix.ts }}
+
+      # - uses: actions/download-artifact@v2
+      #   with:
+      #     name: package
+      #     path: packages/toolkit
+
+      # - name: Install build artifact
+      #   run: yarn add ./package.tgz
+
+      # - run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json ./jest.config.js ./src/tests/*.* ./src/query/tests/*.*
+
+      # - name: "@ts-ignore stuff that didn't exist pre-4.1 in the tests"
+      #   if: ${{ matrix.ts < 4.1 }}
+      #   run: sed -i -e 's/@pre41-ts-ignore/@ts-ignore/' -e  '/pre41-remove-start/,/pre41-remove-end/d' ./src/tests/*.* ./src/query/tests/*.ts*
+
+      # - name: 'disable strictOptionalProperties'
+      #   if: ${{ matrix.ts == 'next' }}
+      #   run: sed -i -e 's|//\(.*strictOptionalProperties.*\)$|\1|' tsconfig.base.json
+
+      - name: Test types
+        run: |
+          yarn tsc --version
+          yarn type-tests

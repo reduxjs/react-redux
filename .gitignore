@@ -3,6 +3,23 @@ dist
 lib
 coverage
 es
+temp/
+react-redux-*/
+
+.cache
+.yarnrc
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+*.tgz
+
+.yalc
+yalc.lock
+yalc.sig
 
 lib/core/metadata.js
 lib/core/MetadataBlog.js
