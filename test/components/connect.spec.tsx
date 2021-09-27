@@ -2497,42 +2497,6 @@ describe('React', () => {
     })
 
     describe('Refs', () => {
-      it.skip('should throw when trying to access the wrapped instance if withRef is not specified', () => {
-        const store = createStore(() => ({}))
-
-        class Container extends Component {
-          render() {
-            return <Passthrough />
-          }
-        }
-
-        const decorator = connect((state) => state)
-        const Decorated = decorator(Container)
-
-        class Wrapper extends Component {
-          render() {
-            return (
-              <Decorated
-                ref={(comp) => comp && (comp as any).getWrappedInstance()}
-              />
-            )
-          }
-        }
-
-        // TODO Remove this when React is fixed, per https://github.com/facebook/react/issues/11098
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
-        expect(() =>
-          rtl.render(
-            <ProviderMock store={store}>
-              <Wrapper />
-            </ProviderMock>
-          )
-        ).toThrow(
-          `To access the wrapped instance, you need to specify { withRef: true } in the options argument of the connect() call`
-        )
-        spy.mockRestore()
-      })
-
       it('should return the instance of the wrapped component for use in calling child methods', async () => {
         const store = createStore(() => ({}))
 
