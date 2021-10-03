@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.12.1",
+    "@types/hoist-non-react-statics": "^3.3.1",
     "@types/use-sync-external-store": "^0.0.0",
     "hoist-non-react-statics": "^3.3.2",
     "loose-envify": "^1.4.0",
@@ -70,6 +71,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.14.5",
     "@microsoft/api-extractor": "^7.18.1",
+    "@reduxjs/toolkit": "^1.6.1",
     "@rollup/plugin-babel": "^5.2.1",
     "@rollup/plugin-commonjs": "^15.1.0",
     "@rollup/plugin-node-resolve": "^9.0.0",
