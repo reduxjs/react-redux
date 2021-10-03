@@ -39,9 +39,6 @@
     "type-tests": "yarn tsc -p test/typetests",
     "coverage": "codecov"
   },
-  "workspaces": [
-    "website"
-  ],
   "peerDependencies": {
     "react": "^16.8.3 || ^17 || ^18"
   },
