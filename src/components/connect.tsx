@@ -425,9 +425,9 @@ function connect<
   TMergedProps = {},
   State = DefaultRootState
 >(
-  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
-  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
+  mapStateToProps?: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+  mapDispatchToProps?: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+  mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
   options?: ConnectOptions<State, TStateProps, TOwnProps, TMergedProps>
 ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps & ConnectProps>
 

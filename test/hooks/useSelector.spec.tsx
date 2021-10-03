@@ -697,8 +697,9 @@ describe('React', () => {
       })
 
       it('subscribes to the correct store', () => {
-        const nestedContext =
-          React.createContext<ReactReduxContextValue | null>(null)
+        const nestedContext = React.createContext<ReactReduxContextValue>(
+          null as any
+        )
         const useCustomSelector = createSelectorHook(nestedContext)
         let defaultCount = null
         let customCount = null

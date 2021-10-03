@@ -2154,10 +2154,9 @@ describe('React', () => {
           }
         }
 
-        const context = React.createContext<ReactReduxContextValue<
-          any,
-          AnyAction
-        > | null>(null)
+        const context = React.createContext<
+          ReactReduxContextValue<any, AnyAction>
+        >(null as any)
 
         let actualState
 
@@ -2196,10 +2195,9 @@ describe('React', () => {
           }
         }
 
-        const context = React.createContext<ReactReduxContextValue<
-          any,
-          AnyAction
-        > | null>(null)
+        const context = React.createContext<
+          ReactReduxContextValue<any, AnyAction>
+        >(null as any)
 
         let actualState
 
@@ -2451,8 +2449,9 @@ describe('React', () => {
           (state: RootStateType = 0, action: ActionType) =>
             action.type === 'INC' ? state + 1 : state
         )
-        const customContext =
-          React.createContext<ReactReduxContextValue | null>(null)
+        const customContext = React.createContext<ReactReduxContextValue>(
+          null as any
+        )
 
         class A extends Component {
           render() {
