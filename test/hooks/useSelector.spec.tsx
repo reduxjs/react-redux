@@ -2,7 +2,6 @@
 
 import React, { useCallback, useReducer, useLayoutEffect } from 'react'
 import { createStore } from 'redux'
-import { renderHook, act } from '@testing-library/react-hooks'
 import * as rtl from '@testing-library/react'
 import {
   Provider as ProviderMock,
@@ -15,7 +14,6 @@ import { useReduxContext } from '../../src/hooks/useReduxContext'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
 import type {
-  ProviderProps,
   TypedUseSelectorHook,
   ReactReduxContextValue,
   Subscription,
@@ -31,6 +29,7 @@ describe('React', () => {
       let renderedItems: any[] = []
       type RootState = ReturnType<typeof normalStore.getState>
       let useNormalSelector: TypedUseSelectorHook<RootState> = useSelector
+      type VoidFunc = () => void
 
       beforeEach(() => {
         normalStore = createStore(
@@ -44,19 +43,24 @@ describe('React', () => {
       afterEach(() => rtl.cleanup())
 
       describe('core subscription behavior', () => {
-        type PropsTypeDelStore = Omit<ProviderProps, 'store'>
-
         it('selects the state on initial render', () => {
-          const { result } = renderHook(
-            () => useNormalSelector((s) => s.count),
-            {
-              wrapper: (props: PropsTypeDelStore) => (
-                <ProviderMock {...props} store={normalStore} />
-              ),
-            }
+          let result: number | undefined
+          const Comp = () => {
+            const count = useNormalSelector((state) => state.count)
+
+            useLayoutEffect(() => {
+              result = count
+            }, [])
+            return <div>{count}</div>
+          }
+
+          rtl.render(
+            <ProviderMock store={normalStore}>
+              <Comp />
+            </ProviderMock>
           )
 
-          expect(result.current).toEqual(0)
+          expect(result).toEqual(0)
         })
 
         it('selects the state and renders the component when the store updates', () => {
@@ -64,21 +68,30 @@ describe('React', () => {
           const selector: jest.Mock<number, MockParams> = jest.fn(
             (s) => s.count
           )
+          let result: number | undefined
+          const Comp = () => {
+            const count = useNormalSelector(selector)
 
-          const { result } = renderHook(() => useNormalSelector(selector), {
-            wrapper: (props: PropsTypeDelStore) => (
-              <ProviderMock {...props} store={normalStore} />
-            ),
-          })
+            useLayoutEffect(() => {
+              result = count
+            })
+            return <div>{count}</div>
+          }
 
-          expect(result.current).toEqual(0)
+          rtl.render(
+            <ProviderMock store={normalStore}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          expect(result).toEqual(0)
           expect(selector).toHaveBeenCalledTimes(1)
 
-          act(() => {
+          rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
-          expect(result.current).toEqual(1)
+          expect(result).toEqual(1)
           expect(selector).toHaveBeenCalledTimes(2)
         })
       })
@@ -102,12 +115,29 @@ describe('React', () => {
 
           expect(renderedItems).toEqual([1])
 
-          store.dispatch({ type: '' })
+          rtl.act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems).toEqual([1, 2])
         })
 
         it('subscribes to the store synchronously', () => {
+          const listeners = new Set<VoidFunc>()
+          const originalSubscribe = normalStore.subscribe
+
+          jest
+            .spyOn(normalStore, 'subscribe')
+            .mockImplementation((callback: VoidFunc) => {
+              listeners.add(callback)
+              const originalUnsubscribe = originalSubscribe(callback)
+
+              return () => {
+                listeners.delete(callback)
+                originalUnsubscribe()
+              }
+            })
+
           let rootSubscription: Subscription
 
           const Parent = () => {
@@ -127,20 +157,35 @@ describe('React', () => {
               <Parent />
             </ProviderMock>
           )
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(1)
+          // Provider + 1 component
+          expect(listeners.size).toBe(2)
 
-          normalStore.dispatch({ type: '' })
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(2)
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
+
+          // Provider + 2 components
+          expect(listeners.size).toBe(3)
         })
 
         it('unsubscribes when the component is unmounted', () => {
-          let rootSubscription: Subscription
+          const originalSubscribe = normalStore.subscribe
+
+          const listeners = new Set<VoidFunc>()
+
+          jest
+            .spyOn(normalStore, 'subscribe')
+            .mockImplementation((callback: VoidFunc) => {
+              listeners.add(callback)
+              const originalUnsubscribe = originalSubscribe(callback)
+
+              return () => {
+                listeners.delete(callback)
+                originalUnsubscribe()
+              }
+            })
 
           const Parent = () => {
-            const { subscription } = useReduxContext() as ReactReduxContextValue
-            rootSubscription = subscription
             const count = useNormalSelector((s) => s.count)
             return count === 0 ? <Child /> : null
           }
@@ -155,34 +200,56 @@ describe('React', () => {
               <Parent />
             </ProviderMock>
           )
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(2)
+          // Provider + 2 components
+          expect(listeners.size).toBe(3)
 
-          normalStore.dispatch({ type: '' })
-          // @ts-ignore   ts(2454)
-          expect(rootSubscription.getListeners().get().length).toBe(1)
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
+
+          // Provider + 1 component
+          expect(listeners.size).toBe(2)
         })
 
         it('notices store updates between render and store subscription effect', () => {
+          const Child = ({ count }: { count: number }) => {
+            // console.log('Child rendering')
+            useLayoutEffect(() => {
+              // console.log('Child layoutEffect: ', count)
+              if (count === 0) {
+                // console.log('Dispatching store update')
+                normalStore.dispatch({ type: '' })
+              }
+            }, [count])
+            return null
+          }
           const Comp = () => {
+            // console.log('Parent rendering, selecting state')
             const count = useNormalSelector((s) => s.count)
-            renderedItems.push(count)
 
-            // I don't know a better way to trigger a store update before the
-            // store subscription effect happens
-            if (count === 0) {
-              normalStore.dispatch({ type: '' })
-            }
+            useLayoutEffect(() => {
+              // console.log('Parent layoutEffect: ', count)
+              renderedItems.push(count)
+            })
 
-            return <div>{count}</div>
+            return (
+              <div>
+                {count}
+                <Child count={count} />
+              </div>
+            )
           }
 
+          // console.log('Starting initial render')
           rtl.render(
             <ProviderMock store={normalStore}>
               <Comp />
             </ProviderMock>
           )
 
+          // With `useSyncExternalStore`, we get three renders of `<Comp>`:
+          // 1) Initial render, count is 0
+          // 2) Render due to dispatch, still sync in the initial render's commit phase
           expect(renderedItems).toEqual([0, 1])
         })
       })
@@ -246,7 +313,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          store.dispatch({ type: '' })
+          rtl.act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(1)
         })
@@ -279,7 +348,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          store.dispatch({ type: '' })
+          rtl.act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(1)
         })
@@ -314,7 +385,9 @@ describe('React', () => {
           expect(numCalls).toBe(1)
           expect(renderedItems.length).toEqual(1)
 
-          store.dispatch({ type: '' })
+          rtl.act(() => {
+            store.dispatch({ type: '' })
+          })
 
           expect(numCalls).toBe(2)
           expect(renderedItems.length).toEqual(2)
@@ -344,7 +417,11 @@ describe('React', () => {
 
           const Comp = () => {
             const value = useSelector(selector)
-            renderedItems.push(value)
+
+            useLayoutEffect(() => {
+              renderedItems.push(value)
+            })
+
             return (
               <div>
                 <Child />
@@ -435,13 +512,14 @@ describe('React', () => {
           spy.mockRestore()
         })
 
-        it('correlates the subscription callback error with a following error during rendering', () => {
+        it('Passes through errors thrown while rendering', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
             const result = useSelector((count: number) => {
               if (count > 0) {
-                throw new Error('foo')
+                // console.log('Throwing error')
+                throw new Error('Panic!')
               }
 
               return count
@@ -460,9 +538,13 @@ describe('React', () => {
 
           rtl.render(<App />)
 
-          expect(() => store.dispatch({ type: '' })).toThrow(
-            /The error may be correlated/
-          )
+          // TODO We can no longer catch errors in selectors after dispatch ourselves, as `uSES` swallows them.
+          // The test selector will happen to re-throw while rendering and we do see that.
+          expect(() => {
+            rtl.act(() => {
+              store.dispatch({ type: '' })
+            })
+          }).toThrow(/Panic!/)
 
           spy.mockRestore()
         })
@@ -493,12 +575,16 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(() => normalStore.dispatch({ type: '' })).toThrowError()
+          expect(() => {
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
+          }).toThrowError()
 
           spy.mockRestore()
         })
 
-        it('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
+        it.skip('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
@@ -551,7 +637,9 @@ describe('React', () => {
             // triggers render on store change
             useNormalSelector((s) => s.count)
             const array = useSelector(() => [1, 2, 3], alwaysEqual)
-            renderedItems.push(array)
+            useLayoutEffect(() => {
+              renderedItems.push(array)
+            })
             return <div />
           }
 
@@ -563,7 +651,9 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(1)
 
-          normalStore.dispatch({ type: '' })
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
 
           expect(renderedItems.length).toBe(2)
           expect(renderedItems[0]).toBe(renderedItems[1])
@@ -607,8 +697,9 @@ describe('React', () => {
       })
 
       it('subscribes to the correct store', () => {
-        const nestedContext =
-          React.createContext<ReactReduxContextValue | null>(null)
+        const nestedContext = React.createContext<ReactReduxContextValue>(
+          null as any
+        )
         const useCustomSelector = createSelectorHook(nestedContext)
         let defaultCount = null
         let customCount = null

@@ -5,8 +5,11 @@ coverage
 es
 temp/
 react-redux-*/
+.vscode/
 
-.cache
+.cache/
+.yarn/cache/
+website/.yarn/
 .yarnrc
 .yarn/*
 !.yarn/patches
@@ -26,6 +29,5 @@ lib/core/MetadataBlog.js
 
 website/translated_docs
 website/build/
-website/yarn.lock
 website/node_modules
 website/i18n/*

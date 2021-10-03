@@ -66,29 +66,6 @@ export type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (
   ownProps: TOwnProps
 ) => TMergedProps
 
-export function impureFinalPropsSelectorFactory<
-  TStateProps,
-  TOwnProps,
-  TDispatchProps,
-  TMergedProps,
-  State = DefaultRootState
->(
-  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-  mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
-  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
-  dispatch: Dispatch
-) {
-  return function impureFinalPropsSelector(state: State, ownProps: TOwnProps) {
-    return mergeProps(
-      // @ts-ignore
-      mapStateToProps(state, ownProps),
-      // @ts-ignore
-      mapDispatchToProps(dispatch, ownProps),
-      ownProps
-    )
-  }
-}
-
 interface PureSelectorFactoryComparisonOptions<
   TOwnProps,
   State = DefaultRootState
@@ -97,7 +74,6 @@ interface PureSelectorFactoryComparisonOptions<
   areOwnPropsEqual: EqualityFn<TOwnProps>
   areStatePropsEqual: EqualityFn<unknown>
   displayName: string
-  pure?: boolean
 }
 
 export function pureFinalPropsSelectorFactory<
@@ -222,10 +198,9 @@ export interface SelectorFactoryOptions<
 
 // TODO: Add more comments
 
-// If pure is true, the selector returned by selectorFactory will memoize its results,
+// The selector returned by selectorFactory will memoize its results,
 // allowing connect's shouldComponentUpdate to return false if final
-// props have not changed. If false, the selector will always return a new
-// object and shouldComponentUpdate will always return true.
+// props have not changed.
 
 export default function finalPropsSelectorFactory<
   TStateProps,
@@ -256,9 +231,7 @@ export default function finalPropsSelectorFactory<
     verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps)
   }
 
-  const selectorFactory = options.pure
-    ? pureFinalPropsSelectorFactory
-    : impureFinalPropsSelectorFactory
+  const selectorFactory = pureFinalPropsSelectorFactory
 
   return selectorFactory(
     // @ts-ignore

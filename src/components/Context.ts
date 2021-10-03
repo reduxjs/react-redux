@@ -1,10 +1,9 @@
 import React from 'react'
 import { Action, AnyAction, Store } from 'redux'
-import type { FixTypeLater } from '../types'
 import type { Subscription } from '../utils/Subscription'
 
 export interface ReactReduxContextValue<
-  SS = FixTypeLater,
+  SS = any,
   A extends Action = AnyAction
 > {
   store: Store<SS, A>
@@ -12,7 +11,7 @@ export interface ReactReduxContextValue<
 }
 
 export const ReactReduxContext =
-  /*#__PURE__*/ React.createContext<ReactReduxContextValue | null>(null)
+  /*#__PURE__*/ React.createContext<ReactReduxContextValue>(null as any)
 
 export type ReactReduxContextInstance = typeof ReactReduxContext
 

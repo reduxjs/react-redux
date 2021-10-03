@@ -1,7 +1,4 @@
-/* eslint-disable no-unused-vars */
+/* eslint-disable import/no-unresolved */
+import {} from 'react/next'
 
-declare module 'react-is' {
-  import * as React from 'react'
-  export function isContextConsumer(value: any): value is React.ReactElement
-  export function isValidElementType(value: any): value is React.ElementType
-}
+import {} from 'react-dom/next'

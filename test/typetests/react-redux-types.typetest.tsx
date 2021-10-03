@@ -2,21 +2,77 @@
 import { Component, ReactElement } from 'react'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { Store, Dispatch, bindActionCreators, AnyAction } from 'redux'
-import { connect, Provider, ConnectedProps } from '../../src/index'
+import {
+  configureStore,
+  createSlice,
+  createAsyncThunk,
+  Store,
+  Dispatch,
+  bindActionCreators,
+  AnyAction,
+  ThunkAction,
+  Action,
+} from '@reduxjs/toolkit'
+import {
+  connect,
+  Provider,
+  ConnectedProps,
+  useDispatch,
+  useSelector,
+  TypedUseSelectorHook,
+} from '../../src/index'
 import { expectType } from '../typeTestHelpers'
 
 import objectAssign from 'object-assign'
 
-//
-// Quick Start
-// https://github.com/rackt/react-redux/blob/master/docs/quick-start.md#quick-start
-//
-
 interface CounterState {
   counter: number
 }
-declare var increment: Function
+
+const initialState: CounterState = {
+  counter: 0,
+}
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState,
+  reducers: {
+    increment(state) {
+      state.counter++
+    },
+  },
+})
+
+export function fetchCount(amount = 1) {
+  return new Promise<{ data: number }>((resolve) =>
+    setTimeout(() => resolve({ data: amount }), 500)
+  )
+}
+
+export const incrementAsync = createAsyncThunk(
+  'counter/fetchCount',
+  async (amount: number) => {
+    const response = await fetchCount(amount)
+    // The value we return becomes the `fulfilled` action payload
+    return response.data
+  }
+)
+
+const { increment } = counterSlice.actions
+
+const counterStore = configureStore({
+  reducer: counterSlice.reducer,
+  middleware: (gdm) => gdm(),
+})
+
+export type AppDispatch = typeof counterStore.dispatch
+export type RootState = ReturnType<typeof counterStore.getState>
+export type AppThunk<ReturnType = void> = ThunkAction<
+  ReturnType,
+  RootState,
+  unknown,
+  Action<string>
+>
 
 class Counter extends Component<any, any> {
   render() {
@@ -67,7 +123,7 @@ connect<ICounterStateProps, ICounterDispatchProps, {}, {}, CounterState>(
   () => mapStateToProps,
   () => mapDispatchToProps,
   (s: ICounterStateProps, d: ICounterDispatchProps) => objectAssign({}, s, d),
-  { pure: true }
+  { forwardRef: true }
 )(Counter)
 
 class App extends Component<any, any> {
@@ -400,5 +456,21 @@ namespace ConnectedPropsTest {
 
   expectType<{ exampleThunk: (id: number) => Promise<string> }>(
     {} as PropsFromRedux2
+  )
+}
+
+// Standard hooks setup
+export const useAppDispatch = () => useDispatch<AppDispatch>()
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+
+function CounterComponent() {
+  const dispatch = useAppDispatch()
+
+  return (
+    <button
+      onClick={() => {
+        dispatch(incrementAsync(1))
+      }}
+    />
   )
 }

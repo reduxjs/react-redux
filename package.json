@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "7.2.4",
+  "version": "8.0.0-alpha.0",
   "description": "Official React bindings for Redux",
   "keywords": [
     "react",
@@ -39,11 +39,8 @@
     "type-tests": "yarn tsc -p test/typetests",
     "coverage": "codecov"
   },
-  "workspaces": [
-    "website"
-  ],
   "peerDependencies": {
-    "react": "^16.8.3 || ^17"
+    "react": "^16.8.3 || ^17 || ^18"
   },
   "peerDependenciesMeta": {
     "react-dom": {
@@ -55,10 +52,13 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.12.1",
+    "@types/hoist-non-react-statics": "^3.3.1",
+    "@types/use-sync-external-store": "^0.0.0",
     "hoist-non-react-statics": "^3.3.2",
     "loose-envify": "^1.4.0",
     "prop-types": "^15.7.2",
-    "react-is": "^16.13.1"
+    "react-is": "^16.13.1",
+    "use-sync-external-store": "0.0.0-experimental-7d38e4fd8-20210930"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
@@ -71,18 +71,19 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.14.5",
     "@microsoft/api-extractor": "^7.18.1",
+    "@reduxjs/toolkit": "^1.6.1",
     "@rollup/plugin-babel": "^5.2.1",
     "@rollup/plugin-commonjs": "^15.1.0",
     "@rollup/plugin-node-resolve": "^9.0.0",
     "@rollup/plugin-replace": "^2.3.3",
     "@testing-library/jest-dom": "^5.11.5",
     "@testing-library/jest-native": "^3.4.3",
-    "@testing-library/react": "^12.0.0",
+    "@testing-library/react": "https://pkg.csb.dev/testing-library/react-testing-library/commit/0e2cf7da/@testing-library/react#.tgz",
     "@testing-library/react-hooks": "^3.4.2",
     "@testing-library/react-native": "^7.1.0",
     "@types/create-react-class": "^15.6.3",
     "@types/object-assign": "^4.0.30",
-    "@types/react": "^17.0.14",
+    "@types/react": "17.0.19",
     "@types/react-dom": "^17.0.9",
     "@types/react-is": "^17.0.1",
     "@types/react-native": "^0.64.12",
@@ -103,10 +104,10 @@
     "glob": "^7.1.6",
     "jest": "^26.6.1",
     "prettier": "^2.1.2",
-    "react": "^16.14.0",
-    "react-dom": "^16.14.0",
+    "react": "0.0.0-experimental-7d38e4fd8-20210930",
+    "react-dom": "0.0.0-experimental-7d38e4fd8-20210930",
     "react-native": "^0.64.1",
-    "react-test-renderer": "^16.14.0",
+    "react-test-renderer": "0.0.0-experimental-7d38e4fd8-20210930",
     "redux": "^4.0.5",
     "rimraf": "^3.0.2",
     "rollup": "^2.32.1",

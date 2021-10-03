@@ -15,7 +15,7 @@ export interface ProviderProps<A extends Action = AnyAction> {
    * If this is used, you'll need to customize `connect` by supplying the same context provided to the Provider.
    * Initial value doesn't matter, as it is overwritten with the internal state of Provider.
    */
-  context?: Context<ReactReduxContextValue | null>
+  context?: Context<ReactReduxContextValue>
   children: ReactNode
 }
 
