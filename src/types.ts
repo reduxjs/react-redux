@@ -1,17 +1,9 @@
 /* eslint-disable no-unused-vars */
 // TODO Ignoring all unused variables for now
 
-import {
-  ClassAttributes,
-  Component,
-  ComponentClass,
-  ComponentType,
-  StatelessComponent,
-  Context,
-  NamedExoticComponent,
-} from 'react'
+import { ClassAttributes, ComponentClass, ComponentType } from 'react'
 
-import { Action, ActionCreator, AnyAction, Dispatch, Store } from 'redux'
+import { Action, AnyAction, Dispatch } from 'redux'
 
 // import hoistNonReactStatics = require('hoist-non-react-statics');
 import type { NonReactStatics } from 'hoist-non-react-statics'

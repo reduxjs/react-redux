@@ -10,14 +10,9 @@ import {
   connect,
   createSelectorHook,
 } from '../../src/index'
-import { useReduxContext } from '../../src/hooks/useReduxContext'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
-import type {
-  TypedUseSelectorHook,
-  ReactReduxContextValue,
-  Subscription,
-} from '../../src/'
+import type { TypedUseSelectorHook, ReactReduxContextValue } from '../../src/'
 
 describe('React', () => {
   describe('hooks', () => {
@@ -138,11 +133,7 @@ describe('React', () => {
               }
             })
 
-          let rootSubscription: Subscription
-
           const Parent = () => {
-            const { subscription } = useReduxContext() as ReactReduxContextValue
-            rootSubscription = subscription
             const count = useNormalSelector((s) => s.count)
             return count === 1 ? <Child /> : null
           }

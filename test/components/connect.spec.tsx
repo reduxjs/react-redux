@@ -1,8 +1,7 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component, MouseEvent, useLayoutEffect } from 'react'
+import React, { Component, MouseEvent } from 'react'
 import createClass from 'create-react-class'
-import PropTypes from 'prop-types'
 import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
