@@ -9063,7 +9063,6 @@ __metadata:
     jest: ^26.6.1
     loose-envify: ^1.4.0
     prettier: ^2.1.2
-    prop-types: ^15.7.2
     react: 0.0.0-experimental-7d38e4fd8-20210930
     react-dom: 0.0.0-experimental-7d38e4fd8-20210930
     react-is: ^16.13.1
