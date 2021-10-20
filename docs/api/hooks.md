@@ -290,7 +290,7 @@ However, the React hooks lint rules do not know that `dispatch` should be stable
 should be added to dependency arrays for `useEffect` and `useCallback`. The simplest solution is to do just that:
 
 ````js
-export const Todos() = () => {
+export const Todos = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
