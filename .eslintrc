@@ -4,7 +4,7 @@
     "eslint:recommended",
     "plugin:import/recommended",
     "plugin:react/recommended",
-    "plugin:prettier/recommended"
+    "prettier"
   ],
   "settings": {
     "react": {
@@ -31,8 +31,5 @@
     "react/jsx-wrap-multilines": 2,
     "react/no-string-refs": 0
   },
-  "plugins": [
-    "import",
-    "react"
-  ]
+  "plugins": ["import", "react"]
 }

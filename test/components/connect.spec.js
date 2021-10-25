@@ -2275,7 +2275,7 @@ describe('React', () => {
         spy.mockRestore()
       })
 
-      it('should return the instance of the wrapped component for use in calling child methods', async (done) => {
+      it('should return the instance of the wrapped component for use in calling child methods', async () => {
         const store = createStore(() => ({}))
 
         const someData = {
@@ -2314,7 +2314,6 @@ describe('React', () => {
         await tester.findByTestId('loaded')
 
         expect(ref.current.someInstanceMethod()).toBe(someData)
-        done()
       })
 
       it('should correctly separate and pass through props to the wrapped component with a forwarded ref', () => {
@@ -2352,7 +2351,7 @@ describe('React', () => {
     })
 
     describe('Impure behavior', () => {
-      it('should return the instance of the wrapped component for use in calling child methods, impure component', async (done) => {
+      it('should return the instance of the wrapped component for use in calling child methods, impure component', async () => {
         const store = createStore(() => ({}))
 
         const someData = {
@@ -2392,7 +2391,6 @@ describe('React', () => {
         await tester.findByTestId('loaded')
 
         expect(ref.current.someInstanceMethod()).toBe(someData)
-        done()
       })
 
       it('should wrap impure components without supressing updates', () => {

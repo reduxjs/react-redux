@@ -468,9 +468,8 @@ describe('React Native', () => {
       const rendered = rtl.render(<ReduxBugDemo />)
 
       const assertValuesMatch = (rendered) => {
-        const [, boolFromSelector] = rendered.getByTestId(
-          'boolFromSelector'
-        ).children
+        const [, boolFromSelector] =
+          rendered.getByTestId('boolFromSelector').children
         const [, boolFromStore] = rendered.getByTestId('boolFromStore').children
         expect(boolFromSelector).toBe(boolFromStore)
       }
