@@ -26,18 +26,15 @@
     "build:es": "babel src --out-dir es",
     "build:umd": "cross-env NODE_ENV=development rollup -c -o dist/react-redux.js",
     "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/react-redux.min.js",
-    "build": "yarn build:commonjs && yarn build:es && yarn build:umd && yarn build:umd:min",
+    "build": "npm run build:commonjs && npm run build:es && npm run build:umd && npm run build:umd:min",
     "clean": "rimraf lib dist es coverage",
     "format": "prettier --write \"{src,test}/**/*.{js,ts}\"  \"docs/**/*.md\"",
     "lint": "eslint src test/utils test/components test/hooks",
-    "prepare": "yarn clean && yarn build",
-    "pretest": "yarn lint",
+    "prepare": "npm run clean && npm run build",
+    "pretest": "npm run lint",
     "test": "jest",
     "coverage": "codecov"
   },
-  "workspaces": [
-    "website"
-  ],
   "peerDependencies": {
     "react": "^16.8.3 || ^17"
   },

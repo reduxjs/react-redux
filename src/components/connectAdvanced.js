@@ -272,17 +272,14 @@ export default function connectAdvanced(
     const usePureOnlyMemo = pure ? useMemo : (callback) => callback()
 
     function ConnectFunction(props) {
-      const [
-        propsContext,
-        reactReduxForwardedRef,
-        wrapperProps,
-      ] = useMemo(() => {
-        // Distinguish between actual "data" props that were passed to the wrapper component,
-        // and values needed to control behavior (forwarded refs, alternate context instances).
-        // To maintain the wrapperProps object reference, memoize this destructuring.
-        const { reactReduxForwardedRef, ...wrapperProps } = props
-        return [props.context, reactReduxForwardedRef, wrapperProps]
-      }, [props])
+      const [propsContext, reactReduxForwardedRef, wrapperProps] =
+        useMemo(() => {
+          // Distinguish between actual "data" props that were passed to the wrapper component,
+          // and values needed to control behavior (forwarded refs, alternate context instances).
+          // To maintain the wrapperProps object reference, memoize this destructuring.
+          const { reactReduxForwardedRef, ...wrapperProps } = props
+          return [props.context, reactReduxForwardedRef, wrapperProps]
+        }, [props])
 
       const ContextToUse = useMemo(() => {
         // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
@@ -343,9 +340,8 @@ export default function connectAdvanced(
         // the middle of the notification loop, where `subscription` will then be null. This can
         // probably be avoided if Subscription's listeners logic is changed to not call listeners
         // that have been unsubscribed in the  middle of the notification loop.
-        const notifyNestedSubs = subscription.notifyNestedSubs.bind(
-          subscription
-        )
+        const notifyNestedSubs =
+          subscription.notifyNestedSubs.bind(subscription)
 
         return [subscription, notifyNestedSubs]
       }, [store, didStoreComeFromProps, contextValue])
@@ -370,10 +366,8 @@ export default function connectAdvanced(
 
       // We need to force this wrapper component to re-render whenever a Redux store update
       // causes a change to the calculated child component props (or we caught an error in mapState)
-      const [
-        [previousStateUpdateResult],
-        forceComponentUpdateDispatch,
-      ] = useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates)
+      const [[previousStateUpdateResult], forceComponentUpdateDispatch] =
+        useReducer(storeStateUpdatesReducer, EMPTY_ARRAY, initStateUpdates)
 
       // Propagate any mapState/mapDispatch errors upwards
       if (previousStateUpdateResult && previousStateUpdateResult.error) {

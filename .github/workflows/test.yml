@@ -16,22 +16,16 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 14.x
+          cache: npm
 
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: .yarn/cache
-          key: yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: yarn-
-
       - name: Install dependencies
-        run: yarn install
+        run: npm ci
 
       - name: Run test suite
-        run: yarn test
+        run: npm test
 
       - name: Collect coverage
-        run: yarn coverage
+        run: npm run coverage
