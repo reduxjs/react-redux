@@ -14,10 +14,10 @@ function useSelectorWithStoreAndSubscription(
 ) {
   const [, forceRender] = useReducer((s) => s + 1, 0)
 
-  const subscription = useMemo(() => createSubscription(store, contextSub), [
-    store,
-    contextSub,
-  ])
+  const subscription = useMemo(
+    () => createSubscription(store, contextSub),
+    [store, contextSub]
+  )
 
   const latestSubscriptionCallbackError = useRef()
   const latestSelector = useRef()
