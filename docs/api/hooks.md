@@ -190,7 +190,7 @@ export const App = () => {
 }
 ```
 
-However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that each component instance gets its own selector instance (see [here](https://github.com/reduxjs/reselect#accessing-react-props-in-selectors) for a more thorough explanation of why this is necessary):
+However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that each component instance gets its own selector instance (see [here](https://github.com/reduxjs/reselect#q-can-i-share-a-selector-across-multiple-component-instances) for a more thorough explanation of why this is necessary):
 
 ```jsx
 import React, { useMemo } from 'react'
