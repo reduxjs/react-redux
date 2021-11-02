@@ -27,7 +27,10 @@ import defaultMapStateToPropsFactories from '../connect/mapStateToProps'
 import defaultMergePropsFactories from '../connect/mergeProps'
 
 import { createSubscription, Subscription } from '../utils/Subscription'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import {
+  useIsomorphicLayoutEffect,
+  canUseDOM,
+} from '../utils/useIsomorphicLayoutEffect'
 import shallowEqual from '../utils/shallowEqual'
 
 import {
@@ -124,6 +127,7 @@ function subscribeUpdates(
       return
     }
 
+    // TODO We're currently calling getState ourselves here, rather than letting `uSES` do it
     const latestStoreState = store.getState()
 
     let newChildProps, error
@@ -157,6 +161,7 @@ function subscribeUpdates(
       childPropsFromStoreUpdate.current = newChildProps
       renderIsScheduled.current = true
 
+      // TODO This is hacky and not how `uSES` is meant to be used
       // Trigger the React `useSyncExternalStore` subscriber
       additionalSubscribeListener()
     }
@@ -597,6 +602,10 @@ function connect<
         ? props.store!
         : contextValue!.store
 
+      const getServerSnapshot = didStoreComeFromContext
+        ? contextValue.getServerState
+        : store.getState
+
       const childPropsSelector = useMemo(() => {
         // The child props selector needs the store reference as an input.
         // Re-create this selector whenever the store changes.
@@ -724,7 +733,10 @@ function connect<
 
       try {
         actualChildProps = useSyncExternalStore(
+          // TODO We're passing through a big wrapper that does a bunch of extra side effects besides subscribing
           subscribeForReact,
+          // TODO This is incredibly hacky. We've already processed the store update and calculated new child props,
+          // TODO and we're just passing that through so it triggers a re-render for us rather than relying on `uSES`.
           actualChildPropsSelector,
           // TODO Need a real getServerSnapshot here
           actualChildPropsSelector
