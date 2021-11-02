@@ -40,7 +40,7 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^16.8.3 || ^17 || ^18"
+    "react": "^18.0.0-alpha || ^18.0.0-beta"
   },
   "peerDependenciesMeta": {
     "react-dom": {
