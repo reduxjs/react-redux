@@ -1,6 +1,7 @@
 import { useContext, useDebugValue } from 'react'
 
-import { useSyncExternalStoreExtra } from 'use-sync-external-store/extra'
+// @ts-ignore
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import { ReactReduxContext } from '../components/Context'
@@ -45,7 +46,7 @@ export function createSelectorHook(
 
     const { store } = useReduxContext()!
 
-    const selectedState = useSyncExternalStoreExtra(
+    const selectedState = useSyncExternalStoreWithSelector(
       store.subscribe,
       store.getState,
       // TODO Need a server-side snapshot here
