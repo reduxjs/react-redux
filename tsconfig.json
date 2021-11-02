@@ -13,13 +13,13 @@
     "outDir": "./es",
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
-    "rootDirs": ["./src", "./test", "./types"],
+    "rootDirs": ["./src", "./types"],
     "rootDir": "./src",
     "typeRoots": [
       "./node_modules/@types",
       "./types"
     ]
   },
-  "include": ["src/**/*", "est/**/*", "types"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "types"],
+  "exclude": ["node_modules", "dist", "test/**/*"]
 }
