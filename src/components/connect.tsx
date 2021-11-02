@@ -1,8 +1,14 @@
 /* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
 import hoistStatics from 'hoist-non-react-statics'
-import React, { useContext, useMemo, useRef, useReducer } from 'react'
+import React, {
+  useContext,
+  useMemo,
+  useRef,
+  useReducer,
+  // @ts-ignore
+  useSyncExternalStore,
+} from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
-import { useSyncExternalStore } from 'use-sync-external-store'
 
 import type { Store, Dispatch, Action, AnyAction } from 'redux'
 
