@@ -55,7 +55,7 @@ The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_functi
 
 :::
 
-The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-mapstate) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders (unless its reference hasn't changed since a previous render of the component so that a cached result can be returned by the hook without re-running the selector). `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
+The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-extracting-data-with-mapStateToProps.md) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders (unless its reference hasn't changed since a previous render of the component so that a cached result can be returned by the hook without re-running the selector). `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
 
 However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
 
