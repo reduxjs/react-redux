@@ -70,9 +70,9 @@ const mapStateToProps = (state, ownProps) => ({
 
 Your `mapStateToProps` functions are expected to return an object. This object, normally referred to as `stateProps`, will be merged as props to your connected component. If you define `mergeProps`, it will be supplied as the first parameter to `mergeProps`.
 
-The return of the `mapStateToProps` determine whether the connected component will re-render (details [here](../using-react-redux/connect-mapstate#return-values-determine-if-your-component-re-renders)).
+The return of the `mapStateToProps` determine whether the connected component will re-render (details [here](../using-react-redux/connect-extracting-data-with-mapStateToProps.md#return-values-determine-if-your-component-re-renders)).
 
-For more details on recommended usage of `mapStateToProps`, please refer to [our guide on using `mapStateToProps`](../using-react-redux/connect-mapstate).
+For more details on recommended usage of `mapStateToProps`, please refer to [our guide on using `mapStateToProps`](../using-react-redux/connect-extracting-data-with-mapStateToProps).
 
 > You may define `mapStateToProps` and `mapDispatchToProps` as a factory function, i.e., you return a function instead of an object. In this case your returned function will be treated as the real `mapStateToProps` or `mapDispatchToProps`, and be called in subsequent calls. You may see notes on [Factory Functions](#factory-functions) or our guide on performance optimizations.
 
