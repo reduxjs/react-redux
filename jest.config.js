@@ -29,6 +29,18 @@ const rnConfig = {
   },
 }
 
+const compatEntryConfig = {
+  ...tsStandardConfig,
+  displayName: 'Compat',
+  moduleNameMapper: {
+    '^react$': 'react-17',
+    '^react-dom$': 'react-dom-17',
+    '^react-test-renderer$': 'react-test-renderer-17',
+    '^@testing-library/react$': '@testing-library/react-12',
+    '../../src/index': '<rootDir>/src/compat',
+  },
+}
+
 module.exports = {
-  projects: [tsStandardConfig, rnConfig],
+  projects: [tsStandardConfig, rnConfig, compatEntryConfig],
 }
