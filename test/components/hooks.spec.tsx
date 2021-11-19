@@ -7,6 +7,8 @@ import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 import type { AnyAction } from 'redux'
 
+const IS_REACT_18 = React.version.startsWith('18')
+
 describe('React', () => {
   describe('connect', () => {
     afterEach(() => rtl.cleanup())
@@ -146,9 +148,9 @@ describe('React', () => {
       expect(mapStateSpy2).toHaveBeenCalledTimes(3)
 
       // 2. Batched update from nested subscriber / C1 re-render
-      // expect(renderSpy2).toHaveBeenCalledTimes(2)
-      // TODO Getting 3 instead of 2
-      expect(renderSpy2).toHaveBeenCalledTimes(3)
+      // Not sure why the differences across versions here
+      const numFinalRenders = IS_REACT_18 ? 3 : 2
+      expect(renderSpy2).toHaveBeenCalledTimes(numFinalRenders)
     })
   })
 })

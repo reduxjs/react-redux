@@ -1,6 +1,7 @@
 /*eslint-disable react/prop-types*/
 
 import React, { useCallback, useReducer, useLayoutEffect } from 'react'
+import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
 import * as rtl from '@testing-library/react'
 import {
@@ -10,9 +11,14 @@ import {
   connect,
   createSelectorHook,
 } from '../../src/index'
+import type {
+  TypedUseSelectorHook,
+  ReactReduxContextValue,
+} from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
-import type { TypedUseSelectorHook, ReactReduxContextValue } from '../../src/'
+
+const IS_REACT_18 = React.version.startsWith('18')
 
 describe('React', () => {
   describe('hooks', () => {
@@ -498,7 +504,13 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(() => normalStore.dispatch({ type: '' })).not.toThrowError()
+          const doDispatch = () => normalStore.dispatch({ type: '' })
+          // Seems to be an alteration in behavior - not sure if 17/18, or shim/built-in
+          if (IS_REACT_18) {
+            expect(doDispatch).not.toThrowError()
+          } else {
+            expect(doDispatch).toThrowError()
+          }
 
           spy.mockRestore()
         })

@@ -40,7 +40,7 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^18.0.0-alpha || ^18.0.0-beta"
+    "react": "^18.0.0-beta"
   },
   "peerDependenciesMeta": {
     "react-dom": {
@@ -52,12 +52,15 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.12.1",
+    "@testing-library/react-12": "npm:@testing-library/react@^12",
     "@types/hoist-non-react-statics": "^3.3.1",
-    "@types/use-sync-external-store": "^0.0.0",
+    "@types/use-sync-external-store": "^0.0.3",
     "hoist-non-react-statics": "^3.3.2",
-    "loose-envify": "^1.4.0",
-    "react-is": "^16.13.1",
-    "use-sync-external-store": "1.0.0-alpha-5cccacd13-20211101"
+    "react-17": "npm:react@^17",
+    "react-dom-17": "npm:react-dom@^17",
+    "react-is": "^18.0.0-beta-fdc1d617a-20211118",
+    "react-test-renderer-17": "npm:react-test-renderer@^17",
+    "use-sync-external-store": "1.0.0-beta-fdc1d617a-20211118"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
@@ -80,10 +83,9 @@
     "@testing-library/react": "13.0.0-alpha.4",
     "@testing-library/react-hooks": "^3.4.2",
     "@testing-library/react-native": "^7.1.0",
-    "@types/create-react-class": "^15.6.3",
     "@types/object-assign": "^4.0.30",
-    "@types/react": "17.0.19",
-    "@types/react-dom": "^17.0.9",
+    "@types/react": "^17.0.35",
+    "@types/react-dom": "^17.0.11",
     "@types/react-is": "^17.0.1",
     "@types/react-native": "^0.64.12",
     "@types/react-redux": "^7.1.18",
@@ -92,9 +94,7 @@
     "babel-eslint": "^10.1.0",
     "babel-jest": "^26.6.1",
     "codecov": "^3.8.0",
-    "create-react-class": "^15.7.0",
     "cross-env": "^7.0.2",
-    "es3ify": "^0.2.0",
     "eslint": "^7.12.0",
     "eslint-config-prettier": "^6.14.0",
     "eslint-plugin-import": "^2.22.1",
@@ -103,20 +103,15 @@
     "glob": "^7.1.6",
     "jest": "^26.6.1",
     "prettier": "^2.1.2",
-    "react": "18.0.0-alpha-5cccacd13-20211101",
-    "react-dom": "18.0.0-alpha-5cccacd13-20211101",
+    "react": "18.0.0-beta-fdc1d617a-20211118",
+    "react-dom": "18.0.0-beta-fdc1d617a-20211118",
     "react-native": "^0.64.1",
-    "react-test-renderer": "18.0.0-alpha-5cccacd13-20211101",
+    "react-test-renderer": "18.0.0-beta-fdc1d617a-20211118",
     "redux": "^4.0.5",
     "rimraf": "^3.0.2",
     "rollup": "^2.32.1",
     "rollup-plugin-terser": "^7.0.2",
     "ts-jest": "26.5.6",
     "typescript": "^4.3.4"
-  },
-  "browserify": {
-    "transform": [
-      "loose-envify"
-    ]
   }
 }
