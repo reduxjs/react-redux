@@ -52,10 +52,14 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.12.1",
+    "@testing-library/react-12": "npm:@testing-library/react@^12",
     "@types/hoist-non-react-statics": "^3.3.1",
     "@types/use-sync-external-store": "^0.0.3",
     "hoist-non-react-statics": "^3.3.2",
+    "react-17": "npm:react@^17",
+    "react-dom-17": "npm:react-dom@^17",
     "react-is": "^18.0.0-beta-fdc1d617a-20211118",
+    "react-test-renderer-17": "npm:react-test-renderer@^17",
     "use-sync-external-store": "1.0.0-beta-fdc1d617a-20211118"
   },
   "devDependencies": {
