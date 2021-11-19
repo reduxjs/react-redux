@@ -1,7 +1,6 @@
 /*eslint-disable react/prop-types*/
 
 import React, { Component, MouseEvent } from 'react'
-import createClass from 'create-react-class'
 import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
@@ -1842,31 +1841,6 @@ describe('React', () => {
             }
           ).displayName
         ).toBe('Connect(Foo)')
-
-        expect(
-          connect((state) => state)(
-            createClass({
-              displayName: 'Bar',
-              render() {
-                return <div />
-              },
-            })
-          ).displayName
-        ).toBe('Connect(Bar)')
-
-        expect(
-          connect((state) => state)(
-            // eslint: In this case, we don't want to specify a displayName because we're testing what
-            // happens when one isn't defined.
-            /* eslint-disable react/display-name */
-            createClass({
-              render() {
-                return <div />
-              },
-            })
-            /* eslint-enable react/display-name */
-          ).displayName
-        ).toBe('Connect(Component)')
       })
 
       it('should expose the wrapped component as WrappedComponent', () => {
