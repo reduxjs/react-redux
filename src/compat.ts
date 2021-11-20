@@ -5,11 +5,14 @@
 import { useSyncExternalStore } from 'use-sync-external-store/shim'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector'
 
-import { setSyncFunctions } from './utils/useSyncExternalStore'
 import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
 import { setBatch } from './utils/batch'
 
-setSyncFunctions(useSyncExternalStore, useSyncExternalStoreWithSelector)
+import { initializeUseSelector } from './hooks/useSelector'
+import { initializeConnect } from './components/connect'
+
+initializeUseSelector(useSyncExternalStoreWithSelector)
+initializeConnect(useSyncExternalStore)
 
 // Enable batched updates in our subscriptions for use
 // with standard React renderers (ReactDOM, React Native)
