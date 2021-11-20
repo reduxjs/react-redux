@@ -28,7 +28,6 @@ import defaultMergePropsFactories from '../connect/mergeProps'
 
 import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import { getSyncFunctions } from '../utils/useSyncExternalStore'
 import shallowEqual from '../utils/shallowEqual'
 
 import {
@@ -37,7 +36,13 @@ import {
   ReactReduxContextInstance,
 } from './Context'
 
-const [useSyncExternalStore] = getSyncFunctions()
+import type { uSES } from '../utils/useSyncExternalStore'
+import { notInitialized } from '../utils/useSyncExternalStore'
+
+let useSyncExternalStore = notInitialized as uSES
+export const initializeConnect = (fn: uSES) => {
+  useSyncExternalStore = fn
+}
 
 // Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY: [unknown, number] = [null, 0]

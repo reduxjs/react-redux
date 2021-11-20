@@ -6,9 +6,11 @@
 import { useSyncExternalStore } from 'use-sync-external-store/shim'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector'
 
-import { setSyncFunctions } from './utils/useSyncExternalStore'
+import { initializeUseSelector } from './hooks/useSelector'
+import { initializeConnect } from './components/connect'
 
-setSyncFunctions(useSyncExternalStore, useSyncExternalStoreWithSelector)
+initializeUseSelector(useSyncExternalStoreWithSelector)
+initializeConnect(useSyncExternalStore)
 
 import { getBatch } from './utils/batch'
 

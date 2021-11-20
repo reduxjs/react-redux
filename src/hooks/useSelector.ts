@@ -2,10 +2,14 @@ import { useContext, useDebugValue } from 'react'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import { ReactReduxContext } from '../components/Context'
-import { getSyncFunctions } from '../utils/useSyncExternalStore'
 import type { DefaultRootState, EqualityFn } from '../types'
+import type { uSESWS } from '../utils/useSyncExternalStore'
+import { notInitialized } from '../utils/useSyncExternalStore'
 
-const [, useSyncExternalStoreWithSelector] = getSyncFunctions()
+let useSyncExternalStoreWithSelector = notInitialized as uSESWS
+export const initializeUseSelector = (fn: uSESWS) => {
+  useSyncExternalStoreWithSelector = fn
+}
 
 const refEquality: EqualityFn<any> = (a, b) => a === b
 
