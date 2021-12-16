@@ -34,7 +34,7 @@ function createListenerCollection() {
     },
 
     get() {
-      let listeners = []
+      let listeners: Listener[] = []
       let listener = first
       while (listener) {
         listeners.push(listener)
