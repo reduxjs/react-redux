@@ -1,6 +1,7 @@
 import Provider from './components/Provider'
 import type { ProviderProps } from './components/Provider'
-import connect, {
+import connect from './components/connect'
+import type {
   Connect,
   ConnectProps,
   ConnectedProps,
@@ -36,6 +37,7 @@ export type {
   MapStateToProps,
   MapStateToPropsFactory,
   MapStateToPropsParam,
+  Connect,
   ConnectProps,
   ConnectedProps,
   MapDispatchToPropsFunction,
@@ -51,7 +53,6 @@ export {
   Provider,
   ReactReduxContext,
   connect,
-  Connect,
   useDispatch,
   createDispatchHook,
   useSelector,
