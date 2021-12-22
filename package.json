@@ -40,7 +40,7 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^18.0.0-beta"
+    "react": "^18.0.0-rc"
   },
   "peerDependenciesMeta": {
     "react-dom": {
@@ -52,15 +52,11 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.12.1",
-    "@testing-library/react-12": "npm:@testing-library/react@^12",
     "@types/hoist-non-react-statics": "^3.3.1",
     "@types/use-sync-external-store": "^0.0.3",
     "hoist-non-react-statics": "^3.3.2",
-    "react-17": "npm:react@^17",
-    "react-dom-17": "npm:react-dom@^17",
-    "react-is": "^18.0.0-beta-fdc1d617a-20211118",
-    "react-test-renderer-17": "npm:react-test-renderer@^17",
-    "use-sync-external-store": "1.0.0-beta-fdc1d617a-20211118"
+    "react-is": "^18.0.0-rc.0",
+    "use-sync-external-store": "^1.0.0-rc.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
@@ -81,6 +77,7 @@
     "@testing-library/jest-dom": "^5.11.5",
     "@testing-library/jest-native": "^3.4.3",
     "@testing-library/react": "13.0.0-alpha.4",
+    "@testing-library/react-12": "npm:@testing-library/react@^12",
     "@testing-library/react-hooks": "^3.4.2",
     "@testing-library/react-native": "^7.1.0",
     "@types/object-assign": "^4.0.30",
@@ -104,9 +101,12 @@
     "jest": "^26.6.1",
     "prettier": "^2.1.2",
     "react": "18.0.0-beta-fdc1d617a-20211118",
+    "react-17": "npm:react@^17",
     "react-dom": "18.0.0-beta-fdc1d617a-20211118",
+    "react-dom-17": "npm:react-dom@^17",
     "react-native": "^0.64.1",
     "react-test-renderer": "18.0.0-beta-fdc1d617a-20211118",
+    "react-test-renderer-17": "npm:react-test-renderer@^17",
     "redux": "^4.0.5",
     "rimraf": "^3.0.2",
     "rollup": "^2.32.1",

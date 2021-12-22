@@ -8,6 +8,7 @@ export interface ReactReduxContextValue<
 > {
   store: Store<SS, A>
   subscription: Subscription
+  getServerState?: () => SS
 }
 
 export const ReactReduxContext =

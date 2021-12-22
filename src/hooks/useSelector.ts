@@ -48,13 +48,13 @@ export function createSelectorHook(
       }
     }
 
-    const { store } = useReduxContext()!
+    const { store, getServerState } = useReduxContext()!
 
     const selectedState = useSyncExternalStoreWithSelector(
       store.subscribe,
       store.getState,
       // TODO Need a server-side snapshot here
-      store.getState,
+      getServerState || store.getState,
       selector,
       equalityFn
     )
