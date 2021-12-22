@@ -2,16 +2,7 @@
 
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import {
-  Store,
-  Dispatch,
-  AnyAction,
-  ActionCreator,
-  createStore,
-  bindActionCreators,
-  ActionCreatorsMapObject,
-  Reducer,
-} from 'redux'
+import { Store, Dispatch, configureStore } from '@reduxjs/toolkit'
 import {
   connect,
   ConnectedProps,
@@ -109,15 +100,19 @@ function testUseDispatch() {
 
   const dispatch = useDispatch()
   dispatch(actionCreator(true))
+  // @ts-expect-error
   dispatch(thunkActionCreator(true))
+  // @ts-expect-error
   dispatch(true)
 
-  type ThunkAction<TReturnType> = (dispatch: Dispatch) => TReturnType
-  type ThunkDispatch = <TReturnType>(
-    action: ThunkAction<TReturnType>
-  ) => TReturnType
+  const store = configureStore({
+    reducer: (state = 0) => state,
+  })
+
+  type AppDispatch = typeof store.dispatch
+
   // tslint:disable-next-line:no-unnecessary-callback-wrapper (required for the generic parameter)
-  const useThunkDispatch = () => useDispatch<ThunkDispatch>()
+  const useThunkDispatch = () => useDispatch<AppDispatch>()
   const thunkDispatch = useThunkDispatch()
   const result: ReturnType<typeof actionCreator> = thunkDispatch(
     thunkActionCreator(true)

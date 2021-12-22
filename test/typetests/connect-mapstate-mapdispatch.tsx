@@ -192,7 +192,7 @@ function MapDispatchWithThunkActionCreators() {
       <Test1 foo="bar" />;
       <Test2 />
       <Test3 foo="bar" />;
-      <Test4 />
+      <Test4 context={CustomContext} />
     </div>
   )
 }
@@ -451,7 +451,6 @@ function MapStateAndOptions() {
     null,
     null,
     {
-      pure: true,
       areStatePropsEqual,
     }
   )(TestComponent)
