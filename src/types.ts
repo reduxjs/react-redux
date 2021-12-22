@@ -1,11 +1,7 @@
-/* eslint-disable no-unused-vars */
-// TODO Ignoring all unused variables for now
-
 import { ClassAttributes, ComponentClass, ComponentType } from 'react'
 
 import { Action, AnyAction, Dispatch } from 'redux'
 
-// import hoistNonReactStatics = require('hoist-non-react-statics');
 import type { NonReactStatics } from 'hoist-non-react-statics'
 
 import type { ConnectProps } from './components/connect'
@@ -25,9 +21,6 @@ export interface DefaultRootState {}
 
 export type AnyIfEmpty<T extends object> = keyof T extends never ? any : T
 export type RootStateOrAny = AnyIfEmpty<DefaultRootState>
-
-// Omit taken from https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-8.html
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
 
 export type DistributiveOmit<T, K extends keyof T> = T extends unknown
   ? Omit<T, K>
@@ -151,116 +144,6 @@ export type ResolveThunks<TDispatchProps> = TDispatchProps extends {
       [C in keyof TDispatchProps]: HandleThunkActionCreator<TDispatchProps[C]>
     }
   : TDispatchProps
-
-// the conditional type is to support TypeScript 3.0, which does not support mapping over tuples and arrays;
-// once the typings are updated to at least TypeScript 3.1, a simple mapped type can replace this mess
-export type ResolveArrayThunks<TDispatchProps extends ReadonlyArray<any>> =
-  TDispatchProps extends [
-    infer A1,
-    infer A2,
-    infer A3,
-    infer A4,
-    infer A5,
-    infer A6,
-    infer A7,
-    infer A8,
-    infer A9
-  ]
-    ? [
-        HandleThunkActionCreator<A1>,
-        HandleThunkActionCreator<A2>,
-        HandleThunkActionCreator<A3>,
-        HandleThunkActionCreator<A4>,
-        HandleThunkActionCreator<A5>,
-        HandleThunkActionCreator<A6>,
-        HandleThunkActionCreator<A7>,
-        HandleThunkActionCreator<A8>,
-        HandleThunkActionCreator<A9>
-      ]
-    : TDispatchProps extends [
-        infer A1,
-        infer A2,
-        infer A3,
-        infer A4,
-        infer A5,
-        infer A6,
-        infer A7,
-        infer A8
-      ]
-    ? [
-        HandleThunkActionCreator<A1>,
-        HandleThunkActionCreator<A2>,
-        HandleThunkActionCreator<A3>,
-        HandleThunkActionCreator<A4>,
-        HandleThunkActionCreator<A5>,
-        HandleThunkActionCreator<A6>,
-        HandleThunkActionCreator<A7>,
-        HandleThunkActionCreator<A8>
-      ]
-    : TDispatchProps extends [
-        infer A1,
-        infer A2,
-        infer A3,
-        infer A4,
-        infer A5,
-        infer A6,
-        infer A7
-      ]
-    ? [
-        HandleThunkActionCreator<A1>,
-        HandleThunkActionCreator<A2>,
-        HandleThunkActionCreator<A3>,
-        HandleThunkActionCreator<A4>,
-        HandleThunkActionCreator<A5>,
-        HandleThunkActionCreator<A6>,
-        HandleThunkActionCreator<A7>
-      ]
-    : TDispatchProps extends [
-        infer A1,
-        infer A2,
-        infer A3,
-        infer A4,
-        infer A5,
-        infer A6
-      ]
-    ? [
-        HandleThunkActionCreator<A1>,
-        HandleThunkActionCreator<A2>,
-        HandleThunkActionCreator<A3>,
-        HandleThunkActionCreator<A4>,
-        HandleThunkActionCreator<A5>,
-        HandleThunkActionCreator<A6>
-      ]
-    : TDispatchProps extends [infer A1, infer A2, infer A3, infer A4, infer A5]
-    ? [
-        HandleThunkActionCreator<A1>,
-        HandleThunkActionCreator<A2>,
-        HandleThunkActionCreator<A3>,
-        HandleThunkActionCreator<A4>,
-        HandleThunkActionCreator<A5>
-      ]
-    : TDispatchProps extends [infer A1, infer A2, infer A3, infer A4]
-    ? [
-        HandleThunkActionCreator<A1>,
-        HandleThunkActionCreator<A2>,
-        HandleThunkActionCreator<A3>,
-        HandleThunkActionCreator<A4>
-      ]
-    : TDispatchProps extends [infer A1, infer A2, infer A3]
-    ? [
-        HandleThunkActionCreator<A1>,
-        HandleThunkActionCreator<A2>,
-        HandleThunkActionCreator<A3>
-      ]
-    : TDispatchProps extends [infer A1, infer A2]
-    ? [HandleThunkActionCreator<A1>, HandleThunkActionCreator<A2>]
-    : TDispatchProps extends [infer A1]
-    ? [HandleThunkActionCreator<A1>]
-    : TDispatchProps extends Array<infer A>
-    ? Array<HandleThunkActionCreator<A>>
-    : TDispatchProps extends ReadonlyArray<infer A>
-    ? ReadonlyArray<HandleThunkActionCreator<A>>
-    : never
 
 /**
  * This interface allows you to easily create a hook that is properly typed for your
