@@ -602,7 +602,7 @@ function connect<
         ? props.store!
         : contextValue!.store
 
-      const getServerSnapshot = didStoreComeFromContext
+      const getServerState = didStoreComeFromContext
         ? contextValue.getServerState
         : store.getState
 
@@ -738,8 +738,9 @@ function connect<
           // TODO This is incredibly hacky. We've already processed the store update and calculated new child props,
           // TODO and we're just passing that through so it triggers a re-render for us rather than relying on `uSES`.
           actualChildPropsSelector,
-          // TODO Need a real getServerSnapshot here
-          actualChildPropsSelector
+          getServerState
+            ? () => childPropsSelector(getServerState(), wrapperProps)
+            : actualChildPropsSelector
         )
       } catch (err) {
         if (latestSubscriptionCallbackError.current) {
