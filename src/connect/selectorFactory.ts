@@ -231,14 +231,12 @@ export default function finalPropsSelectorFactory<
     verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps)
   }
 
-  const selectorFactory = pureFinalPropsSelectorFactory
-
-  return selectorFactory(
+  return pureFinalPropsSelectorFactory<
+    TStateProps,
+    TOwnProps,
+    TDispatchProps,
+    TMergedProps,
+    State
     // @ts-ignore
-    mapStateToProps!,
-    mapDispatchToProps,
-    mergeProps,
-    dispatch,
-    options
-  )
+  >(mapStateToProps!, mapDispatchToProps, mergeProps, dispatch, options)
 }

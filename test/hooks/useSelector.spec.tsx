@@ -1,7 +1,6 @@
 /*eslint-disable react/prop-types*/
 
 import React, { useCallback, useReducer, useLayoutEffect } from 'react'
-import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
 import * as rtl from '@testing-library/react'
 import {

@@ -1,6 +1,11 @@
-import { useContext } from 'react'
-import { ReactReduxContext } from '../components/Context'
+import { useContext, Context } from 'react'
+import { Action as BasicAction, AnyAction, Store } from 'redux'
+import {
+  ReactReduxContext,
+  ReactReduxContextValue,
+} from '../components/Context'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
+import { RootStateOrAny } from '../types'
 
 /**
  * Hook factory, which creates a `useStore` hook bound to a given context.
@@ -8,14 +13,24 @@ import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useStore` hook bound to the specified context.
  */
-export function createStoreHook(context = ReactReduxContext) {
+export function createStoreHook<
+  S = RootStateOrAny,
+  A extends BasicAction = AnyAction
+  // @ts-ignore
+>(context?: Context<ReactReduxContextValue<S, A>> = ReactReduxContext) {
   const useReduxContext =
+    // @ts-ignore
     context === ReactReduxContext
       ? useDefaultReduxContext
       : () => useContext(context)
-  return function useStore() {
+  return function useStore<
+    State = S,
+    Action extends BasicAction = A
+    // @ts-ignore
+  >() {
     const { store } = useReduxContext()!
-    return store
+    // @ts-ignore
+    return store as Store<State, Action>
   }
 }
 

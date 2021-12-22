@@ -2181,7 +2181,7 @@ describe('React', () => {
 
         const decorator = connect((state) => {
           actualState = state
-          return {}
+          return { a: 42 }
         })
         const Decorated = decorator(Container)
 
@@ -2829,45 +2829,50 @@ describe('React', () => {
       }
 
       it('should throw a helpful error for invalid mapStateToProps arguments', () => {
-        //@ts-expect-error
-        @connect('invalid')
         class InvalidMapState extends React.Component {
           render() {
             return <div />
           }
         }
 
-        const error = renderWithBadConnect(InvalidMapState)
+        //@ts-expect-error
+        // eslint-disable-next-line
+        const Connected = connect('invalid')(InvalidMapState)
+
+        const error = renderWithBadConnect(Connected)
         expect(error).toContain('string')
         expect(error).toContain('mapStateToProps')
         expect(error).toContain('InvalidMapState')
       })
 
       it('should throw a helpful error for invalid mapDispatchToProps arguments', () => {
-        //@ts-expect-error
-        @connect(null, 'invalid')
         class InvalidMapDispatch extends React.Component {
           render() {
             return <div />
           }
         }
 
-        const error = renderWithBadConnect(InvalidMapDispatch)
+        // eslint-disable-next-line
+        const Connected = connect(null, 'invalid')(InvalidMapDispatch)
+
+        const error = renderWithBadConnect(Connected)
         expect(error).toContain('string')
         expect(error).toContain('mapDispatchToProps')
         expect(error).toContain('InvalidMapDispatch')
       })
 
       it('should throw a helpful error for invalid mergeProps arguments', () => {
-        // @ts-expect-error
-        @connect(null, null, 'invalid')
         class InvalidMerge extends React.Component {
           render() {
             return <div />
           }
         }
 
-        const error = renderWithBadConnect(InvalidMerge)
+        // @ts-expect-error
+        // eslint-disable-next-line
+        const Connected = connect(null, null, 'invalid')(InvalidMerge)
+
+        const error = renderWithBadConnect(Connected)
         expect(error).toContain('string')
         expect(error).toContain('mergeProps')
         expect(error).toContain('InvalidMerge')

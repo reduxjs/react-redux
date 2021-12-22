@@ -1,6 +1,11 @@
 import Provider from './components/Provider'
 import type { ProviderProps } from './components/Provider'
-import connect, { ConnectProps, ConnectedProps } from './components/connect'
+import connect from './components/connect'
+import type {
+  Connect,
+  ConnectProps,
+  ConnectedProps,
+} from './components/connect'
 import type {
   SelectorFactory,
   Selector,
@@ -32,6 +37,7 @@ export type {
   MapStateToProps,
   MapStateToPropsFactory,
   MapStateToPropsParam,
+  Connect,
   ConnectProps,
   ConnectedProps,
   MapDispatchToPropsFunction,

@@ -14,6 +14,8 @@ import {
   Action,
 } from '@reduxjs/toolkit'
 import {
+  MapStateToProps,
+  DispatchProp,
   connect,
   Provider,
   ConnectedProps,
@@ -23,56 +25,18 @@ import {
 } from '../../src/index'
 import { expectType } from '../typeTestHelpers'
 
-import objectAssign from 'object-assign'
-
-interface CounterState {
-  counter: number
-}
-
-const initialState: CounterState = {
-  counter: 0,
-}
-
-const counterSlice = createSlice({
-  name: 'counter',
-  initialState,
-  reducers: {
-    increment(state) {
-      state.counter++
-    },
-  },
-})
-
-export function fetchCount(amount = 1) {
-  return new Promise<{ data: number }>((resolve) =>
-    setTimeout(() => resolve({ data: amount }), 500)
-  )
-}
-
-export const incrementAsync = createAsyncThunk(
-  'counter/fetchCount',
-  async (amount: number) => {
-    const response = await fetchCount(amount)
-    // The value we return becomes the `fulfilled` action payload
-    return response.data
-  }
-)
-
-const { increment } = counterSlice.actions
-
-const counterStore = configureStore({
-  reducer: counterSlice.reducer,
-  middleware: (gdm) => gdm(),
-})
-
-export type AppDispatch = typeof counterStore.dispatch
-export type RootState = ReturnType<typeof counterStore.getState>
-export type AppThunk<ReturnType = void> = ThunkAction<
-  ReturnType,
+import {
+  CounterState,
+  counterSlice,
+  increment,
+  incrementAsync,
+  AppDispatch,
+  AppThunk,
   RootState,
-  unknown,
-  Action<string>
->
+  fetchCount,
+} from './counterApp'
+
+import objectAssign from 'object-assign'
 
 class Counter extends Component<any, any> {
   render() {
@@ -183,17 +147,9 @@ export default connect(mapStateToProps2)(TodoApp)
 
 // Inject todos and all action creators (addTodo, completeTodo, ...)
 
-//function mapStateToProps(state) {
-//    return { todos: state.todos };
-//}
-
 connect(mapStateToProps2, actionCreators)(TodoApp)
 
 // Inject todos and all action creators (addTodo, completeTodo, ...) as actions
-
-//function mapStateToProps(state) {
-//    return { todos: state.todos };
-//}
 
 function mapDispatchToProps2(dispatch: Dispatch<AnyAction>) {
   return { actions: bindActionCreators(actionCreators, dispatch) }
@@ -203,10 +159,6 @@ connect(mapStateToProps2, mapDispatchToProps2)(TodoApp)
 
 // Inject todos and a specific action creator (addTodo)
 
-//function mapStateToProps(state) {
-//    return { todos: state.todos };
-//}
-
 function mapDispatchToProps3(dispatch: Dispatch<AnyAction>) {
   return bindActionCreators({ addTodo }, dispatch)
 }
@@ -214,10 +166,6 @@ function mapDispatchToProps3(dispatch: Dispatch<AnyAction>) {
 connect(mapStateToProps2, mapDispatchToProps3)(TodoApp)
 
 // Inject todos, todoActionCreators as todoActions, and counterActionCreators as counterActions
-
-//function mapStateToProps(state) {
-//    return { todos: state.todos };
-//}
 
 function mapDispatchToProps4(dispatch: Dispatch<AnyAction>) {
   return {
@@ -247,10 +195,6 @@ connect(mapStateToProps2, mapDispatchToProps5)(TodoApp)
 
 // Inject todos, and all todoActionCreators and counterActionCreators directly as props
 
-//function mapStateToProps(state) {
-//    return { todos: state.todos };
-//}
-
 function mapDispatchToProps6(dispatch: Dispatch<AnyAction>) {
   return bindActionCreators(
     objectAssign({}, todoActionCreators, counterActionCreators),
@@ -269,10 +213,6 @@ function mapStateToProps3(state: TodoState, ownProps: TodoProps): TodoState {
 connect(mapStateToProps3)(TodoApp)
 
 // Inject todos of a specific user depending on props, and inject props.userId into the action
-
-//function mapStateToProps(state) {
-//    return { todos: state.todos };
-//}
 
 function mergeProps(
   stateProps: TodoState,
@@ -420,6 +360,32 @@ namespace TestTOwnPropsInference {
   // This should not compile, which is good.
   // @ts-expect-error
   React.createElement(ConnectedWithTypeHint, { missingOwn: true })
+
+  interface AllProps {
+    own: string
+    state: string
+  }
+
+  class AllPropsComponent extends React.Component<AllProps & DispatchProp> {
+    render() {
+      return <div />
+    }
+  }
+
+  type PickedOwnProps = Pick<AllProps, 'own'>
+  type PickedStateProps = Pick<AllProps, 'state'>
+
+  const mapStateToPropsForPicked: MapStateToProps<
+    PickedStateProps,
+    PickedOwnProps,
+    {}
+  > = (state: any): PickedStateProps => {
+    return { state: 'string' }
+  }
+  const ConnectedWithPickedOwnProps = connect(mapStateToPropsForPicked)(
+    AllPropsComponent
+  )
+  ;<ConnectedWithPickedOwnProps own="blah" />
 }
 
 namespace ConnectedPropsTest {
@@ -456,21 +422,5 @@ namespace ConnectedPropsTest {
 
   expectType<{ exampleThunk: (id: number) => Promise<string> }>(
     {} as PropsFromRedux2
-  )
-}
-
-// Standard hooks setup
-export const useAppDispatch = () => useDispatch<AppDispatch>()
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
-
-function CounterComponent() {
-  const dispatch = useAppDispatch()
-
-  return (
-    <button
-      onClick={() => {
-        dispatch(incrementAsync(1))
-      }}
-    />
   )
 }
