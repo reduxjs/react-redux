@@ -2,6 +2,7 @@ import Provider from './components/Provider'
 import type { ProviderProps } from './components/Provider'
 import connect, {
   Connect,
+  ConnectProps,
   ConnectedProps,
 } from './components/connect'
 import type {

@@ -192,9 +192,14 @@ function subscribeUpdates(
 const initStateUpdates = () => EMPTY_ARRAY
 
 export interface ConnectProps {
-  reactReduxForwardedRef?: React.ForwardedRef<unknown>
+  /** A custom Context instance that the component can use to access the store from an alternate Provider using that same Context instance */
   context?: ReactReduxContextInstance
+  /** A Redux store instance to be used for subscriptions instead of the store from a Provider */
   store?: Store
+}
+
+interface InternalConnectProps extends ConnectProps {
+  reactReduxForwardedRef?: React.ForwardedRef<unknown>
 }
 
 function match<T>(
@@ -538,7 +543,9 @@ function connect<
     // that just executes the given callback immediately.
     const usePureOnlyMemo = pure ? useMemo : (callback: () => any) => callback()
 
-    function ConnectFunction<TOwnProps>(props: ConnectProps & TOwnProps) {
+    function ConnectFunction<TOwnProps>(
+      props: InternalConnectProps & TOwnProps
+    ) {
       const [propsContext, reactReduxForwardedRef, wrapperProps] =
         useMemo(() => {
           // Distinguish between actual "data" props that were passed to the wrapper component,
