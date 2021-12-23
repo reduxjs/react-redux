@@ -39,7 +39,7 @@ function Provider<A extends Action = AnyAction>({
     }
   }, [store, serverState])
 
-  const previousState = useMemo(() => store.getState(), [store])
+  const previousState = useMemo(store.getState, [store])
 
   useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue
