@@ -16,8 +16,10 @@ const siteConfig = {
       {
         docs: {
           path: '../docs',
-          sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
+          sidebarPath: require.resolve('./sidebars.js'),
+          showLastUpdateTime: true,
+          editUrl: 'https://github.com/reduxjs/react-redux/edit/master/website',
           include: [
             '{api,introduction,using-react-redux,tutorials}/*.{md,mdx}',
             'troubleshooting.md',

@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "emitDeclarationOnly": false,
+    "declaration": false,
+    "strict": true,
+    "noEmit": true,
+    "target": "es2018",
+    "jsx": "react",
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "noImplicitReturns": false,
+    "experimentalDecorators": true,
+  }
+}
