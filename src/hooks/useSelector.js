@@ -80,7 +80,6 @@ function useSelectorWithStoreAndSubscription(
         // changed
         latestSubscriptionCallbackError.current = err
       }
-
       forceRender()
     }
 
@@ -94,6 +93,11 @@ function useSelectorWithStoreAndSubscription(
 
   return selectedState
 }
+
+/**
+ * useSelector实际由useSelectorWithStoreAndSubscription输出结果
+ * 如果父级有connect，useReduxContext是父级context。否则是根context，那这时所有useSelector都把checkForUpdates注册在根listeners中，它们没有嵌套关系
+ * */
 
 /**
  * Hook factory, which creates a `useSelector` hook bound to a given context.
@@ -121,7 +125,6 @@ export function createSelectorHook(context = ReactReduxContext) {
       }
     }
     const { store, subscription: contextSub } = useReduxContext()
-
     const selectedState = useSelectorWithStoreAndSubscription(
       selector,
       equalityFn,

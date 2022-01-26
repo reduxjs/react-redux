@@ -271,6 +271,25 @@ export default function connectAdvanced(
     // that just executes the given callback immediately.
     const usePureOnlyMemo = pure ? useMemo : (callback) => callback()
 
+    /**
+     *  @description
+     *    ConnectFunction是最终的被消费组件，它可能由两种渠道更新：
+     * 1. 父组件更新，它收到新的wrapperProps：
+     *    如果wrapperProps变化，会导致最终的props: actualChildProps被重新计算（由childPropsSelector(latestStoreState,lastWrapperProps.current)得出），从而得到应有的更新
+
+     * 2. 来自store的更新，即它的checkForUpdates被调用：
+     *    如果它是第一层connect，它的checkForUpdates会注册给根Provider的listeners
+     *    如果它是子connect，它的checkForUpdates会注册给父级connect的listeners
+     *    store更新首先会调用根Provider的listeners，从而触发上层connect的checkForUpdates
+     *    checkForUpdates做的工作是：
+     *    如果childPropsSelector计算结果没有变化（即这个组件不需要更新），那么会继续调用子connect的checkForUpdates（如果有的话），即一定是上层先更新，下层基于最新的props后更新
+     *    如果childPropsSelector计算结果变化了，则通过useReducer的dispatch触发本组件的更新，子组件们自然也发生更新，子connect如第一种渠道所示
+     *    值得注意的是，本组件更新到页面后每次都会调用captureWrapperProps，它会触发子connect的checkForUpdates，通常来说这时子connect已经更新过了，所以checkForUpdates并不会再次更新。
+     *    但有一种情况是，虽然本组件更新了，但传递给子connect的props没有变化，从而导致子connect的渠道1没有更新，这时captureWrapperProps就能确保子connect更新
+     * 
+     *  @param  {WrapperProps} props 传给connect()()组件的props
+     *  @returns {JSX.Element}
+     **/
     function ConnectFunction(props) {
       const [
         propsContext,
@@ -284,6 +303,7 @@ export default function connectAdvanced(
         return [props.context, reactReduxForwardedRef, wrapperProps]
       }, [props])
 
+      // ContextToUse === props.context或React.context
       const ContextToUse = useMemo(() => {
         // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
         // Memoize the check that determines which context instance we should use.
@@ -300,6 +320,7 @@ export default function connectAdvanced(
       // The store _must_ exist as either a prop or in context.
       // We'll check to see if it _looks_ like a Redux store first.
       // This allows us to pass through a `store` prop that is just a plain value.
+      // 判断props.store是否存在
       const didStoreComeFromProps =
         Boolean(props.store) &&
         Boolean(props.store.getState) &&
@@ -334,6 +355,8 @@ export default function connectAdvanced(
 
         // This Subscription's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
+        // 如果store来自props，订阅直接注册给redux的subscribe
+        // 如果store来自context，该subscription作为嵌套的子subscription，订阅会放进contextValue.subscription的listeners里
         const subscription = new Subscription(
           store,
           didStoreComeFromProps ? null : contextValue.subscription
@@ -386,6 +409,7 @@ export default function connectAdvanced(
       const childPropsFromStoreUpdate = useRef()
       const renderIsScheduled = useRef(false)
 
+      // 最终的props
       const actualChildProps = usePureOnlyMemo(() => {
         // Tricky logic here:
         // - This render may have been triggered by a Redux store update that produced new child props

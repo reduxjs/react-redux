@@ -40,6 +40,9 @@ export function getDependsOnOwnProps(mapToProps) {
 //
 export function wrapMapToPropsFunc(mapToProps, methodName) {
   return function initProxySelector(dispatch, { displayName }) {
+    // 将stateOrDispatch和ownProps注入mapToProps调用
+    // 如果返回的是函数，则将返回值作为mapToProps递归直到返回非函数为止
+    // 返回值即为select后的props
     const proxy = function mapToPropsProxy(stateOrDispatch, ownProps) {
       return proxy.dependsOnOwnProps
         ? proxy.mapToProps(stateOrDispatch, ownProps)
@@ -64,6 +67,7 @@ export function wrapMapToPropsFunc(mapToProps, methodName) {
       }
 
       if (process.env.NODE_ENV !== 'production')
+        // 校验props对象是否是Object的子类（只继承了Object）
         verifyPlainObject(props, displayName, methodName)
 
       return props
