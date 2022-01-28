@@ -1,4 +1,4 @@
-function is(x, y) {
+export function is(x, y) {
   if (x === y) {
     return x !== 0 || y !== 0 || 1 / x === 1 / y
   } else {
