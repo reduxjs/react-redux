@@ -2,9 +2,10 @@ import { useReducer, useRef, useMemo, useContext, useDebugValue } from 'react'
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import { is } from '../utils/shallowEqual'
 import { ReactReduxContext } from '../components/Context'
 
-const refEquality = (a, b) => a === b
+const refEquality = is
 
 function useSelectorWithStoreAndSubscription(
   selector,
