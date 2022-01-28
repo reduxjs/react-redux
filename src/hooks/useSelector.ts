@@ -5,13 +5,14 @@ import { ReactReduxContext } from '../components/Context'
 import type { DefaultRootState, EqualityFn } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
+import { is } from '../utils/shallowEqual'
 
 let useSyncExternalStoreWithSelector = notInitialized as uSESWS
 export const initializeUseSelector = (fn: uSESWS) => {
   useSyncExternalStoreWithSelector = fn
 }
 
-const refEquality: EqualityFn<any> = (a, b) => a === b
+const refEquality: EqualityFn<any> = is
 
 /**
  * Hook factory, which creates a `useSelector` hook bound to a given context.
