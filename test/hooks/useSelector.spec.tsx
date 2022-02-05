@@ -1,14 +1,23 @@
 /*eslint-disable react/prop-types*/
 
-import React, { useCallback, useReducer, useLayoutEffect } from 'react'
+import React, {
+  useCallback,
+  useReducer,
+  useLayoutEffect,
+  useState,
+  useContext,
+} from 'react'
 import { createStore } from 'redux'
 import * as rtl from '@testing-library/react'
 import {
   Provider as ProviderMock,
   useSelector,
+  useDispatch,
   shallowEqual,
   connect,
   createSelectorHook,
+  ReactReduxContext,
+  Subscription,
 } from '../../src/index'
 import type {
   TypedUseSelectorHook,
@@ -29,7 +38,6 @@ describe('React', () => {
       let renderedItems: any[] = []
       type RootState = ReturnType<typeof normalStore.getState>
       let useNormalSelector: TypedUseSelectorHook<RootState> = useSelector
-      type VoidFunc = () => void
 
       beforeEach(() => {
         normalStore = createStore(
@@ -123,29 +131,18 @@ describe('React', () => {
         })
 
         it('subscribes to the store synchronously', () => {
-          const listeners = new Set<VoidFunc>()
-          const originalSubscribe = normalStore.subscribe
-
-          jest
-            .spyOn(normalStore, 'subscribe')
-            .mockImplementation((callback: VoidFunc) => {
-              listeners.add(callback)
-              const originalUnsubscribe = originalSubscribe(callback)
-
-              return () => {
-                listeners.delete(callback)
-                originalUnsubscribe()
-              }
-            })
-
-          const Parent = () => {
-            const count = useNormalSelector((s) => s.count)
-            return count === 1 ? <Child /> : null
-          }
+          let appSubscription: Subscription | null = null
 
           const Child = () => {
             const count = useNormalSelector((s) => s.count)
             return <div>{count}</div>
+          }
+
+          const Parent = () => {
+            const { subscription } = useContext(ReactReduxContext)
+            appSubscription = subscription
+            const count = useNormalSelector((s) => s.count)
+            return count === 1 ? <Child /> : null
           }
 
           rtl.render(
@@ -153,35 +150,23 @@ describe('React', () => {
               <Parent />
             </ProviderMock>
           )
-          // Provider + 1 component
-          expect(listeners.size).toBe(2)
+          // Parent component only
+          expect(appSubscription!.getListeners().get().length).toBe(1)
 
           rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
-          // Provider + 2 components
-          expect(listeners.size).toBe(3)
+          // Parent component + 1 child component
+          expect(appSubscription!.getListeners().get().length).toBe(2)
         })
 
         it('unsubscribes when the component is unmounted', () => {
-          const originalSubscribe = normalStore.subscribe
-
-          const listeners = new Set<VoidFunc>()
-
-          jest
-            .spyOn(normalStore, 'subscribe')
-            .mockImplementation((callback: VoidFunc) => {
-              listeners.add(callback)
-              const originalUnsubscribe = originalSubscribe(callback)
-
-              return () => {
-                listeners.delete(callback)
-                originalUnsubscribe()
-              }
-            })
+          let appSubscription: Subscription | null = null
 
           const Parent = () => {
+            const { subscription } = useContext(ReactReduxContext)
+            appSubscription = subscription
             const count = useNormalSelector((s) => s.count)
             return count === 0 ? <Child /> : null
           }
@@ -196,15 +181,15 @@ describe('React', () => {
               <Parent />
             </ProviderMock>
           )
-          // Provider + 2 components
-          expect(listeners.size).toBe(3)
+          // Parent + 1 child component
+          expect(appSubscription!.getListeners().get().length).toBe(2)
 
           rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
-          // Provider + 1 component
-          expect(listeners.size).toBe(2)
+          // Parent component only
+          expect(appSubscription!.getListeners().get().length).toBe(1)
         })
 
         it('notices store updates between render and store subscription effect', () => {
@@ -504,12 +489,7 @@ describe('React', () => {
           )
 
           const doDispatch = () => normalStore.dispatch({ type: '' })
-          // Seems to be an alteration in behavior - not sure if 17/18, or shim/built-in
-          if (IS_REACT_18) {
-            expect(doDispatch).not.toThrowError()
-          } else {
-            expect(doDispatch).toThrowError()
-          }
+          expect(doDispatch).not.toThrowError()
 
           spy.mockRestore()
         })
@@ -659,6 +639,69 @@ describe('React', () => {
 
           expect(renderedItems.length).toBe(2)
           expect(renderedItems[0]).toBe(renderedItems[1])
+        })
+
+        it('should have linear or better unsubscribe time, not quadratic', () => {
+          const reducer = (state: number = 0, action: any) =>
+            action.type === 'INC' ? state + 1 : state
+          const store = createStore(reducer)
+          const increment = () => ({ type: 'INC' })
+
+          const numChildren = 100000
+
+          function App() {
+            useSelector((s: number) => s)
+            const dispatch = useDispatch()
+
+            const [children, setChildren] = useState(numChildren)
+
+            const toggleChildren = () =>
+              setChildren((c) => (c ? 0 : numChildren))
+
+            return (
+              <div>
+                <button onClick={toggleChildren}>Toggle Children</button>
+                <button onClick={() => dispatch(increment())}>Increment</button>
+                {[...Array(children).keys()].map((i) => (
+                  <Child key={i} />
+                ))}
+              </div>
+            )
+          }
+
+          function Child() {
+            useSelector((s: number) => s)
+            // Deliberately do not return any DOM here - we want to isolate the cost of
+            // unsubscribing, and tearing down thousands of JSDOM nodes is expensive and irrelevant
+            return null
+          }
+
+          const { getByText } = rtl.render(
+            <ProviderMock store={store}>
+              <App />
+            </ProviderMock>
+          )
+
+          const timeBefore = Date.now()
+
+          const button = getByText('Toggle Children')
+          rtl.act(() => {
+            rtl.fireEvent.click(button)
+          })
+
+          const timeAfter = Date.now()
+          const elapsedTime = timeAfter - timeBefore
+
+          // Seeing an unexpected variation in elapsed time between React 18 and React 17 + the compat entry point.
+          // With 18, I see around 75ms with correct implementation on my machine, with 100K items.
+          // With 17 + compat, the same correct impl takes about 4200-5000ms.
+          // With the quadratic behavior, this is at least 13000ms (or worse!) under 18, and 22000ms+ with 17.
+          // The 13000ms time for 18 stays the same if I use the shim, so it must be a 17 vs 18 difference somehow,
+          // although I can't imagine why, and if I remove the `useSelector` calls both tests drop to ~50ms.
+          // So, we'll modify our expectations here depending on whether this is an 18 or 17 compat test,
+          // and give some buffer time to allow for variations in test machines.
+          const expectedMaxUnmountTime = IS_REACT_18 ? 500 : 7000
+          expect(elapsedTime).toBeLessThan(expectedMaxUnmountTime)
         })
       })
 

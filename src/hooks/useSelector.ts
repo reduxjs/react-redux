@@ -1,4 +1,4 @@
-import { useContext, useDebugValue } from 'react'
+import { useContext, useDebugValue, useCallback } from 'react'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import { ReactReduxContext } from '../components/Context'
@@ -48,12 +48,11 @@ export function createSelectorHook(
       }
     }
 
-    const { store, getServerState } = useReduxContext()!
+    const { store, subscription, getServerState } = useReduxContext()!
 
     const selectedState = useSyncExternalStoreWithSelector(
-      store.subscribe,
+      subscription.addNestedSub,
       store.getState,
-      // TODO Need a server-side snapshot here
       getServerState || store.getState,
       selector,
       equalityFn
