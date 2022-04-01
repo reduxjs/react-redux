@@ -7,7 +7,6 @@ import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 function Provider({ store, context, children }) {
   const contextValue = useMemo(() => {
     const subscription = createSubscription(store)
-    subscription.onStateChange = subscription.notifyNestedSubs
     return {
       store,
       subscription,
@@ -18,6 +17,7 @@ function Provider({ store, context, children }) {
 
   useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue
+    subscription.onStateChange = subscription.notifyNestedSubs
     subscription.trySubscribe()
 
     if (previousState !== store.getState()) {
