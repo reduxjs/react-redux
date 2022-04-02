@@ -8,7 +8,7 @@ type StateOrDispatch<S = AnyState> = S | Dispatch
 
 type AnyProps = { [key: string]: any }
 
-export type MapToProps<P = AnyProps> = {
+export type MapToProps<P extends AnyProps = AnyProps> = {
   // eslint-disable-next-line no-unused-vars
   (stateOrDispatch: StateOrDispatch, ownProps?: P): FixTypeLater
   dependsOnOwnProps?: boolean
@@ -65,7 +65,7 @@ export function getDependsOnOwnProps(mapToProps: MapToProps) {
 //  * On first call, verifies the first result is a plain object, in order to warn
 //    the developer that their mapToProps function is not returning a valid result.
 //
-export function wrapMapToPropsFunc<P = AnyProps>(
+export function wrapMapToPropsFunc<P extends AnyProps = AnyProps>(
   mapToProps: MapToProps,
   methodName: string
 ) {
