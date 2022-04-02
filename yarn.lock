@@ -2366,16 +2366,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/react@npm:13.0.0-alpha.4":
-  version: 13.0.0-alpha.4
-  resolution: "@testing-library/react@npm:13.0.0-alpha.4"
+"@testing-library/react@npm:13.0.0":
+  version: 13.0.0
+  resolution: "@testing-library/react@npm:13.0.0"
   dependencies:
     "@babel/runtime": ^7.12.5
     "@testing-library/dom": ^8.5.0
+    "@types/react-dom": "*"
   peerDependencies:
-    react: "*"
-    react-dom: "*"
-  checksum: ac40cf67d3305dec64a2692bbc9b2193be13a6d49469869ba21054bfd3b1c11a8a47ea586d4bf58ed2f84982f2ed68e17fa0a808cd197747f378a594b1e7397d
+    react: ^18.0.0
+    react-dom: ^18.0.0
+  checksum: 8de90109778e72da67973e960826a848dbb4afda89ad4c489b596b846416e31fa88d0f33a267518e2705faa73ee3df54b43728c3e9a2c76a5cce8ef77c716981
   languageName: node
   linkType: hard
 
@@ -2565,6 +2566,15 @@ __metadata:
   version: 15.7.4
   resolution: "@types/prop-types@npm:15.7.4"
   checksum: ef15c425a944f6b13824a87854cccf238e1b4cd0350b3124f4938406fe758fbdd6fadb2480d1388a00daeab61ce9888be5ca2b73da275f5dbc977143ff98e1eb
+  languageName: node
+  linkType: hard
+
+"@types/react-dom@npm:*":
+  version: 17.0.14
+  resolution: "@types/react-dom@npm:17.0.14"
+  dependencies:
+    "@types/react": "*"
+  checksum: 3565d6658304b00acfe90504e5f52f744a46f1acab60a3c369d03be2f9a48ba7b2f163b212e4d9907e0452f574191ef618d30da0214a437ba30d2e66e969f0d1
   languageName: node
   linkType: hard
 
@@ -8923,7 +8933,7 @@ __metadata:
     "@rollup/plugin-replace": ^2.3.3
     "@testing-library/jest-dom": ^5.11.5
     "@testing-library/jest-native": ^3.4.3
-    "@testing-library/react": 13.0.0-alpha.4
+    "@testing-library/react": 13.0.0
     "@testing-library/react-12": "npm:@testing-library/react@^12"
     "@testing-library/react-hooks": ^3.4.2
     "@testing-library/react-native": ^7.1.0
