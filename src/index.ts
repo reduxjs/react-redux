@@ -1,11 +1,9 @@
-// The default entry point assumes we are working with React 18, and thus have
-// useSyncExternalStore available. We can import that directly from React itself.
-// The useSyncExternalStoreWithSelector has to be imported, but we can use the
-// non-shim version. This shaves off the byte size of the shim.
+// The primary entry point assumes we're working with standard ReactDOM/RN, but
+// older versions that do not include `useSyncExternalStore` (React 16.9 - 17.x).
+// Because of that, the useSyncExternalStore compat shim is needed.
 
-// @ts-ignore React types not updated yet
-import { useSyncExternalStore } from 'react'
-import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector'
+import { useSyncExternalStore } from 'use-sync-external-store/shim'
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector'
 
 import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
 import { setBatch } from './utils/batch'
