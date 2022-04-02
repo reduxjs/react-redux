@@ -40,7 +40,7 @@ jobs:
       fail-fast: false
       matrix:
         node: ['14.x']
-        ts: ['4.0', '4.1', '4.2', '4.3', '4.4', '4.5', 'next']
+        ts: ['4.0', '4.1', '4.2', '4.3', '4.4', '4.5', '4.6', 'next']
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2
@@ -56,24 +56,6 @@ jobs:
 
       - name: Install TypeScript ${{ matrix.ts }}
         run: yarn add typescript@${{ matrix.ts }}
-
-      # - uses: actions/download-artifact@v2
-      #   with:
-      #     name: package
-      #     path: packages/toolkit
-
-      # - name: Install build artifact
-      #   run: yarn add ./package.tgz
-
-      # - run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json ./jest.config.js ./src/tests/*.* ./src/query/tests/*.*
-
-      # - name: "@ts-ignore stuff that didn't exist pre-4.1 in the tests"
-      #   if: ${{ matrix.ts < 4.1 }}
-      #   run: sed -i -e 's/@pre41-ts-ignore/@ts-ignore/' -e  '/pre41-remove-start/,/pre41-remove-end/d' ./src/tests/*.* ./src/query/tests/*.ts*
-
-      # - name: 'disable strictOptionalProperties'
-      #   if: ${{ matrix.ts == 'next' }}
-      #   run: sed -i -e 's|//\(.*strictOptionalProperties.*\)$|\1|' tsconfig.base.json
 
       - name: Test types
         run: |
