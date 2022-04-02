@@ -40,7 +40,7 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "react": "^18.0.0-rc"
+    "react": "^18.0.0"
   },
   "peerDependenciesMeta": {
     "react-dom": {
@@ -55,8 +55,8 @@
     "@types/hoist-non-react-statics": "^3.3.1",
     "@types/use-sync-external-store": "^0.0.3",
     "hoist-non-react-statics": "^3.3.2",
-    "react-is": "^18.0.0-rc.0",
-    "use-sync-external-store": "^1.0.0-rc.0"
+    "react-is": "^18.0.0",
+    "use-sync-external-store": "^1.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.12.1",
@@ -100,12 +100,12 @@
     "glob": "^7.1.6",
     "jest": "^26.6.1",
     "prettier": "^2.1.2",
-    "react": "18.0.0-beta-fdc1d617a-20211118",
+    "react": "18.0.0",
     "react-17": "npm:react@^17",
-    "react-dom": "18.0.0-beta-fdc1d617a-20211118",
+    "react-dom": "18.0.0",
     "react-dom-17": "npm:react-dom@^17",
     "react-native": "^0.64.1",
-    "react-test-renderer": "18.0.0-beta-fdc1d617a-20211118",
+    "react-test-renderer": "18.0.0",
     "react-test-renderer-17": "npm:react-test-renderer@^17",
     "redux": "^4.0.5",
     "rimraf": "^3.0.2",
