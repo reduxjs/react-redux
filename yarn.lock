@@ -2569,7 +2569,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:*":
+"@types/react-dom@npm:*, @types/react-dom@npm:^17.0.14":
   version: 17.0.14
   resolution: "@types/react-dom@npm:17.0.14"
   dependencies:
@@ -2578,21 +2578,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:^17.0.11":
-  version: 17.0.11
-  resolution: "@types/react-dom@npm:17.0.11"
+"@types/react-is@npm:^17.0.3":
+  version: 17.0.3
+  resolution: "@types/react-is@npm:17.0.3"
   dependencies:
     "@types/react": "*"
-  checksum: 4ebd8c0f858ab3c2db2a527307d05042310259b0a2642d3e34dcdc6c8cdee2618712bfb88d8ba3a0479f93658058f21da83653ff1f4ddf215e855d8512c546bc
-  languageName: node
-  linkType: hard
-
-"@types/react-is@npm:^17.0.1":
-  version: 17.0.2
-  resolution: "@types/react-is@npm:17.0.2"
-  dependencies:
-    "@types/react": "*"
-  checksum: 0144ba967566b8ac2178ac4dea30b5d48f943d3b2cc5360e30822b6f6158522f332f19b584cc2352283668a2bd7441c55d7c666f180bea2af90ae2158380917c
+  checksum: 525c01f9eb6913db423e632c702fc5ab29c4d7673eaa1e6988afa4c97477744ac0192d59f36ddcba845821710eff6813275967ef430a3a08243db438468fe060
   languageName: node
   linkType: hard
 
@@ -2626,7 +2617,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^17.0.35":
+"@types/react@npm:*":
   version: 17.0.35
   resolution: "@types/react@npm:17.0.35"
   dependencies:
@@ -2634,6 +2625,17 @@ __metadata:
     "@types/scheduler": "*"
     csstype: ^3.0.2
   checksum: 8606c027a284555ee16097133156964e8b9373612e9979d8a6b02e9ce545b72809ad15b381664f2175b4afb2264bbb04254b0f91c8d16b3482b6f17a3123916f
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^17.0.43":
+  version: 17.0.43
+  resolution: "@types/react@npm:17.0.43"
+  dependencies:
+    "@types/prop-types": "*"
+    "@types/scheduler": "*"
+    csstype: ^3.0.2
+  checksum: d368aa3d03f1951554398882771d562a0e0c81fe02f7d11d974721bbb667d2643b95ecdc01c783bdab2c2f69704524379f96e73e86b413faf3501c932c25b4b6
   languageName: node
   linkType: hard
 
@@ -8939,9 +8941,9 @@ __metadata:
     "@testing-library/react-native": ^7.1.0
     "@types/hoist-non-react-statics": ^3.3.1
     "@types/object-assign": ^4.0.30
-    "@types/react": ^17.0.35
-    "@types/react-dom": ^17.0.11
-    "@types/react-is": ^17.0.1
+    "@types/react": ^17.0.43
+    "@types/react-dom": ^17.0.14
+    "@types/react-is": ^17.0.3
     "@types/react-native": ^0.64.12
     "@types/react-redux": ^7.1.18
     "@types/use-sync-external-store": ^0.0.3
