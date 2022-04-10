@@ -7,7 +7,9 @@ export type SelectorFactory<S, TProps, TOwnProps, TFactoryOptions> = (
   factoryOptions: TFactoryOptions
 ) => Selector<S, TProps, TOwnProps>
 
-export type Selector<S, TProps, TOwnProps> = TOwnProps extends null | undefined
+export type Selector<S, TProps, TOwnProps = null> = TOwnProps extends
+  | null
+  | undefined
   ? (state: S) => TProps
   : (state: S, ownProps: TOwnProps) => TProps
 
