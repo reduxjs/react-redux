@@ -8,7 +8,6 @@ import type { Store, Dispatch, Action, AnyAction } from 'redux'
 import type {
   AdvancedComponentDecorator,
   ConnectedComponent,
-  DefaultRootState,
   InferableComponentEnhancer,
   InferableComponentEnhancerWithProps,
   ResolveThunks,
@@ -246,7 +245,7 @@ export type ConnectedProps<TConnector> =
     : never
 
 export interface ConnectOptions<
-  State = DefaultRootState,
+  State = unknown,
   TStateProps = {},
   TOwnProps = {},
   TMergedProps = {}
@@ -289,7 +288,7 @@ export interface ConnectOptions<
  * @param mergeProps
  * @param options
  */
-export interface Connect<DefaultState = DefaultRootState> {
+export interface Connect<DefaultState = unknown> {
   // tslint:disable:no-unnecessary-generics
   (): InferableComponentEnhancer<DispatchProp>
 
@@ -453,7 +452,7 @@ function connect<
   TDispatchProps = {},
   TOwnProps = {},
   TMergedProps = {},
-  State = DefaultRootState
+  State = unknown
 >(
   mapStateToProps?: MapStateToPropsParam<TStateProps, TOwnProps, State>,
   mapDispatchToProps?: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
@@ -527,7 +526,13 @@ function connect<
 
     const displayName = `Connect(${wrappedComponentName})`
 
-    const selectorFactoryOptions: SelectorFactoryOptions<any, any, any, any> = {
+    const selectorFactoryOptions: SelectorFactoryOptions<
+      any,
+      any,
+      any,
+      any,
+      State
+    > = {
       shouldHandleStateChanges,
       displayName,
       wrappedComponentName,

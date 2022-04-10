@@ -31,7 +31,6 @@ import {
   createSelectorHook,
   createStoreHook,
   TypedUseSelectorHook,
-  DefaultRootState,
 } from '../../src/index'
 
 import { expectType } from '../typeTestHelpers'
@@ -837,7 +836,7 @@ function testRef() {
 function testConnectDefaultState() {
   connect((state) => {
     const s = state
-    expectType<DefaultRootState>(s)
+    expectType<unknown>(s)
     return state
   })
 

@@ -10,17 +10,7 @@ export type FixTypeLater = any
 
 export type EqualityFn<T> = (a: T, b: T) => boolean
 
-/**
- * This interface can be augmented by users to add default types for the root state when
- * using `react-redux`.
- * Use module augmentation to append your own type definition in a your_custom_type.d.ts file.
- * https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
- */
-// tslint:disable-next-line:no-empty-interface
-export interface DefaultRootState {}
-
 export type AnyIfEmpty<T extends object> = keyof T extends never ? any : T
-export type RootStateOrAny = AnyIfEmpty<DefaultRootState>
 
 export type DistributiveOmit<T, K extends keyof T> = T extends unknown
   ? Omit<T, K>
