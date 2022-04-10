@@ -2018,6 +2018,7 @@ describe('React', () => {
             return false
           }
           render() {
+            // @ts-ignore don't care about "children" errors
             return this.props.children
           }
         }

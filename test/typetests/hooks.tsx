@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import { Store, Dispatch, configureStore } from '@reduxjs/toolkit'
+import { Store, Dispatch, configureStore, AnyAction } from '@reduxjs/toolkit'
 import {
   connect,
   ConnectedProps,
@@ -33,6 +33,8 @@ import {
   RootState,
   fetchCount,
 } from './counterApp'
+
+import { expectType } from '../typeTestHelpers'
 
 function preTypedHooksSetup() {
   // Standard hooks setup
@@ -147,8 +149,7 @@ function testUseSelector() {
   useSelector(selector, 'a')
   useSelector(selector, (l, r) => l === r)
   useSelector(selector, (l, r) => {
-    // $ExpectType { counter: number; active: string; }
-    l
+    expectType<{ counter: number; active: string }>(l)
     return l === r
   })
 
@@ -169,12 +170,11 @@ function testUseSelector() {
 
   const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector
 
-  // $ExpectType string
   const r = useTypedSelector((state) => {
-    // $ExpectType RootState
-    state
+    expectType<RootState>(state)
     return state.property
   })
+  expectType<string>(r)
 }
 
 function testUseStore() {
@@ -188,7 +188,7 @@ function testUseStore() {
 
   const untypedStore = useStore()
   const state = untypedStore.getState()
-  state.things.stuff.anything // any by default
+  expectType<unknown>(state)
 
   const typedStore = useStore<TypedState, TypedAction>()
   const typedState = typedStore.getState()
@@ -211,18 +211,22 @@ function testCreateHookFunctions() {
   >(null as any)
 
   // No context tests
-  // $ExpectType () => Dispatch<AnyAction>
-  createDispatchHook()
-  // $ExpectType <Selected extends unknown>(selector: (state: any) => Selected, equalityFn?: ((previous: Selected, next: Selected) => boolean) | undefined) => Selected
-  createSelectorHook()
-  // $ExpectType () => Store<any, AnyAction>
-  createStoreHook()
+  expectType<() => Dispatch<AnyAction>>(createDispatchHook())
+  expectType<
+    <Selected extends unknown>(
+      selector: (state: any) => Selected,
+      equalityFn?: ((previous: Selected, next: Selected) => boolean) | undefined
+    ) => Selected
+  >(createSelectorHook())
+  expectType<() => Store<any, AnyAction>>(createStoreHook())
 
   // With context tests
-  // $ExpectType () => Dispatch<RootAction>
-  createDispatchHook(Context)
-  // $ExpectType <Selected extends unknown>(selector: (state: RootState) => Selected, equalityFn?: ((previous: Selected, next: Selected) => boolean) | undefined) => Selected
-  createSelectorHook(Context)
-  // $ExpectType () => Store<RootState, RootAction>
-  createStoreHook(Context)
+  expectType<() => Dispatch<RootAction>>(createDispatchHook(Context))
+  expectType<
+    <Selected extends unknown>(
+      selector: (state: RootState) => Selected,
+      equalityFn?: ((previous: Selected, next: Selected) => boolean) | undefined
+    ) => Selected
+  >(createSelectorHook(Context))
+  expectType<() => Store<RootState, RootAction>>(createStoreHook(Context))
 }

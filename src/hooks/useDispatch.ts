@@ -6,7 +6,6 @@ import {
   ReactReduxContextValue,
 } from '../components/Context'
 import { useStore as useDefaultStore, createStoreHook } from './useStore'
-import { RootStateOrAny } from '../types'
 
 /**
  * Hook factory, which creates a `useDispatch` hook bound to a given context.
@@ -15,7 +14,7 @@ import { RootStateOrAny } from '../types'
  * @returns {Function} A `useDispatch` hook bound to the specified context.
  */
 export function createDispatchHook<
-  S = RootStateOrAny,
+  S = unknown,
   A extends Action = AnyAction
   // @ts-ignore
 >(context?: Context<ReactReduxContextValue<S, A>> = ReactReduxContext) {

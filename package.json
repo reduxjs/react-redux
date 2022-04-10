@@ -43,6 +43,9 @@
     "react": "^18.0.0"
   },
   "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
     "react-dom": {
       "optional": true
     },
@@ -81,11 +84,10 @@
     "@testing-library/react-hooks": "^3.4.2",
     "@testing-library/react-native": "^7.1.0",
     "@types/object-assign": "^4.0.30",
-    "@types/react": "^17.0.43",
-    "@types/react-dom": "^17.0.14",
-    "@types/react-is": "^17.0.3",
-    "@types/react-native": "^0.64.12",
-    "@types/react-redux": "^7.1.18",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/react-is": "^17",
+    "@types/react-native": "^0.67.4",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
     "@typescript-eslint/parser": "^4.28.0",
     "babel-eslint": "^10.1.0",

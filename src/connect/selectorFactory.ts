@@ -1,6 +1,6 @@
 import type { Dispatch, Action } from 'redux'
 import verifySubselectors from './verifySubselectors'
-import type { DefaultRootState, EqualityFn } from '../types'
+import type { EqualityFn } from '../types'
 
 export type SelectorFactory<S, TProps, TOwnProps, TFactoryOptions> = (
   dispatch: Dispatch<Action>,
@@ -13,26 +13,17 @@ export type Selector<S, TProps, TOwnProps = null> = TOwnProps extends
   ? (state: S) => TProps
   : (state: S, ownProps: TOwnProps) => TProps
 
-export type MapStateToProps<
-  TStateProps,
-  TOwnProps,
-  State = DefaultRootState
-> = (state: State, ownProps: TOwnProps) => TStateProps
+export type MapStateToProps<TStateProps, TOwnProps, State = unknown> = (
+  state: State,
+  ownProps: TOwnProps
+) => TStateProps
 
-export type MapStateToPropsFactory<
-  TStateProps,
-  TOwnProps,
-  State = DefaultRootState
-> = (
+export type MapStateToPropsFactory<TStateProps, TOwnProps, State = unknown> = (
   initialState: State,
   ownProps: TOwnProps
 ) => MapStateToProps<TStateProps, TOwnProps, State>
 
-export type MapStateToPropsParam<
-  TStateProps,
-  TOwnProps,
-  State = DefaultRootState
-> =
+export type MapStateToPropsParam<TStateProps, TOwnProps, State = unknown> =
   | MapStateToPropsFactory<TStateProps, TOwnProps, State>
   | MapStateToProps<TStateProps, TOwnProps, State>
   | null
@@ -66,10 +57,7 @@ export type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (
   ownProps: TOwnProps
 ) => TMergedProps
 
-interface PureSelectorFactoryComparisonOptions<
-  TOwnProps,
-  State = DefaultRootState
-> {
+interface PureSelectorFactoryComparisonOptions<TOwnProps, State = unknown> {
   areStatesEqual: EqualityFn<State>
   areOwnPropsEqual: EqualityFn<TOwnProps>
   areStatePropsEqual: EqualityFn<unknown>
@@ -81,7 +69,7 @@ export function pureFinalPropsSelectorFactory<
   TOwnProps,
   TDispatchProps,
   TMergedProps,
-  State = DefaultRootState
+  State = unknown
 >(
   mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State> & {
     dependsOnOwnProps: boolean
@@ -180,7 +168,7 @@ export interface SelectorFactoryOptions<
   TOwnProps,
   TDispatchProps,
   TMergedProps,
-  State = DefaultRootState
+  State = unknown
 > extends PureSelectorFactoryComparisonOptions<TOwnProps, State> {
   initMapStateToProps: (
     dispatch: Dispatch,
@@ -207,7 +195,7 @@ export default function finalPropsSelectorFactory<
   TOwnProps,
   TDispatchProps,
   TMergedProps,
-  State = DefaultRootState
+  State = unknown
 >(
   dispatch: Dispatch<Action>,
   {

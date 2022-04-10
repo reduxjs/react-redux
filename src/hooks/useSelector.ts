@@ -2,7 +2,7 @@ import { useContext, useDebugValue } from 'react'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import { ReactReduxContext } from '../components/Context'
-import type { DefaultRootState, EqualityFn } from '../types'
+import type { EqualityFn } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
 
@@ -21,7 +21,7 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  */
 export function createSelectorHook(
   context = ReactReduxContext
-): <TState = DefaultRootState, Selected = unknown>(
+): <TState = unknown, Selected = unknown>(
   selector: (state: TState) => Selected,
   equalityFn?: EqualityFn<Selected>
 ) => Selected {
