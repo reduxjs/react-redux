@@ -2571,12 +2571,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-native@npm:^0.64.12":
-  version: 0.64.12
-  resolution: "@types/react-native@npm:0.64.12"
+"@types/react-native@npm:^0.67.4":
+  version: 0.67.4
+  resolution: "@types/react-native@npm:0.67.4"
   dependencies:
     "@types/react": "*"
-  checksum: de9dd20a86d02b1e8715c55ec019c3062e9f1e52e4b09e4fb00f9ecd017b684c607871fc700722abfeca9b69820703871527db43170758a1984702192c34013a
+  checksum: 6d200dbdebe720203b73cdbd942c7f7fdb74cbfb816810875a7802eebad1a10b829fa2f8b6df6d152a979a6082a9461f08494a884db53629aae80f22e43ed0c7
   languageName: node
   linkType: hard
 
@@ -8898,7 +8898,7 @@ __metadata:
     "@types/react": ^18
     "@types/react-dom": ^18
     "@types/react-is": ^17
-    "@types/react-native": ^0.64.12
+    "@types/react-native": ^0.67.4
     "@types/use-sync-external-store": ^0.0.3
     "@typescript-eslint/eslint-plugin": ^4.28.0
     "@typescript-eslint/parser": ^4.28.0

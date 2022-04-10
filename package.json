@@ -87,7 +87,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-is": "^17",
-    "@types/react-native": "^0.64.12",
+    "@types/react-native": "^0.67.4",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
     "@typescript-eslint/parser": "^4.28.0",
     "babel-eslint": "^10.1.0",
