@@ -537,7 +537,9 @@ function connect<
       displayName,
       wrappedComponentName,
       WrappedComponent,
+      // @ts-ignore
       initMapStateToProps,
+      // @ts-ignore
       initMapDispatchToProps,
       // @ts-ignore
       initMergeProps,

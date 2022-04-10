@@ -4,7 +4,7 @@ import { FixTypeLater } from '../types'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
 type AnyState = { [key: string]: any }
-type StateOrDispatch<S = AnyState> = S | Dispatch
+type StateOrDispatch<S extends AnyState = AnyState> = S | Dispatch
 
 type AnyProps = { [key: string]: any }
 
