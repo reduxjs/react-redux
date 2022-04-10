@@ -530,9 +530,7 @@ describe('React', () => {
 
         const ConnectedInner = connect(
           (state) => ({ stateThing: state }),
-          (dispatch) => ({
-            doSomething: (whatever: any) => dispatch(doSomething(whatever)),
-          }),
+          { doSomething },
           (stateProps, actionProps, parentProps: InnerPropsType) => ({
             ...stateProps,
             ...actionProps,
