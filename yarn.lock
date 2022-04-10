@@ -2260,7 +2260,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/dom@npm:^8.0.0":
+"@testing-library/dom@npm:^8.0.0, @testing-library/dom@npm:^8.5.0":
   version: 8.11.1
   resolution: "@testing-library/dom@npm:8.11.1"
   dependencies:
@@ -2273,22 +2273,6 @@ __metadata:
     lz-string: ^1.4.4
     pretty-format: ^27.0.2
   checksum: a51d45574792db25a70298a01e6317fb3a5cefeec0c45dfe5d5cd95ab537c7e7e948acb3375f3652ba675f84aa1e204dba600b034aa6b6e8cbe7f03c2fc29b9a
-  languageName: node
-  linkType: hard
-
-"@testing-library/dom@npm:^8.5.0":
-  version: 8.10.1
-  resolution: "@testing-library/dom@npm:8.10.1"
-  dependencies:
-    "@babel/code-frame": ^7.10.4
-    "@babel/runtime": ^7.12.5
-    "@types/aria-query": ^4.2.0
-    aria-query: ^5.0.0
-    chalk: ^4.1.0
-    dom-accessibility-api: ^0.5.9
-    lz-string: ^1.4.4
-    pretty-format: ^27.0.2
-  checksum: d37eef1a3db509f3be3fcb77721f04694aadba7de195c0338d7f203668e132452a694504733ecee6fc71838abca8c02d27e78545cd8d6e89abae95d4ab2c1ab0
   languageName: node
   linkType: hard
 
@@ -2465,7 +2449,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/hoist-non-react-statics@npm:^3.3.0, @types/hoist-non-react-statics@npm:^3.3.1":
+"@types/hoist-non-react-statics@npm:^3.3.1":
   version: 3.3.1
   resolution: "@types/hoist-non-react-statics@npm:3.3.1"
   dependencies:
@@ -2569,16 +2553,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:*, @types/react-dom@npm:^17.0.14":
-  version: 17.0.14
-  resolution: "@types/react-dom@npm:17.0.14"
+"@types/react-dom@npm:*, @types/react-dom@npm:^18":
+  version: 18.0.0
+  resolution: "@types/react-dom@npm:18.0.0"
   dependencies:
     "@types/react": "*"
-  checksum: 3565d6658304b00acfe90504e5f52f744a46f1acab60a3c369d03be2f9a48ba7b2f163b212e4d9907e0452f574191ef618d30da0214a437ba30d2e66e969f0d1
+  checksum: 5db55eace82432392820274f22f895ee7540444b1c53ec0830da9d3ba7cd37f77b20a23b1abb2d193b163430ee358b51dc8f08494cddb8bb77e6942324d0e95c
   languageName: node
   linkType: hard
 
-"@types/react-is@npm:^17.0.3":
+"@types/react-is@npm:^17":
   version: 17.0.3
   resolution: "@types/react-is@npm:17.0.3"
   dependencies:
@@ -2596,18 +2580,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-redux@npm:^7.1.18":
-  version: 7.1.18
-  resolution: "@types/react-redux@npm:7.1.18"
-  dependencies:
-    "@types/hoist-non-react-statics": ^3.3.0
-    "@types/react": "*"
-    hoist-non-react-statics: ^3.3.0
-    redux: ^4.0.0
-  checksum: b247ff7ce31cede226f4606571bf975aeec91fe911e65e72cecaaac7234d4d694a7be0791419bb4259c7012b662a96267f694daaacbc18f3157fc7f955af55c9
-  languageName: node
-  linkType: hard
-
 "@types/react-test-renderer@npm:*":
   version: 17.0.1
   resolution: "@types/react-test-renderer@npm:17.0.1"
@@ -2617,25 +2589,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*":
-  version: 17.0.35
-  resolution: "@types/react@npm:17.0.35"
+"@types/react@npm:*, @types/react@npm:^18":
+  version: 18.0.1
+  resolution: "@types/react@npm:18.0.1"
   dependencies:
     "@types/prop-types": "*"
     "@types/scheduler": "*"
     csstype: ^3.0.2
-  checksum: 8606c027a284555ee16097133156964e8b9373612e9979d8a6b02e9ce545b72809ad15b381664f2175b4afb2264bbb04254b0f91c8d16b3482b6f17a3123916f
-  languageName: node
-  linkType: hard
-
-"@types/react@npm:^17.0.43":
-  version: 17.0.43
-  resolution: "@types/react@npm:17.0.43"
-  dependencies:
-    "@types/prop-types": "*"
-    "@types/scheduler": "*"
-    csstype: ^3.0.2
-  checksum: d368aa3d03f1951554398882771d562a0e0c81fe02f7d11d974721bbb667d2643b95ecdc01c783bdab2c2f69704524379f96e73e86b413faf3501c932c25b4b6
+  checksum: 12cf4f38f8e58f12700a60579b0b54719d632181cb6efe8574aac2314c6826f1058091a388512e8b98d818511aee6d808c2818e964d28a6fe491d0cf2d98866a
   languageName: node
   linkType: hard
 
@@ -4458,14 +4419,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dom-accessibility-api@npm:^0.5.6":
-  version: 0.5.6
-  resolution: "dom-accessibility-api@npm:0.5.6"
-  checksum: b579681083e683291df022bdf094dae2c7e39db0ff28f70ed2c8368eda203fe4c45bcf92f1c623ce4b746cb245f9a5dc9d176f1781d600b9218728d3a1d1580f
-  languageName: node
-  linkType: hard
-
-"dom-accessibility-api@npm:^0.5.9":
+"dom-accessibility-api@npm:^0.5.6, dom-accessibility-api@npm:^0.5.9":
   version: 0.5.10
   resolution: "dom-accessibility-api@npm:0.5.10"
   checksum: f6135bf1fe84b2eee884db115ad165e773811ed035dffb519750c137bf954d3f6c69d2f9e27510265303dc3c6050c775d2fc261e802ad7196154f4148312f653
@@ -8941,11 +8895,10 @@ __metadata:
     "@testing-library/react-native": ^7.1.0
     "@types/hoist-non-react-statics": ^3.3.1
     "@types/object-assign": ^4.0.30
-    "@types/react": ^17.0.43
-    "@types/react-dom": ^17.0.14
-    "@types/react-is": ^17.0.3
+    "@types/react": ^18
+    "@types/react-dom": ^18
+    "@types/react-is": ^17
     "@types/react-native": ^0.64.12
-    "@types/react-redux": ^7.1.18
     "@types/use-sync-external-store": ^0.0.3
     "@typescript-eslint/eslint-plugin": ^4.28.0
     "@typescript-eslint/parser": ^4.28.0
@@ -8980,6 +8933,8 @@ __metadata:
   peerDependencies:
     react: ^18.0.0
   peerDependenciesMeta:
+    "@types/react":
+      optional: true
     react-dom:
       optional: true
     react-native:
@@ -9169,7 +9124,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redux@npm:^4.0.0, redux@npm:^4.0.5, redux@npm:^4.1.0":
+"redux@npm:^4.0.5, redux@npm:^4.1.0":
   version: 4.1.1
   resolution: "redux@npm:4.1.1"
   dependencies:
