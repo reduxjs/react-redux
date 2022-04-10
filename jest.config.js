@@ -13,7 +13,7 @@ const tsTestFolderPath = (folderName) =>
 
 const tsStandardConfig = {
   ...defaults,
-  displayName: 'ReactDOM 18',
+  displayName: 'ReactDOM 18 (Shim)',
   preset: 'ts-jest',
   testMatch: NORMAL_TEST_FOLDERS.map(tsTestFolderPath),
 }
@@ -42,7 +42,7 @@ const standardReact17Config = {
 
 const nextEntryConfig = {
   ...tsStandardConfig,
-  displayName: 'Next',
+  displayName: 'ReactDOM 18 (Next)',
   moduleNameMapper: {
     '../../src/index': '<rootDir>/src/next',
   },
