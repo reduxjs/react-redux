@@ -1,9 +1,9 @@
 /* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
 import hoistStatics from 'hoist-non-react-statics'
-import React, { useContext, useMemo, useRef, useReducer } from 'react'
+import React, { useContext, useMemo, useRef } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 
-import type { Store, Dispatch, Action, AnyAction } from 'redux'
+import type { Store } from 'redux'
 
 import type {
   AdvancedComponentDecorator,
@@ -21,15 +21,12 @@ import defaultSelectorFactory, {
   MapDispatchToPropsNonObject,
   SelectorFactoryOptions,
 } from '../connect/selectorFactory'
-import defaultMapDispatchToPropsFactories from '../connect/mapDispatchToProps'
-import defaultMapStateToPropsFactories from '../connect/mapStateToProps'
-import defaultMergePropsFactories from '../connect/mergeProps'
+import { mapDispatchToPropsFactory } from '../connect/mapDispatchToProps'
+import { mapStateToPropsFactory } from '../connect/mapStateToProps'
+import { mergePropsFactory } from '../connect/mergeProps'
 
 import { createSubscription, Subscription } from '../utils/Subscription'
-import {
-  useIsomorphicLayoutEffect,
-  canUseDOM,
-} from '../utils/useIsomorphicLayoutEffect'
+import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import shallowEqual from '../utils/shallowEqual'
 
 import {
@@ -204,25 +201,6 @@ export interface ConnectProps {
 
 interface InternalConnectProps extends ConnectProps {
   reactReduxForwardedRef?: React.ForwardedRef<unknown>
-}
-
-function match<T>(
-  arg: unknown,
-  factories: ((value: unknown) => T)[],
-  name: string
-): T {
-  for (let i = factories.length - 1; i >= 0; i--) {
-    const result = factories[i](arg)
-    if (result) return result
-  }
-
-  return ((dispatch: Dispatch, options: { wrappedComponentName: string }) => {
-    throw new Error(
-      `Invalid value of type ${typeof arg} for ${name} argument when connecting component ${
-        options.wrappedComponentName
-      }.`
-    )
-  }) as any
 }
 
 function strictEqual(a: unknown, b: unknown) {
@@ -485,24 +463,9 @@ function connect<
 
   type WrappedComponentProps = TOwnProps & ConnectProps
 
-  const initMapStateToProps = match(
-    mapStateToProps,
-    // @ts-ignore
-    defaultMapStateToPropsFactories,
-    'mapStateToProps'
-  )!
-  const initMapDispatchToProps = match(
-    mapDispatchToProps,
-    // @ts-ignore
-    defaultMapDispatchToPropsFactories,
-    'mapDispatchToProps'
-  )!
-  const initMergeProps = match(
-    mergeProps,
-    // @ts-ignore
-    defaultMergePropsFactories,
-    'mergeProps'
-  )!
+  const initMapStateToProps = mapStateToPropsFactory(mapStateToProps)
+  const initMapDispatchToProps = mapDispatchToPropsFactory(mapDispatchToProps)
+  const initMergeProps = mergePropsFactory(mergeProps)
 
   const shouldHandleStateChanges = Boolean(mapStateToProps)
 
@@ -541,7 +504,6 @@ function connect<
       initMapStateToProps,
       // @ts-ignore
       initMapDispatchToProps,
-      // @ts-ignore
       initMergeProps,
       areStatesEqual,
       areStatePropsEqual,

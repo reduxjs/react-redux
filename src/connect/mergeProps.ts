@@ -1,23 +1,21 @@
-import { Dispatch } from 'redux'
+import type { Action, Dispatch } from 'redux'
 import verifyPlainObject from '../utils/verifyPlainObject'
+import { createInvalidArgFactory } from './invalidArgFactory'
+import type { MergeProps } from './selectorFactory'
+import type { EqualityFn } from '../types'
 
-type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (
+export function defaultMergeProps<
+  TStateProps,
+  TDispatchProps,
+  TOwnProps,
+  TMergedProps
+>(
   stateProps: TStateProps,
   dispatchProps: TDispatchProps,
   ownProps: TOwnProps
-) => TMergedProps
-
-export function defaultMergeProps<TStateProps, TDispatchProps, TOwnProps>(
-  stateProps: TStateProps,
-  dispatchProps: TDispatchProps,
-  ownProps: TOwnProps
-) {
+): TMergedProps {
+  // @ts-ignore
   return { ...ownProps, ...stateProps, ...dispatchProps }
-}
-
-interface InitMergeOptions {
-  displayName: string
-  areMergedPropsEqual: (a: any, b: any) => boolean
 }
 
 export function wrapMergePropsFunc<
@@ -28,8 +26,11 @@ export function wrapMergePropsFunc<
 >(
   mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
 ): (
-  dispatch: Dispatch,
-  options: InitMergeOptions
+  dispatch: Dispatch<Action<unknown>>,
+  options: {
+    readonly displayName: string
+    readonly areMergedPropsEqual: EqualityFn<TMergedProps>
+  }
 ) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> {
   return function initMergePropsProxy(
     dispatch,
@@ -61,20 +62,7 @@ export function wrapMergePropsFunc<
   }
 }
 
-export function whenMergePropsIsFunction<
-  TStateProps,
-  TDispatchProps,
-  TOwnProps,
-  TMergedProps
->(
-  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
-) {
-  return typeof mergeProps === 'function'
-    ? wrapMergePropsFunc(mergeProps)
-    : undefined
-}
-
-export function whenMergePropsIsOmitted<
+export function mergePropsFactory<
   TStateProps,
   TDispatchProps,
   TOwnProps,
@@ -82,7 +70,9 @@ export function whenMergePropsIsOmitted<
 >(
   mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
 ) {
-  return !mergeProps ? () => defaultMergeProps : undefined
+  return !mergeProps
+    ? () => defaultMergeProps
+    : typeof mergeProps === 'function'
+    ? wrapMergePropsFunc(mergeProps)
+    : createInvalidArgFactory(mergeProps, 'mergeProps')
 }
-
-export default [whenMergePropsIsFunction, whenMergePropsIsOmitted] as const

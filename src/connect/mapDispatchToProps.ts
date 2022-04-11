@@ -1,36 +1,25 @@
-import { ActionCreatorsMapObject, Dispatch } from 'redux'
-import { FixTypeLater } from '../types'
+import type { Action, Dispatch } from 'redux'
 import bindActionCreators from '../utils/bindActionCreators'
 import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
+import { createInvalidArgFactory } from './invalidArgFactory'
+import type { MapDispatchToPropsParam } from './selectorFactory'
 
-export function whenMapDispatchToPropsIsFunction(
-  mapDispatchToProps: ActionCreatorsMapObject | FixTypeLater
-) {
-  return typeof mapDispatchToProps === 'function'
-    ? wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps')
-    : undefined
-}
-
-export function whenMapDispatchToPropsIsMissing(mapDispatchToProps: undefined) {
-  return !mapDispatchToProps
-    ? wrapMapToPropsConstant((dispatch: Dispatch) => ({
-        dispatch,
-      }))
-    : undefined
-}
-
-export function whenMapDispatchToPropsIsObject(
-  mapDispatchToProps: ActionCreatorsMapObject
+export function mapDispatchToPropsFactory<TDispatchProps, TOwnProps>(
+  mapDispatchToProps:
+    | MapDispatchToPropsParam<TDispatchProps, TOwnProps>
+    | undefined
 ) {
   return mapDispatchToProps && typeof mapDispatchToProps === 'object'
-    ? wrapMapToPropsConstant((dispatch: Dispatch) =>
+    ? wrapMapToPropsConstant((dispatch: Dispatch<Action<unknown>>) =>
+        // @ts-ignore
         bindActionCreators(mapDispatchToProps, dispatch)
       )
-    : undefined
+    : !mapDispatchToProps
+    ? wrapMapToPropsConstant((dispatch: Dispatch<Action<unknown>>) => ({
+        dispatch,
+      }))
+    : typeof mapDispatchToProps === 'function'
+    ? // @ts-ignore
+      wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps')
+    : createInvalidArgFactory(mapDispatchToProps, 'mapDispatchToProps')
 }
-
-export default [
-  whenMapDispatchToPropsIsFunction,
-  whenMapDispatchToPropsIsMissing,
-  whenMapDispatchToPropsIsObject,
-]

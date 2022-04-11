@@ -1,4 +1,5 @@
 import type { Dispatch, Action } from 'redux'
+import type { ComponentType } from 'react'
 import verifySubselectors from './verifySubselectors'
 import type { EqualityFn } from '../types'
 
@@ -58,10 +59,9 @@ export type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (
 ) => TMergedProps
 
 interface PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
-  areStatesEqual: EqualityFn<State>
-  areOwnPropsEqual: EqualityFn<TOwnProps>
-  areStatePropsEqual: EqualityFn<TStateProps>
-  displayName: string
+  readonly areStatesEqual: EqualityFn<State>
+  readonly areStatePropsEqual: EqualityFn<TStateProps>
+  readonly areOwnPropsEqual: EqualityFn<TOwnProps>
 }
 
 export function pureFinalPropsSelectorFactory<
@@ -162,24 +162,33 @@ interface WrappedMapDispatchToProps<TDispatchProps, TOwnProps> {
   readonly dependsOnOwnProps: boolean
 }
 
+export interface InitOptions<TStateProps, TOwnProps, TMergedProps, State>
+  extends PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
+  readonly shouldHandleStateChanges: boolean
+  readonly displayName: string
+  readonly wrappedComponentName: string
+  readonly WrappedComponent: ComponentType<TOwnProps>
+  readonly areMergedPropsEqual: EqualityFn<TMergedProps>
+}
+
 export interface SelectorFactoryOptions<
   TStateProps,
   TOwnProps,
   TDispatchProps,
   TMergedProps,
   State
-> extends PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
-  initMapStateToProps: (
-    dispatch: Dispatch,
-    options: PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State>
+> extends InitOptions<TStateProps, TOwnProps, TMergedProps, State> {
+  readonly initMapStateToProps: (
+    dispatch: Dispatch<Action<unknown>>,
+    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>
   ) => WrappedMapStateToProps<TStateProps, TOwnProps, State>
-  initMapDispatchToProps: (
-    dispatch: Dispatch,
-    options: PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State>
+  readonly initMapDispatchToProps: (
+    dispatch: Dispatch<Action<unknown>>,
+    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>
   ) => WrappedMapDispatchToProps<TDispatchProps, TOwnProps>
-  initMergeProps: (
-    dispatch: Dispatch,
-    options: PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State>
+  readonly initMergeProps: (
+    dispatch: Dispatch<Action<unknown>>,
+    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>
   ) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
 }
 

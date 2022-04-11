@@ -1,17 +1,14 @@
-import {
-  MapToProps,
-  wrapMapToPropsConstant,
-  wrapMapToPropsFunc,
-} from './wrapMapToProps'
+import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
+import { createInvalidArgFactory } from './invalidArgFactory'
+import type { MapStateToPropsParam } from './selectorFactory'
 
-export function whenMapStateToPropsIsFunction(mapStateToProps?: MapToProps) {
-  return typeof mapStateToProps === 'function'
-    ? wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps')
-    : undefined
+export function mapStateToPropsFactory<TStateProps, TOwnProps, State>(
+  mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>
+) {
+  return !mapStateToProps
+    ? wrapMapToPropsConstant(() => ({}))
+    : typeof mapStateToProps === 'function'
+    ? // @ts-ignore
+      wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps')
+    : createInvalidArgFactory(mapStateToProps, 'mapStateToProps')
 }
-
-export function whenMapStateToPropsIsMissing(mapStateToProps?: MapToProps) {
-  return !mapStateToProps ? wrapMapToPropsConstant(() => ({})) : undefined
-}
-
-export default [whenMapStateToPropsIsFunction, whenMapStateToPropsIsMissing]
