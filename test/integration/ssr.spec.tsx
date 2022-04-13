@@ -126,7 +126,7 @@ describe('New v8 serverState behavior', () => {
     jest.clearAllMocks()
   })
 
-  it.only('Handles hydration correctly', async () => {
+  it('Handles hydration correctly', async () => {
     const ssrStore = createStore(dataSlice.reducer)
 
     // Simulating loading all data before rendering the app
