@@ -312,7 +312,7 @@ export interface Connect<DefaultState = unknown> {
   <no_state = {}, no_dispatch = {}, TOwnProps = {}, TMergedProps = {}>(
     mapStateToProps: null | undefined,
     mapDispatchToProps: null | undefined,
-    mergeProps: MergeProps<undefined, undefined, TOwnProps, TMergedProps>
+    mergeProps: MergeProps<undefined, DispatchProp, TOwnProps, TMergedProps>
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
 
   /** mapState and mergeProps */
@@ -325,7 +325,7 @@ export interface Connect<DefaultState = unknown> {
   >(
     mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
     mapDispatchToProps: null | undefined,
-    mergeProps: MergeProps<TStateProps, undefined, TOwnProps, TMergedProps>
+    mergeProps: MergeProps<TStateProps, DispatchProp, TOwnProps, TMergedProps>
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
 
   /** mapDispatch (as a object) and mergeProps */
