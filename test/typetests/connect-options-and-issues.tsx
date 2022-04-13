@@ -103,6 +103,14 @@ function TestMergedPropsInference() {
       merged: 'merged',
     })
   )(MergedPropsComponent)
+
+  const ConnectedWithInferredDispatch = connect(
+    mapStateToProps,
+    undefined,
+    (stateProps, dispatchProps, ownProps) => {
+      expectType<DispatchProp<AnyAction>>(dispatchProps)
+    }
+  )(MergedPropsComponent)
 }
 
 function Issue16652() {
