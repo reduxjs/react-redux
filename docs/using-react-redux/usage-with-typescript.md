@@ -10,11 +10,15 @@ description: 'Usage > TypeScript: how to correctly type React Redux APIs'
 
 # Usage with TypeScript
 
-React Redux itself is currently written in plain JavaScript. However, it works well with static type systems such as TypeScript.
+As of React-Redux v8, React-Redux is fully written in TypeScript, and the types are included in the published package. The types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
 
-The React Redux type definitions are a separate [`@types/react-redux` typedefs package](https://npm.im/@types/react-redux) on NPM. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
+:::info
 
-**As of React Redux v7.2.3, the `react-redux` package has a dependency on `@types/react-redux`, so the type definitions will be automatically installed with the library**. Otherwise, you'll need to manually install them yourself ( `npm install @types/react-redux` ).
+The recently updated `@types/react@18` major version has changed component definitions to remove having `children` as a prop by default. This causes errors if you have multiple copies of `@types/react` in your project. To fix this, tell your package manager to resolve `@types/react` to a single version. Details:
+
+https://github.com/facebook/react/issues/24304#issuecomment-1094565891
+
+:::
 
 ## Standard Redux Toolkit Project Setup with TypeScript
 
@@ -120,7 +124,7 @@ const dispatch: AppDispatch = useDispatch()
 
 `connect` consists of two functions that are called sequentially. The first function accepts `mapState` and `mapDispatch` as arguments, and returns a second function. The second function accepts the component to be wrapped, and returns a new wrapper component that passes down the props from `mapState` and `mapDispatch`. Normally, both functions are called together, like `connect(mapState, mapDispatch)(MyComponent)`.
 
-As of v7.1.2, the `@types/react-redux` package exposes a helper type, `ConnectedProps`, that can extract the return types of `mapStateToProps` and `mapDispatchToProps` from the first function. This means that if you split the `connect` call into two steps, all of the "props from Redux" can be inferred automatically without having to write them by hand. While this approach may feel unusual if you've been using React-Redux for a while, it does simplify the type declarations considerably.
+The package includes a helper type, `ConnectedProps`, that can extract the return types of `mapStateToProps` and `mapDispatchToProps` from the first function. This means that if you split the `connect` call into two steps, all of the "props from Redux" can be inferred automatically without having to write them by hand. While this approach may feel unusual if you've been using React-Redux for a while, it does simplify the type declarations considerably.
 
 ```ts
 import { connect, ConnectedProps } from 'react-redux'

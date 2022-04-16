@@ -31,11 +31,12 @@ As with `connect()`, you should start by wrapping your entire application in a `
 ```jsx
 const store = createStore(rootReducer)
 
-ReactDOM.render(
+// As of React 18
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(
   <Provider store={store}>
     <App />
-  </Provider>,
-  document.getElementById('root')
+  </Provider>
 )
 ```
 
@@ -79,7 +80,7 @@ When the function component renders, the provided selector function will be call
 from the `useSelector()` hook. (A cached result may be returned by the hook without re-running the selector if it's the same function reference as on a previous render of the component.)
 
 However, when an action is dispatched to the Redux store, `useSelector()` only forces a re-render if the selector result
-appears to be different than the last result. As of v7.1.0-alpha.5, the default comparison is a strict `===` reference
+appears to be different than the last result. The default comparison is a strict `===` reference
 comparison. This is different than `connect()`, which uses shallow equality checks on the results of `mapState` calls
 to determine if re-rendering is needed. This has several implications on how you should use `useSelector()`.
 
@@ -289,17 +290,18 @@ Normally, that store instance never changes in an application.
 However, the React hooks lint rules do not know that `dispatch` should be stable, and will warn that the `dispatch` variable
 should be added to dependency arrays for `useEffect` and `useCallback`. The simplest solution is to do just that:
 
-````js
+```js
 export const Todos = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch()
 
   useEffect(() => {
     dispatch(fetchTodos())
-  // highlight-start
-  // Safe to add dispatch to the dependencies array
+    // highlight-start
+    // Safe to add dispatch to the dependencies array
   }, [dispatch])
   // highlight-end
 }
+```
 
 :::
 
@@ -315,7 +317,7 @@ This hook should probably not be used frequently. Prefer `useSelector()` as your
 
 #### Examples
 
-```jsx
+```js
 import React from 'react'
 import { useStore } from 'react-redux'
 
@@ -340,7 +342,7 @@ import {
   Provider,
   createStoreHook,
   createDispatchHook,
-  createSelectorHook
+  createSelectorHook,
 } from 'react-redux'
 
 const MyContext = React.createContext(null)
@@ -368,6 +370,8 @@ export function MyProvider({ children }) {
 :::info
 
 The React-Redux hooks API has been production-ready since we released it in v7.1.0, and **we recommend using the hooks API as the default approach in your components**. However, there are a couple of edge cases that can occur, and **we're documenting those so that you can be aware of them**.
+
+In practice, these are a rare concern - we've received far more comments about these being in the docs than actual reports of these being a real problem in an app.
 
 :::
 
@@ -405,7 +409,7 @@ If you prefer to deal with this issue yourself, here are some possible options f
 For a longer description of these scenarios, see:
 
 - ["Stale props and zombie children in Redux" by Kai Hao](https://kaihao.dev/posts/Stale-props-and-zombie-children-in-Redux)
-- [this chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec)
+- [A chat log that describes the problems in more detail](https://gist.github.com/markerikson/faac6ae4aca7b82a058e13216a7888ec)
 - [issue #1179](https://github.com/reduxjs/react-redux/issues/1179)
 
 :::
@@ -418,7 +422,7 @@ If further performance optimizations are necessary, you may consider wrapping yo
 
 ```jsx
 const CounterComponent = ({ name }) => {
-  const counter = useSelector(state => state.counter)
+  const counter = useSelector((state) => state.counter)
   return (
     <div>
       {name}: {counter}
@@ -459,7 +463,7 @@ export function useActions(actions, deps) {
   return useMemo(
     () => {
       if (Array.isArray(actions)) {
-        return actions.map(a => bindActionCreators(a, dispatch))
+        return actions.map((a) => bindActionCreators(a, dispatch))
       }
       return bindActionCreators(actions, dispatch)
     },

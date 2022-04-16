@@ -33,13 +33,7 @@ module.exports = {
     {
       type: 'category',
       label: 'API Reference',
-      items: [
-        'api/provider',
-        'api/hooks',
-        'api/connect',
-        'api/connect-advanced',
-        'api/batch',
-      ],
+      items: ['api/provider', 'api/hooks', 'api/connect', 'api/batch'],
     },
     {
       type: 'category',

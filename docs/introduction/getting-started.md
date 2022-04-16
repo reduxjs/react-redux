@@ -17,7 +17,7 @@ import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
 ## Installation
 
-React Redux 7.1+ requires **React 16.8.3 or later**, in order to make use of React Hooks.
+React Redux 8.x requires **React 16.8.3 or later** / **React Native 0.59 or later**, in order to make use of React Hooks.
 
 ### Using Create React App
 
@@ -45,11 +45,7 @@ yarn add react-redux
 
 You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
 
-If you are using TypeScript, the React Redux types are maintained separately in DefinitelyTyped, but included as a dependency of the `react-redux` package, so they should be installed automatically. If you still need to install them manually, run:
-
-```bash
-npm install @types/react-redux
-```
+React-Redux v8 is written in TypeScript, so all types are automatically included.
 
 ## API Overview
 
@@ -59,19 +55,19 @@ React Redux includes a `<Provider />` component, which makes the Redux store ava
 
 ```jsx
 import React from 'react'
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom/client'
 
 import { Provider } from 'react-redux'
 import store from './store'
 
 import App from './App'
 
-const rootElement = document.getElementById('root')
-ReactDOM.render(
+// As of React 18
+const root = ReactDOM.createRoot(document.getElementById('root'))
+root.render(
   <Provider store={store}>
     <App />
-  </Provider>,
-  rootElement
+  </Provider>
 )
 ```
 
