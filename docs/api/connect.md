@@ -10,6 +10,12 @@ description: 'API > connect: a Higher-Order Component to interact with Redux'
 
 # `connect()`
 
+:::tip
+
+`connect` still works and is supported in React-Redux 8.x. However, [**we recommend using the hooks API as the default**](./hooks.md).
+
+:::
+
 ## Overview
 
 The `connect()` function connects a React component to a Redux store.
@@ -202,7 +208,6 @@ The return value of `mergeProps` is referred to as `mergedProps` and the fields 
 ```js
 {
   context?: Object,
-  pure?: boolean,
   areStatesEqual?: Function,
   areOwnPropsEqual?: Function,
   areStatePropsEqual?: Function,
@@ -226,23 +231,11 @@ connect(mapStateToProps, mapDispatchToProps, null, { context: MyContext })(
 )
 ```
 
-#### `pure: boolean`
-
-- default value: `true`
-
-Assumes that the wrapped component is a “pure” component and does not rely on any input or state other than its props and the selected Redux store’s state.
-
-When `options.pure` is true, `connect` performs several equality checks that are used to avoid unnecessary calls to `mapStateToProps`, `mapDispatchToProps`, `mergeProps`, and ultimately to `render`. These include `areStatesEqual`, `areOwnPropsEqual`, `areStatePropsEqual`, and `areMergedPropsEqual`. While the defaults are probably appropriate 99% of the time, you may wish to override them with custom implementations for performance or other reasons.
-
-We provide a few examples in the following sections.
-
 #### `areStatesEqual: (next: Object, prev: Object) => boolean`
 
 - default value: `strictEqual: (next, prev) => prev === next`
 
-When pure, compares incoming store state to its previous value.
-
-_Example 1_
+Compares incoming store state to its previous value.
 
 ```js
 const areStatesEqual = (next, prev) =>
@@ -251,14 +244,6 @@ const areStatesEqual = (next, prev) =>
 
 You may wish to override `areStatesEqual` if your `mapStateToProps` function is computationally expensive and is also only concerned with a small slice of your state. The example above will effectively ignore state changes for everything but that slice of state.
 
-_Example 2_
-
-If you have impure reducers that mutate your store state, you may wish to override `areStatesEqual` to always return false:
-
-```js
-const areStatesEqual = () => false
-```
-
 This would likely impact the other equality checks as well, depending on your `mapStateToProps` function.
 
 #### `areOwnPropsEqual: (next: Object, prev: Object) => boolean`
@@ -266,7 +251,7 @@ This would likely impact the other equality checks as well, depending on your `m
 - default value: `shallowEqual: (objA, objB) => boolean`
   ( returns `true` when each field of the objects is equal )
 
-When pure, compares incoming props to its previous value.
+Compares incoming props to its previous value.
 
 You may wish to override `areOwnPropsEqual` as a way to whitelist incoming props. You'd also have to implement `mapStateToProps`, `mapDispatchToProps` and `mergeProps` to also whitelist props. (It may be simpler to achieve this other ways, for example by using [recompose's mapProps](https://github.com/acdlite/recompose/blob/master/docs/API.md#mapprops).)
 
@@ -275,13 +260,13 @@ You may wish to override `areOwnPropsEqual` as a way to whitelist incoming props
 - type: `function`
 - default value: `shallowEqual`
 
-When pure, compares the result of `mapStateToProps` to its previous value.
+Compares the result of `mapStateToProps` to its previous value.
 
 #### `areMergedPropsEqual: (next: Object, prev: Object) => boolean`
 
 - default value: `shallowEqual`
 
-When pure, compares the result of `mergeProps` to its previous value.
+Compares the result of `mergeProps` to its previous value.
 
 You may wish to override `areStatePropsEqual` to use `strictEqual` if your `mapStateToProps` uses a memoized selector that will only return a new object if a relevant prop has changed. This would be a very slight performance improvement, since would avoid extra equality checks on individual props each time `mapStateToProps` is called.
 

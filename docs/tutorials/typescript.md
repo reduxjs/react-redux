@@ -29,13 +29,19 @@ Welcome to the React Redux TypeScript Quick Start tutorial! **This tutorial will
 
 This page focuses on just how to set up the TypeScript aspects . For explanations of what Redux is, how it works, and full examples of how to use Redux, see [the Redux core docs tutorials](https://redux.js.org/tutorials/index).
 
-Redux Toolkit is already written in TypeScript, so its TS type definitions are built in.
+Both React-Redux and Redux Toolkit are already written in TypeScript, so their TS type definitions are built in.
 
 [React Redux](https://react-redux.js.org) has its type definitions in a separate [`@types/react-redux` typedefs package](https://npm.im/@types/react-redux) on NPM. In addition to typing the library functions, the types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
 
-As of React Redux v7.2.3, the `react-redux` package has a dependency on `@types/react-redux`, so the type definitions will be automatically installed with the library. Otherwise, you'll need to manually install them yourself (typically `npm install @types/react-redux` ).
-
 The [Redux+TS template for Create-React-App](https://github.com/reduxjs/cra-template-redux-typescript) comes with a working example of these patterns already configured.
+
+:::info
+
+The recently updated `@types/react@18` major version has changed component definitions to remove having `children` as a prop by default. This causes errors if you have multiple copies of `@types/react` in your project. To fix this, tell your package manager to resolve `@types/react` to a single version. Details:
+
+https://github.com/facebook/react/issues/24304#issuecomment-1094565891
+
+:::
 
 ## Project Setup
 
