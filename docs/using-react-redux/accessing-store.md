@@ -75,6 +75,10 @@ The following runtime error occurs when React Redux does not find a store in the
 >
 > Could not find "store" in the context of "Connect(MyComponent)". Either wrap the root component in a `<Provider>`, or pass a custom React context provider to `<Provider>` and the corresponding React context consumer to Connect(Todo) in connect options.
 
+### Custom Context and the hooks API
+
+To access the custom context via the hooks API, you can create custom hooks via the [hook creator functions](../api/hooks.md#custom-context).
+
 ## Multiple Stores
 
 [Redux was designed to use a single store](https://redux.js.org/api/store#a-note-for-flux-users).
