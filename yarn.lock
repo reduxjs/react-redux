@@ -8932,12 +8932,15 @@ __metadata:
     use-sync-external-store: ^1.0.0
   peerDependencies:
     "@types/react": ^16.8 || ^17.0 || ^18.0
+    "@types/react-dom": ^16.8 || ^17.0 || ^18.0
     react: ^16.8 || ^17.0 || ^18.0
     react-dom: ^16.8 || ^17.0 || ^18.0
     react-native: ">=0.59"
     redux: ^4
   peerDependenciesMeta:
     "@types/react":
+      optional: true
+    "@types/react-dom":
       optional: true
     react-dom:
       optional: true
