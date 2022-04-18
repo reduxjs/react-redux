@@ -203,6 +203,8 @@ The fields in the plain object you return from it will be used as the props for 
 
 The return value of `mergeProps` is referred to as `mergedProps` and the fields will be used as the props for the wrapped component.
 
+> Note: Creating new values in mergeProps will cause re-renders. It is recommended that you memoize fields in order to avoid unnecessary re-renders. 
+
 ### `options?: Object`
 
 ```js
