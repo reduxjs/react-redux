@@ -1,4 +1,3 @@
-const { resolve } = require('path')
 /**
  * Copyright (c) 2017-present, Facebook, Inc.
  *
