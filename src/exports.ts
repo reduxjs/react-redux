@@ -27,7 +27,7 @@ import { useSelector, createSelectorHook } from './hooks/useSelector'
 import { useStore, createStoreHook } from './hooks/useStore'
 
 import shallowEqual from './utils/shallowEqual'
-import type { Subscription } from '../src/utils/Subscription'
+import type { Subscription } from './utils/Subscription'
 
 export * from './types'
 export type {
