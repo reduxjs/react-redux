@@ -221,7 +221,7 @@ function mapStateToProps(...args) {
 **Performance**
 
 - [Lee Byron's Tweet Suggesting to avoid `toJS`, `toArray` and `toObject` for Performance](https://twitter.com/leeb/status/746733697093668864)
-- [Improving React and Redux performance with Reselect](https://blog.rangle.io/react-and-redux-performance-with-reselect/)
+- [Improving React and Redux performance with Reselect](https://rangle.io/blog/react-and-redux-performance-with-reselect/)
 - [Immutable data performance links](https://github.com/markerikson/react-redux-links/blob/master/react-performance.md#immutable-data)
 
 **Q&A**
