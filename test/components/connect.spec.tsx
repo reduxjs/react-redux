@@ -2912,6 +2912,57 @@ describe('React', () => {
             expect.stringContaining('was not wrapped in act')
           )
         }
+
+        spy.mockRestore()
+      })
+
+      it('should warn one-time-only that `pure` options has been removed', () => {
+        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const store: Store = createStore(stringBuilder)
+
+        class ContainerA extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+
+        const ConnectedContainerA = connect(
+          (state) => ({ string: state }),
+          () => ({}),
+          () => ({}),
+          // The `pure` option has been removed
+          // @ts-ignore
+          { pure: true }
+        )(ContainerA)
+
+        class ContainerB extends Component {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+
+        const ConnectedContainerB = connect(
+          (state) => ({ string: state }),
+          () => ({}),
+          () => ({}),
+          // The `pure` option has been removed
+          // @ts-ignore
+          { pure: true }
+        )(ContainerB)
+
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainerA />
+            <ConnectedContainerB />
+          </ProviderMock>
+        )
+
+        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledWith(
+          'The `pure` option has been removed. `connect` is now always a "pure/memoized" component'
+        )
+
+        spy.mockRestore()
       })
     })
 
@@ -3236,9 +3287,13 @@ describe('React', () => {
           </ProviderMock>
         )
 
-        store.dispatch({ type: '' })
-        store.dispatch({ type: '' })
-        outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
+        rtl.act(() => {
+          store.dispatch({ type: '' })
+          store.dispatch({ type: '' })
+          outerComponent.current!.setState(({ count }) => ({
+            count: count + 1,
+          }))
+        })
 
         expect(reduxCountPassedToMapState).toEqual(3)
       })

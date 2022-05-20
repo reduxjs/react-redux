@@ -28,6 +28,7 @@ import { mergePropsFactory } from '../connect/mergeProps'
 import { createSubscription, Subscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import shallowEqual from '../utils/shallowEqual'
+import warning from '../utils/warning'
 
 import {
   ReactReduxContext,
@@ -405,6 +406,8 @@ export interface Connect<DefaultState = unknown> {
   // tslint:enable:no-unnecessary-generics
 }
 
+let hasWarnedAboutDeprecatedPureOption = false
+
 /**
  * Connects a React component to a Redux store.
  *
@@ -452,8 +455,9 @@ function connect<
   }: ConnectOptions<unknown, unknown, unknown, unknown> = {}
 ): unknown {
   if (process.env.NODE_ENV !== 'production') {
-    if (pure !== undefined) {
-      throw new Error(
+    if (pure !== undefined && !hasWarnedAboutDeprecatedPureOption) {
+      hasWarnedAboutDeprecatedPureOption = true
+      warning(
         'The `pure` option has been removed. `connect` is now always a "pure/memoized" component'
       )
     }
