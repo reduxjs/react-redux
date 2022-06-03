@@ -1,6 +1,6 @@
 /*eslint-disable react/prop-types*/
 
-import React from 'react'
+import * as React from 'react'
 import { createStore } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 import { Component, ReactElement } from 'react'
-import React from 'react'
-import ReactDOM from 'react-dom'
+import * as React from 'react'
+import * as ReactDOM from 'react-dom'
 import {
   configureStore,
   createSlice,

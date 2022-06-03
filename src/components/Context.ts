@@ -1,4 +1,4 @@
-import React from 'react'
+import * as React from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
 
