@@ -1,13 +1,14 @@
 /*eslint-disable react/prop-types*/
 
 import * as React from 'react'
+import { useState, useEffect, version as reactVersion } from 'react'
 import { createStore } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
 import type { AnyAction } from 'redux'
 
-const IS_REACT_18 = React.version.startsWith('18')
+const IS_REACT_18 = reactVersion.startsWith('18')
 
 describe('React', () => {
   describe('connect', () => {
@@ -61,11 +62,11 @@ describe('React', () => {
       })
 
       const component1 = (props: Omit<RootStateType, 'byId'>) => {
-        const [state, setState] = React.useState({ list: props.list })
+        const [state, setState] = useState({ list: props.list })
 
         component1StateList = state.list
 
-        React.useEffect(() => {
+        useEffect(() => {
           setState((prevState) => ({ ...prevState, list: props.list }))
         }, [props.list])
 

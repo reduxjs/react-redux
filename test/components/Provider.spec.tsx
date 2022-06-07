@@ -1,8 +1,8 @@
 /*eslint-disable react/prop-types*/
 
 import * as React from 'react'
-import { Component, Dispatch } from 'react'
-import * as ReactDOM from 'react-dom'
+import { Component, Dispatch, StrictMode } from 'react'
+import { render, unmountComponentAtNode } from 'react-dom'
 import { createStore } from 'redux'
 import { Provider, connect, ReactReduxContext } from '../../src/index'
 import * as rtl from '@testing-library/react'
@@ -312,18 +312,18 @@ describe('React', () => {
     })
 
     it('works in <StrictMode> without warnings (React 16.3+)', () => {
-      if (!React.StrictMode) {
+      if (!StrictMode) {
         return
       }
       const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
       const store = createStore(() => ({}))
 
       rtl.render(
-        <React.StrictMode>
+        <StrictMode>
           <Provider store={store}>
             <div />
           </Provider>
-        </React.StrictMode>
+        </StrictMode>
       )
 
       expect(spy).not.toHaveBeenCalled()
@@ -344,7 +344,7 @@ describe('React', () => {
       }
 
       const div = document.createElement('div')
-      ReactDOM.render(
+      render(
         <Provider store={store}>
           <div />
         </Provider>,
@@ -352,7 +352,7 @@ describe('React', () => {
       )
 
       expect(spy).toHaveBeenCalledTimes(0)
-      ReactDOM.unmountComponentAtNode(div)
+      unmountComponentAtNode(div)
       expect(spy).toHaveBeenCalledTimes(1)
     })
 
