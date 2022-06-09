@@ -1,13 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
-import {
-  createElement,
-  Component,
-  ComponentType,
-  ReactElement,
-  ReactNode,
-} from 'react'
-import * as React from 'react'
-import { render } from 'react-dom'
+import { Component, ReactElement } from 'react'
+import React from 'react'
+import ReactDOM from 'react-dom'
 import {
   configureStore,
   createSlice,
@@ -97,7 +91,7 @@ connect<ICounterStateProps, ICounterDispatchProps, {}, {}, CounterState>(
 )(Counter)
 
 class App extends Component<any, any> {
-  render(): ReactNode {
+  render(): React.ReactNode {
     // ...
     return null
   }
@@ -105,7 +99,7 @@ class App extends Component<any, any> {
 
 const targetEl = document.getElementById('root')
 
-render(
+ReactDOM.render(
   <Provider store={store}>
     <App />
   </Provider>,
@@ -135,7 +129,7 @@ type AddTodoAction = ReturnType<typeof addTodo>
 declare var todoActionCreators: { [type: string]: (...args: any[]) => any }
 declare var counterActionCreators: { [type: string]: (...args: any[]) => any }
 
-render(
+ReactDOM.render(
   <Provider store={store}>
     <MyRootComponent />
   </Provider>,
@@ -252,7 +246,7 @@ class TestComponent extends Component<TestProp, TestState> {}
 const WrappedTestComponent = connect()(TestComponent)
 
 // return value of the connect()(TestComponent) is of the type TestComponent
-let ATestComponent: ComponentType<TestProp>
+let ATestComponent: React.ComponentType<TestProp>
 ATestComponent = TestComponent
 ATestComponent = WrappedTestComponent
 
@@ -277,8 +271,11 @@ function HelloMessage(props: HelloMessageProps) {
   return <div>Hello {props.name}</div>
 }
 let ConnectedHelloMessage = connect()(HelloMessage)
-render(<HelloMessage name="Sebastian" />, document.getElementById('content'))
-render(
+ReactDOM.render(
+  <HelloMessage name="Sebastian" />,
+  document.getElementById('content')
+)
+ReactDOM.render(
   <ConnectedHelloMessage name="Sebastian" />,
   document.getElementById('content')
 )
@@ -327,7 +324,7 @@ namespace TestTOwnPropsInference {
     state: string
   }
 
-  class OwnPropsComponent extends Component<OwnProps & StateProps, {}> {
+  class OwnPropsComponent extends React.Component<OwnProps & StateProps, {}> {
     render() {
       return <div />
     }
@@ -355,28 +352,28 @@ namespace TestTOwnPropsInference {
   )(OwnPropsComponent)
 
   // @ts-expect-error
-  createElement(ConnectedWithoutOwnProps, { anything: 'goes!' })
+  React.createElement(ConnectedWithoutOwnProps, { anything: 'goes!' })
 
   // This compiles, as expected.
-  createElement(ConnectedWithOwnProps, { own: 'string' })
+  React.createElement(ConnectedWithOwnProps, { own: 'string' })
 
   // This should not compile, which is good.
   // @ts-expect-error
-  createElement(ConnectedWithOwnProps, { missingOwn: true })
+  React.createElement(ConnectedWithOwnProps, { missingOwn: true })
 
   // This compiles, as expected.
-  createElement(ConnectedWithTypeHint, { own: 'string' })
+  React.createElement(ConnectedWithTypeHint, { own: 'string' })
 
   // This should not compile, which is good.
   // @ts-expect-error
-  createElement(ConnectedWithTypeHint, { missingOwn: true })
+  React.createElement(ConnectedWithTypeHint, { missingOwn: true })
 
   interface AllProps {
     own: string
     state: string
   }
 
-  class AllPropsComponent extends Component<AllProps & DispatchProp> {
+  class AllPropsComponent extends React.Component<AllProps & DispatchProp> {
     render() {
       return <div />
     }

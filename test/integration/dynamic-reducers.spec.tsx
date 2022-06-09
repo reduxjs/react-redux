@@ -1,8 +1,7 @@
 /*eslint-disable react/prop-types*/
 
-import * as React from 'react'
-import { createContext } from 'react'
-import { renderToString } from 'react-dom/server'
+import React from 'react'
+import ReactDOMServer from 'react-dom/server'
 import { createStore, combineReducers } from 'redux'
 import { connect, Provider, ReactReduxContext } from '../../src/index'
 import * as rtl from '@testing-library/react'
@@ -30,7 +29,9 @@ describe('React', () => {
     because it's the popular approach, this test targets nr 3.
   */
   describe('dynamic reducers', () => {
-    const InjectReducersContext = createContext<((r: any) => void) | null>(null)
+    const InjectReducersContext = React.createContext<
+      ((r: any) => void) | null
+    >(null)
 
     type Reducer = (s: any) => any
 
@@ -184,7 +185,7 @@ describe('React', () => {
       // @ts-ignore
       console.error.mockImplementation(() => {})
 
-      const markup = renderToString(
+      const markup = ReactDOMServer.renderToString(
         <Provider store={store}>
           <InjectReducersContext.Provider value={injectReducers}>
             <InitialGreeting />
