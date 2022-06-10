@@ -1,4 +1,4 @@
-import React from 'react'
+import { createContext } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
 
@@ -12,7 +12,7 @@ export interface ReactReduxContextValue<
 }
 
 export const ReactReduxContext =
-  /*#__PURE__*/ React.createContext<ReactReduxContextValue>(null as any)
+  /*#__PURE__*/ createContext<ReactReduxContextValue>(null as any)
 
 export type ReactReduxContextInstance = typeof ReactReduxContext
 
