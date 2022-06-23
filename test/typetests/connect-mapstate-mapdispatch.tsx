@@ -269,6 +269,40 @@ function MapStateAndDispatchObject() {
   const verify = <Test foo="bar" />
 }
 
+function MapStateAndNullishDispatch() {
+  interface ClickPayload {
+    count: number
+  }
+  const onClick: ActionCreator<ClickPayload> = () => ({ count: 1 })
+  const dispatchToProps = {
+    onClick,
+  }
+
+  interface OwnProps {
+    foo: string
+  }
+  interface StateProps {
+    bar: number
+  }
+
+  const mapStateToProps = (_: any, __: OwnProps): StateProps => ({
+    bar: 1,
+  })
+
+  class TestComponent extends React.Component<OwnProps & StateProps> {}
+
+  const TestDispatchPropsNull = connect(mapStateToProps, null)(TestComponent)
+
+  const verifyNull = <TestDispatchPropsNull foo="bar" />
+
+  const TestDispatchPropsUndefined = connect(
+    mapStateToProps,
+    undefined
+  )(TestComponent)
+
+  const verifyNonUn = <TestDispatchPropsUndefined foo="bar" />
+}
+
 function MapDispatchFactory() {
   interface OwnProps {
     foo: string
@@ -418,6 +452,33 @@ function MapStateAndDispatchAndMerge() {
     mapDispatchToProps,
     mergeProps
   )(TestComponent)
+
+  const verify = <Test foo="bar" />
+}
+
+function MapStateAndMerge() {
+  interface OwnProps {
+    foo: string
+  }
+  interface StateProps {
+    bar: number
+  }
+  interface DispatchProps {
+    onClick: () => void
+  }
+
+  class TestComponent extends React.Component<OwnProps & StateProps> {}
+
+  const mapStateToProps = () => ({
+    bar: 1,
+  })
+
+  const mergeProps = (stateProps: StateProps, _: null, ownProps: OwnProps) => ({
+    ...stateProps,
+    ...ownProps,
+  })
+
+  const Test = connect(mapStateToProps, null, mergeProps)(TestComponent)
 
   const verify = <Test foo="bar" />
 }
