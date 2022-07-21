@@ -1,30 +1,17 @@
 {
-  "parser": "@typescript-eslint/parser",
+  "parser": "babel-eslint",
   "extends": [
     "eslint:recommended",
     "plugin:import/recommended",
-    "plugin:react/recommended",
-    "plugin:prettier/recommended"
-    // "plugin:@typescript-eslint/recommended"
+    "plugin:react/recommended"
   ],
-  "settings": {
-    "react": {
-      "version": "detect"
-    },
-    "import/ignore": ["react-native"],
-    "import/resolver": {
-      "node": {
-        "extensions": [".js", ".ts", ".tsx"]
-      }
-    }
-  },
   "parserOptions": {
     "ecmaVersion": 6,
     "sourceType": "module",
     "ecmaFeatures": {
       "jsx": true,
       "experimentalObjectRestSpread": true
-    }
+    },
   },
   "env": {
     "browser": true,
@@ -36,14 +23,10 @@
     "react/jsx-uses-react": 1,
     "react/jsx-no-undef": 2,
     "react/jsx-wrap-multilines": 2,
-    "react/no-string-refs": 0,
-    "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error"],
-    "no-redeclare": "off",
-    "@typescript-eslint/no-redeclare": ["error"]
+    "react/no-string-refs": 0
   },
-  "plugins": ["@typescript-eslint", "import", "react"],
-  "globals": {
-    "JSX": true
-  }
+  "plugins": [
+    "import",
+    "react"
+  ]
 }

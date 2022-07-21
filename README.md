@@ -1,60 +1,45 @@
-# React Redux
+React Redux
+=========================
 
-Official React bindings for [Redux](https://github.com/reduxjs/redux).  
+Official React bindings for [Redux](https://github.com/reactjs/redux).  
 Performant and flexible.
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/reduxjs/react-redux/Tests?style=flat-square) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
+[![build status](https://img.shields.io/travis/reactjs/react-redux/master.svg?style=flat-square)](https://travis-ci.org/reactjs/react-redux) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
 [![npm downloads](https://img.shields.io/npm/dm/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
-[![#redux channel on Discord](https://img.shields.io/badge/discord-redux@reactiflux-61DAFB.svg?style=flat-square)](http://www.reactiflux.com)
+[![redux channel on slack](https://img.shields.io/badge/slack-redux@reactiflux-61DAFB.svg?style=flat-square)](http://www.reactiflux.com)
+
 
 ## Installation
 
-### Using Create React App
+React Redux requires **React 0.14 or later.**
 
-The recommended way to start new apps with React Redux is by using the [official Redux+JS/TS templates](https://github.com/reduxjs/cra-template-redux) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of [Redux Toolkit](https://redux-toolkit.js.org/).
-
-```sh
-# JS
-npx create-react-app my-app --template redux
-
-# TS
-npx create-react-app my-app --template redux-typescript
+```
+npm install --save react-redux
 ```
 
-### An Existing React App
+This assumes that you’re using [npm](http://npmjs.com/) package manager with a module bundler like [Webpack](https://webpack.js.org/) or [Browserify](http://browserify.org/) to consume [CommonJS modules](http://webpack.github.io/docs/commonjs.html).
 
-React Redux 8.0 requires **React 16.8.3 or later** (or React Native 0.59 or later).
+If you don’t yet use [npm](http://npmjs.com/) or a modern module bundler, and would rather prefer a single-file [UMD](https://github.com/umdjs/umd) build that makes `ReactRedux` available as a global object, you can grab a pre-built version from [cdnjs](https://cdnjs.com/libraries/react-redux). We *don’t* recommend this approach for any serious application, as most of the libraries complementary to Redux are only available on [npm](http://npmjs.com/).
 
-To use React Redux with your React app, install it as a dependency:
+## React Native
 
-```bash
-# If you use npm:
-npm install react-redux
+As of React Native 0.18, React Redux 5.x should work with React Native. If you have any issues with React Redux 5.x on React Native, run `npm ls react` and make sure you don’t have a duplicate React installation in your `node_modules`. We recommend that you use `npm@3.x` which is better at avoiding these kinds of issues.
 
-# Or if you use Yarn:
-yarn add react-redux
-```
-
-You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
-
-This assumes that you’re using [npm](http://npmjs.com/) package manager
-with a module bundler like [Webpack](https://webpack.js.org/) or
-[Browserify](http://browserify.org/) to consume [CommonJS
-modules](https://webpack.js.org/api/module-methods/#commonjs).
-
-If you don’t yet use [npm](http://npmjs.com/) or a modern module bundler, and would rather prefer a single-file [UMD](https://github.com/umdjs/umd) build that makes `ReactRedux` available as a global object, you can grab a pre-built version from [cdnjs](https://cdnjs.com/libraries/react-redux). We _don’t_ recommend this approach for any serious application, as most of the libraries complementary to Redux are only available on [npm](http://npmjs.com/).
+If you are on an older version of React Native, you’ll need to keep using [React Redux 3.x branch and documentation](https://github.com/reactjs/react-redux/tree/v3.1.0) because of [this problem](https://github.com/facebook/react-native/issues/2985).
 
 ## Documentation
 
-The React Redux docs are published at **https://react-redux.js.org** .
+- [Redux: Usage with React](http://redux.js.org/docs/basics/UsageWithReact.html)
+- [API](docs/api.md#api)
+  - [`<Provider store>`](docs/api.md#provider-store)
+  - [`connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`](docs/api.md#connectmapstatetoprops-mapdispatchtoprops-mergeprops-options)
+- [Troubleshooting](docs/troubleshooting.md#troubleshooting)
 
 ## How Does It Work?
 
-The post [The History and Implementation of React-Redux](https://blog.isquaredsoftware.com/2018/11/react-redux-history-implementation/)
-explains what it does, how it works, and how the API and implementation have evolved over time.
-
-There's also a [Deep Dive into React-Redux](https://blog.isquaredsoftware.com/2019/06/presentation-react-redux-deep-dive/) talk that covers some of the same material at a higher level.
+We do a deep dive on how React Redux works in [this readthesource episode](https://www.youtube.com/watch?v=VJ38wSFbM3A).  
+Enjoy!
 
 ## License
 
-[MIT](LICENSE.md)
+MIT
