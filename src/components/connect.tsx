@@ -103,7 +103,6 @@ function subscribeUpdates(
   lastWrapperProps: React.MutableRefObject<unknown>,
   lastChildProps: React.MutableRefObject<unknown>,
   renderIsScheduled: React.MutableRefObject<boolean>,
-  isMounted: React.MutableRefObject<boolean>,
   childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
   notifyNestedSubs: () => void,
   // forceComponentUpdateDispatch: React.Dispatch<any>,
@@ -118,7 +117,7 @@ function subscribeUpdates(
 
   // We'll run this callback every time a store subscription update propagates to this component
   const checkForUpdates = () => {
-    if (didUnsubscribe || !isMounted.current) {
+    if (didUnsubscribe) {
       // Don't run stale listeners.
       // Redux doesn't guarantee unsubscriptions happen until next dispatch.
       return
@@ -622,17 +621,8 @@ function connect<
       const lastWrapperProps = useRef(wrapperProps)
       const childPropsFromStoreUpdate = useRef<unknown>()
       const renderIsScheduled = useRef(false)
-      const isProcessingDispatch = useRef(false)
-      const isMounted = useRef(false)
 
       const latestSubscriptionCallbackError = useRef<Error>()
-
-      useIsomorphicLayoutEffect(() => {
-        isMounted.current = true
-        return () => {
-          isMounted.current = false
-        }
-      }, [])
 
       const actualChildPropsSelector = useMemo(() => {
         const selector = () => {
@@ -677,7 +667,6 @@ function connect<
             lastWrapperProps,
             lastChildProps,
             renderIsScheduled,
-            isMounted,
             childPropsFromStoreUpdate,
             notifyNestedSubs,
             reactListener
