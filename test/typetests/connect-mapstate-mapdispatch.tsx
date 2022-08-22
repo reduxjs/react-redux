@@ -88,7 +88,9 @@ function MapStateWithDispatchProp() {
 
   const Test = connect(mapStateToProps)(TestComponent)
 
-  const verify = <Test foo="bar" />
+  const dispatch = (() => undefined) as Dispatch
+
+  const verify = <Test foo="bar" dispatch={dispatch} />
 }
 
 function MapStateFactory() {

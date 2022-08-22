@@ -123,7 +123,7 @@ function Issue16652() {
   }
 
   class CommentList extends React.Component<
-    PassedProps & GeneratedStateProps & DispatchProp
+    PassedProps & GeneratedStateProps
   > {}
 
   const mapStateToProps = (
@@ -135,7 +135,7 @@ function Issue16652() {
     }
   }
 
-  const ConnectedCommentList = connect<GeneratedStateProps, {}, PassedProps>(
+  const ConnectedCommentList = connect<GeneratedStateProps, void, PassedProps>(
     mapStateToProps
   )(CommentList)
 
@@ -147,7 +147,7 @@ function Issue15463() {
     showGlobalSpinner: boolean
   }
 
-  class SpinnerClass extends React.Component<SpinnerProps & DispatchProp> {
+  class SpinnerClass extends React.Component<SpinnerProps> {
     render() {
       return <div />
     }
@@ -165,7 +165,7 @@ function RemoveInjectedAndPassOnRest() {
     showGlobalSpinner: boolean
     foo: string
   }
-  class SpinnerClass extends React.Component<TProps & DispatchProp> {
+  class SpinnerClass extends React.Component<TProps> {
     render() {
       return <div />
     }
@@ -320,7 +320,7 @@ function TestWithoutTOwnPropsDecoratedInference() {
   }
 
   class WithoutOwnPropsComponentClass extends React.Component<
-    ForwardedProps & StateProps & DispatchProp<any>
+    ForwardedProps & StateProps
   > {
     render() {
       return <div />
@@ -328,7 +328,7 @@ function TestWithoutTOwnPropsDecoratedInference() {
   }
 
   const WithoutOwnPropsComponentStateless: React.FunctionComponent<
-    ForwardedProps & StateProps & DispatchProp<any>
+    ForwardedProps & StateProps
   > = () => <div />
 
   function mapStateToProps4(state: any, ownProps: OwnProps): StateProps {
@@ -387,7 +387,7 @@ function TestWithoutTOwnPropsDecoratedInference() {
   }
 
   class AllPropsComponent extends React.Component<
-    AllProps & DispatchProp<any>
+    AllProps
   > {
     render() {
       return <div />
@@ -722,7 +722,6 @@ function testConnectedPropsWithState() {
   const Component: React.FC<OwnProps & ReduxProps> = ({
     own,
     injected,
-    dispatch,
   }) => {
     injected.slice()
     return null

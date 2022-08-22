@@ -373,7 +373,7 @@ namespace TestTOwnPropsInference {
     state: string
   }
 
-  class AllPropsComponent extends React.Component<AllProps & DispatchProp> {
+  class AllPropsComponent extends React.Component<AllProps> {
     render() {
       return <div />
     }

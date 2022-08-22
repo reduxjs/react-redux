@@ -274,7 +274,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState only */
   <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>
-  ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>
+  ): InferableComponentEnhancerWithProps<TStateProps, TOwnProps>
 
   /** mapDispatch only (as a function) */
   <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
