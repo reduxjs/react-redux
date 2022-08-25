@@ -233,7 +233,7 @@ connect(mapStateToProps, mapDispatchToProps, null, { context: MyContext })(
 )
 ```
 
-#### `areStatesEqual: (next: Object, prev: Object) => boolean`
+#### `areStatesEqual: (next: Object, prev: Object, nextOwnProps: Object, prevOwnProps: Object) => boolean`
 
 - default value: `strictEqual: (next, prev) => prev === next`
 
@@ -244,7 +244,7 @@ const areStatesEqual = (next, prev) =>
   prev.entities.todos === next.entities.todos
 ```
 
-You may wish to override `areStatesEqual` if your `mapStateToProps` function is computationally expensive and is also only concerned with a small slice of your state. The example above will effectively ignore state changes for everything but that slice of state.
+You may wish to override `areStatesEqual` if your `mapStateToProps` function is computationally expensive and is also only concerned with a small slice of your state. The example above will effectively ignore state changes for everything but that slice of state. Additionally, `areStatesEqual` provides `nextOwnProps` and `prevOwnProps` to allow for more effective scoping of your state which your connected component is interested in, if needed. 
 
 This would likely impact the other equality checks as well, depending on your `mapStateToProps` function.
 
