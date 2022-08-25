@@ -1,7 +1,7 @@
 import type { Dispatch, Action } from 'redux'
 import type { ComponentType } from 'react'
 import verifySubselectors from './verifySubselectors'
-import type { EqualityFn } from '../types'
+import type { EqualityFn, ExtendedEqualityFn } from '../types'
 
 export type SelectorFactory<S, TProps, TOwnProps, TFactoryOptions> = (
   dispatch: Dispatch<Action<unknown>>,
@@ -59,7 +59,7 @@ export type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (
 ) => TMergedProps
 
 interface PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
-  readonly areStatesEqual: EqualityFn<State>
+  readonly areStatesEqual: ExtendedEqualityFn<State, TOwnProps>
   readonly areStatePropsEqual: EqualityFn<TStateProps>
   readonly areOwnPropsEqual: EqualityFn<TOwnProps>
 }
@@ -132,7 +132,12 @@ export function pureFinalPropsSelectorFactory<
 
   function handleSubsequentCalls(nextState: State, nextOwnProps: TOwnProps) {
     const propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps)
-    const stateChanged = !areStatesEqual(nextState, state)
+    const stateChanged = !areStatesEqual(
+      nextState,
+      state,
+      nextOwnProps,
+      ownProps
+    )
     state = nextState
     ownProps = nextOwnProps
 

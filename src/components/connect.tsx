@@ -231,7 +231,12 @@ export interface ConnectOptions<
 > {
   forwardRef?: boolean
   context?: typeof ReactReduxContext
-  areStatesEqual?: (nextState: State, prevState: State) => boolean
+  areStatesEqual?: (
+    nextState: State,
+    prevState: State,
+    nextOwnProps: TOwnProps,
+    prevOwnProps: TOwnProps
+  ) => boolean
 
   areOwnPropsEqual?: (
     nextOwnProps: TOwnProps,
