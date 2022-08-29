@@ -73,7 +73,7 @@ export function pureFinalPropsSelectorFactory(
 
   function handleSubsequentCalls(nextState, nextOwnProps) {
     const propsChanged = !areOwnPropsEqual(nextOwnProps, ownProps)
-    const stateChanged = !areStatesEqual(nextState, state)
+    const stateChanged = !areStatesEqual(nextState, state, nextOwnProps, ownProps)
     state = nextState
     ownProps = nextOwnProps
 
