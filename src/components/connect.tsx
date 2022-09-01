@@ -701,7 +701,7 @@ function connect<
         notifyNestedSubs,
       ])
 
-      let actualChildProps: uSES
+      let actualChildProps: Record<string, unknown>
 
       try {
         actualChildProps = useSyncExternalStore(
