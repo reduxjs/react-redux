@@ -7,6 +7,9 @@ on:
     branches: [master, typescript-port]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Test Suite
