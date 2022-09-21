@@ -1,4 +1,9 @@
-import { ClassAttributes, ComponentClass, ComponentType } from 'react'
+import {
+  ClassAttributes,
+  ComponentClass,
+  ComponentType,
+  FunctionComponent,
+} from 'react'
 
 import { Action, AnyAction, Dispatch } from 'redux'
 
@@ -82,7 +87,7 @@ export type GetLibraryManagedProps<C> = JSX.LibraryManagedAttributes<
 export type ConnectedComponent<
   C extends ComponentType<any>,
   P
-> = ComponentType<P> &
+> = FunctionComponent<P> &
   NonReactStatics<C> & {
     WrappedComponent: C
   }
