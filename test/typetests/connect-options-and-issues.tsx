@@ -465,7 +465,7 @@ function TestOptionalPropsMergedCorrectly() {
     }
   }
 
-  connect(mapStateToProps, mapDispatchToProps)(Component)
+  const Connected = connect(mapStateToProps, mapDispatchToProps)(Component)
 }
 
 function TestMoreGeneralDecorationProps() {

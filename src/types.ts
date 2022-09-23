@@ -93,6 +93,9 @@ export type ConnectPropsMaybeWithoutContext<TActualOwnProps> =
     ? Omit<ConnectProps, 'context'>
     : ConnectProps
 
+type Identity<T> = T
+export type Mapped<T> = Identity<{ [k in keyof T]: T[k] }>
+
 // Injects props and removes them from the prop requirements.
 // Will not pass through the injected props if they are passed in during
 // render. Also adds new prop requirements from TNeedsProps.
@@ -105,12 +108,14 @@ export type InferableComponentEnhancerWithProps<TInjectedProps, TNeedsProps> = <
   component: C
 ) => ConnectedComponent<
   C,
-  DistributiveOmit<
-    GetLibraryManagedProps<C>,
-    keyof Shared<TInjectedProps, GetLibraryManagedProps<C>>
-  > &
-    TNeedsProps &
-    ConnectPropsMaybeWithoutContext<TNeedsProps & GetProps<C>>
+  Mapped<
+    DistributiveOmit<
+      GetLibraryManagedProps<C>,
+      keyof Shared<TInjectedProps, GetLibraryManagedProps<C>>
+    > &
+      TNeedsProps &
+      ConnectPropsMaybeWithoutContext<TNeedsProps & GetProps<C>>
+  >
 >
 
 // Injects props and removes them from the prop requirements.
