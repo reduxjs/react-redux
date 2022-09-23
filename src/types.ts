@@ -27,10 +27,6 @@ export interface DispatchProp<A extends Action = AnyAction> {
   dispatch: Dispatch<A>
 }
 
-export type AdvancedComponentDecorator<TProps, TOwnProps> = (
-  component: ComponentType<TProps>
-) => ComponentType<TOwnProps>
-
 /**
  * A property P will be present if:
  * - it is present in DecorationTargetProps
@@ -94,22 +90,34 @@ export type ConnectedComponent<
     WrappedComponent: C
   }
 
+export type ConnectPropsMaybeWithoutContext<TActualOwnProps> =
+  TActualOwnProps extends { context: any }
+    ? Omit<ConnectProps, 'context'>
+    : ConnectProps
+
+type Identity<T> = T
+export type Mapped<T> = Identity<{ [k in keyof T]: T[k] }>
+
 // Injects props and removes them from the prop requirements.
 // Will not pass through the injected props if they are passed in during
 // render. Also adds new prop requirements from TNeedsProps.
-// Uses distributive omit to preserve discriminated unions part of original prop type
+// Uses distributive omit to preserve discriminated unions part of original prop type.
+// Note> Most of the time TNeedsProps is empty, because the overloads in `Connect`
+// just pass in `{}`.  The real props we need come from the component.
 export type InferableComponentEnhancerWithProps<TInjectedProps, TNeedsProps> = <
   C extends ComponentType<Matching<TInjectedProps, GetProps<C>>>
 >(
   component: C
 ) => ConnectedComponent<
   C,
-  DistributiveOmit<
-    GetLibraryManagedProps<C>,
-    keyof Shared<TInjectedProps, GetLibraryManagedProps<C>>
-  > &
-    TNeedsProps &
-    ConnectProps
+  Mapped<
+    DistributiveOmit<
+      GetLibraryManagedProps<C>,
+      keyof Shared<TInjectedProps, GetLibraryManagedProps<C>>
+    > &
+      TNeedsProps &
+      ConnectPropsMaybeWithoutContext<TNeedsProps & GetProps<C>>
+  >
 >
 
 // Injects props and removes them from the prop requirements.
