@@ -32,6 +32,7 @@ import {
   createStoreHook,
   TypedUseSelectorHook,
 } from '../../src/index'
+import { ConnectPropsMaybeWithoutContext } from '../../src/types'
 
 import { expectType } from '../typeTestHelpers'
 
@@ -880,4 +881,40 @@ function testPreserveDiscriminatedUnions() {
   // @ts-expect-error
   ;<ConnectedMyText type="localized" color="red" />
   ;<ConnectedMyText type="localized" color="red" params={someParams} />
+}
+
+function issue1187ConnectAcceptsPropNamedContext() {
+  const mapStateToProps = (state: { name: string }) => {
+    return {
+      name: state.name,
+    }
+  }
+
+  const connector = connect(mapStateToProps)
+
+  type PropsFromRedux = ConnectedProps<typeof connector>
+
+  interface IButtonOwnProps {
+    label: string
+    context: 'LIST' | 'CARD'
+  }
+  type IButtonProps = IButtonOwnProps & PropsFromRedux
+
+  function Button(props: IButtonProps) {
+    const { name, label, context } = props
+    return (
+      <button>
+        {name} - {label} - {context}
+      </button>
+    )
+  }
+
+  const ConnectedButton = connector(Button)
+
+  // Since `IButtonOwnProps` includes a field named `context`, the final
+  // connected component _should_ use exactly that type, and omit the
+  // built-in `context: ReactReduxContext` field definition.
+  // If the types are broken, then `context` will have an error like:
+  // Type '"LIST"' is not assignable to type '("LIST" | "CARD") & (Context<ReactReduxContextValue<any, AnyAction>> | undefined)'
+  return <ConnectedButton label="a" context="LIST" />
 }
