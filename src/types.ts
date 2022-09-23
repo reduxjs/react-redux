@@ -15,6 +15,8 @@ export type FixTypeLater = any
 
 export type EqualityFn<T> = (a: T, b: T) => boolean
 
+export type ExtendedEqualityFn<T, P> = (a: T, b: T, c: P, d: P) => boolean
+
 export type AnyIfEmpty<T extends object> = keyof T extends never ? any : T
 
 export type DistributiveOmit<T, K extends keyof T> = T extends unknown
