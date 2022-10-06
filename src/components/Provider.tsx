@@ -24,12 +24,12 @@ export interface ProviderProps<A extends Action = AnyAction, S = any> {
   children: ReactNode
 }
 
-function Provider<A extends Action = AnyAction>({
+function Provider<A extends Action = AnyAction, S = any>({
   store,
   context,
   children,
   serverState,
-}: ProviderProps<A>) {
+}: ProviderProps<A, S>) {
   const contextValue = useMemo(() => {
     const subscription = createSubscription(store)
     return {
