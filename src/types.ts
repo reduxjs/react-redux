@@ -168,3 +168,5 @@ export interface TypedUseSelectorHook<TState> {
     equalityFn?: EqualityFn<TSelected>
   ): TSelected
 }
+
+export type NoInfer<T> = [T][T extends any ? 0 : never]

@@ -2,7 +2,7 @@ import { useContext, useDebugValue } from 'react'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import { ReactReduxContext } from '../components/Context'
-import type { EqualityFn } from '../types'
+import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
 
@@ -32,7 +32,7 @@ export function createSelectorHook(
 
   return function useSelector<TState, Selected extends unknown>(
     selector: (state: TState) => Selected,
-    equalityFn: EqualityFn<Selected> = refEquality
+    equalityFn: EqualityFn<NoInfer<Selected>> = refEquality
   ): Selected {
     if (process.env.NODE_ENV !== 'production') {
       if (!selector) {
