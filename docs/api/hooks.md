@@ -100,6 +100,18 @@ import { shallowEqual, useSelector } from 'react-redux'
 const selectedData = useSelector(selectorReturningObject, shallowEqual)
 ```
 
+- Use a custom equality function as the `equalityFn` argument to `useSelector()`, like:
+
+```js
+import { useSelector } from 'react-redux'
+
+// equality function
+const customEqual = (oldValue, newValue) => oldValue === newValue
+
+// later
+const selectedData = useSelector(selectorReturningObject, customEqual)
+```
+
 The optional comparison function also enables using something like Lodash's `_.isEqual()` or Immutable.js's comparison capabilities.
 
 ### `useSelector` Examples
