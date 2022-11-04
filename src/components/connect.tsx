@@ -305,6 +305,12 @@ export interface Connect<DefaultState = unknown> {
     TOwnProps
   >
 
+  /** mapState and mapDispatch (nullish) */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: null | undefined
+  ): InferableComponentEnhancerWithProps<TStateProps, TOwnProps>
+
   /** mapState and mapDispatch (as an object) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
