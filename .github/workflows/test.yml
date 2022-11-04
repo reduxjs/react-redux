@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
         with:
-          node-version: 14.x
+          node-version: 16.x
           cache: 'yarn'
 
       - name: Install dependencies
@@ -39,8 +39,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['14.x']
-        ts: ['4.0', '4.1', '4.2', '4.3', '4.4', '4.5', '4.6', 'next']
+        node: ['16.x']
+        ts: ['4.1', '4.2', '4.3', '4.4', '4.5', '4.6', '4.7', '4.8', '4.9.2-rc']
     steps:
       - name: Checkout repo
         uses: actions/checkout@v2

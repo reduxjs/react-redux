@@ -165,6 +165,8 @@ export type ResolveThunks<TDispatchProps> = TDispatchProps extends {
 export interface TypedUseSelectorHook<TState> {
   <TSelected>(
     selector: (state: TState) => TSelected,
-    equalityFn?: EqualityFn<TSelected>
+    equalityFn?: EqualityFn<NoInfer<TSelected>>
   ): TSelected
 }
+
+export type NoInfer<T> = [T][T extends any ? 0 : never]
