@@ -34,7 +34,7 @@ import {
   fetchCount,
 } from './counterApp'
 
-import { expectType } from '../typeTestHelpers'
+import { expectType, expectExactType } from '../typeTestHelpers'
 
 function preTypedHooksSetup() {
   // Standard hooks setup
@@ -87,6 +87,20 @@ function testShallowEqual() {
   shallowEqual({ test: 'test' }, { test: 'test' })
   shallowEqual({ test: 'test' }, 'a')
   const x: boolean = shallowEqual('a', 'a')
+
+  type TestState = { stateProp: string }
+
+  // Additionally, it should infer its type from arguments and not become `any`
+  const selected1 = useSelector(
+    (state: TestState) => state.stateProp,
+    shallowEqual
+  )
+  expectExactType<string>(selected1)
+
+  const useAppSelector: TypedUseSelectorHook<TestState> = useSelector
+
+  const selected2 = useAppSelector((state) => state.stateProp, shallowEqual)
+  expectExactType<string>(selected2)
 }
 
 function testUseDispatch() {
