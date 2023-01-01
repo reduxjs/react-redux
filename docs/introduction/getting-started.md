@@ -1,4 +1,4 @@
----
+I---
 id: getting-started
 title: Getting Started with React Redux
 hide_title: true
