@@ -3,6 +3,27 @@ import { ReactReduxContext } from '../components/Context'
 import type { ReactReduxContextValue } from '../components/Context'
 
 /**
+ * Hook factory, which creates a `useReduxContext` hook bound to a given context. This is a low-level
+ * hook that you should usually not need to call directly.
+ *
+ * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @returns {Function} A `useReduxContext` hook bound to the specified context.
+ */
+export function createReduxContextHook(context = ReactReduxContext) {
+  return function useReduxContext(): ReactReduxContextValue | null {
+    const contextValue = useContext(context)
+
+    if (process.env.NODE_ENV !== 'production' && !contextValue) {
+      throw new Error(
+        'could not find react-redux context value; please ensure the component is wrapped in a <Provider>'
+      )
+    }
+
+    return contextValue
+  }
+}
+
+/**
  * A hook to access the value of the `ReactReduxContext`. This is a low-level
  * hook that you should usually not need to call directly.
  *
@@ -18,14 +39,4 @@ import type { ReactReduxContextValue } from '../components/Context'
  *   return <div>{store.getState()}</div>
  * }
  */
-export function useReduxContext(): ReactReduxContextValue | null {
-  const contextValue = useContext(ReactReduxContext)
-
-  if (process.env.NODE_ENV !== 'production' && !contextValue) {
-    throw new Error(
-      'could not find react-redux context value; please ensure the component is wrapped in a <Provider>'
-    )
-  }
-
-  return contextValue
-}
+export const useReduxContext = /*#__PURE__*/ createReduxContextHook()

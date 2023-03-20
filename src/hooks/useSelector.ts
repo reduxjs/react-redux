@@ -1,6 +1,9 @@
-import { useContext, useDebugValue } from 'react'
+import { useDebugValue } from 'react'
 
-import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
+import {
+  createReduxContextHook,
+  useReduxContext as useDefaultReduxContext,
+} from './useReduxContext'
 import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
@@ -28,7 +31,7 @@ export function createSelectorHook(
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
-      : () => useContext(context)
+      : createReduxContextHook(context)
 
   return function useSelector<TState, Selected extends unknown>(
     selector: (state: TState) => Selected,
