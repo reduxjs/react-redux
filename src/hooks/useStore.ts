@@ -24,7 +24,8 @@ export function createStoreHook<
     // @ts-ignore
     context === ReactReduxContext
       ? useDefaultReduxContext
-      : createReduxContextHook(context)
+      : // @ts-ignore
+        createReduxContextHook(context)
   return function useStore<
     State = S,
     Action extends BasicAction = A
