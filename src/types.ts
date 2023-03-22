@@ -1,8 +1,10 @@
 import {
-  ClassAttributes,
-  ComponentClass,
+  JSXElementConstructor,
   ComponentType,
   FunctionComponent,
+  ComponentClass,
+  ClassAttributes,
+  ComponentPropsWithRef,
 } from 'react'
 
 import { Action, AnyAction, Dispatch } from 'redux'
@@ -71,6 +73,8 @@ export type GetProps<C> = C extends ComponentType<infer P>
   ? C extends ComponentClass<P>
     ? ClassAttributes<InstanceType<C>> & P
     : P
+  : C extends keyof JSX.IntrinsicElements | JSXElementConstructor<any>
+  ? ComponentPropsWithRef<C>
   : never
 
 // Applies LibraryManagedAttributes (proper handling of defaultProps
@@ -105,7 +109,7 @@ export type Mapped<T> = Identity<{ [k in keyof T]: T[k] }>
 // Note> Most of the time TNeedsProps is empty, because the overloads in `Connect`
 // just pass in `{}`.  The real props we need come from the component.
 export type InferableComponentEnhancerWithProps<TInjectedProps, TNeedsProps> = <
-  C extends ComponentType<Matching<TInjectedProps, GetProps<C>>>
+  C extends JSXElementConstructor<Matching<TInjectedProps, GetProps<C>>>
 >(
   component: C
 ) => ConnectedComponent<
