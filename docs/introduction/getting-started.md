@@ -19,17 +19,25 @@ import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
 React Redux 8.x requires **React 16.8.3 or later** / **React Native 0.59 or later**, in order to make use of React Hooks.
 
-### Using Create React App
+### Create a React Redux App
 
-The recommended way to start new apps with React and Redux is by using the [official Redux+JS template](https://github.com/reduxjs/cra-template-redux) or [Redux+TS template](https://github.com/reduxjs/cra-template-redux-typescript) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of **[Redux Toolkit](https://redux-toolkit.js.org/)** and React Redux's integration with React components.
+The recommended way to start new apps with React and Redux is by using [our official Redux+TS template for Vite](https://github.com/reduxjs/redux-templates), or by creating a new Next.js project using [Next's `with-redux` template](https://github.com/vercel/next.js/tree/canary/examples/with-redux).
+
+Both of these already have Redux Toolkit and React-Redux configured appropriately for that build tool, and come with a small example app that demonstrates how to use several of Redux Toolkit's features.
 
 ```bash
-# Redux + Plain JS template
-npx create-react-app my-app --template redux
+# Vite with our Redux+TS template
+# (using the `degit` tool to clone and extract the template)
+npx degit reduxjs/redux-templates/packages/vite-template-redux my-app
 
-# Redux + TypeScript template
-npx create-react-app my-app --template redux-typescript
+# Next.js using the `with-redux` template
+npx create-next-app --example with-redux my-app
 ```
+
+We do not currently have official React Native templates, but recommend these templates for standard React Native and for Expo:
+
+- https://github.com/rahsheen/react-native-template-redux-typescript
+- https://github.com/rahsheen/expo-template-redux-typescript
 
 ### An Existing React App
 
