@@ -22,6 +22,12 @@ $ yarn
 # Start the site
 $ yarn start
 ```
+3. Build your project:
+
+```sh
+# Build the site
+$ yarn build
+```
 
 ## Directory Structure
 
