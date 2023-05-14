@@ -1,4 +1,5 @@
-import { useContext, useDebugValue } from 'react'
+import { useContext, useDebugValue, Context } from 'react'
+import { AnyAction } from 'redux'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
 import { ReactReduxContext } from '../components/Context'
@@ -19,9 +20,13 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(
-  context = ReactReduxContext
-): <TState = unknown, Selected = unknown>(
+export function createSelectorHook<
+  S = unknown,
+  A extends Action = AnyAction
+  // @ts-ignore
+>(
+  context?: Context<ReactReduxContextValue<S, A>> = ReactReduxContext
+): <TState = S, Selected = unknown>(
   selector: (state: TState) => Selected,
   equalityFn?: EqualityFn<Selected>
 ) => Selected {
