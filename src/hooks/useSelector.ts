@@ -2,7 +2,7 @@ import { useContext, useDebugValue, Context } from 'react'
 import { AnyAction } from 'redux'
 
 import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
-import { ReactReduxContext } from '../components/Context'
+import { ReactReduxContext, ReactReduxContextValue } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
