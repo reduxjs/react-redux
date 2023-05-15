@@ -11,6 +11,8 @@ import type { NonReactStatics } from 'hoist-non-react-statics'
 
 import type { ConnectProps } from './components/connect'
 
+import { UseSelectorOptions } from './hooks/useSelector'
+
 export type FixTypeLater = any
 
 export type EqualityFn<T> = (a: T, b: T) => boolean
@@ -167,6 +169,10 @@ export interface TypedUseSelectorHook<TState> {
     selector: (state: TState) => TSelected,
     equalityFn?: EqualityFn<NoInfer<TSelected>>
   ): TSelected
+  <Selected = unknown>(
+    selector: (state: TState) => Selected,
+    options?: UseSelectorOptions<Selected>
+  ): Selected
 }
 
 export type NoInfer<T> = [T][T extends any ? 0 : never]

@@ -3,6 +3,7 @@ import { ReactReduxContext, ReactReduxContextValue } from './Context'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { Action, AnyAction, Store } from 'redux'
+import { StabilityCheck } from '../hooks/useSelector'
 
 export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
   /**
@@ -21,6 +22,8 @@ export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
    * Initial value doesn't matter, as it is overwritten with the internal state of Provider.
    */
   context?: Context<ReactReduxContextValue<S, A>>
+
+  stabilityCheck?: StabilityCheck
   children: ReactNode
 }
 
@@ -29,6 +32,7 @@ function Provider<A extends Action = AnyAction, S = unknown>({
   context,
   children,
   serverState,
+  stabilityCheck = 'once',
 }: ProviderProps<A, S>) {
   const contextValue = useMemo(() => {
     const subscription = createSubscription(store)
@@ -36,8 +40,9 @@ function Provider<A extends Action = AnyAction, S = unknown>({
       store,
       subscription,
       getServerState: serverState ? () => serverState : undefined,
+      stabilityCheck,
     }
-  }, [store, serverState])
+  }, [store, serverState, stabilityCheck])
 
   const previousState = useMemo(() => store.getState(), [store])
 
