@@ -7,10 +7,11 @@ import React, {
   useState,
   useContext,
 } from 'react'
-import { createStore } from 'redux'
+import { Action, createStore } from 'redux'
 import * as rtl from '@testing-library/react'
 import {
-  Provider as ProviderMock,
+  Provider,
+  ProviderProps,
   useSelector,
   useDispatch,
   shallowEqual,
@@ -25,6 +26,15 @@ import type {
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
+
+// most of these tests depend on selectors being run once, which stabilityCheck doesn't do
+// rather than specify it every time, let's make a new "default" here
+function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
+  stabilityCheck = 'never',
+  ...props
+}: ProviderProps<A, S>) {
+  return <Provider {...props} stabilityCheck={stabilityCheck} />
+}
 
 const IS_REACT_18 = React.version.startsWith('18')
 
@@ -349,7 +359,7 @@ describe('React', () => {
             numCalls += 1
             return s.count
           }
-          const renderedItems = []
+          const renderedItems: number[] = []
 
           const Comp = () => {
             const value = useSelector(selector)
@@ -387,7 +397,7 @@ describe('React', () => {
             numCalls += 1
             return s.count
           }
-          const renderedItems = []
+          const renderedItems: number[] = []
 
           const Child = () => {
             useLayoutEffect(() => {
@@ -746,13 +756,13 @@ describe('React', () => {
           null as any
         )
         const useCustomSelector = createSelectorHook(nestedContext)
-        let defaultCount = null
-        let customCount = null
+        let defaultCount: number | null = null
+        let customCount: number | null = null
 
         const getCount = (s: StateType) => s.count
 
         const DisplayDefaultCount = ({ children = null }) => {
-          const count = useSelector<StateType>(getCount)
+          const count = useSelector(getCount)
           defaultCount = count
           return <>{children}</>
         }
@@ -760,7 +770,7 @@ describe('React', () => {
           children: ReactNode
         }
         const DisplayCustomCount = ({ children }: DisplayCustomCountType) => {
-          const count = useCustomSelector<StateType>(getCount)
+          const count = useCustomSelector(getCount)
           customCount = count
           return <>{children}</>
         }
