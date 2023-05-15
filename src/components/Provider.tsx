@@ -23,7 +23,9 @@ export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
    */
   context?: Context<ReactReduxContextValue<S, A>>
 
+  /** Global configuration for the `useSelector` stability check */
   stabilityCheck?: StabilityCheck
+
   children: ReactNode
 }
 

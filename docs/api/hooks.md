@@ -98,6 +98,11 @@ import { shallowEqual, useSelector } from 'react-redux'
 
 // later
 const selectedData = useSelector(selectorReturningObject, shallowEqual)
+
+// or with object format
+const selectedData = useSelector(selectorReturningObject, {
+  equalityFn: shallowEqual,
+})
 ```
 
 - Use a custom equality function as the `equalityFn` argument to `useSelector()`, like:
@@ -239,6 +244,46 @@ export const App = () => {
   )
 }
 ```
+
+### Development mode checks
+
+#### Selector result stability
+
+In development, an extra check is conducted on the passed selector. It runs the selector an extra time with the same parameter, and warns in console if it returns a different result (based on the `equalityFn` provided).
+
+This is important, as a selector returning a materially different result with the same parameter will cause unnecessary rerenders.
+
+```ts
+// this selector will return a new object reference whenever called
+// meaning the component will rerender whenever *any* action is dispatched
+const { count, user } = useSelector((state) => ({
+  count: state.count,
+  user: state.user,
+}))
+```
+
+If a selector result is suitably stable, or memoised, it will not return a different result and thus not cause a warning to be logged.
+
+By default, this will only happen when the selector is first called. You can configure the check via context, or per `useSelector` call - either to run the check always, or never.
+
+```tsx title="Global setting via context"
+<Provider store={store} stabilityCheck="always">
+  {children}
+</Provider>
+```
+
+```tsx title="Individual hook setting"
+function Component() {
+  const count = useSelector(selectCount, { stabilityCheck: 'never' })
+  // run once (default)
+  const user = useSelector(selectUser, { stabilityCheck: 'once' })
+  // ...
+}
+```
+
+:::info
+This check is disabled for production environments.
+:::
 
 ## `useDispatch()`
 
