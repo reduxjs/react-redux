@@ -26,7 +26,7 @@ import type {
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
-import { StabilityCheck, UseSelectorOptions } from '../../src/hooks/useSelector'
+import { UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // most of these tests depend on selectors being run once, which stabilityCheck doesn't do
 // rather than specify it every time, let's make a new "default" here
@@ -757,8 +757,8 @@ describe('React', () => {
             selector,
             options,
           }: {
-            selector: (state: NormalStateType) => number
-            options?: UseSelectorOptions<number>
+            selector: (state: NormalStateType) => unknown
+            options?: UseSelectorOptions<unknown>
           }) => {
             useSelector(selector, options)
             return null
@@ -799,6 +799,23 @@ describe('React', () => {
                 selected2: expect.any(Number),
               })
             )
+          })
+          it('uses provided equalityFn', () => {
+            const unstableSelector = jest.fn((state: NormalStateType) => ({
+              count: state.count,
+            }))
+
+            rtl.render(
+              <Provider store={normalStore}>
+                <RenderSelector
+                  selector={unstableSelector}
+                  options={{ equalityFn: shallowEqual }}
+                />
+              </Provider>
+            )
+
+            expect(unstableSelector).toHaveBeenCalledTimes(2)
+            expect(consoleSpy).not.toHaveBeenCalled()
           })
           it('by default will only check on first selector call', () => {
             rtl.render(
