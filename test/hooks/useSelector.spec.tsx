@@ -26,6 +26,7 @@ import type {
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
+import { StabilityCheck, UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // most of these tests depend on selectors being run once, which stabilityCheck doesn't do
 // rather than specify it every time, let's make a new "default" here
@@ -82,10 +83,7 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          type MockParams = [NormalStateType]
-          const selector: jest.Mock<number, MockParams> = jest.fn(
-            (s) => s.count
-          )
+          const selector = jest.fn((s: NormalStateType) => s.count)
           let result: number | undefined
           const Comp = () => {
             const count = useNormalSelector(selector)
@@ -324,9 +322,18 @@ describe('React', () => {
           )
 
           const Comp = () => {
-            const value = useSelector<StateType, string[]>((s) => {
-              return Object.keys(s)
-            }, shallowEqual)
+            const value = useSelector(
+              (s: StateType) => Object.keys(s),
+              shallowEqual
+            )
+            renderedItems.push(value)
+            return <div />
+          }
+
+          const Comp2 = () => {
+            const value = useSelector((s: StateType) => Object.keys(s), {
+              equalityFn: shallowEqual,
+            })
             renderedItems.push(value)
             return <div />
           }
@@ -334,16 +341,17 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={store}>
               <Comp />
+              <Comp2 />
             </ProviderMock>
           )
 
-          expect(renderedItems.length).toBe(1)
+          expect(renderedItems.length).toBe(2)
 
           rtl.act(() => {
             store.dispatch({ type: '' })
           })
 
-          expect(renderedItems.length).toBe(1)
+          expect(renderedItems.length).toBe(2)
         })
 
         it('calls selector exactly once on mount and on update', () => {
@@ -354,11 +362,9 @@ describe('React', () => {
             count: count + 1,
           }))
 
-          let numCalls = 0
-          const selector = (s: StateType) => {
-            numCalls += 1
+          const selector = jest.fn((s: StateType) => {
             return s.count
-          }
+          })
           const renderedItems: number[] = []
 
           const Comp = () => {
@@ -373,14 +379,14 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          expect(numCalls).toBe(1)
+          expect(selector).toHaveBeenCalledTimes(1)
           expect(renderedItems.length).toEqual(1)
 
           rtl.act(() => {
             store.dispatch({ type: '' })
           })
 
-          expect(numCalls).toBe(2)
+          expect(selector).toHaveBeenCalledTimes(2)
           expect(renderedItems.length).toEqual(2)
         })
 
@@ -392,11 +398,9 @@ describe('React', () => {
             count: count + 1,
           }))
 
-          let numCalls = 0
-          const selector = (s: StateType) => {
-            numCalls += 1
+          const selector = jest.fn((s: StateType) => {
             return s.count
-          }
+          })
           const renderedItems: number[] = []
 
           const Child = () => {
@@ -427,7 +431,7 @@ describe('React', () => {
           )
 
           // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
-          expect(numCalls).toBe(2)
+          expect(selector).toHaveBeenCalledTimes(2)
           expect(renderedItems.length).toEqual(2)
         })
       })
@@ -731,6 +735,146 @@ describe('React', () => {
             //@ts-expect-error
             useNormalSelector((s) => s.count, 1)
           ).toThrow()
+        })
+      })
+
+      describe('Development mode checks', () => {
+        describe('selector result stability check', () => {
+          const selector = jest.fn((state: NormalStateType) => state.count)
+
+          const consoleSpy = jest
+            .spyOn(console, 'warn')
+            .mockImplementation(() => {})
+          afterEach(() => {
+            consoleSpy.mockClear()
+            selector.mockClear()
+          })
+          afterAll(() => {
+            consoleSpy.mockRestore()
+          })
+
+          const RenderSelector = ({
+            selector,
+            options,
+          }: {
+            selector: (state: NormalStateType) => number
+            options?: UseSelectorOptions<number>
+          }) => {
+            useSelector(selector, options)
+            return null
+          }
+
+          it('calls a selector twice, and warns in console if it returns a different result', () => {
+            rtl.render(
+              <Provider store={normalStore}>
+                <RenderSelector selector={selector} />
+              </Provider>
+            )
+
+            expect(selector).toHaveBeenCalledTimes(2)
+
+            expect(consoleSpy).not.toHaveBeenCalled()
+
+            rtl.cleanup()
+
+            const unstableSelector = jest.fn(() => Math.random())
+
+            rtl.render(
+              <Provider store={normalStore}>
+                <RenderSelector selector={unstableSelector} />
+              </Provider>
+            )
+
+            expect(selector).toHaveBeenCalledTimes(2)
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+              expect.stringContaining(
+                'returned a different result when called with the same parameters'
+              ),
+              expect.objectContaining({
+                state: expect.objectContaining({
+                  count: 0,
+                }),
+                selected: expect.any(Number),
+                selected2: expect.any(Number),
+              })
+            )
+          })
+          it('by default will only check on first selector call', () => {
+            rtl.render(
+              <Provider store={normalStore}>
+                <RenderSelector selector={selector} />
+              </Provider>
+            )
+
+            expect(selector).toHaveBeenCalledTimes(2)
+
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
+
+            expect(selector).toHaveBeenCalledTimes(3)
+          })
+          it('disables check if context or hook specifies', () => {
+            rtl.render(
+              <Provider store={normalStore} stabilityCheck="never">
+                <RenderSelector selector={selector} />
+              </Provider>
+            )
+
+            expect(selector).toHaveBeenCalledTimes(1)
+
+            rtl.cleanup()
+
+            selector.mockClear()
+
+            rtl.render(
+              <Provider store={normalStore}>
+                <RenderSelector
+                  selector={selector}
+                  options={{ stabilityCheck: 'never' }}
+                />
+              </Provider>
+            )
+
+            expect(selector).toHaveBeenCalledTimes(1)
+          })
+          it('always runs check if context or hook specifies', () => {
+            rtl.render(
+              <Provider store={normalStore} stabilityCheck="always">
+                <RenderSelector selector={selector} />
+              </Provider>
+            )
+
+            expect(selector).toHaveBeenCalledTimes(2)
+
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
+
+            expect(selector).toHaveBeenCalledTimes(4)
+
+            rtl.cleanup()
+
+            selector.mockClear()
+
+            rtl.render(
+              <Provider store={normalStore}>
+                <RenderSelector
+                  selector={selector}
+                  options={{ stabilityCheck: 'always' }}
+                />
+              </Provider>
+            )
+
+            expect(selector).toHaveBeenCalledTimes(2)
+
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
+
+            expect(selector).toHaveBeenCalledTimes(4)
+          })
         })
       })
     })
