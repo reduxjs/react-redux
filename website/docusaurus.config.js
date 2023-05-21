@@ -52,8 +52,7 @@ const siteConfig = {
     '/scripts/sidebarScroll.js',
     '/scripts/codeblock.js',
     {
-      src:
-        'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
       async: true,
     },
   ],
@@ -192,6 +191,20 @@ const siteConfig = {
       trackingID: 'UA-130598673-2',
     },
   },
+  plugins: [
+    [
+      '@dipakparmar/docusaurus-plugin-umami',
+      /** @type {import('@dipakparmar/docusaurus-plugin-umami').Options} */
+      ({
+        websiteID: 'e81a2686-96f3-4557-9c03-f584b7e8ab6b',
+        analyticsDomain: 'redux-docs-umami.vercel.app',
+        scriptName: 'script.js',
+        dataAutoTrack: true,
+        dataDoNotTrack: true,
+        dataCache: true,
+      }),
+    ],
+  ],
 }
 
 module.exports = siteConfig
