@@ -7679,13 +7679,13 @@ __metadata:
   linkType: hard
 
 "loader-utils@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "loader-utils@npm:2.0.0"
+  version: 2.0.4
+  resolution: "loader-utils@npm:2.0.4"
   dependencies:
     big.js: ^5.2.2
     emojis-list: ^3.0.0
     json5: ^2.1.2
-  checksum: 6856423131b50b6f5f259da36f498cfd7fc3c3f8bb17777cf87fdd9159e797d4ba4288d9a96415fd8da62c2906960e88f74711dee72d03a9003bddcd0d364a51
+  checksum: a5281f5fff1eaa310ad5e1164095689443630f3411e927f95031ab4fb83b4a98f388185bb1fe949e8ab8d4247004336a625e9255c22122b815bb9a4c5d8fc3b7
   languageName: node
   linkType: hard
 
