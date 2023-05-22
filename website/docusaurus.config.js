@@ -31,6 +31,9 @@ const siteConfig = {
             require.resolve('./static/css/codeblock.css'),
           ],
         },
+        googleAnalytics: {
+          trackingID: 'UA-130598673-2',
+        },
       },
     ],
   ],
@@ -52,8 +55,7 @@ const siteConfig = {
     '/scripts/sidebarScroll.js',
     '/scripts/codeblock.js',
     {
-      src:
-        'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js',
       async: true,
     },
   ],
@@ -63,7 +65,7 @@ const siteConfig = {
     repoUrl: 'https://github.com/reduxjs/react-redux',
   },
   themeConfig: {
-    metadatas: [{ name: 'twitter:card', content: 'summary' }],
+    metadata: [{ name: 'twitter:card', content: 'summary' }],
     prism: {
       theme: require('./static/scripts/monokaiTheme.js'),
     },
@@ -184,14 +186,26 @@ const siteConfig = {
       ],
     },
     algolia: {
-      apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
+      appId: 'G15KG9HEMQ',
+      apiKey: '3a19f2b0974a8fdde5e8eee758059ba4',
       indexName: 'react-redux',
       algoliaOptions: {},
     },
-    googleAnalytics: {
-      trackingID: 'UA-130598673-2',
-    },
   },
+  plugins: [
+    [
+      '@dipakparmar/docusaurus-plugin-umami',
+      /** @type {import('@dipakparmar/docusaurus-plugin-umami').Options} */
+      ({
+        websiteID: 'e81a2686-96f3-4557-9c03-f584b7e8ab6b',
+        analyticsDomain: 'redux-docs-umami.vercel.app',
+        scriptName: 'script.js',
+        dataAutoTrack: true,
+        dataDoNotTrack: true,
+        dataCache: true,
+      }),
+    ],
+  ],
 }
 
 module.exports = siteConfig
