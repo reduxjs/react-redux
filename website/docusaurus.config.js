@@ -186,8 +186,8 @@ const siteConfig = {
       ],
     },
     algolia: {
-      appId: 'G15KG9HEMQ',
-      apiKey: '3a19f2b0974a8fdde5e8eee758059ba4',
+      appId: ' ',
+      apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
       indexName: 'react-redux',
       algoliaOptions: {},
     },
