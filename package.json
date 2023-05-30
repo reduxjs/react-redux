@@ -40,14 +40,18 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
+    "@reduxjs/toolkit": "^5.0.0-beta.0",
     "@types/react": "^16.8 || ^17.0 || ^18.0",
     "@types/react-dom": "^16.8 || ^17.0 || ^18.0",
     "react": "^16.8 || ^17.0 || ^18.0",
     "react-dom": "^16.8 || ^17.0 || ^18.0",
     "react-native": ">=0.59",
-    "redux": "^4"
+    "redux": "^4 || ^5.0.0-beta.0"
   },
   "peerDependenciesMeta": {
+    "@reduxjs/toolkit": {
+      "optional": true
+    },
     "@types/react": {
       "optional": true
     },
@@ -83,7 +87,7 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.14.5",
     "@microsoft/api-extractor": "^7.18.1",
-    "@reduxjs/toolkit": "^1.6.1",
+    "@reduxjs/toolkit": "^1.9.5",
     "@rollup/plugin-babel": "^5.2.1",
     "@rollup/plugin-commonjs": "^15.1.0",
     "@rollup/plugin-node-resolve": "^9.0.0",
