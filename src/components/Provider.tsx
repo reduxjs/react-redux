@@ -3,7 +3,7 @@ import { ReactReduxContext, ReactReduxContextValue } from './Context'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { Action, AnyAction, Store } from 'redux'
-import { StabilityCheck } from '../hooks/useSelector'
+import { CheckFrequency } from '../hooks/useSelector'
 
 export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
   /**
@@ -24,7 +24,10 @@ export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
   context?: Context<ReactReduxContextValue<S, A>>
 
   /** Global configuration for the `useSelector` stability check */
-  stabilityCheck?: StabilityCheck
+  stabilityCheck?: CheckFrequency
+
+  /** Global configuration for the `useSelector` no-op check */
+  noopCheck?: CheckFrequency
 
   children: ReactNode
 }
@@ -35,6 +38,7 @@ function Provider<A extends Action = AnyAction, S = unknown>({
   children,
   serverState,
   stabilityCheck = 'once',
+  noopCheck = 'once',
 }: ProviderProps<A, S>) {
   const contextValue = useMemo(() => {
     const subscription = createSubscription(store)
@@ -43,8 +47,9 @@ function Provider<A extends Action = AnyAction, S = unknown>({
       subscription,
       getServerState: serverState ? () => serverState : undefined,
       stabilityCheck,
+      noopCheck,
     }
-  }, [store, serverState, stabilityCheck])
+  }, [store, serverState, stabilityCheck, noopCheck])
 
   const previousState = useMemo(() => store.getState(), [store])
 
