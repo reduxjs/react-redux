@@ -99,7 +99,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
                 'Selector ' +
                   (selector.name || 'unknown') +
                   ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
-                  '\n Selectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
+                  '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
                 {
                   state,
                   selected,
