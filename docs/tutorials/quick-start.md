@@ -105,7 +105,8 @@ export const counterSlice = createSlice({
       // Redux Toolkit allows us to write "mutating" logic in reducers. It
       // doesn't actually mutate the state because it uses the Immer library,
       // which detects changes to a "draft state" and produces a brand new
-      // immutable state based off those changes
+      // immutable state based off those changes.
+      // Also, no return statement is required from these functions.
       state.value += 1
     },
     decrement: (state) => {
@@ -125,7 +126,7 @@ export default counterSlice.reducer
 
 ### Add Slice Reducers to the Store
 
-Next, we need to import the reducer function from the counter slice and add it to our store. By defining a field inside the `reducers` parameter, we tell the store to use this slice reducer function to handle all updates to that state.
+Next, we need to import the reducer function from the counter slice and add it to our store. By defining a field inside the `reducer` parameter, we tell the store to use this slice reducer function to handle all updates to that state.
 
 ```js title="app/store.js"
 import { configureStore } from '@reduxjs/toolkit'
@@ -142,7 +143,7 @@ export default configureStore({
 
 ### Use Redux State and Actions in React Components
 
-Now we can use the React Redux hooks to let React components interact with the Redux store. We can read data from the store with `useSelector`, and dispatch actions using `useDispatch`. Create a `src/features/counter/Counter.js` file with a `<Counter>` component inside, then import that component into `App.js` and render it inside of `<App>`.
+Now we can use the React-Redux hooks to let React components interact with the Redux store. We can read data from the store with `useSelector`, and dispatch actions using `useDispatch`. Create a `src/features/counter/Counter.js` file with a `<Counter>` component inside, then import that component into `App.js` and render it inside of `<App>`.
 
 ```jsx title="features/counter/Counter.js"
 import React from 'react'
@@ -206,9 +207,7 @@ That was a brief overview of how to set up and use Redux Toolkit with React. Rec
 
 ### Full Counter App Example
 
-The counter example app shown here is also the
-
-Here's the complete counter application as a running CodeSandbox:
+Here's the complete Counter application as a running CodeSandbox:
 
 <iframe
   class="codesandbox"
