@@ -262,9 +262,9 @@ const { count, user } = useSelector((state) => ({
 }))
 ```
 
-If a selector result is suitably stable, or memoised, it will not return a different result and thus not cause a warning to be logged.
+If a selector result is suitably stable (or the selector is memoized), it will not return a different result and no warning will be logged.
 
-By default, this will only happen when the selector is first called. You can configure the check via context, or per `useSelector` call - either to run the check always, or never.
+By default, this will only happen when the selector is first called. You can configure the check in the Provider or at each `useSelector` call.
 
 ```tsx title="Global setting via context"
 <Provider store={store} stabilityCheck="always">
