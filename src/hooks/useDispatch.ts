@@ -1,10 +1,8 @@
-import { Action, AnyAction, Dispatch } from 'redux'
-import { Context } from 'react'
+import type { Action, AnyAction, Dispatch } from 'redux'
+import type { Context } from 'react'
 
-import {
-  ReactReduxContext,
-  ReactReduxContextValue,
-} from '../components/Context'
+import type { ReactReduxContextValue } from '../components/Context'
+import { ReactReduxContext } from '../components/Context'
 import { useStore as useDefaultStore, createStoreHook } from './useStore'
 
 /**

@@ -1,12 +1,10 @@
-import { Context } from 'react'
-import { Action as BasicAction, AnyAction, Store } from 'redux'
+import type { Context } from 'react'
+import type { Action as BasicAction, AnyAction, Store } from 'redux'
+import type { ReactReduxContextValue } from '../components/Context'
+import { ReactReduxContext } from '../components/Context'
 import {
-  ReactReduxContext,
-  ReactReduxContextValue,
-} from '../components/Context'
-import {
-  createReduxContextHook,
   useReduxContext as useDefaultReduxContext,
+  createReduxContextHook,
 } from './useReduxContext'
 
 /**

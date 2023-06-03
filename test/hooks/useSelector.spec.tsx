@@ -7,25 +7,25 @@ import React, {
   useState,
   useContext,
 } from 'react'
-import { Action, createStore } from 'redux'
+import { createStore } from 'redux'
 import * as rtl from '@testing-library/react'
 import {
   Provider,
-  ProviderProps,
   useSelector,
   useDispatch,
   shallowEqual,
   connect,
   createSelectorHook,
   ReactReduxContext,
-  Subscription,
 } from '../../src/index'
 import type {
   TypedUseSelectorHook,
   ReactReduxContextValue,
+  ProviderProps,
+  Subscription,
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
-import type { Store, AnyAction } from 'redux'
+import type { Store, AnyAction, Action } from 'redux'
 import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // disable checks by default

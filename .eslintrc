@@ -11,10 +11,16 @@
     "react": {
       "version": "detect"
     },
-    "import/ignore": ["react-native"],
+    "import/ignore": [
+      "react-native"
+    ],
     "import/resolver": {
       "node": {
-        "extensions": [".js", ".ts", ".tsx"]
+        "extensions": [
+          ".js",
+          ".ts",
+          ".tsx"
+        ]
       }
     }
   },
@@ -38,11 +44,25 @@
     "react/jsx-wrap-multilines": 2,
     "react/no-string-refs": 0,
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error"],
+    "@typescript-eslint/no-unused-vars": [
+      "error"
+    ],
     "no-redeclare": "off",
-    "@typescript-eslint/no-redeclare": ["error"]
+    "@typescript-eslint/no-redeclare": [
+      "error"
+    ],
+    "@typescript-eslint/consistent-type-imports": [
+      "error",
+      {
+        "prefer": "type-imports"
+      }
+    ]
   },
-  "plugins": ["@typescript-eslint", "import", "react"],
+  "plugins": [
+    "@typescript-eslint",
+    "import",
+    "react"
+  ],
   "globals": {
     "JSX": true
   }

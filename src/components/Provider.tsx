@@ -1,8 +1,10 @@
-import React, { Context, ReactNode, useMemo } from 'react'
-import { ReactReduxContext, ReactReduxContextValue } from './Context'
+import type { Context, ReactNode } from 'react'
+import React, { useMemo } from 'react'
+import type { ReactReduxContextValue } from './Context'
+import { ReactReduxContext } from './Context'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import { Action, AnyAction, Store } from 'redux'
+import type { Action, AnyAction, Store } from 'redux'
 import type { CheckFrequency } from '../hooks/useSelector'
 
 export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
