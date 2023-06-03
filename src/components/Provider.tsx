@@ -3,7 +3,7 @@ import { ReactReduxContext, ReactReduxContextValue } from './Context'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { Action, AnyAction, Store } from 'redux'
-import { CheckFrequency } from '../hooks/useSelector'
+import type { CheckFrequency } from '../hooks/useSelector'
 
 export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
   /**

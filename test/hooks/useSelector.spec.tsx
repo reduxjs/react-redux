@@ -26,7 +26,7 @@ import type {
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
-import { UseSelectorOptions } from '../../src/hooks/useSelector'
+import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // disable checks by default
 function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({

@@ -2,7 +2,7 @@ import { createContext } from 'react'
 import type { Context } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
-import { CheckFrequency } from '../hooks/useSelector'
+import type { CheckFrequency } from '../hooks/useSelector'
 
 export interface ReactReduxContextValue<
   SS = any,
