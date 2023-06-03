@@ -28,13 +28,19 @@ import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction } from 'redux'
 import { UseSelectorOptions } from '../../src/hooks/useSelector'
 
-// most of these tests depend on selectors being run once, which stabilityCheck doesn't do
-// rather than specify it every time, let's make a new "default" here
+// disable checks by default
 function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
   stabilityCheck = 'never',
+  noopCheck = 'never',
   ...props
 }: ProviderProps<A, S>) {
-  return <Provider {...props} stabilityCheck={stabilityCheck} />
+  return (
+    <Provider
+      {...props}
+      stabilityCheck={stabilityCheck}
+      noopCheck={noopCheck}
+    />
+  )
 }
 
 const IS_REACT_18 = React.version.startsWith('18')
@@ -739,36 +745,38 @@ describe('React', () => {
       })
 
       describe('Development mode checks', () => {
+        const consoleSpy = jest
+          .spyOn(console, 'warn')
+          .mockImplementation(() => {})
+        afterEach(() => {
+          consoleSpy.mockClear()
+        })
+        afterAll(() => {
+          consoleSpy.mockRestore()
+        })
+
+        const RenderSelector = ({
+          selector,
+          options,
+        }: {
+          selector: (state: NormalStateType) => unknown
+          options?: UseSelectorOptions<unknown>
+        }) => {
+          useSelector(selector, options)
+          return null
+        }
         describe('selector result stability check', () => {
           const selector = jest.fn((state: NormalStateType) => state.count)
 
-          const consoleSpy = jest
-            .spyOn(console, 'warn')
-            .mockImplementation(() => {})
           afterEach(() => {
-            consoleSpy.mockClear()
             selector.mockClear()
           })
-          afterAll(() => {
-            consoleSpy.mockRestore()
-          })
-
-          const RenderSelector = ({
-            selector,
-            options,
-          }: {
-            selector: (state: NormalStateType) => unknown
-            options?: UseSelectorOptions<unknown>
-          }) => {
-            useSelector(selector, options)
-            return null
-          }
 
           it('calls a selector twice, and warns in console if it returns a different result', () => {
             rtl.render(
-              <Provider store={normalStore}>
+              <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector selector={selector} />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -780,9 +788,9 @@ describe('React', () => {
             const unstableSelector = jest.fn(() => Math.random())
 
             rtl.render(
-              <Provider store={normalStore}>
+              <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector selector={unstableSelector} />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -806,12 +814,12 @@ describe('React', () => {
             }))
 
             rtl.render(
-              <Provider store={normalStore}>
+              <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector
                   selector={unstableSelector}
                   options={{ equalityFn: shallowEqual }}
                 />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(unstableSelector).toHaveBeenCalledTimes(2)
@@ -819,9 +827,9 @@ describe('React', () => {
           })
           it('by default will only check on first selector call', () => {
             rtl.render(
-              <Provider store={normalStore}>
+              <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector selector={selector} />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -834,9 +842,9 @@ describe('React', () => {
           })
           it('disables check if context or hook specifies', () => {
             rtl.render(
-              <Provider store={normalStore} stabilityCheck="never">
+              <ProviderMock store={normalStore} stabilityCheck="never">
                 <RenderSelector selector={selector} />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(selector).toHaveBeenCalledTimes(1)
@@ -846,21 +854,21 @@ describe('React', () => {
             selector.mockClear()
 
             rtl.render(
-              <Provider store={normalStore}>
+              <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector
                   selector={selector}
                   options={{ stabilityCheck: 'never' }}
                 />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(selector).toHaveBeenCalledTimes(1)
           })
           it('always runs check if context or hook specifies', () => {
             rtl.render(
-              <Provider store={normalStore} stabilityCheck="always">
+              <ProviderMock store={normalStore} stabilityCheck="always">
                 <RenderSelector selector={selector} />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -876,12 +884,12 @@ describe('React', () => {
             selector.mockClear()
 
             rtl.render(
-              <Provider store={normalStore}>
+              <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector
                   selector={selector}
                   options={{ stabilityCheck: 'always' }}
                 />
-              </Provider>
+              </ProviderMock>
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -891,6 +899,29 @@ describe('React', () => {
             })
 
             expect(selector).toHaveBeenCalledTimes(4)
+          })
+        })
+        describe('no-op selector check', () => {
+          it('warns for selectors that return the entire root state', () => {
+            rtl.render(
+              <ProviderMock noopCheck="once" store={normalStore}>
+                <RenderSelector selector={(state) => state.count} />
+              </ProviderMock>
+            )
+
+            expect(consoleSpy).not.toHaveBeenCalled()
+
+            rtl.cleanup()
+
+            rtl.render(
+              <ProviderMock noopCheck="once" store={normalStore}>
+                <RenderSelector selector={(state) => state} />
+              </ProviderMock>
+            )
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+              expect.stringContaining('returned the root state when called.')
+            )
           })
         })
       })

@@ -90,7 +90,6 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
           const selected = selector(state)
           if (process.env.NODE_ENV !== 'production') {
             const finalStabilityCheck =
-              // are we safe to use ?? here?
               typeof stabilityCheck === 'undefined'
                 ? globalStabilityCheck
                 : stabilityCheck
@@ -114,7 +113,6 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
               }
             }
             const finalNoopCheck =
-              // are we safe to use ?? here?
               typeof noopCheck === 'undefined' ? globalNoopCheck : noopCheck
             if (
               finalNoopCheck === 'always' ||
