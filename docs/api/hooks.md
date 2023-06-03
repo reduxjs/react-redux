@@ -311,6 +311,42 @@ There are some differences between the selectors passed to `useSelector()` and a
 - The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples above) or by using a curried selector.
 - You can use the `equalityFn` option to customize the comparison behavior
 
+#### No-op selector check
+
+In development, a check is conducted on the result returned by the selector. It warns in console if the result is the same as the parameter passed in, i.e. the root state.
+
+A `useSelector` call returning the entire root state is almost always a mistake, as it means the component will rerender whenever _anything_ in state changes. Selectors should select as specifically as possible.
+
+```ts no-transpile
+// this selector returns the entire state, meaning that the component will rerender unnecessarily
+const { count, user } = useSelector((state) => state)
+
+// instead, select only the state you need, calling useSelector as many times as needed
+const count = useSelector((state) => state.count)
+const user = useSelector((state) => state.user)
+```
+
+By default, this will only happen when the selector is first called. You can configure the check via context, or per `useSelector` call - either to run the check always, or never.
+
+```tsx title="Global setting via context"
+<Provider store={store} noopCheck="always">
+  {children}
+</Provider>
+```
+
+```tsx title="Individual hook setting"
+function Component() {
+  const count = useSelector(selectCount, { noopCheck: 'never' })
+  // run once (default)
+  const user = useSelector(selectUser, { noopCheck: 'once' })
+  // ...
+}
+```
+
+:::info
+This check is disabled for production environments.
+:::
+
 ## `useDispatch()`
 
 ```ts
