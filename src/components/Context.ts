@@ -26,7 +26,7 @@ function getContext() {
 
 export const ReactReduxContext = /*#__PURE__*/ new Proxy(
   {} as Context<ReactReduxContextValue>,
-  new Proxy<ProxyHandler<Context<ReactReduxContextValue>>>(
+  /*#__PURE__*/ new Proxy<ProxyHandler<Context<ReactReduxContextValue>>>(
     {},
     {
       get(_, handler) {
