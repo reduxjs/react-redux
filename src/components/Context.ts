@@ -1,4 +1,5 @@
-import { Context, createContext } from 'react'
+import { createContext } from 'react'
+import type { Context } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
 import { StabilityCheck } from '../hooks/useSelector'
