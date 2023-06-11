@@ -1,10 +1,13 @@
-import { useContext, Context } from 'react'
+import { Context } from 'react'
 import { Action as BasicAction, AnyAction, Store } from 'redux'
 import {
   ReactReduxContext,
   ReactReduxContextValue,
 } from '../components/Context'
-import { useReduxContext as useDefaultReduxContext } from './useReduxContext'
+import {
+  createReduxContextHook,
+  useReduxContext as useDefaultReduxContext,
+} from './useReduxContext'
 
 /**
  * Hook factory, which creates a `useStore` hook bound to a given context.
@@ -21,7 +24,8 @@ export function createStoreHook<
     // @ts-ignore
     context === ReactReduxContext
       ? useDefaultReduxContext
-      : () => useContext(context)
+      : // @ts-ignore
+        createReduxContextHook(context)
   return function useStore<
     State = S,
     Action extends BasicAction = A
