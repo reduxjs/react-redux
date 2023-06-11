@@ -44,35 +44,48 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 
 ## `useSelector()`
 
-```js
-const result: any = useSelector(selector: Function, equalityFn?: Function)
+```ts
+type RootState = ReturnType<typeof store.getState>
+type SelectorFn = <Selected>(state: RootState) => Selected
+type EqualityFn = (a: any, b: any) => boolean
+export type StabilityCheck = 'never' | 'once' | 'always'
+
+interface UseSelectorOptions {
+  equalityFn?: EqualityFn
+  stabilityCheck?: StabilityCheck
+}
+
+const result: Selected = useSelector(
+  selector: SelectorFunction,
+  options?: EqualityFn | UseSelectorOptions
+)
 ```
 
-Allows you to extract data from the Redux store state, using a selector function.
+Allows you to extract data from the Redux store state for use in this component, using a selector function.
 
 :::info
 
 The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
 
+See [Using Redux: Deriving Data with Selectors](https://redux.js.org/usage/deriving-data-selectors) in the Redux docs for more details on writing and using selector functions.
+
 :::
 
-The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-extracting-data-with-mapStateToProps.md) conceptually. The selector will be called with the entire Redux store state as its only argument. The selector will be run whenever the function component renders (unless its reference hasn't changed since a previous render of the component so that a cached result can be returned by the hook without re-running the selector). `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
+The selector will be called with the entire Redux store state as its only argument. The selector may return any value as a result, including directly returning a value that was nested inside `state`, or deriving new values. The return value of the selector will be used as the return value of the `useSelector()` hook.
 
-However, there are some differences between the selectors passed to `useSelector()` and a `mapState` function:
+The selector will be run whenever the function component renders (unless its reference hasn't changed since a previous render of the component so that a cached result can be returned by the hook without re-running the selector). `useSelector()` will also subscribe to the Redux store, and run your selector whenever an action is dispatched.
 
-- The selector may return any value as a result, not just an object. The return value of the selector will be used as the return value of the `useSelector()` hook.
-- When an action is dispatched, `useSelector()` will do a reference comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, the component will not re-render.
-- The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples below) or by using a curried selector.
-- Extra care must be taken when using memoizing selectors (see examples below for more details).
-- `useSelector()` uses strict `===` reference equality checks by default, not shallow equality (see the following section for more details).
+When an action is dispatched, `useSelector()` will do a reference comparison of the previous selector result value and the current result value. If they are different, the component will be forced to re-render. If they are the same, the component will not re-render. `useSelector()` uses strict `===` reference equality checks by default, not shallow equality (see the following section for more details).
+
+The selector is approximately equivalent to the [`mapStateToProps` argument to `connect`](../using-react-redux/connect-extracting-data-with-mapStateToProps.md) conceptually.
+
+You may call `useSelector()` multiple times within a single function component. Each call to `useSelector()` creates an individual subscription to the Redux store. Because of the React update batching behavior used in React Redux v7, a dispatched action that causes multiple `useSelector()`s in the same component to return new values _should_ only result in a single re-render.
 
 :::info
 
 There are potential edge cases with using props in selectors that may cause issues. See the [Usage Warnings](#usage-warnings) section of this page for further details.
 
 :::
-
-You may call `useSelector()` multiple times within a single function component. Each call to `useSelector()` creates an individual subscription to the Redux store. Because of the React update batching behavior used in React Redux v7, a dispatched action that causes multiple `useSelector()`s in the same component to return new values _should_ only result in a single re-render.
 
 ### Equality Comparisons and Updates
 
@@ -96,8 +109,13 @@ every time will _always_ force a re-render by default. If you want to retrieve m
 ```js
 import { shallowEqual, useSelector } from 'react-redux'
 
-// later
+// Pass it as the second argument directly
 const selectedData = useSelector(selectorReturningObject, shallowEqual)
+
+// or pass it as the `equalityFn` field in the options argument
+const selectedData = useSelector(selectorReturningObject, {
+  equalityFn: shallowEqual,
+})
 ```
 
 - Use a custom equality function as the `equalityFn` argument to `useSelector()`, like:
@@ -240,10 +258,64 @@ export const App = () => {
 }
 ```
 
+### Development mode checks
+
+`useSelector` runs some extra checks in development mode to watch for unexpected behavior. These checks do not run in production builds.
+
+:::info
+
+These checks were first added in v8.1.0
+
+:::
+
+#### Selector result stability
+
+In development, the provided selector function is run an extra time with the same parameter during the first call to `useSelector`, and warns in the console if the selector returns a different result (based on the `equalityFn` provided).
+
+This is important, as a selector returning that returns a different result reference with the same parameter will cause unnecessary rerenders.
+
+```ts
+// this selector will return a new object reference whenever called,
+// which causes the component to rerender after *every* action is dispatched
+const { count, user } = useSelector((state) => ({
+  count: state.count,
+  user: state.user,
+}))
+```
+
+If a selector result is suitably stable (or the selector is memoized), it will not return a different result and no warning will be logged.
+
+By default, this will only happen when the selector is first called. You can configure the check in the Provider or at each `useSelector` call.
+
+```tsx title="Global setting via context"
+<Provider store={store} stabilityCheck="always">
+  {children}
+</Provider>
+```
+
+```tsx title="Individual hook setting"
+function Component() {
+  const count = useSelector(selectCount, { stabilityCheck: 'never' })
+  // run once (default)
+  const user = useSelector(selectUser, { stabilityCheck: 'once' })
+  // ...
+}
+```
+
+### Comparisons with `connect`
+
+There are some differences between the selectors passed to `useSelector()` and a `mapState` function:
+
+- The selector may return any value as a result, not just an object.
+- The selector normally _should_ return just a single value, and not an object. If you do return an object or an array, be sure to use a memoized selector to avoid unnecessary re-renders.
+- The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples above) or by using a curried selector.
+- You can use the `equalityFn` option to customize the comparison behavior
+
 ## `useDispatch()`
 
-```js
-const dispatch = useDispatch()
+```ts
+import type { Dispatch } from 'redux'
+const dispatch: Dispatch = useDispatch()
 ```
 
 This hook returns a reference to the `dispatch` function from the Redux store. You may use it to dispatch actions as needed.
@@ -319,8 +391,9 @@ export const Todos = () => {
 
 ## `useStore()`
 
-```js
-const store = useStore()
+```ts
+import type { Store } from 'redux'
+const store: Store = useStore()
 ```
 
 This hook returns a reference to the same Redux store that was passed in to the `<Provider>` component.
@@ -333,12 +406,19 @@ This hook should probably not be used frequently. Prefer `useSelector()` as your
 import React from 'react'
 import { useStore } from 'react-redux'
 
-export const CounterComponent = ({ value }) => {
+export const ExampleComponent = ({ value }) => {
   const store = useStore()
+
+  const onClick = () => {
+    // Not _recommended_, but safe
+    // This avoids subscribing to the state via `useSelector`
+    // Prefer moving this logic into a thunk instead
+    const numTodos = store.getState().todos.length
+  }
 
   // EXAMPLE ONLY! Do not do this in a real app.
   // The component will not automatically update if the store state changes
-  return <div>{store.getState()}</div>
+  return <div>{store.getState().todos.length}</div>
 }
 ```
 

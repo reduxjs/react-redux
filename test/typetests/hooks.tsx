@@ -168,6 +168,10 @@ function testUseSelector() {
   })
 
   const correctlyInferred: State = useSelector(selector, shallowEqual)
+  const correctlyInferred2: State = useSelector(selector, {
+    equalityFn: shallowEqual,
+    stabilityCheck: 'never',
+  })
   // @ts-expect-error
   const inferredTypeIsNotString: string = useSelector(selector, shallowEqual)
 

@@ -43,6 +43,9 @@ interface ProviderProps<A extends Action = AnyAction, S = any> {
    */
   context?: Context<ReactReduxContextValue<S, A>>
 
+  /** Global configuration for the `useSelector` stability check */
+  stabilityCheck?: StabilityCheck
+
   /** The top-level React elements in your component tree, such as `<App />` **/
   children: ReactNode
 }

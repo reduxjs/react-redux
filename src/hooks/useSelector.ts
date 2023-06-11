@@ -1,4 +1,4 @@
-import { useDebugValue } from 'react'
+import { useCallback, useDebugValue, useRef } from 'react'
 
 import {
   createReduxContextHook,
@@ -8,6 +8,24 @@ import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
+
+export type StabilityCheck = 'never' | 'once' | 'always'
+
+export interface UseSelectorOptions<Selected = unknown> {
+  equalityFn?: EqualityFn<Selected>
+  stabilityCheck?: StabilityCheck
+}
+
+interface UseSelector {
+  <TState = unknown, Selected = unknown>(
+    selector: (state: TState) => Selected,
+    equalityFn?: EqualityFn<Selected>
+  ): Selected
+  <TState = unknown, Selected = unknown>(
+    selector: (state: TState) => Selected,
+    options?: UseSelectorOptions<Selected>
+  ): Selected
+}
 
 let useSyncExternalStoreWithSelector = notInitialized as uSESWS
 export const initializeUseSelector = (fn: uSESWS) => {
@@ -22,12 +40,7 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(
-  context = ReactReduxContext
-): <TState = unknown, Selected = unknown>(
-  selector: (state: TState) => Selected,
-  equalityFn?: EqualityFn<Selected>
-) => Selected {
+export function createSelectorHook(context = ReactReduxContext): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
@@ -35,8 +48,14 @@ export function createSelectorHook(
 
   return function useSelector<TState, Selected extends unknown>(
     selector: (state: TState) => Selected,
-    equalityFn: EqualityFn<NoInfer<Selected>> = refEquality
+    equalityFnOrOptions:
+      | EqualityFn<NoInfer<Selected>>
+      | UseSelectorOptions<NoInfer<Selected>> = {}
   ): Selected {
+    const { equalityFn = refEquality, stabilityCheck = undefined } =
+      typeof equalityFnOrOptions === 'function'
+        ? { equalityFn: equalityFnOrOptions }
+        : equalityFnOrOptions
     if (process.env.NODE_ENV !== 'production') {
       if (!selector) {
         throw new Error(`You must pass a selector to useSelector`)
@@ -51,13 +70,56 @@ export function createSelectorHook(
       }
     }
 
-    const { store, subscription, getServerState } = useReduxContext()!
+    const {
+      store,
+      subscription,
+      getServerState,
+      stabilityCheck: globalStabilityCheck,
+    } = useReduxContext()!
+
+    const firstRun = useRef(true)
+
+    const wrappedSelector = useCallback<typeof selector>(
+      {
+        [selector.name](state: TState) {
+          const selected = selector(state)
+          const finalStabilityCheck =
+            // are we safe to use ?? here?
+            typeof stabilityCheck === 'undefined'
+              ? globalStabilityCheck
+              : stabilityCheck
+          if (
+            process.env.NODE_ENV !== 'production' &&
+            (finalStabilityCheck === 'always' ||
+              (finalStabilityCheck === 'once' && firstRun.current))
+          ) {
+            const toCompare = selector(state)
+            if (!equalityFn(selected, toCompare)) {
+              console.warn(
+                'Selector ' +
+                  (selector.name || 'unknown') +
+                  ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
+                  '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
+                {
+                  state,
+                  selected,
+                  selected2: toCompare,
+                }
+              )
+            }
+            firstRun.current = false
+          }
+          return selected
+        },
+      }[selector.name],
+      [selector, globalStabilityCheck, stabilityCheck]
+    )
 
     const selectedState = useSyncExternalStoreWithSelector(
       subscription.addNestedSub,
       store.getState,
       getServerState || store.getState,
-      selector,
+      wrappedSelector,
       equalityFn
     )
 
