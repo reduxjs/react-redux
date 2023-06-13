@@ -1,5 +1,8 @@
 import Image from 'next/image'
 import styles from './page.module.css'
+import React from 'react'
+import { useSelector } from 'react-redux'
+console.log(useSelector)
 
 export default function Home() {
   return (
