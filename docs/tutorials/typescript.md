@@ -17,7 +17,7 @@ hide_title: true
 
 :::info Prerequisites
 
-- Knowledge of React [Hooks](https://reactjs.org/docs/hooks-intro.html)
+- Knowledge of React [Hooks](https://react.dev/reference/react#)
 - Understanding of [Redux terms and concepts](https://redux.js.org/tutorials/fundamentals/part-2-concepts-data-flow)
 - Understanding of TypeScript syntax and concepts
 

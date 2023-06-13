@@ -10,7 +10,7 @@ description: 'API > Hooks: the `useSelector` and `useDispatch` hooks`'
 
 # Hooks
 
-React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give function components the ability to use local component state, execute side effects, and more. React also lets us write [custom hooks](https://reactjs.org/docs/hooks-custom.html), which let us extract reusable hooks to add our own behavior on top of React's built-in hooks.
+React's ["hooks" APIs](https://react.dev/reference/react#) give function components the ability to use local component state, execute side effects, and more. React also lets us write [custom hooks](https://react.dev/learn/reusing-logic-with-custom-hooks#extracting-your-own-custom-hook-from-a-component), which let us extract reusable hooks to add our own behavior on top of React's built-in hooks.
 
 React Redux includes its own custom hook APIs, which allow your React components to subscribe to the Redux store and dispatch actions.
 
@@ -373,7 +373,7 @@ export const CounterComponent = ({ value }) => {
 }
 ```
 
-When passing a callback using `dispatch` to a child component, you may sometimes want to memoize it with [`useCallback`](https://reactjs.org/docs/hooks-reference.html#usecallback). _If_ the child component is trying to optimize render behavior using `React.memo()` or similar, this avoids unnecessary rendering of child components due to the changed callback reference.
+When passing a callback using `dispatch` to a child component, you may sometimes want to memoize it with [`useCallback`](https://react.dev/reference/react/useCallback). _If_ the child component is trying to optimize render behavior using `React.memo()` or similar, this avoids unnecessary rendering of child components due to the changed callback reference.
 
 ```jsx
 import React, { useCallback } from 'react'
