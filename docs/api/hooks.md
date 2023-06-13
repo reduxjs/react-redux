@@ -48,11 +48,12 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 type RootState = ReturnType<typeof store.getState>
 type SelectorFn = <Selected>(state: RootState) => Selected
 type EqualityFn = (a: any, b: any) => boolean
-export type StabilityCheck = 'never' | 'once' | 'always'
+export type CheckFrequency = 'never' | 'once' | 'always'
 
 interface UseSelectorOptions {
   equalityFn?: EqualityFn
-  stabilityCheck?: StabilityCheck
+  stabilityCheck?: CheckFrequency
+  noopCheck?: CheckFrequency
 }
 
 const result: Selected = useSelector(
@@ -272,7 +273,7 @@ These checks were first added in v8.1.0
 
 In development, the provided selector function is run an extra time with the same parameter during the first call to `useSelector`, and warns in the console if the selector returns a different result (based on the `equalityFn` provided).
 
-This is important, as a selector returning that returns a different result reference with the same parameter will cause unnecessary rerenders.
+This is important, as **a selector that returns a different result reference when called again with the same inputs will cause unnecessary rerenders**.
 
 ```ts
 // this selector will return a new object reference whenever called,
@@ -302,28 +303,19 @@ function Component() {
 }
 ```
 
-### Comparisons with `connect`
-
-There are some differences between the selectors passed to `useSelector()` and a `mapState` function:
-
-- The selector may return any value as a result, not just an object.
-- The selector normally _should_ return just a single value, and not an object. If you do return an object or an array, be sure to use a memoized selector to avoid unnecessary re-renders.
-- The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples above) or by using a curried selector.
-- You can use the `equalityFn` option to customize the comparison behavior
-
 #### No-op selector check
 
 In development, a check is conducted on the result returned by the selector. It warns in the console if the result is the same as the parameter passed in, i.e. the root state.
 
-A `useSelector` call returning the entire root state is almost always a mistake, as it means the component will rerender whenever _anything_ in state changes. Selectors should be as granular as possible.
+**A `useSelector` call returning the entire root state is almost always a mistake**, as it means the component will rerender whenever _anything_ in state changes. Selectors should be as granular as possible, like `state => state.some.nested.field`.
 
 ```ts no-transpile
 // BAD: this selector returns the entire state, meaning that the component will rerender unnecessarily
 const { count, user } = useSelector((state) => state)
 
 // GOOD: instead, select only the state you need, calling useSelector as many times as needed
-const count = useSelector((state) => state.count)
-const user = useSelector((state) => state.user)
+const count = useSelector((state) => state.count.value)
+const user = useSelector((state) => state.auth.currentUser)
 ```
 
 By default, this will only happen when the selector is first called. You can configure the check in the Provider or at each `useSelector` call.
@@ -343,9 +335,14 @@ function Component() {
 }
 ```
 
-:::info
-This check is disabled for production environments.
-:::
+### Comparisons with `connect`
+
+There are some differences between the selectors passed to `useSelector()` and a `mapState` function:
+
+- The selector may return any value as a result, not just an object.
+- The selector normally _should_ return just a single value, and not an object. If you do return an object or an array, be sure to use a memoized selector to avoid unnecessary re-renders.
+- The selector function does _not_ receive an `ownProps` argument. However, props can be used through closure (see the examples above) or by using a curried selector.
+- You can use the `equalityFn` option to customize the comparison behavior
 
 ## `useDispatch()`
 
