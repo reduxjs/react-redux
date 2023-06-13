@@ -1,6 +1,6 @@
-import { ActionCreatorsMapObject, Dispatch, ActionCreator } from 'redux'
+import type { ActionCreatorsMapObject, Dispatch, ActionCreator } from 'redux'
 
-import { FixTypeLater } from '../types'
+import type { FixTypeLater } from '../types'
 import verifyPlainObject from '../utils/verifyPlainObject'
 
 type AnyState = { [key: string]: any }

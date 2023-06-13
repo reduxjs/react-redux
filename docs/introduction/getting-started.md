@@ -13,7 +13,7 @@ import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
 # Getting Started with React Redux
 
-[React Redux](https://github.com/reduxjs/react-redux) is the official [React](https://reactjs.org/) UI bindings layer for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update state.
+[React Redux](https://github.com/reduxjs/react-redux) is the official [React](https://react.dev/) UI bindings layer for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update state.
 
 ## Installation
 

@@ -18,7 +18,7 @@ hide_title: true
 :::info Prerequisites
 
 - Familiarity with [ES6 syntax and features](https://www.taniarascia.com/es6-syntax-and-feature-overview/)
-- Knowledge of React terminology: [JSX](https://reactjs.org/docs/introducing-jsx.html), [State](https://reactjs.org/docs/state-and-lifecycle.html), [Function Components, Props](https://reactjs.org/docs/components-and-props.html), and [Hooks](https://reactjs.org/docs/hooks-intro.html)
+- Knowledge of React terminology: [JSX](https://react.dev/learn/writing-markup-with-jsx), [State](https://react.dev/learn/state-a-components-memory), [Function Components, Props](https://react.dev/learn/passing-props-to-a-component), and [Hooks](https://react.dev/reference/react#)
 - Understanding of [Redux terms and concepts](https://redux.js.org/tutorials/fundamentals/part-2-concepts-data-flow)
 
 :::

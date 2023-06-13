@@ -1,17 +1,17 @@
-import {
+import type {
   ClassAttributes,
   ComponentClass,
   ComponentType,
   FunctionComponent,
 } from 'react'
 
-import { Action, AnyAction, Dispatch } from 'redux'
+import type { Action, AnyAction, Dispatch } from 'redux'
 
 import type { NonReactStatics } from 'hoist-non-react-statics'
 
 import type { ConnectProps } from './components/connect'
 
-import { UseSelectorOptions } from './hooks/useSelector'
+import type { UseSelectorOptions } from './hooks/useSelector'
 
 export type FixTypeLater = any
 

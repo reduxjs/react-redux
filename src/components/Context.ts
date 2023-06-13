@@ -2,7 +2,7 @@ import { createContext } from 'react'
 import type { Context } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
-import { StabilityCheck } from '../hooks/useSelector'
+import type { CheckFrequency } from '../hooks/useSelector'
 
 export interface ReactReduxContextValue<
   SS = any,
@@ -11,7 +11,8 @@ export interface ReactReduxContextValue<
   store: Store<SS, A>
   subscription: Subscription
   getServerState?: () => SS
-  stabilityCheck: StabilityCheck
+  stabilityCheck: CheckFrequency
+  noopCheck: CheckFrequency
 }
 
 let realContext: Context<ReactReduxContextValue> | null = null

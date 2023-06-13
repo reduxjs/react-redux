@@ -1,11 +1,11 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component, MouseEvent } from 'react'
+import React, { Component } from 'react'
 import { createStore, applyMiddleware } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
-import type { ReactNode, Dispatch, ElementType } from 'react'
+import type { ReactNode, Dispatch, ElementType, MouseEvent } from 'react'
 import type {
   Store,
   Dispatch as ReduxDispatch,

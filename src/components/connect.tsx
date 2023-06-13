@@ -1,6 +1,7 @@
 /* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
 import hoistStatics from 'hoist-non-react-statics'
-import React, { ComponentType, useContext, useMemo, useRef } from 'react'
+import type { ComponentType } from 'react'
+import React, { useContext, useMemo, useRef } from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 
 import type { Store } from 'redux'
@@ -14,27 +15,29 @@ import type {
   ConnectPropsMaybeWithoutContext,
 } from '../types'
 
-import defaultSelectorFactory, {
+import type {
   MapStateToPropsParam,
   MapDispatchToPropsParam,
   MergeProps,
   MapDispatchToPropsNonObject,
   SelectorFactoryOptions,
 } from '../connect/selectorFactory'
+import defaultSelectorFactory from '../connect/selectorFactory'
 import { mapDispatchToPropsFactory } from '../connect/mapDispatchToProps'
 import { mapStateToPropsFactory } from '../connect/mapStateToProps'
 import { mergePropsFactory } from '../connect/mergeProps'
 
-import { createSubscription, Subscription } from '../utils/Subscription'
+import type { Subscription } from '../utils/Subscription'
+import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import shallowEqual from '../utils/shallowEqual'
 import warning from '../utils/warning'
 
-import {
-  ReactReduxContext,
+import type {
   ReactReduxContextValue,
   ReactReduxContextInstance,
 } from './Context'
+import { ReactReduxContext } from './Context'
 
 import type { uSES } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'

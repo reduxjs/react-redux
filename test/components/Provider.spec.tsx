@@ -1,6 +1,7 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component, Dispatch } from 'react'
+import type { Dispatch } from 'react'
+import React, { Component } from 'react'
 import ReactDOM from 'react-dom'
 import { createStore } from 'redux'
 import { Provider, connect, ReactReduxContext } from '../../src/index'

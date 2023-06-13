@@ -10,7 +10,7 @@ description: 'API > Hooks: the `useSelector` and `useDispatch` hooks`'
 
 # Hooks
 
-React's new ["hooks" APIs](https://reactjs.org/docs/hooks-intro.html) give function components the ability to use local component state, execute side effects, and more. React also lets us write [custom hooks](https://reactjs.org/docs/hooks-custom.html), which let us extract reusable hooks to add our own behavior on top of React's built-in hooks.
+React's ["hooks" APIs](https://react.dev/reference/react#) give function components the ability to use local component state, execute side effects, and more. React also lets us write [custom hooks](https://react.dev/learn/reusing-logic-with-custom-hooks#extracting-your-own-custom-hook-from-a-component), which let us extract reusable hooks to add our own behavior on top of React's built-in hooks.
 
 React Redux includes its own custom hook APIs, which allow your React components to subscribe to the Redux store and dispatch actions.
 
@@ -48,11 +48,12 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 type RootState = ReturnType<typeof store.getState>
 type SelectorFn = <Selected>(state: RootState) => Selected
 type EqualityFn = (a: any, b: any) => boolean
-export type StabilityCheck = 'never' | 'once' | 'always'
+export type CheckFrequency = 'never' | 'once' | 'always'
 
 interface UseSelectorOptions {
   equalityFn?: EqualityFn
-  stabilityCheck?: StabilityCheck
+  stabilityCheck?: CheckFrequency
+  noopCheck?: CheckFrequency
 }
 
 const result: Selected = useSelector(
@@ -272,7 +273,7 @@ These checks were first added in v8.1.0
 
 In development, the provided selector function is run an extra time with the same parameter during the first call to `useSelector`, and warns in the console if the selector returns a different result (based on the `equalityFn` provided).
 
-This is important, as a selector returning that returns a different result reference with the same parameter will cause unnecessary rerenders.
+This is important, as **a selector that returns a different result reference when called again with the same inputs will cause unnecessary rerenders**.
 
 ```ts
 // this selector will return a new object reference whenever called,
@@ -298,6 +299,38 @@ function Component() {
   const count = useSelector(selectCount, { stabilityCheck: 'never' })
   // run once (default)
   const user = useSelector(selectUser, { stabilityCheck: 'once' })
+  // ...
+}
+```
+
+#### No-op selector check
+
+In development, a check is conducted on the result returned by the selector. It warns in the console if the result is the same as the parameter passed in, i.e. the root state.
+
+**A `useSelector` call returning the entire root state is almost always a mistake**, as it means the component will rerender whenever _anything_ in state changes. Selectors should be as granular as possible, like `state => state.some.nested.field`.
+
+```ts no-transpile
+// BAD: this selector returns the entire state, meaning that the component will rerender unnecessarily
+const { count, user } = useSelector((state) => state)
+
+// GOOD: instead, select only the state you need, calling useSelector as many times as needed
+const count = useSelector((state) => state.count.value)
+const user = useSelector((state) => state.auth.currentUser)
+```
+
+By default, this will only happen when the selector is first called. You can configure the check in the Provider or at each `useSelector` call.
+
+```tsx title="Global setting via context"
+<Provider store={store} noopCheck="always">
+  {children}
+</Provider>
+```
+
+```tsx title="Individual hook setting"
+function Component() {
+  const count = useSelector(selectCount, { noopCheck: 'never' })
+  // run once (default)
+  const user = useSelector(selectUser, { noopCheck: 'once' })
   // ...
 }
 ```
@@ -340,7 +373,7 @@ export const CounterComponent = ({ value }) => {
 }
 ```
 
-When passing a callback using `dispatch` to a child component, you may sometimes want to memoize it with [`useCallback`](https://reactjs.org/docs/hooks-reference.html#usecallback). _If_ the child component is trying to optimize render behavior using `React.memo()` or similar, this avoids unnecessary rendering of child components due to the changed callback reference.
+When passing a callback using `dispatch` to a child component, you may sometimes want to memoize it with [`useCallback`](https://react.dev/reference/react/useCallback). _If_ the child component is trying to optimize render behavior using `React.memo()` or similar, this avoids unnecessary rendering of child components due to the changed callback reference.
 
 ```jsx
 import React, { useCallback } from 'react'

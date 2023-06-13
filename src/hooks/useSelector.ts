@@ -9,11 +9,12 @@ import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
 
-export type StabilityCheck = 'never' | 'once' | 'always'
+export type CheckFrequency = 'never' | 'once' | 'always'
 
 export interface UseSelectorOptions<Selected = unknown> {
   equalityFn?: EqualityFn<Selected>
-  stabilityCheck?: StabilityCheck
+  stabilityCheck?: CheckFrequency
+  noopCheck?: CheckFrequency
 }
 
 interface UseSelector {
@@ -52,10 +53,13 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       | EqualityFn<NoInfer<Selected>>
       | UseSelectorOptions<NoInfer<Selected>> = {}
   ): Selected {
-    const { equalityFn = refEquality, stabilityCheck = undefined } =
-      typeof equalityFnOrOptions === 'function'
-        ? { equalityFn: equalityFnOrOptions }
-        : equalityFnOrOptions
+    const {
+      equalityFn = refEquality,
+      stabilityCheck = undefined,
+      noopCheck = undefined,
+    } = typeof equalityFnOrOptions === 'function'
+      ? { equalityFn: equalityFnOrOptions }
+      : equalityFnOrOptions
     if (process.env.NODE_ENV !== 'production') {
       if (!selector) {
         throw new Error(`You must pass a selector to useSelector`)
@@ -75,6 +79,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       subscription,
       getServerState,
       stabilityCheck: globalStabilityCheck,
+      noopCheck: globalNoopCheck,
     } = useReduxContext()!
 
     const firstRun = useRef(true)
@@ -83,31 +88,47 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       {
         [selector.name](state: TState) {
           const selected = selector(state)
-          const finalStabilityCheck =
-            // are we safe to use ?? here?
-            typeof stabilityCheck === 'undefined'
-              ? globalStabilityCheck
-              : stabilityCheck
-          if (
-            process.env.NODE_ENV !== 'production' &&
-            (finalStabilityCheck === 'always' ||
-              (finalStabilityCheck === 'once' && firstRun.current))
-          ) {
-            const toCompare = selector(state)
-            if (!equalityFn(selected, toCompare)) {
-              console.warn(
-                'Selector ' +
-                  (selector.name || 'unknown') +
-                  ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
-                  '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
-                {
-                  state,
-                  selected,
-                  selected2: toCompare,
-                }
-              )
+          if (process.env.NODE_ENV !== 'production') {
+            const finalStabilityCheck =
+              typeof stabilityCheck === 'undefined'
+                ? globalStabilityCheck
+                : stabilityCheck
+            if (
+              finalStabilityCheck === 'always' ||
+              (finalStabilityCheck === 'once' && firstRun.current)
+            ) {
+              const toCompare = selector(state)
+              if (!equalityFn(selected, toCompare)) {
+                console.warn(
+                  'Selector ' +
+                    (selector.name || 'unknown') +
+                    ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
+                    '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
+                  {
+                    state,
+                    selected,
+                    selected2: toCompare,
+                  }
+                )
+              }
             }
-            firstRun.current = false
+            const finalNoopCheck =
+              typeof noopCheck === 'undefined' ? globalNoopCheck : noopCheck
+            if (
+              finalNoopCheck === 'always' ||
+              (finalNoopCheck === 'once' && firstRun.current)
+            ) {
+              // @ts-ignore
+              if (selected === state) {
+                console.warn(
+                  'Selector ' +
+                    (selector.name || 'unknown') +
+                    ' returned the root state when called. This can lead to unnecessary rerenders.' +
+                    '\nSelectors that return the entire state are almost certainly a mistake, as they will cause a rerender whenever *anything* in state changes.'
+                )
+              }
+            }
+            if (firstRun.current) firstRun.current = false
           }
           return selected
         },
