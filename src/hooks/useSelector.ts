@@ -17,7 +17,7 @@ export interface UseSelectorOptions<Selected = unknown> {
   noopCheck?: CheckFrequency
 }
 
-interface UseSelector {
+export interface UseSelector {
   <TState = unknown, Selected = unknown>(
     selector: (state: TState) => Selected,
     equalityFn?: EqualityFn<Selected>
