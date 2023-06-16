@@ -125,7 +125,7 @@ const selectedData = useSelector(selectorReturningObject, {
 import { useSelector } from 'react-redux'
 
 // equality function
-const customEqual = (oldValue, newValue) => oldValue === newValue
+const customEqual = (newValue, oldValue) => newValue === oldValue
 
 // later
 const selectedData = useSelector(selectorReturningObject, customEqual)
