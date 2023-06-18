@@ -198,7 +198,7 @@ const siteConfig = {
       /** @type {import('@dipakparmar/docusaurus-plugin-umami').Options} */
       ({
         websiteID: 'e81a2686-96f3-4557-9c03-f584b7e8ab6b',
-        analyticsDomain: 'redux-docs-umami.vercel.app',
+        analyticsDomain: 'redux-docs-umami.up.railway.app',
         scriptName: 'script.js',
         dataAutoTrack: true,
         dataDoNotTrack: true,
