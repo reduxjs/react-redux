@@ -465,10 +465,12 @@ describe('React Native', () => {
   })
 
   describe('useSelector', () => {
-    it('should stay in sync with the store', () => {
+    it('should stay in sync with the store', async () => {
       // https://github.com/reduxjs/react-redux/issues/1437
 
-      jest.useFakeTimers()
+      function delay(ms: number) {
+        return new Promise((resolve) => setTimeout(resolve, ms))
+      }
 
       // Explicitly silence "not wrapped in act()" messages for this test
       const spy = jest.spyOn(console, 'error')
@@ -587,21 +589,22 @@ describe('React Native', () => {
         rtl.fireEvent.press(button)
       }
 
-      const clickAndRender = (rendered: RenderedType, testId: string) => {
+      const clickAndRender = async (rendered: RenderedType, testId: string) => {
         // Note: Normally we'd wrap this all in act(), but that automatically
         // wraps your code in batchedUpdates(). The point of this bug is that it
         // specifically occurs when you are _not_ batching updates!
         clickButton(rendered, testId)
-        jest.advanceTimersByTime(100)
+        // jest.advanceTimersByTime(100)
+        await delay(100)
         assertValuesMatch(rendered)
       }
 
       assertValuesMatch(rendered)
 
-      clickAndRender(rendered, 'setTimeout')
-      clickAndRender(rendered, 'standardBatching')
-      clickAndRender(rendered, 'unstableBatched')
-      clickAndRender(rendered, 'reactReduxBatch')
+      await clickAndRender(rendered, 'setTimeout')
+      await clickAndRender(rendered, 'standardBatching')
+      await clickAndRender(rendered, 'unstableBatched')
+      await clickAndRender(rendered, 'reactReduxBatch')
 
       spy.mockRestore()
     })
