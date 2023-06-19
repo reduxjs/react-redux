@@ -6,6 +6,8 @@ const defaults = {
   testURL: 'http://localhost',
 }
 
+process.env.TS_JEST_DISABLE_VER_CHECKER = true
+
 const NORMAL_TEST_FOLDERS = ['components', 'hooks', 'integration', 'utils']
 
 const tsTestFolderPath = (folderName) =>
@@ -13,7 +15,7 @@ const tsTestFolderPath = (folderName) =>
 
 const tsStandardConfig = {
   ...defaults,
-  displayName: 'ReactDOM 18 (Shim)',
+  displayName: 'ReactDOM 18',
   preset: 'ts-jest',
   testMatch: NORMAL_TEST_FOLDERS.map(tsTestFolderPath),
 }
@@ -29,30 +31,6 @@ const rnConfig = {
   },
 }
 
-const standardReact17Config = {
-  ...tsStandardConfig,
-  displayName: 'ReactDOM 17',
-  moduleNameMapper: {
-    '^react$': 'react-17',
-    '^react-dom$': 'react-dom-17',
-    '^react-test-renderer$': 'react-test-renderer-17',
-    '^@testing-library/react$': '@testing-library/react-12',
-  },
-}
-
-const nextEntryConfig = {
-  ...tsStandardConfig,
-  displayName: 'ReactDOM 18 (Next)',
-  moduleNameMapper: {
-    '../../src/index': '<rootDir>/src/next',
-  },
-}
-
 module.exports = {
-  projects: [
-    tsStandardConfig,
-    rnConfig,
-    standardReact17Config,
-    nextEntryConfig,
-  ],
+  projects: [tsStandardConfig, rnConfig],
 }
