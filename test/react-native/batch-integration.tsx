@@ -276,7 +276,10 @@ describe('React Native', () => {
 
       const store = createStore(
         counter,
-        applyMiddleware(reactCallbackMiddleware)
+        applyMiddleware(
+          // @ts-ignore
+          reactCallbackMiddleware
+        )
       )
 
       interface ChildrenTStatePropsType {
