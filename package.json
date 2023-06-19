@@ -12,23 +12,27 @@
   "homepage": "https://github.com/reduxjs/react-redux",
   "repository": "github:reduxjs/react-redux",
   "bugs": "https://github.com/reduxjs/react-redux/issues",
-  "main": "./lib/index.js",
-  "types": "./es/index.d.ts",
-  "unpkg": "dist/react-redux.js",
-  "module": "es/index.js",
+  "module": "dist/react-redux.legacy-esm.js",
+  "main": "dist/cjs/index.js",
+  "types": "dist/react-redux.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/react-redux.d.ts",
+      "import": "./dist/react-redux.mjs",
+      "default": "./dist/cjs/index.js"
+    },
+    "./alternate-renderers": {
+      "types": "./dist/react-redux.d.ts",
+      "import": "./dist/react-redux.alternate-renderers.mjs"
+    }
+  },
   "files": [
     "dist",
-    "lib",
-    "src",
     "es"
   ],
   "scripts": {
-    "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --extensions \".js,.ts,.tsx\" --out-dir lib",
-    "build:es": "babel src --extensions \".js,.ts,.tsx\" --out-dir es",
-    "build:umd": "cross-env NODE_ENV=development rollup -c -o dist/react-redux.js",
-    "build:umd:min": "cross-env NODE_ENV=production rollup -c -o dist/react-redux.min.js",
-    "build:types": "tsc",
-    "build": "yarn build:types && yarn build:commonjs && yarn build:es && yarn build:umd && yarn build:umd:min",
+    "build": "tsup",
     "clean": "rimraf lib dist es coverage",
     "api-types": "api-extractor run --local",
     "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
@@ -40,10 +44,10 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "@types/react": "^16.8 || ^17.0 || ^18.0",
-    "@types/react-dom": "^16.8 || ^17.0 || ^18.0",
-    "react": "^16.8 || ^17.0 || ^18.0",
-    "react-dom": "^16.8 || ^17.0 || ^18.0",
+    "@types/react": "^18.0",
+    "@types/react-dom": "^18.0",
+    "react": "^18.0",
+    "react-dom": "^18.0",
     "react-native": ">=0.59",
     "redux": "^4 || ^5.0.0-beta.0"
   },
@@ -65,7 +69,6 @@
     }
   },
   "dependencies": {
-    "@babel/runtime": "^7.12.1",
     "@types/hoist-non-react-statics": "^3.3.1",
     "@types/use-sync-external-store": "^0.0.3",
     "hoist-non-react-statics": "^3.3.2",
