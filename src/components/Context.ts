@@ -1,4 +1,4 @@
-import { createContext } from 'react'
+import { createContext, version as ReactVersion } from 'react'
 import type { Context } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
@@ -15,13 +15,17 @@ export interface ReactReduxContextValue<
   noopCheck: CheckFrequency
 }
 
-let realContext: Context<ReactReduxContextValue> | null = null
+const ContextKey = Symbol.for(`react-redux-context-${ReactVersion}`)
+const gT = globalThis as { [ContextKey]?: Context<ReactReduxContextValue> }
+
 function getContext() {
+  let realContext = gT[ContextKey]
   if (!realContext) {
     realContext = createContext<ReactReduxContextValue>(null as any)
     if (process.env.NODE_ENV !== 'production') {
       realContext.displayName = 'ReactRedux'
     }
+    gT[ContextKey] = realContext
   }
   return realContext
 }
