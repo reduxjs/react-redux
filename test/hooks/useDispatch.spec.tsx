@@ -27,9 +27,8 @@ describe('React', () => {
     })
     describe('createDispatchHook', () => {
       it("returns the correct store's dispatch function", () => {
-        const nestedContext = React.createContext<ReactReduxContextValue>(
-          null as any
-        )
+        const nestedContext =
+          React.createContext<ReactReduxContextValue | null>(null)
         const useCustomDispatch = createDispatchHook(nestedContext)
         const { result } = renderHook(() => useDispatch(), {
           // eslint-disable-next-line react/prop-types

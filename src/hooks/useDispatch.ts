@@ -15,7 +15,7 @@ export function createDispatchHook<
   S = unknown,
   A extends Action = AnyAction
   // @ts-ignore
->(context?: Context<ReactReduxContextValue<S, A>> = ReactReduxContext) {
+>(context?: Context<ReactReduxContextValue<S, A> | null> = ReactReduxContext) {
   const useStore =
     // @ts-ignore
     context === ReactReduxContext ? useDefaultStore : createStoreHook(context)

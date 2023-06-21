@@ -153,8 +153,8 @@ describe('React', () => {
           }
 
           const Parent = () => {
-            const { subscription } = useContext(ReactReduxContext)
-            appSubscription = subscription
+            const contextVal = useContext(ReactReduxContext)
+            appSubscription = contextVal && contextVal.subscription
             const count = useNormalSelector((s) => s.count)
             return count === 1 ? <Child /> : null
           }
@@ -179,8 +179,8 @@ describe('React', () => {
           let appSubscription: Subscription | null = null
 
           const Parent = () => {
-            const { subscription } = useContext(ReactReduxContext)
-            appSubscription = subscription
+            const contextVal = useContext(ReactReduxContext)
+            appSubscription = contextVal && contextVal.subscription
             const count = useNormalSelector((s) => s.count)
             return count === 0 ? <Child /> : null
           }
@@ -944,9 +944,8 @@ describe('React', () => {
       })
 
       it('subscribes to the correct store', () => {
-        const nestedContext = React.createContext<ReactReduxContextValue>(
-          null as any
-        )
+        const nestedContext =
+          React.createContext<ReactReduxContextValue | null>(null)
         const useCustomSelector = createSelectorHook(nestedContext)
         let defaultCount: number | null = null
         let customCount: number | null = null

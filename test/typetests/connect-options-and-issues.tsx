@@ -2,23 +2,17 @@
 import * as PropTypes from 'prop-types'
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import {
-  Store,
-  Dispatch,
-  AnyAction,
-  ActionCreator,
-  createStore,
-  bindActionCreators,
-  ActionCreatorsMapObject,
-  Reducer,
-} from 'redux'
-import {
-  connect,
+import type { Store, Dispatch, AnyAction, ActionCreator, Reducer } from 'redux'
+import { createStore, bindActionCreators, ActionCreatorsMapObject } from 'redux'
+import type {
   Connect,
   ConnectedProps,
-  Provider,
   DispatchProp,
   MapStateToProps,
+} from '../../src/index'
+import {
+  connect,
+  Provider,
   ReactReduxContext,
   ReactReduxContextValue,
   Selector,

@@ -16,12 +16,14 @@ export interface ReactReduxContextValue<
 }
 
 const ContextKey = Symbol.for(`react-redux-context-${ReactVersion}`)
-const gT = globalThis as { [ContextKey]?: Context<ReactReduxContextValue> }
+const gT = globalThis as {
+  [ContextKey]?: Context<ReactReduxContextValue | null>
+}
 
 function getContext() {
   let realContext = gT[ContextKey]
   if (!realContext) {
-    realContext = createContext<ReactReduxContextValue>(null as any)
+    realContext = createContext<ReactReduxContextValue | null>(null)
     if (process.env.NODE_ENV !== 'production') {
       realContext.displayName = 'ReactRedux'
     }
@@ -31,8 +33,8 @@ function getContext() {
 }
 
 export const ReactReduxContext = /*#__PURE__*/ new Proxy(
-  {} as Context<ReactReduxContextValue>,
-  /*#__PURE__*/ new Proxy<ProxyHandler<Context<ReactReduxContextValue>>>(
+  {} as Context<ReactReduxContextValue | null>,
+  /*#__PURE__*/ new Proxy<ProxyHandler<Context<ReactReduxContextValue | null>>>(
     {},
     {
       get(_, handler) {

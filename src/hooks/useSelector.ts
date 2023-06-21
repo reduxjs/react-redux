@@ -80,7 +80,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       getServerState,
       stabilityCheck: globalStabilityCheck,
       noopCheck: globalNoopCheck,
-    } = useReduxContext()!
+    } = useReduxContext()
 
     const firstRun = useRef(true)
 
