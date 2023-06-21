@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master, typescript-port]
+    branches: [master, v9.0-integration]
   pull_request:
-    branches: [master, typescript-port]
+    branches: [master, v9.0-integration]
   workflow_dispatch:
 
 jobs:
@@ -72,6 +72,27 @@ jobs:
         run: |
           yarn tsc --version
           yarn type-tests
+
+  are-the-types-wrong:
+    name: Check package config with are-the-types-wrong
+
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['16.x']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: package
+          path: .
+
+      - name: Run are-the-types-wrong
+        run: npx @arethetypeswrong/cli ./package.tgz
 
   test-published-artifact-local:
     name: Test Published Artifact (Local) ${{ matrix.example }}
