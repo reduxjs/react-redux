@@ -40,7 +40,6 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "@reduxjs/toolkit": "^1 || ^2.0.0-beta.0",
     "@types/react": "^16.8 || ^17.0 || ^18.0",
     "@types/react-dom": "^16.8 || ^17.0 || ^18.0",
     "react": "^16.8 || ^17.0 || ^18.0",
@@ -49,9 +48,6 @@
     "redux": "^4 || ^5.0.0-beta.0"
   },
   "peerDependenciesMeta": {
-    "@reduxjs/toolkit": {
-      "optional": true
-    },
     "@types/react": {
       "optional": true
     },
