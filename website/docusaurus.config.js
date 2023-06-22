@@ -31,9 +31,6 @@ const siteConfig = {
             require.resolve('./static/css/codeblock.css'),
           ],
         },
-        googleAnalytics: {
-          trackingID: 'UA-130598673-2',
-        },
       },
     ],
   ],
