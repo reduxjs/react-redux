@@ -600,8 +600,8 @@ describe('React', () => {
           expect(() => {
             rtl.act(() => {
               console.log('Dispatching update')
-              //normalStore.dispatch({ type: '' })
-              forceParentRender()
+              normalStore.dispatch({ type: '' })
+              //forceParentRender()
             })
           }).toThrowError()
 

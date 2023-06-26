@@ -10,6 +10,7 @@ import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { createCache } from '../utils/autotracking/autotracking'
+import { CacheWrapper } from '../utils/Subscription'
 
 export type CheckFrequency = 'never' | 'once' | 'always'
 
@@ -150,10 +151,17 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
     const cache = useMemo(() => {
       const cache = createCache(() => {
         console.log('Wrapper cache called: ', store.getState())
-        return latestWrappedSelectorRef.current(trackingNode.proxy as TState)
+        //return latestWrappedSelectorRef.current(trackingNode.proxy as TState)
+        return wrappedSelector(trackingNode.proxy as TState)
       })
       return cache
-    }, [trackingNode])
+    }, [trackingNode, wrappedSelector])
+
+    const cacheWrapper = useRef({ cache } as CacheWrapper)
+
+    useIsomorphicLayoutEffect(() => {
+      cacheWrapper.current.cache = cache
+    })
 
     const subscribeToStore = useMemo(() => {
       const subscribeToStore = (onStoreChange: () => void) => {
@@ -164,7 +172,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
         // console.log('Subscribing to store with tracking')
         return subscription.addNestedSub(wrappedOnStoreChange, {
           trigger: 'tracked',
-          cache,
+          cache: cacheWrapper.current,
         })
       }
       return subscribeToStore

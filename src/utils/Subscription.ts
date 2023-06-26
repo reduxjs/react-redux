@@ -15,13 +15,16 @@ import { updateNode } from './autotracking/proxy'
 
 type VoidFunc = () => void
 
+export interface CacheWrapper {
+  cache: TrackingCache
+}
+
 type Listener = {
   callback: VoidFunc
   next: Listener | null
   prev: Listener | null
   trigger: 'always' | 'tracked'
-  selectorCache?: TrackingCache
-  subscriberCache?: TrackingCache
+  selectorCache?: CacheWrapper
 }
 
 function createListenerCollection() {
@@ -42,7 +45,7 @@ function createListenerCollection() {
         while (listener) {
           //console.log('Listener: ', listener)
           if (listener.trigger == 'tracked') {
-            if (listener.selectorCache!.needsRecalculation()) {
+            if (listener.selectorCache!.cache.needsRecalculation()) {
               console.log('Calling subscriber due to recalc need')
               // console.log(
               //   'Calling subscriber due to recalc. Revision before: ',
@@ -128,7 +131,7 @@ type ListenerCollection = ReturnType<typeof createListenerCollection>
 
 interface AddNestedSubOptions {
   trigger: 'always' | 'tracked'
-  cache?: TrackingCache
+  cache?: CacheWrapper
 }
 
 export interface Subscription {
