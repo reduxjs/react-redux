@@ -451,7 +451,7 @@ describe('React', () => {
           expect(renderedItems.length).toEqual(2)
         })
 
-        it.only('only re-runs selectors if the referenced fields actually change', () => {
+        it('only re-runs selectors if the referenced fields actually change', () => {
           interface StateType {
             count1: number
             count2: number
