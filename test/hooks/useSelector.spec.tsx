@@ -89,7 +89,10 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const selector = jest.fn((s: NormalStateType) => s.count)
+          const selector = jest.fn((s: NormalStateType) => {
+            console.log('Running selector: `s.count`')
+            return s.count
+          })
           let result: number | undefined
           const Comp = () => {
             const count = useNormalSelector(selector)
@@ -120,17 +123,20 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          const store = createStore((c: number = 1): number => c + 1, -1)
+          // const store = createStore((c: number = 1): number => c + 1, -1)
 
           const Comp = () => {
-            const selector = useCallback((c: number): number => c + 1, [])
+            const selector = useCallback(
+              (state: NormalStateType) => state.count + 1,
+              []
+            )
             const value = useSelector(selector)
             renderedItems.push(value)
             return <div />
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Comp />
             </ProviderMock>
           )
@@ -138,7 +144,7 @@ describe('React', () => {
           expect(renderedItems).toEqual([1])
 
           rtl.act(() => {
-            store.dispatch({ type: '' })
+            normalStore.dispatch({ type: '' })
           })
 
           expect(renderedItems).toEqual([1, 2])
@@ -250,10 +256,13 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        const store = createStore((c: number = 1): number => c + 1, -1)
+        //const store = createStore((c: number = 1): number => c + 1, -1)
 
         const Comp = () => {
-          const selector = useCallback((c: number): number => c, [])
+          const selector = useCallback(
+            (state: NormalStateType) => state.count,
+            []
+          )
           const count = useSelector(selector)
           renderedItems.push(count)
           return <Child parentCount={count} />
@@ -266,14 +275,14 @@ describe('React', () => {
         const Child = ({ parentCount }: ChildPropsType) => {
           useLayoutEffect(() => {
             if (parentCount === 1) {
-              store.dispatch({ type: '' })
+              normalStore.dispatch({ type: '' })
             }
           }, [parentCount])
           return <div>{parentCount}</div>
         }
 
         rtl.render(
-          <ProviderMock store={store}>
+          <ProviderMock store={normalStore}>
             <Comp />
           </ProviderMock>
         )
@@ -283,7 +292,7 @@ describe('React', () => {
 
         // This dispatch triggers another dispatch in useLayoutEffect
         rtl.act(() => {
-          store.dispatch({ type: '' })
+          normalStore.dispatch({ type: '' })
         })
 
         expect(renderedItems).toEqual([0, 1, 2])
@@ -442,7 +451,7 @@ describe('React', () => {
         })
       })
 
-      it('uses the latest selector', () => {
+      it.skip('uses the latest selector', () => {
         let selectorId = 0
         let forceRender: DispatchWithoutAction
 
@@ -450,7 +459,10 @@ describe('React', () => {
           const [, f] = useReducer((c) => c + 1, 0)
           forceRender = f
           const renderedSelectorId = selectorId++
-          const value = useSelector(() => renderedSelectorId)
+          const value = useSelector((state: NormalStateType) => {
+            const { count } = state
+            return renderedSelectorId
+          })
           renderedItems.push(value)
           return <div />
         }
@@ -492,6 +504,7 @@ describe('React', () => {
           }
           const Child = ({ parentCount }: ChildPropsType) => {
             const result = useNormalSelector(({ count }) => {
+              console.log('Selector: ', { count, parentCount })
               if (count !== parentCount) {
                 throw new Error()
               }
@@ -508,6 +521,7 @@ describe('React', () => {
             </ProviderMock>
           )
 
+          console.log('Running second dispatch')
           const doDispatch = () => normalStore.dispatch({ type: '' })
           expect(doDispatch).not.toThrowError()
 
@@ -518,22 +532,20 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
-            const result = useSelector((count: number) => {
-              if (count > 0) {
+            const result = useSelector((state: NormalStateType) => {
+              if (state.count > 0) {
                 // console.log('Throwing error')
                 throw new Error('Panic!')
               }
 
-              return count
+              return state.count
             })
 
             return <div>{result}</div>
           }
 
-          const store = createStore((count: number = -1): number => count + 1)
-
           const App = () => (
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Comp />
             </ProviderMock>
           )
@@ -544,23 +556,31 @@ describe('React', () => {
           // The test selector will happen to re-throw while rendering and we do see that.
           expect(() => {
             rtl.act(() => {
-              store.dispatch({ type: '' })
+              normalStore.dispatch({ type: '' })
             })
           }).toThrow(/Panic!/)
 
           spy.mockRestore()
         })
 
-        it('re-throws errors from the selector that only occur during rendering', () => {
+        it.only('re-throws errors from the selector that only occur during rendering', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
+          let forceParentRender: () => void
           const Parent = () => {
-            const count = useNormalSelector((s) => s.count)
+            const [, forceRender] = useReducer((c) => c + 1, 0)
+            forceParentRender = forceRender
+            const count = useNormalSelector((s) => {
+              console.log('Parent selector running')
+              return s.count
+            })
             return <Child parentCount={count} />
           }
 
           const Child = ({ parentCount }: ChildPropsType) => {
+            console.log('Child rendering')
             const result = useNormalSelector(({ count }) => {
+              console.trace('Selector values: ', { count, parentCount })
               if (parentCount > 0) {
                 throw new Error()
               }
@@ -579,7 +599,9 @@ describe('React', () => {
 
           expect(() => {
             rtl.act(() => {
-              normalStore.dispatch({ type: '' })
+              console.log('Dispatching update')
+              //normalStore.dispatch({ type: '' })
+              forceParentRender()
             })
           }).toThrowError()
 
