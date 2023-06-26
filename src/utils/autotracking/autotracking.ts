@@ -98,6 +98,7 @@ export class TrackingCache {
     return this._needsRecalculation
   }
 
+  /*
   getWithArgs = (...args: any[]) => {
     // console.log(
     //   `TrackingCache value: revision = ${this.revision}, cachedRevision = ${this._cachedRevision}, value = ${this._cachedValue}`
@@ -139,7 +140,7 @@ export class TrackingCache {
     // Always return the cached value.
     return this._cachedValue
   }
-
+*/
   get value() {
     // console.log(
     //   `TrackingCache value: revision = ${this.revision}, cachedRevision = ${this._cachedRevision}, value = ${this._cachedValue}`
@@ -172,7 +173,7 @@ export class TrackingCache {
       this._cachedRevision = this.revision
       this._needsRecalculation = false
 
-      console.log('Value: ', this._cachedValue, 'deps: ', this._deps)
+      // console.log('Value: ', this._cachedValue, 'deps: ', this._deps)
       // }
     }
 
@@ -185,10 +186,10 @@ export class TrackingCache {
   }
 
   get revision() {
-    console.log('Calculating revision: ', {
-      value: this._cachedValue,
-      deps: this._deps.map((d) => d._name),
-    })
+    // console.log('Calculating revision: ', {
+    //   value: this._cachedValue,
+    //   deps: this._deps.map((d) => d._name),
+    // })
     // The current revision is the max of all the dependencies' revisions.
     return Math.max(...this._deps.map((d) => d.revision), 0)
   }

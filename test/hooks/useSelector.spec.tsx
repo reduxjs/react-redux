@@ -521,33 +521,40 @@ describe('React', () => {
           expect(selector2).toHaveBeenCalledTimes(1)
           expect(selector3).toHaveBeenCalledTimes(1)
 
-          // expect(listeners[0].selectorCache!.cache.needsRecalculation()).toBe(
-          //   false
-          // )
-          // expect(listeners[1].selectorCache!.cache.needsRecalculation()).toBe(
-          //   false
-          // )
-          // expect(listeners[2].selectorCache!.cache.needsRecalculation()).toBe(
-          //   false
-          // )
+          expect(listeners[0].selectorCache!.cache.needsRecalculation()).toBe(
+            false
+          )
+          expect(listeners[1].selectorCache!.cache.needsRecalculation()).toBe(
+            false
+          )
+          expect(listeners[2].selectorCache!.cache.needsRecalculation()).toBe(
+            false
+          )
 
           rtl.act(() => {
             console.log('Dispatching action')
             store.dispatch(countersSlice.actions.increment1())
+            console.log('Dispatch complete')
 
             expect(selector1).toHaveBeenCalledTimes(2)
             expect(selector2).toHaveBeenCalledTimes(1)
             expect(selector3).toHaveBeenCalledTimes(1)
+          })
 
-            // expect(listeners[0].selectorCache!.cache.needsRecalculation()).toBe(
-            //   true
-            // )
-            // expect(listeners[1].selectorCache!.cache.needsRecalculation()).toBe(
-            //   false
-            // )
-            // expect(listeners[2].selectorCache!.cache.needsRecalculation()).toBe(
-            //   false
-            // )
+          rtl.act(() => {
+            store.dispatch(countersSlice.actions.increment2())
+
+            expect(selector1).toHaveBeenCalledTimes(2)
+            expect(selector2).toHaveBeenCalledTimes(2)
+            expect(selector3).toHaveBeenCalledTimes(1)
+          })
+
+          rtl.act(() => {
+            store.dispatch(countersSlice.actions.increment3())
+
+            expect(selector1).toHaveBeenCalledTimes(2)
+            expect(selector2).toHaveBeenCalledTimes(2)
+            expect(selector3).toHaveBeenCalledTimes(2)
           })
         })
       })
