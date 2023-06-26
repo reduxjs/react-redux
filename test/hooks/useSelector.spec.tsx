@@ -532,7 +532,6 @@ describe('React', () => {
           )
 
           rtl.act(() => {
-            console.log('Dispatching action')
             store.dispatch(countersSlice.actions.increment1())
             console.log('Dispatch complete')
 

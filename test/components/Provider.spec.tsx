@@ -217,8 +217,14 @@ describe('React', () => {
         type: string
         body: string
       }
-      function stringBuilder(prev = '', action: ActionType) {
-        return action.type === 'APPEND' ? prev + action.body : prev
+      interface StringState {
+        string: string
+      }
+
+      function stringBuilder(state = { string: '' }, action: ActionType) {
+        return action.type === 'APPEND'
+          ? { string: state.string + action.body }
+          : state
       }
 
       const store: Store = createStore(stringBuilder)
@@ -244,10 +250,10 @@ describe('React', () => {
         {},
         unknown,
         ChildContainerProps,
-        string
+        StringState
       >((state, parentProps) => {
         childMapStateInvokes++
-        childCalls.push([state, parentProps.parentState])
+        childCalls.push([state.string, parentProps.parentState])
         // The state from parent props should always be consistent with the current state
         return {}
       })(ChildContainer)
