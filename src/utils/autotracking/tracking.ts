@@ -2,15 +2,15 @@ import {
   createCell as createStorage,
   getValue as consumeTag,
   setValue,
-  Cell
+  Cell,
 } from './autotracking'
 
 export type Tag = Cell<unknown>
 
 const neverEq = (a: any, b: any): boolean => false
 
-export function createTag(): Tag {
-  return createStorage(null, neverEq)
+export function createTag(name?: string): Tag {
+  return createStorage(null, neverEq, name)
 }
 export { consumeTag }
 export function dirtyTag(tag: Tag, value: any): void {
@@ -35,7 +35,7 @@ export const consumeCollection = (node: Node): void => {
   let tag = node.collectionTag
 
   if (tag === null) {
-    tag = node.collectionTag = createTag()
+    tag = node.collectionTag = createTag(node.collectionTag?._name || 'Unknown')
   }
 
   consumeTag(tag)

@@ -142,15 +142,16 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
 
     const latestWrappedSelectorRef = useRef(wrappedSelector)
 
-    console.log(
-      'Writing latest selector. Same reference? ',
-      wrappedSelector === latestWrappedSelectorRef.current
-    )
+    // console.log(
+    //   'Writing latest selector. Same reference? ',
+    //   wrappedSelector === latestWrappedSelectorRef.current
+    // )
     latestWrappedSelectorRef.current = wrappedSelector
 
     const cache = useMemo(() => {
+      console.log('Recreating cache')
       const cache = createCache(() => {
-        console.log('Wrapper cache called: ', store.getState())
+        // console.log('Wrapper cache called: ', store.getState())
         //return latestWrappedSelectorRef.current(trackingNode.proxy as TState)
         return wrappedSelector(trackingNode.proxy as TState)
       })

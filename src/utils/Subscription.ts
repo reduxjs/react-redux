@@ -46,11 +46,11 @@ function createListenerCollection() {
           //console.log('Listener: ', listener)
           if (listener.trigger == 'tracked') {
             if (listener.selectorCache!.cache.needsRecalculation()) {
-              console.log('Calling subscriber due to recalc need')
-              // console.log(
-              //   'Calling subscriber due to recalc. Revision before: ',
-              //   $REVISION
-              // )
+              //console.log('Calling subscriber due to recalc need')
+              console.log(
+                'Calling subscriber due to recalc. Revision before: ',
+                $REVISION
+              )
               listener.callback()
               //console.log('Revision after: ', $REVISION)
             } else {
@@ -169,7 +169,7 @@ export function createSubscription(
 
   function notifyNestedSubs() {
     if (store && trackingNode) {
-      //console.log('Updating node in notifyNestedSubs')
+      console.log('Updating node in notifyNestedSubs')
       updateNode(trackingNode, store.getState())
     }
     listeners.notify()

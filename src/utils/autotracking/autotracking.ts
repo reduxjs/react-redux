@@ -22,10 +22,12 @@ export class Cell<T> {
   _value: T
   _lastValue: T
   _isEqual: EqualityFn = tripleEq
+  _name: string | undefined
 
-  constructor(initialValue: T, isEqual: EqualityFn = tripleEq) {
+  constructor(initialValue: T, isEqual: EqualityFn = tripleEq, name?: string) {
     this._value = this._lastValue = initialValue
     this._isEqual = isEqual
+    this._name = name
   }
 
   // Whenever a storage value is read, it'll add itself to the current tracker if
@@ -60,7 +62,7 @@ function tripleEq(a: unknown, b: unknown) {
 export class TrackingCache {
   _cachedValue: any
   _cachedRevision = -1
-  _deps: any[] = []
+  _deps: Cell<any>[] = []
   hits = 0
   _needsRecalculation = false
 
@@ -79,7 +81,7 @@ export class TrackingCache {
   }
 
   getValue = () => {
-    console.log('TrackedCache getValue')
+    //console.log('TrackedCache getValue')
     return this.value
   }
 
@@ -87,12 +89,12 @@ export class TrackingCache {
     if (!this._needsRecalculation) {
       this._needsRecalculation = this.revision > this._cachedRevision
     }
-    console.log(
-      'Needs recalculation: ',
-      this._needsRecalculation,
-      this._cachedRevision,
-      this._cachedValue
-    )
+    // console.log(
+    //   'Needs recalculation: ',
+    //   this._needsRecalculation,
+    //   this._cachedRevision,
+    //   this._cachedValue
+    // )
     return this._needsRecalculation
   }
 
@@ -139,9 +141,9 @@ export class TrackingCache {
   }
 
   get value() {
-    console.log(
-      `TrackingCache value: revision = ${this.revision}, cachedRevision = ${this._cachedRevision}, value = ${this._cachedValue}`
-    )
+    // console.log(
+    //   `TrackingCache value: revision = ${this.revision}, cachedRevision = ${this._cachedRevision}, value = ${this._cachedValue}`
+    // )
     // When getting the value for a Cache, first we check all the dependencies of
     // the cache to see what their current revision is. If the current revision is
     // greater than the cached revision, then something has changed.
@@ -168,6 +170,9 @@ export class TrackingCache {
       // dependencies. If any dependency changes, this number will be less
       // than the new revision.
       this._cachedRevision = this.revision
+      this._needsRecalculation = false
+
+      console.log('Value: ', this._cachedValue, 'deps: ', this._deps)
       // }
     }
 
@@ -180,6 +185,10 @@ export class TrackingCache {
   }
 
   get revision() {
+    console.log('Calculating revision: ', {
+      value: this._cachedValue,
+      deps: this._deps.map((d) => d._name),
+    })
     // The current revision is the max of all the dependencies' revisions.
     return Math.max(...this._deps.map((d) => d.revision), 0)
   }
@@ -209,9 +218,10 @@ export function setValue<T extends Cell<unknown>>(
 
 export function createCell<T = unknown>(
   initialValue: T,
-  isEqual: EqualityFn = tripleEq
+  isEqual: EqualityFn = tripleEq,
+  name?: string
 ): Cell<T> {
-  return new Cell(initialValue, isEqual)
+  return new Cell(initialValue, isEqual, name)
 }
 
 export function createCache<T = unknown>(

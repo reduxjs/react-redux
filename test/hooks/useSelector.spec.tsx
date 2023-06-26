@@ -26,6 +26,7 @@ import type {
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction, Action } from 'redux'
+import { createSlice, configureStore } from '@reduxjs/toolkit'
 import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // disable checks by default
@@ -90,7 +91,7 @@ describe('React', () => {
 
         it('selects the state and renders the component when the store updates', () => {
           const selector = jest.fn((s: NormalStateType) => {
-            console.log('Running selector: `s.count`')
+            //console.log('Running selector: `s.count`')
             return s.count
           })
           let result: number | undefined
@@ -449,9 +450,109 @@ describe('React', () => {
           expect(selector).toHaveBeenCalledTimes(2)
           expect(renderedItems.length).toEqual(2)
         })
+
+        it.only('only re-runs selectors if the referenced fields actually change', () => {
+          interface StateType {
+            count1: number
+            count2: number
+            count3: number
+          }
+
+          const initialState: StateType = {
+            count1: 0,
+            count2: 0,
+            count3: 0,
+          }
+
+          const countersSlice = createSlice({
+            name: 'counters',
+            initialState,
+            reducers: {
+              increment1: (state) => {
+                state.count1++
+              },
+              increment2: (state) => {
+                state.count2++
+              },
+              increment3: (state) => {
+                state.count3++
+              },
+            },
+          })
+
+          const store = configureStore({
+            reducer: countersSlice.reducer,
+          })
+
+          const selector1 = jest.fn((s: StateType) => {
+            return s.count1
+          })
+          const selector2 = jest.fn((s: StateType) => {
+            return s.count2
+          })
+          const selector3 = jest.fn((s: StateType) => {
+            return s.count3
+          })
+          const renderedItems: number[] = []
+
+          let subscription: Subscription
+
+          const Comp = () => {
+            subscription = useContext(ReactReduxContext).subscription
+            const c1 = useSelector(selector1)
+            const c2 = useSelector(selector2)
+            const c3 = useSelector(selector3)
+
+            return null
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          const listeners = subscription!.getListeners().get()
+
+          expect(listeners.length).toBe(3)
+
+          // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
+          expect(selector1).toHaveBeenCalledTimes(1)
+          expect(selector2).toHaveBeenCalledTimes(1)
+          expect(selector3).toHaveBeenCalledTimes(1)
+
+          // expect(listeners[0].selectorCache!.cache.needsRecalculation()).toBe(
+          //   false
+          // )
+          // expect(listeners[1].selectorCache!.cache.needsRecalculation()).toBe(
+          //   false
+          // )
+          // expect(listeners[2].selectorCache!.cache.needsRecalculation()).toBe(
+          //   false
+          // )
+
+          rtl.act(() => {
+            console.log('Dispatching action')
+            store.dispatch(countersSlice.actions.increment1())
+
+            expect(selector1).toHaveBeenCalledTimes(2)
+            expect(selector2).toHaveBeenCalledTimes(1)
+            expect(selector3).toHaveBeenCalledTimes(1)
+
+            // expect(listeners[0].selectorCache!.cache.needsRecalculation()).toBe(
+            //   true
+            // )
+            // expect(listeners[1].selectorCache!.cache.needsRecalculation()).toBe(
+            //   false
+            // )
+            // expect(listeners[2].selectorCache!.cache.needsRecalculation()).toBe(
+            //   false
+            // )
+          })
+        })
       })
 
-      it.skip('uses the latest selector', () => {
+      it('uses the latest selector', () => {
         let selectorId = 0
         let forceRender: DispatchWithoutAction
 
@@ -504,7 +605,7 @@ describe('React', () => {
           }
           const Child = ({ parentCount }: ChildPropsType) => {
             const result = useNormalSelector(({ count }) => {
-              console.log('Selector: ', { count, parentCount })
+              // console.log('Selector: ', { count, parentCount })
               if (count !== parentCount) {
                 throw new Error()
               }
@@ -521,7 +622,7 @@ describe('React', () => {
             </ProviderMock>
           )
 
-          console.log('Running second dispatch')
+          // console.log('Running second dispatch')
           const doDispatch = () => normalStore.dispatch({ type: '' })
           expect(doDispatch).not.toThrowError()
 
@@ -563,7 +664,7 @@ describe('React', () => {
           spy.mockRestore()
         })
 
-        it.only('re-throws errors from the selector that only occur during rendering', () => {
+        it('re-throws errors from the selector that only occur during rendering', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           let forceParentRender: () => void
@@ -571,14 +672,12 @@ describe('React', () => {
             const [, forceRender] = useReducer((c) => c + 1, 0)
             forceParentRender = forceRender
             const count = useNormalSelector((s) => {
-              console.log('Parent selector running')
               return s.count
             })
             return <Child parentCount={count} />
           }
 
           const Child = ({ parentCount }: ChildPropsType) => {
-            console.log('Child rendering')
             const result = useNormalSelector(({ count }) => {
               console.trace('Selector values: ', { count, parentCount })
               if (parentCount > 0) {
@@ -599,7 +698,6 @@ describe('React', () => {
 
           expect(() => {
             rtl.act(() => {
-              console.log('Dispatching update')
               normalStore.dispatch({ type: '' })
               //forceParentRender()
             })

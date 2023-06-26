@@ -19,7 +19,7 @@ const proto = Object.getPrototypeOf({})
 
 class ObjectTreeNode<T extends Record<string, unknown>> implements Node<T> {
   proxy: T = new Proxy(this, objectProxyHandler) as unknown as T
-  tag = createTag()
+  tag = createTag('object')
   tags = {} as Record<string, Tag>
   children = {} as Record<string, Node>
   collectionTag = null
@@ -33,7 +33,7 @@ class ObjectTreeNode<T extends Record<string, unknown>> implements Node<T> {
 
 const objectProxyHandler = {
   get(node: Node, key: string | symbol): unknown {
-    console.log('Reading key: ', key, node.value)
+    //console.log('Reading key: ', key, node.value)
 
     function calculateResult() {
       const { value } = node
@@ -64,7 +64,7 @@ const objectProxyHandler = {
         let tag = node.tags[key]
 
         if (tag === undefined) {
-          tag = node.tags[key] = createTag()
+          tag = node.tags[key] = createTag(key)
           tag.value = childValue
         }
 
@@ -96,7 +96,7 @@ const objectProxyHandler = {
 
 class ArrayTreeNode<T extends Array<unknown>> implements Node<T> {
   proxy: T = new Proxy([this], arrayProxyHandler) as unknown as T
-  tag = createTag()
+  tag = createTag('array')
   tags = {}
   children = {}
   collectionTag = null
@@ -191,7 +191,7 @@ export function updateNode<T extends Array<unknown> | Record<string, unknown>>(
   }
 
   for (const key in tags) {
-    console.log('Checking tag: ', key)
+    //console.log('Checking tag: ', key)
     const childValue = (value as Record<string, unknown>)[key]
     const newChildValue = (newValue as Record<string, unknown>)[key]
 
@@ -206,7 +206,7 @@ export function updateNode<T extends Array<unknown> | Record<string, unknown>>(
   }
 
   for (const key in children) {
-    console.log(`Checking node: key = ${key}, value = ${children[key]}`)
+    //console.log(`Checking node: key = ${key}, value = ${children[key]}`)
     const childNode = children[key]
     const newChildValue = (newValue as Record<string, unknown>)[key]
 
