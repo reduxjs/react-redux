@@ -1,4 +1,4 @@
-import { createContext } from 'react'
+import * as React from 'react'
 import type { Context } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
@@ -17,35 +17,28 @@ export interface ReactReduxContextValue<
 
 const ContextKey = Symbol.for(`react-redux-context`)
 const gT = globalThis as {
-  [ContextKey]?: Map<typeof createContext, Context<ReactReduxContextValue>>
+  [ContextKey]?: Map<
+    typeof React['createContext'],
+    Context<ReactReduxContextValue>
+  >
 }
 
-function getContext() {
+function getContext(): Context<ReactReduxContextValue> {
+  if (!React.createContext) return {} as any
+
   const contextMap = (gT[ContextKey] ??= new Map())
-  let realContext = contextMap.get(createContext)
+  let realContext = contextMap.get(React.createContext)
   if (!realContext) {
-    realContext = createContext<ReactReduxContextValue>(null as any)
+    realContext = React.createContext<ReactReduxContextValue>(null as any)
     if (process.env.NODE_ENV !== 'production') {
       realContext.displayName = 'ReactRedux'
     }
-    contextMap.set(createContext, realContext)
+    contextMap.set(React.createContext, realContext)
   }
   return realContext
 }
 
-export const ReactReduxContext = /*#__PURE__*/ new Proxy(
-  {} as Context<ReactReduxContextValue>,
-  /*#__PURE__*/ new Proxy<ProxyHandler<Context<ReactReduxContextValue>>>(
-    {},
-    {
-      get(_, handler) {
-        const target = getContext()
-        // @ts-ignore
-        return (_target, ...args) => Reflect[handler](target, ...args)
-      },
-    }
-  )
-)
+export const ReactReduxContext = /*#__PURE__*/ getContext()
 
 export type ReactReduxContextInstance = typeof ReactReduxContext
 
