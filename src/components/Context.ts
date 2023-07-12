@@ -16,9 +16,9 @@ export interface ReactReduxContextValue<
 }
 
 const ContextKey = Symbol.for(`react-redux-context`)
-const gT = globalThis as {
+const gT: {
   [ContextKey]?: Map<typeof createContext, Context<ReactReduxContextValue>>
-}
+} = (typeof globalThis !== "undefined" ? globalThis : /* fall back to a per-module scope (pre-8.1 behaviour) if `globalThis` is not available */ {}) as any; 
 
 function getContext() {
   const contextMap = (gT[ContextKey] ??= new Map())
