@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from 'react'
+import * as React from 'react'
 
 // React currently throws a warning when using useLayoutEffect on the server.
 // To get around it, we can conditionally useEffect on the server (no-op) and
@@ -16,4 +16,6 @@ export const canUseDOM = !!(
   typeof window.document.createElement !== 'undefined'
 )
 
-export const useIsomorphicLayoutEffect = canUseDOM ? useLayoutEffect : useEffect
+export const useIsomorphicLayoutEffect = canUseDOM
+  ? React.useLayoutEffect
+  : React.useEffect

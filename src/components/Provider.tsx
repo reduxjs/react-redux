@@ -1,5 +1,5 @@
 import type { Context, ReactNode } from 'react'
-import React, { useMemo } from 'react'
+import * as React from 'react'
 import type { ReactReduxContextValue } from './Context'
 import { ReactReduxContext } from './Context'
 import { createSubscription } from '../utils/Subscription'
@@ -42,7 +42,7 @@ function Provider<A extends Action = AnyAction, S = unknown>({
   stabilityCheck = 'once',
   noopCheck = 'once',
 }: ProviderProps<A, S>) {
-  const contextValue = useMemo(() => {
+  const contextValue = React.useMemo(() => {
     const subscription = createSubscription(store)
     return {
       store,
@@ -53,7 +53,7 @@ function Provider<A extends Action = AnyAction, S = unknown>({
     }
   }, [store, serverState, stabilityCheck, noopCheck])
 
-  const previousState = useMemo(() => store.getState(), [store])
+  const previousState = React.useMemo(() => store.getState(), [store])
 
   useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue

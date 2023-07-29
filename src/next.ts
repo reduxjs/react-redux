@@ -3,7 +3,7 @@
 // The useSyncExternalStoreWithSelector has to be imported, but we can use the
 // non-shim version. This shaves off the byte size of the shim.
 
-import { useSyncExternalStore } from 'react'
+import * as React from 'react'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector'
 
 import { unstable_batchedUpdates as batch } from './utils/reactBatchedUpdates'
@@ -13,7 +13,7 @@ import { initializeUseSelector } from './hooks/useSelector'
 import { initializeConnect } from './components/connect'
 
 initializeUseSelector(useSyncExternalStoreWithSelector)
-initializeConnect(useSyncExternalStore)
+initializeConnect(React.useSyncExternalStore)
 
 // Enable batched updates in our subscriptions for use
 // with standard React renderers (ReactDOM, React Native)
