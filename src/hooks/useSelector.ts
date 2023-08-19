@@ -170,7 +170,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
           // console.log('wrappedOnStoreChange')
           return onStoreChange()
         }
-        // console.log('Subscribing to store with tracking')
+        console.log('Subscribing to store with tracking')
         return subscription.addNestedSub(wrappedOnStoreChange, {
           trigger: 'tracked',
           cache: cacheWrapper.current,

@@ -87,14 +87,15 @@ export class TrackingCache {
 
   needsRecalculation() {
     if (!this._needsRecalculation) {
-      this._needsRecalculation = this.revision > this._cachedRevision
+      this._needsRecalculation =
+        this.revision > this._cachedRevision || this._cachedRevision === -1
     }
-    // console.log(
-    //   'Needs recalculation: ',
-    //   this._needsRecalculation,
-    //   this._cachedRevision,
-    //   this._cachedValue
-    // )
+    console.log(
+      'Needs recalculation: ',
+      this._needsRecalculation,
+      this._cachedRevision,
+      this._cachedValue
+    )
     return this._needsRecalculation
   }
 

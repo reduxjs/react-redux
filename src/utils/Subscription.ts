@@ -39,25 +39,25 @@ function createListenerCollection() {
     },
 
     notify() {
-      //console.log('Notifying subscribers')
+      console.log('Notifying subscribers')
       batch(() => {
         let listener = first
         while (listener) {
-          //console.log('Listener: ', listener)
+          console.log('Listener: ', listener)
           if (listener.trigger == 'tracked') {
             if (listener.selectorCache!.cache.needsRecalculation()) {
-              //console.log('Calling subscriber due to recalc need')
-              // console.log(
-              //   'Calling subscriber due to recalc. Revision before: ',
-              //   $REVISION
-              // )
+              console.log('Calling subscriber due to recalc need')
+              console.log(
+                'Calling subscriber due to recalc. Revision before: ',
+                $REVISION
+              )
               listener.callback()
-              //console.log('Revision after: ', $REVISION)
+              console.log('Revision after: ', $REVISION)
             } else {
-              // console.log(
-              //   'Skipping subscriber, no recalc: ',
-              //   listener.selectorCache
-              // )
+              console.log(
+                'Skipping subscriber, no recalc: ',
+                listener.selectorCache
+              )
             }
           } else {
             listener.callback()
@@ -83,7 +83,7 @@ function createListenerCollection() {
     ) {
       let isSubscribed = true
 
-      //console.log('Adding listener: ', options.trigger)
+      console.log('Adding listener: ', options.trigger)
 
       let listener: Listener = (last = {
         callback,
@@ -162,14 +162,14 @@ export function createSubscription(
     listener: () => void,
     options: AddNestedSubOptions = { trigger: 'always' }
   ) {
-    //console.log('addNestedSub: ', options)
+    console.log('addNestedSub: ', options)
     trySubscribe(options)
     return listeners.subscribe(listener, options)
   }
 
   function notifyNestedSubs() {
     if (store && trackingNode) {
-      //console.log('Updating node in notifyNestedSubs')
+      console.log('Updating node in notifyNestedSubs')
       updateNode(trackingNode, store.getState())
     }
     listeners.notify()
@@ -187,7 +187,7 @@ export function createSubscription(
 
   function trySubscribe(options: AddNestedSubOptions = { trigger: 'always' }) {
     if (!unsubscribe) {
-      //console.log('trySubscribe, parentSub: ', parentSub)
+      console.log('trySubscribe, parentSub: ', parentSub)
       unsubscribe = parentSub
         ? parentSub.addNestedSub(handleChangeWrapper, options)
         : store.subscribe(handleChangeWrapper)

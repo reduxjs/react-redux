@@ -26,7 +26,7 @@ import type {
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction, Action } from 'redux'
-import { createSlice, configureStore } from '@reduxjs/toolkit'
+import { createSlice, configureStore, PayloadAction } from '@reduxjs/toolkit'
 import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // disable checks by default
@@ -1049,6 +1049,129 @@ describe('React', () => {
               expect.stringContaining('returned the root state when called.')
             )
           })
+        })
+      })
+
+      describe('Auto-tracking behavior checks', () => {
+        interface Todo {
+          id: number
+          name: string
+          completed: boolean
+        }
+
+        type TodosState = Todo[]
+
+        const counterSlice = createSlice({
+          name: 'counters',
+          initialState: {
+            deeply: {
+              nested: {
+                really: {
+                  deeply: {
+                    nested: {
+                      c1: { value: 0 },
+                    },
+                  },
+                },
+              },
+            },
+
+            c2: { value: 0 },
+          },
+          reducers: {
+            increment1(state) {
+              // state.c1.value++
+              state.deeply.nested.really.deeply.nested.c1.value++
+            },
+            increment2(state) {
+              state.c2.value++
+            },
+          },
+        })
+
+        const todosSlice = createSlice({
+          name: 'todos',
+          initialState: [
+            { id: 0, name: 'a', completed: false },
+            { id: 1, name: 'b', completed: false },
+            { id: 2, name: 'c', completed: false },
+          ] as TodosState,
+          reducers: {
+            toggleCompleted(state, action: PayloadAction<number>) {
+              const todo = state.find((todo) => todo.id === action.payload)
+              if (todo) {
+                todo.completed = !todo.completed
+              }
+            },
+            setName(state) {
+              state[1].name = 'd'
+            },
+          },
+        })
+
+        function makeStore() {
+          return configureStore({
+            reducer: {
+              counter: counterSlice.reducer,
+              todos: todosSlice.reducer,
+            },
+            middleware: (gDM) =>
+              gDM({
+                serializableCheck: false,
+                immutableCheck: false,
+              }),
+          })
+        }
+
+        type AppStore = ReturnType<typeof makeStore>
+        let store: AppStore
+        type RootState = ReturnType<AppStore['getState']>
+
+        const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+
+        beforeEach(() => {
+          store = makeStore()
+        })
+
+        test.only('should correctly handle updates to nested data', async () => {
+          let itemSelectorCallsCount = 0
+          let listSelectorCallsCount = 0
+          function TodoListItem({ todoId }: { todoId: number }) {
+            console.log('TodoListItem render: ', todoId)
+            const todo = useAppSelector((state) => {
+              itemSelectorCallsCount++
+              return state.todos.find((t) => t.id === todoId)
+            })!
+            return (
+              <div>
+                {todo.id}: {todo.name} ({todo.completed})
+              </div>
+            )
+          }
+
+          function TodoList() {
+            const todoIds = useAppSelector((state) => {
+              listSelectorCallsCount++
+              return state.todos.map((t) => t.id)
+            })
+            console.log('TodoList render: ', todoIds)
+            return (
+              <>
+                {todoIds.map((id) => (
+                  <TodoListItem todoId={id} key={id} />
+                ))}
+              </>
+            )
+          }
+
+          rtl.render(
+            <Provider store={store} stabilityCheck="never">
+              <TodoList />
+            </Provider>
+          )
+
+          expect(listSelectorCallsCount).toBe(1)
+          expect(itemSelectorCallsCount).toBe(3)
         })
       })
     })
