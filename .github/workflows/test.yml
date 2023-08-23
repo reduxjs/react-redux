@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master, typescript-port]
+    branches: [master, v9.0-integration]
   pull_request:
-    branches: [master, typescript-port]
+    branches: [master, v9.0-integration]
   workflow_dispatch:
 
 jobs:
@@ -51,7 +51,7 @@ jobs:
       fail-fast: false
       matrix:
         node: ['16.x']
-        ts: ['4.7', '4.8', '4.9', '5.0']
+        ts: ['4.7', '4.8', '4.9', '5.0', '5.1']
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -72,6 +72,30 @@ jobs:
         run: |
           yarn tsc --version
           yarn type-tests
+
+  are-the-types-wrong:
+    name: Check package config with are-the-types-wrong
+
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['16.x']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: package
+          path: .
+
+      # Note: We currently expect "FalseCJS" failures for Node16 + `moduleResolution: "node16",
+      # and the `/alternateRenderers" entry point will not resolve under Node10.
+      # Skipping these is dangerous, but we'll leave it for now.
+      - name: Run are-the-types-wrong
+        run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs no-resolution
 
   test-published-artifact-local:
     name: Test Published Artifact (Local) ${{ matrix.example }}

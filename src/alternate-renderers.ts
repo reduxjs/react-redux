@@ -1,16 +1,18 @@
+'use client'
+
 // The "alternate renderers" entry point is primarily here to fall back on a no-op
 // version of `unstable_batchedUpdates`, for use with renderers other than ReactDOM/RN.
 // Examples include React-Three-Fiber, Ink, etc.
-// Because of that, we'll also assume the useSyncExternalStore compat shim is needed.
+// We'll assume they're built with React 18 and thus have `useSyncExternalStore` available.
 
-import { useSyncExternalStore } from 'use-sync-external-store/shim'
-import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/shim/with-selector'
+import * as React from 'react'
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector'
 
 import { initializeUseSelector } from './hooks/useSelector'
 import { initializeConnect } from './components/connect'
 
 initializeUseSelector(useSyncExternalStoreWithSelector)
-initializeConnect(useSyncExternalStore)
+initializeConnect(React.useSyncExternalStore)
 
 import { getBatch } from './utils/batch'
 

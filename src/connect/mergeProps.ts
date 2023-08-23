@@ -26,7 +26,7 @@ export function wrapMergePropsFunc<
 >(
   mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
 ): (
-  dispatch: Dispatch<Action<unknown>>,
+  dispatch: Dispatch<Action<string>>,
   options: {
     readonly displayName: string
     readonly areMergedPropsEqual: EqualityFn<TMergedProps>

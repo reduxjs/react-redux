@@ -1,5 +1,5 @@
 import type { Context } from 'react'
-import type { Action as BasicAction, AnyAction, Store } from 'redux'
+import type { Action as BasicAction, UnknownAction, Store } from 'redux'
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import {
@@ -15,7 +15,7 @@ import {
  */
 export function createStoreHook<
   S = unknown,
-  A extends BasicAction = AnyAction
+  A extends BasicAction = UnknownAction
   // @ts-ignore
 >(context?: Context<ReactReduxContextValue<S, A>> = ReactReduxContext) {
   const useReduxContext =
@@ -26,12 +26,12 @@ export function createStoreHook<
         createReduxContextHook(context)
   return function useStore<
     State = S,
-    Action extends BasicAction = A
+    Action2 extends BasicAction = A
     // @ts-ignore
   >() {
     const { store } = useReduxContext()!
     // @ts-ignore
-    return store as Store<State, Action>
+    return store as Store<State, Action2>
   }
 }
 

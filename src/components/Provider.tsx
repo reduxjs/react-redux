@@ -1,13 +1,16 @@
 import type { Context, ReactNode } from 'react'
-import React, { useMemo } from 'react'
+import * as React from 'react'
 import type { ReactReduxContextValue } from './Context'
 import { ReactReduxContext } from './Context'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import type { Action, AnyAction, Store } from 'redux'
+import type { Action, Store, UnknownAction } from 'redux'
 import type { CheckFrequency } from '../hooks/useSelector'
 
-export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
+export interface ProviderProps<
+  A extends Action<string> = UnknownAction,
+  S = unknown
+> {
   /**
    * The single Redux store in your application.
    */
@@ -34,7 +37,7 @@ export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
   children: ReactNode
 }
 
-function Provider<A extends Action = AnyAction, S = unknown>({
+function Provider<A extends Action<string> = UnknownAction, S = unknown>({
   store,
   context,
   children,
@@ -42,7 +45,7 @@ function Provider<A extends Action = AnyAction, S = unknown>({
   stabilityCheck = 'once',
   noopCheck = 'once',
 }: ProviderProps<A, S>) {
-  const contextValue = useMemo(() => {
+  const contextValue = React.useMemo(() => {
     const subscription = createSubscription(store)
     return {
       store,
@@ -53,7 +56,7 @@ function Provider<A extends Action = AnyAction, S = unknown>({
     }
   }, [store, serverState, stabilityCheck, noopCheck])
 
-  const previousState = useMemo(() => store.getState(), [store])
+  const previousState = React.useMemo(() => store.getState(), [store])
 
   useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue

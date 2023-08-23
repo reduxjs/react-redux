@@ -1,9 +1,10 @@
-import { useCallback, useDebugValue, useRef } from 'react'
+import * as React from 'react'
 
 import {
   createReduxContextHook,
   useReduxContext as useDefaultReduxContext,
 } from './useReduxContext'
+import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
@@ -41,7 +42,9 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(context = ReactReduxContext): UseSelector {
+export function createSelectorHook(
+  context: React.Context<ReactReduxContextValue<any, any>> = ReactReduxContext
+): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
@@ -82,9 +85,9 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       noopCheck: globalNoopCheck,
     } = useReduxContext()!
 
-    const firstRun = useRef(true)
+    const firstRun = React.useRef(true)
 
-    const wrappedSelector = useCallback<typeof selector>(
+    const wrappedSelector = React.useCallback<typeof selector>(
       {
         [selector.name](state: TState) {
           const selected = selector(state)
@@ -144,7 +147,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       equalityFn
     )
 
-    useDebugValue(selectedState)
+    React.useDebugValue(selectedState)
 
     return selectedState
   }

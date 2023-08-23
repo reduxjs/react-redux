@@ -1,7 +1,7 @@
 /* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
 import hoistStatics from 'hoist-non-react-statics'
 import type { ComponentType } from 'react'
-import React, { useContext, useMemo, useRef } from 'react'
+import * as React from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
 
 import type { Store } from 'redux'
@@ -533,7 +533,7 @@ function connect<
       props: InternalConnectProps & TOwnProps
     ) {
       const [propsContext, reactReduxForwardedRef, wrapperProps] =
-        useMemo(() => {
+        React.useMemo(() => {
           // Distinguish between actual "data" props that were passed to the wrapper component,
           // and values needed to control behavior (forwarded refs, alternate context instances).
           // To maintain the wrapperProps object reference, memoize this destructuring.
@@ -541,7 +541,7 @@ function connect<
           return [props.context, reactReduxForwardedRef, wrapperProps]
         }, [props])
 
-      const ContextToUse: ReactReduxContextInstance = useMemo(() => {
+      const ContextToUse: ReactReduxContextInstance = React.useMemo(() => {
         // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
         // Memoize the check that determines which context instance we should use.
         return propsContext &&
@@ -553,7 +553,7 @@ function connect<
       }, [propsContext, Context])
 
       // Retrieve the store and ancestor subscription via context, if available
-      const contextValue = useContext(ContextToUse)
+      const contextValue = React.useContext(ContextToUse)
 
       // The store _must_ exist as either a prop or in context.
       // We'll check to see if it _looks_ like a Redux store first.
@@ -587,13 +587,13 @@ function connect<
         ? contextValue.getServerState
         : store.getState
 
-      const childPropsSelector = useMemo(() => {
+      const childPropsSelector = React.useMemo(() => {
         // The child props selector needs the store reference as an input.
         // Re-create this selector whenever the store changes.
         return defaultSelectorFactory(store.dispatch, selectorFactoryOptions)
       }, [store])
 
-      const [subscription, notifyNestedSubs] = useMemo(() => {
+      const [subscription, notifyNestedSubs] = React.useMemo(() => {
         if (!shouldHandleStateChanges) return NO_SUBSCRIPTION_ARRAY
 
         // This Subscription's source should match where store came from: props vs. context. A component
@@ -615,7 +615,7 @@ function connect<
 
       // Determine what {store, subscription} value should be put into nested context, if necessary,
       // and memoize that value to avoid unnecessary context updates.
-      const overriddenContextValue = useMemo(() => {
+      const overriddenContextValue = React.useMemo(() => {
         if (didStoreComeFromProps) {
           // This component is directly subscribed to a store from props.
           // We don't want descendants reading from this store - pass down whatever
@@ -632,14 +632,14 @@ function connect<
       }, [didStoreComeFromProps, contextValue, subscription])
 
       // Set up refs to coordinate values between the subscription effect and the render logic
-      const lastChildProps = useRef<unknown>()
-      const lastWrapperProps = useRef(wrapperProps)
-      const childPropsFromStoreUpdate = useRef<unknown>()
-      const renderIsScheduled = useRef(false)
-      const isProcessingDispatch = useRef(false)
-      const isMounted = useRef(false)
+      const lastChildProps = React.useRef<unknown>()
+      const lastWrapperProps = React.useRef(wrapperProps)
+      const childPropsFromStoreUpdate = React.useRef<unknown>()
+      const renderIsScheduled = React.useRef(false)
+      const isProcessingDispatch = React.useRef(false)
+      const isMounted = React.useRef(false)
 
-      const latestSubscriptionCallbackError = useRef<Error>()
+      const latestSubscriptionCallbackError = React.useRef<Error>()
 
       useIsomorphicLayoutEffect(() => {
         isMounted.current = true
@@ -648,7 +648,7 @@ function connect<
         }
       }, [])
 
-      const actualChildPropsSelector = useMemo(() => {
+      const actualChildPropsSelector = React.useMemo(() => {
         const selector = () => {
           // Tricky logic here:
           // - This render may have been triggered by a Redux store update that produced new child props
@@ -676,7 +676,7 @@ function connect<
       // about useLayoutEffect in SSR, so we try to detect environment and fall back to
       // just useEffect instead to avoid the warning, since neither will run anyway.
 
-      const subscribeForReact = useMemo(() => {
+      const subscribeForReact = React.useMemo(() => {
         const subscribe = (reactListener: () => void) => {
           if (!subscription) {
             return () => {}
@@ -741,7 +741,7 @@ function connect<
 
       // Now that all that's done, we can finally try to actually render the child component.
       // We memoize the elements for the rendered child component as an optimization.
-      const renderedWrappedComponent = useMemo(() => {
+      const renderedWrappedComponent = React.useMemo(() => {
         return (
           // @ts-ignore
           <WrappedComponent
@@ -753,7 +753,7 @@ function connect<
 
       // If React sees the exact same element reference as last time, it bails out of re-rendering
       // that child, same as if it was wrapped in React.memo() or returned false from shouldComponentUpdate.
-      const renderedChild = useMemo(() => {
+      const renderedChild = React.useMemo(() => {
         if (shouldHandleStateChanges) {
           // If this component is subscribed to store updates, we need to pass its own
           // subscription instance down to our descendants. That means rendering the same
