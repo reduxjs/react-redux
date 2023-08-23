@@ -1,17 +1,14 @@
-import React, { useCallback, useDebugValue, useRef } from 'react'
+import * as React from 'react'
 
 import {
   createReduxContextHook,
   useReduxContext as useDefaultReduxContext,
 } from './useReduxContext'
-import {
-  ReactReduxContext,
-  ReactReduxContextValue,
-} from '../components/Context'
+import type { ReactReduxContextValue } from '../components/Context'
+import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
-import { Action, UnknownAction } from 'redux'
 
 export type CheckFrequency = 'never' | 'once' | 'always'
 
@@ -88,9 +85,9 @@ export function createSelectorHook(
       noopCheck: globalNoopCheck,
     } = useReduxContext()!
 
-    const firstRun = useRef(true)
+    const firstRun = React.useRef(true)
 
-    const wrappedSelector = useCallback<typeof selector>(
+    const wrappedSelector = React.useCallback<typeof selector>(
       {
         [selector.name](state: TState) {
           const selected = selector(state)
@@ -150,7 +147,7 @@ export function createSelectorHook(
       equalityFn
     )
 
-    useDebugValue(selectedState)
+    React.useDebugValue(selectedState)
 
     return selectedState
   }

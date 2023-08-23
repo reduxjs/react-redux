@@ -3,14 +3,14 @@
 // Examples include React-Three-Fiber, Ink, etc.
 // We'll assume they're built with React 18 and thus have `useSyncExternalStore` available.
 
-import { useSyncExternalStore } from 'react'
+import * as React from 'react'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector'
 
 import { initializeUseSelector } from './hooks/useSelector'
 import { initializeConnect } from './components/connect'
 
 initializeUseSelector(useSyncExternalStoreWithSelector)
-initializeConnect(useSyncExternalStore)
+initializeConnect(React.useSyncExternalStore)
 
 import { getBatch } from './utils/batch'
 
