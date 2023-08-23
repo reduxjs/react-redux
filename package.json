@@ -19,6 +19,7 @@
     "./package.json": "./package.json",
     ".": {
       "types": "./dist/react-redux.d.ts",
+      "react-server": "./dist/rsc.mjs",
       "import": "./dist/react-redux.mjs",
       "default": "./dist/cjs/index.js"
     },
