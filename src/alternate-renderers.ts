@@ -1,3 +1,5 @@
+'use client'
+
 // The "alternate renderers" entry point is primarily here to fall back on a no-op
 // version of `unstable_batchedUpdates`, for use with renderers other than ReactDOM/RN.
 // Examples include React-Three-Fiber, Ink, etc.
