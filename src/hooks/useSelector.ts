@@ -1,13 +1,17 @@
-import { useCallback, useDebugValue, useRef } from 'react'
+import React, { useCallback, useDebugValue, useRef } from 'react'
 
 import {
   createReduxContextHook,
   useReduxContext as useDefaultReduxContext,
 } from './useReduxContext'
-import { ReactReduxContext } from '../components/Context'
+import {
+  ReactReduxContext,
+  ReactReduxContextValue,
+} from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
+import { Action, UnknownAction } from 'redux'
 
 export type CheckFrequency = 'never' | 'once' | 'always'
 
@@ -41,7 +45,9 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(context = ReactReduxContext): UseSelector {
+export function createSelectorHook(
+  context: React.Context<ReactReduxContextValue<any, any>> = ReactReduxContext
+): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
