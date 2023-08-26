@@ -43,7 +43,10 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
 export function createSelectorHook(
-  context: React.Context<ReactReduxContextValue<any, any>> = ReactReduxContext
+  context: React.Context<ReactReduxContextValue<
+    any,
+    any
+  > | null> = ReactReduxContext
 ): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
@@ -83,7 +86,7 @@ export function createSelectorHook(
       getServerState,
       stabilityCheck: globalStabilityCheck,
       noopCheck: globalNoopCheck,
-    } = useReduxContext()!
+    } = useReduxContext()
 
     const firstRun = React.useRef(true)
 

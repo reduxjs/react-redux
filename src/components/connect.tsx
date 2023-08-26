@@ -584,7 +584,7 @@ function connect<
         : contextValue!.store
 
       const getServerState = didStoreComeFromContext
-        ? contextValue.getServerState
+        ? contextValue!.getServerState
         : store.getState
 
       const childPropsSelector = React.useMemo(() => {

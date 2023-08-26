@@ -2,7 +2,13 @@
 
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import { Store, Dispatch, configureStore, AnyAction } from '@reduxjs/toolkit'
+import type { Store, Dispatch, AnyAction } from '@reduxjs/toolkit'
+import { configureStore } from '@reduxjs/toolkit'
+import type {
+  ReactReduxContextValue,
+  Selector,
+  TypedUseSelectorHook,
+} from '../../src/index'
 import {
   connect,
   ConnectedProps,
@@ -10,8 +16,6 @@ import {
   DispatchProp,
   MapStateToProps,
   ReactReduxContext,
-  ReactReduxContextValue,
-  Selector,
   shallowEqual,
   MapDispatchToProps,
   useDispatch,
@@ -20,17 +24,15 @@ import {
   createDispatchHook,
   createSelectorHook,
   createStoreHook,
-  TypedUseSelectorHook,
 } from '../../src/index'
 
+import type { AppDispatch, RootState } from './counterApp'
 import {
   CounterState,
   counterSlice,
   increment,
   incrementAsync,
-  AppDispatch,
   AppThunk,
-  RootState,
   fetchCount,
 } from './counterApp'
 
@@ -224,9 +226,10 @@ function testCreateHookFunctions() {
     type: 'TEST_ACTION'
   }
 
-  const Context = React.createContext<
-    ReactReduxContextValue<RootState, RootAction>
-  >(null as any)
+  const Context = React.createContext<ReactReduxContextValue<
+    RootState,
+    RootAction
+  > | null>(null)
 
   // No context tests
   expectType<() => Dispatch<AnyAction>>(createDispatchHook())

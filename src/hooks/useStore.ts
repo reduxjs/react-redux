@@ -17,7 +17,7 @@ export function createStoreHook<
   S = unknown,
   A extends BasicAction = UnknownAction
   // @ts-ignore
->(context?: Context<ReactReduxContextValue<S, A>> = ReactReduxContext) {
+>(context?: Context<ReactReduxContextValue<S, A> | null> = ReactReduxContext) {
   const useReduxContext =
     // @ts-ignore
     context === ReactReduxContext
@@ -29,7 +29,7 @@ export function createStoreHook<
     Action2 extends BasicAction = A
     // @ts-ignore
   >() {
-    const { store } = useReduxContext()!
+    const { store } = useReduxContext()
     // @ts-ignore
     return store as Store<State, Action2>
   }

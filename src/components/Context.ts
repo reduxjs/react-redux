@@ -19,20 +19,26 @@ const ContextKey = Symbol.for(`react-redux-context`)
 const gT: {
   [ContextKey]?: Map<
     typeof React.createContext,
-    Context<ReactReduxContextValue>
+    Context<ReactReduxContextValue | null>
   >
-} = (typeof globalThis !== "undefined" ? globalThis : /* fall back to a per-module scope (pre-8.1 behaviour) if `globalThis` is not available */ {}) as any; 
+} = (
+  typeof globalThis !== 'undefined'
+    ? globalThis
+    : /* fall back to a per-module scope (pre-8.1 behaviour) if `globalThis` is not available */ {}
+) as any
 
-function getContext(): Context<ReactReduxContextValue> {
+function getContext(): Context<ReactReduxContextValue | null> {
   if (!React.createContext) return {} as any
 
   const contextMap = (gT[ContextKey] ??= new Map<
     typeof React.createContext,
-    Context<ReactReduxContextValue>
+    Context<ReactReduxContextValue | null>
   >())
   let realContext = contextMap.get(React.createContext)
   if (!realContext) {
-    realContext = React.createContext<ReactReduxContextValue>(null as any)
+    realContext = React.createContext<ReactReduxContextValue | null>(
+      null as any
+    )
     if (process.env.NODE_ENV !== 'production') {
       realContext.displayName = 'ReactRedux'
     }
