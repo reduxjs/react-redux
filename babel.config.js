@@ -16,6 +16,7 @@ module.exports = {
       },
     ],
     '@babel/preset-typescript',
+    'module:metro-react-native-babel-preset',
   ],
   plugins: [
     ['@babel/proposal-decorators', { legacy: true }],
@@ -24,15 +25,6 @@ module.exports = {
     ['@babel/plugin-proposal-private-methods', { loose: true }],
     ['@babel/plugin-proposal-private-property-in-object', { loose: true }],
     cjs && ['@babel/transform-modules-commonjs'],
-    [
-      '@babel/transform-runtime',
-      {
-        useESModules: !cjs,
-        version: require('./package.json').dependencies[
-          '@babel/runtime'
-        ].replace(/^[^0-9]*/, ''),
-      },
-    ],
   ].filter(Boolean),
   assumptions: {
     enumerableModuleMeta: true,

@@ -11,17 +11,13 @@
 import React, { FunctionComponent } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createStore } from 'redux'
+import type { PayloadAction } from '@reduxjs/toolkit'
 import { Provider, connect } from '../../src/index'
 import type { Dispatch, Store } from 'redux'
 
 describe('React', () => {
   describe('server rendering', () => {
-    interface ActionType {
-      type: string
-      payload: {
-        greeting: string
-      }
-    }
+    type ActionType = PayloadAction<{ greeting: string }>
     function greetingReducer(
       state = { greeting: 'Hello' },
       action: ActionType

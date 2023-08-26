@@ -20,7 +20,7 @@ describe('React', () => {
         }
         list: Array<number>
       }
-      const store = createStore<RootStateType, AnyAction, unknown, unknown>(
+      const store = createStore<RootStateType, AnyAction, {}, {}>(
         (state, action) => {
           let newState =
             state !== undefined
