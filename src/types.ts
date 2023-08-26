@@ -7,7 +7,7 @@ import type {
 
 import type { Action, UnknownAction, Dispatch } from 'redux'
 
-import type { NonReactStatics } from 'hoist-non-react-statics'
+import type { NonReactStatics } from './utils/hoistStatics'
 
 import type { ConnectProps } from './components/connect'
 
