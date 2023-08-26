@@ -34,6 +34,16 @@ export default defineConfig((options) => {
       dts: true,
       clean: true,
     },
+    // ESM for RSC
+    {
+      ...commonOptions,
+      entry: {
+        rsc: 'src/index-rsc.ts',
+      },
+      format: ['esm'],
+      outExtension: () => ({ js: '.mjs' }),
+      dts: false,
+    },
     // Support Webpack 4 by pointing `"module"` to a file with a `.js` extension
     {
       ...commonOptions,
