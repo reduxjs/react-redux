@@ -805,6 +805,7 @@ describe('React', () => {
                 }),
                 selected: expect.any(Number),
                 selected2: expect.any(Number),
+                stack: expect.any(String),
               })
             )
           })
@@ -920,7 +921,10 @@ describe('React', () => {
             )
 
             expect(consoleSpy).toHaveBeenCalledWith(
-              expect.stringContaining('returned the root state when called.')
+              expect.stringContaining('returned the root state when called.'),
+              expect.objectContaining({
+                stack: expect.any(String),
+              })
             )
           })
         })
