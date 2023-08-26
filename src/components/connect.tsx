@@ -1,5 +1,4 @@
 /* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
-import hoistStatics from 'hoist-non-react-statics'
 import type { ComponentType } from 'react'
 import * as React from 'react'
 import { isValidElementType, isContextConsumer } from 'react-is'
@@ -31,6 +30,7 @@ import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import shallowEqual from '../utils/shallowEqual'
+import hoistStatics from '../utils/hoistStatics'
 import warning from '../utils/warning'
 
 import type {
