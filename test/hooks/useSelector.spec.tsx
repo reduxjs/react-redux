@@ -26,6 +26,7 @@ import type {
 } from '../../src/index'
 import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
 import type { Store, AnyAction, Action } from 'redux'
+import { createSlice, configureStore, PayloadAction } from '@reduxjs/toolkit'
 import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // disable checks by default
@@ -89,7 +90,10 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const selector = jest.fn((s: NormalStateType) => s.count)
+          const selector = jest.fn((s: NormalStateType) => {
+            //console.log('Running selector: `s.count`')
+            return s.count
+          })
           let result: number | undefined
           const Comp = () => {
             const count = useNormalSelector(selector)
@@ -120,17 +124,20 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          const store = createStore((c: number = 1): number => c + 1, -1)
+          // const store = createStore((c: number = 1): number => c + 1, -1)
 
           const Comp = () => {
-            const selector = useCallback((c: number): number => c + 1, [])
+            const selector = useCallback(
+              (state: NormalStateType) => state.count + 1,
+              []
+            )
             const value = useSelector(selector)
             renderedItems.push(value)
             return <div />
           }
 
           rtl.render(
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Comp />
             </ProviderMock>
           )
@@ -138,7 +145,7 @@ describe('React', () => {
           expect(renderedItems).toEqual([1])
 
           rtl.act(() => {
-            store.dispatch({ type: '' })
+            normalStore.dispatch({ type: '' })
           })
 
           expect(renderedItems).toEqual([1, 2])
@@ -250,10 +257,13 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        const store = createStore((c: number = 1): number => c + 1, -1)
+        //const store = createStore((c: number = 1): number => c + 1, -1)
 
         const Comp = () => {
-          const selector = useCallback((c: number): number => c, [])
+          const selector = useCallback(
+            (state: NormalStateType) => state.count,
+            []
+          )
           const count = useSelector(selector)
           renderedItems.push(count)
           return <Child parentCount={count} />
@@ -266,14 +276,14 @@ describe('React', () => {
         const Child = ({ parentCount }: ChildPropsType) => {
           useLayoutEffect(() => {
             if (parentCount === 1) {
-              store.dispatch({ type: '' })
+              normalStore.dispatch({ type: '' })
             }
           }, [parentCount])
           return <div>{parentCount}</div>
         }
 
         rtl.render(
-          <ProviderMock store={store}>
+          <ProviderMock store={normalStore}>
             <Comp />
           </ProviderMock>
         )
@@ -283,7 +293,7 @@ describe('React', () => {
 
         // This dispatch triggers another dispatch in useLayoutEffect
         rtl.act(() => {
-          store.dispatch({ type: '' })
+          normalStore.dispatch({ type: '' })
         })
 
         expect(renderedItems).toEqual([0, 1, 2])
@@ -440,6 +450,112 @@ describe('React', () => {
           expect(selector).toHaveBeenCalledTimes(2)
           expect(renderedItems.length).toEqual(2)
         })
+
+        it('only re-runs selectors if the referenced fields actually change', () => {
+          interface StateType {
+            count1: number
+            count2: number
+            count3: number
+          }
+
+          const initialState: StateType = {
+            count1: 0,
+            count2: 0,
+            count3: 0,
+          }
+
+          const countersSlice = createSlice({
+            name: 'counters',
+            initialState,
+            reducers: {
+              increment1: (state) => {
+                state.count1++
+              },
+              increment2: (state) => {
+                state.count2++
+              },
+              increment3: (state) => {
+                state.count3++
+              },
+            },
+          })
+
+          const store = configureStore({
+            reducer: countersSlice.reducer,
+          })
+
+          const selector1 = jest.fn((s: StateType) => {
+            return s.count1
+          })
+          const selector2 = jest.fn((s: StateType) => {
+            return s.count2
+          })
+          const selector3 = jest.fn((s: StateType) => {
+            return s.count3
+          })
+          const renderedItems: number[] = []
+
+          let subscription: Subscription
+
+          const Comp = () => {
+            subscription = useContext(ReactReduxContext).subscription
+            const c1 = useSelector(selector1)
+            const c2 = useSelector(selector2)
+            const c3 = useSelector(selector3)
+
+            return null
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <Comp />
+            </ProviderMock>
+          )
+
+          const listeners = subscription!.getListeners().get()
+
+          expect(listeners.length).toBe(3)
+
+          // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
+          expect(selector1).toHaveBeenCalledTimes(1)
+          expect(selector2).toHaveBeenCalledTimes(1)
+          expect(selector3).toHaveBeenCalledTimes(1)
+
+          expect(listeners[0].selectorCache!.cache.needsRecalculation()).toBe(
+            false
+          )
+          expect(listeners[1].selectorCache!.cache.needsRecalculation()).toBe(
+            false
+          )
+          expect(listeners[2].selectorCache!.cache.needsRecalculation()).toBe(
+            false
+          )
+
+          rtl.act(() => {
+            store.dispatch(countersSlice.actions.increment1())
+            console.log('Dispatch complete')
+
+            expect(selector1).toHaveBeenCalledTimes(2)
+            expect(selector2).toHaveBeenCalledTimes(1)
+            expect(selector3).toHaveBeenCalledTimes(1)
+          })
+
+          rtl.act(() => {
+            store.dispatch(countersSlice.actions.increment2())
+
+            expect(selector1).toHaveBeenCalledTimes(2)
+            expect(selector2).toHaveBeenCalledTimes(2)
+            expect(selector3).toHaveBeenCalledTimes(1)
+          })
+
+          rtl.act(() => {
+            store.dispatch(countersSlice.actions.increment3())
+
+            expect(selector1).toHaveBeenCalledTimes(2)
+            expect(selector2).toHaveBeenCalledTimes(2)
+            expect(selector3).toHaveBeenCalledTimes(2)
+          })
+        })
       })
 
       it('uses the latest selector', () => {
@@ -450,7 +566,10 @@ describe('React', () => {
           const [, f] = useReducer((c) => c + 1, 0)
           forceRender = f
           const renderedSelectorId = selectorId++
-          const value = useSelector(() => renderedSelectorId)
+          const value = useSelector((state: NormalStateType) => {
+            const { count } = state
+            return renderedSelectorId
+          })
           renderedItems.push(value)
           return <div />
         }
@@ -492,6 +611,7 @@ describe('React', () => {
           }
           const Child = ({ parentCount }: ChildPropsType) => {
             const result = useNormalSelector(({ count }) => {
+              // console.log('Selector: ', { count, parentCount })
               if (count !== parentCount) {
                 throw new Error()
               }
@@ -508,6 +628,7 @@ describe('React', () => {
             </ProviderMock>
           )
 
+          // console.log('Running second dispatch')
           const doDispatch = () => normalStore.dispatch({ type: '' })
           expect(doDispatch).not.toThrowError()
 
@@ -518,22 +639,20 @@ describe('React', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
-            const result = useSelector((count: number) => {
-              if (count > 0) {
+            const result = useSelector((state: NormalStateType) => {
+              if (state.count > 0) {
                 // console.log('Throwing error')
                 throw new Error('Panic!')
               }
 
-              return count
+              return state.count
             })
 
             return <div>{result}</div>
           }
 
-          const store = createStore((count: number = -1): number => count + 1)
-
           const App = () => (
-            <ProviderMock store={store}>
+            <ProviderMock store={normalStore}>
               <Comp />
             </ProviderMock>
           )
@@ -544,7 +663,7 @@ describe('React', () => {
           // The test selector will happen to re-throw while rendering and we do see that.
           expect(() => {
             rtl.act(() => {
-              store.dispatch({ type: '' })
+              normalStore.dispatch({ type: '' })
             })
           }).toThrow(/Panic!/)
 
@@ -554,13 +673,19 @@ describe('React', () => {
         it('re-throws errors from the selector that only occur during rendering', () => {
           const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
+          let forceParentRender: () => void
           const Parent = () => {
-            const count = useNormalSelector((s) => s.count)
+            const [, forceRender] = useReducer((c) => c + 1, 0)
+            forceParentRender = forceRender
+            const count = useNormalSelector((s) => {
+              return s.count
+            })
             return <Child parentCount={count} />
           }
 
           const Child = ({ parentCount }: ChildPropsType) => {
             const result = useNormalSelector(({ count }) => {
+              console.trace('Selector values: ', { count, parentCount })
               if (parentCount > 0) {
                 throw new Error()
               }
@@ -580,6 +705,7 @@ describe('React', () => {
           expect(() => {
             rtl.act(() => {
               normalStore.dispatch({ type: '' })
+              //forceParentRender()
             })
           }).toThrowError()
 
@@ -927,6 +1053,129 @@ describe('React', () => {
               })
             )
           })
+        })
+      })
+
+      describe('Auto-tracking behavior checks', () => {
+        interface Todo {
+          id: number
+          name: string
+          completed: boolean
+        }
+
+        type TodosState = Todo[]
+
+        const counterSlice = createSlice({
+          name: 'counters',
+          initialState: {
+            deeply: {
+              nested: {
+                really: {
+                  deeply: {
+                    nested: {
+                      c1: { value: 0 },
+                    },
+                  },
+                },
+              },
+            },
+
+            c2: { value: 0 },
+          },
+          reducers: {
+            increment1(state) {
+              // state.c1.value++
+              state.deeply.nested.really.deeply.nested.c1.value++
+            },
+            increment2(state) {
+              state.c2.value++
+            },
+          },
+        })
+
+        const todosSlice = createSlice({
+          name: 'todos',
+          initialState: [
+            { id: 0, name: 'a', completed: false },
+            { id: 1, name: 'b', completed: false },
+            { id: 2, name: 'c', completed: false },
+          ] as TodosState,
+          reducers: {
+            toggleCompleted(state, action: PayloadAction<number>) {
+              const todo = state.find((todo) => todo.id === action.payload)
+              if (todo) {
+                todo.completed = !todo.completed
+              }
+            },
+            setName(state) {
+              state[1].name = 'd'
+            },
+          },
+        })
+
+        function makeStore() {
+          return configureStore({
+            reducer: {
+              counter: counterSlice.reducer,
+              todos: todosSlice.reducer,
+            },
+            middleware: (gDM) =>
+              gDM({
+                serializableCheck: false,
+                immutableCheck: false,
+              }),
+          })
+        }
+
+        type AppStore = ReturnType<typeof makeStore>
+        let store: AppStore
+        type RootState = ReturnType<AppStore['getState']>
+
+        const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+
+        beforeEach(() => {
+          store = makeStore()
+        })
+
+        test.only('should correctly handle updates to nested data', async () => {
+          let itemSelectorCallsCount = 0
+          let listSelectorCallsCount = 0
+          function TodoListItem({ todoId }: { todoId: number }) {
+            console.log('TodoListItem render: ', todoId)
+            const todo = useAppSelector((state) => {
+              itemSelectorCallsCount++
+              return state.todos.find((t) => t.id === todoId)
+            })!
+            return (
+              <div>
+                {todo.id}: {todo.name} ({todo.completed})
+              </div>
+            )
+          }
+
+          function TodoList() {
+            const todoIds = useAppSelector((state) => {
+              listSelectorCallsCount++
+              return state.todos.map((t) => t.id)
+            })
+            console.log('TodoList render: ', todoIds)
+            return (
+              <>
+                {todoIds.map((id) => (
+                  <TodoListItem todoId={id} key={id} />
+                ))}
+              </>
+            )
+          }
+
+          rtl.render(
+            <Provider store={store} stabilityCheck="never">
+              <TodoList />
+            </Provider>
+          )
+
+          expect(listSelectorCallsCount).toBe(1)
+          expect(itemSelectorCallsCount).toBe(3)
         })
       })
     })

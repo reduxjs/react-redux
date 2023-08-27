@@ -3,6 +3,7 @@ import type { Context } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import type { Subscription } from '../utils/Subscription'
 import type { CheckFrequency } from '../hooks/useSelector'
+import type { Node } from '../utils/autotracking/tracking'
 
 export interface ReactReduxContextValue<
   SS = any,
@@ -13,6 +14,7 @@ export interface ReactReduxContextValue<
   getServerState?: () => SS
   stabilityCheck: CheckFrequency
   noopCheck: CheckFrequency
+  trackingNode: Node<Record<string, unknown>>
 }
 
 const ContextKey = Symbol.for(`react-redux-context`)

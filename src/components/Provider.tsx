@@ -6,6 +6,7 @@ import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { Action, AnyAction, Store } from 'redux'
 import type { CheckFrequency } from '../hooks/useSelector'
+import { createNode, updateNode } from '../utils/autotracking/proxy'
 
 export interface ProviderProps<A extends Action = AnyAction, S = unknown> {
   /**
@@ -42,14 +43,21 @@ function Provider<A extends Action = AnyAction, S = unknown>({
   stabilityCheck = 'once',
   noopCheck = 'once',
 }: ProviderProps<A, S>) {
-  const contextValue = React.useMemo(() => {
-    const subscription = createSubscription(store)
+  const contextValue: ReactReduxContextValue = React.useMemo(() => {
+    const trackingNode = createNode(store.getState() as any)
+    //console.log('Created tracking node: ', trackingNode)
+    const subscription = createSubscription(
+      store as any,
+      undefined,
+      trackingNode
+    )
     return {
-      store,
+      store: store as any,
       subscription,
       getServerState: serverState ? () => serverState : undefined,
       stabilityCheck,
       noopCheck,
+      trackingNode,
     }
   }, [store, serverState, stabilityCheck, noopCheck])
 

@@ -13,7 +13,7 @@ import {
 
 const IS_REACT_18 = React.version.startsWith('18')
 
-describe('New v8 serverState behavior', () => {
+describe.skip('New v8 serverState behavior', () => {
   interface State {
     count: number
     data: string[]

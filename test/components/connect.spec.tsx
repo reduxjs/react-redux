@@ -76,8 +76,14 @@ describe('React', () => {
       type: string
       body: any
     }
-    function stringBuilder(prev = '', action: ActionType) {
-      return action.type === 'APPEND' ? prev + action.body : prev
+    interface StringState {
+      string: string
+    }
+
+    function stringBuilder(state = { string: '' }, action: ActionType) {
+      return action.type === 'APPEND'
+        ? { string: state.string + action.body }
+        : state
     }
 
     afterEach(() => rtl.cleanup())
@@ -155,9 +161,9 @@ describe('React', () => {
             return <Passthrough {...this.props} />
           }
         }
-        const ConnectedContainer = connect((state) => ({ string: state }))(
-          Container
-        )
+        const ConnectedContainer = connect((state: StringState) => ({
+          string: state.string,
+        }))(Container)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
@@ -192,9 +198,9 @@ describe('React', () => {
           TStateProps,
           unknown,
           unknown,
-          string
+          StringState
         >((state) => ({
-          string: state,
+          string: state.string,
         }))(Container)
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -236,9 +242,9 @@ describe('React', () => {
           TStateProps,
           unknown,
           unknown,
-          string
+          StringState
         >((state) => ({
-          string: state,
+          string: state.string,
         }))(Container)
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -529,7 +535,7 @@ describe('React', () => {
         }
 
         const ConnectedInner = connect(
-          (state) => ({ stateThing: state }),
+          (state: StringState) => ({ stateThing: state.string }),
           { doSomething },
           (stateProps, actionProps, parentProps: InnerPropsType) => ({
             ...stateProps,
@@ -1196,8 +1202,8 @@ describe('React', () => {
           ChildrenPropsType,
           unknown,
           unknown,
-          string
-        >((state) => ({ state }))(Child)
+          StringState
+        >((state) => ({ state: state.string }))(Child)
 
         const { unmount } = rtl.render(
           <ProviderMock store={store}>
@@ -1477,9 +1483,9 @@ describe('React', () => {
           TStateProps,
           TDispatchProps,
           {},
-          string
+          StringState
         >(
-          (state) => ({ string: state }),
+          (state) => ({ string: state.string }),
           (dispatch) => ({ dispatch })
         )(Container)
 
@@ -1538,7 +1544,7 @@ describe('React', () => {
         }
         type TOwnProps = ContainerPropsType
         type TMergedProps = TOwnProps & TDispatchProps & TStateProps
-        type RootState = string
+        type RootState = StringState
 
         class Container extends Component<TMergedProps> {
           render() {
@@ -1552,7 +1558,7 @@ describe('React', () => {
           TMergedProps,
           RootState
         >(
-          (state) => ({ string: state }),
+          (state) => ({ string: state.string }),
           (dispatch: ReduxDispatch) => ({ dispatch }),
           (
             stateProps: { string: string },
@@ -1705,9 +1711,9 @@ describe('React', () => {
             return <Passthrough {...this.props} />
           }
         }
-        const ConnectedContainer = connect((state) => {
+        const ConnectedContainer = connect((state: StringState) => {
           mapStateCalls++
-          return state === 'aaa' ? { change: 1 } : {}
+          return state.string === 'aaa' ? { change: 1 } : {}
         })(Container)
 
         rtl.render(
@@ -2927,7 +2933,7 @@ describe('React', () => {
         }
 
         const ConnectedContainerA = connect(
-          (state) => ({ string: state }),
+          (state: StringState) => ({ string: state.string }),
           () => ({}),
           () => ({}),
           // The `pure` option has been removed
@@ -2942,7 +2948,7 @@ describe('React', () => {
         }
 
         const ConnectedContainerB = connect(
-          (state) => ({ string: state }),
+          (state: StringState) => ({ string: state.string }),
           () => ({}),
           () => ({}),
           // The `pure` option has been removed
@@ -2968,7 +2974,7 @@ describe('React', () => {
 
     describe('Subscription and update timing correctness', () => {
       it('should pass state consistently to mapState', () => {
-        type RootStateType = string
+        type RootStateType = StringState
         const store: Store = createStore(stringBuilder)
 
         rtl.act(() => {
@@ -2999,7 +3005,7 @@ describe('React', () => {
           ContainerNoDisPatch,
           ContainerOwnProps,
           RootStateType
-        >((state) => ({ state }))(Container)
+        >((state) => ({ state: state.string }))(Container)
 
         const childCalls: any[] = []
 
@@ -3020,9 +3026,9 @@ describe('React', () => {
           RootStateType
         >((state, parentProps) => {
           childMapStateInvokes++
-          childCalls.push([state, parentProps.parentState])
+          childCalls.push([state.string, parentProps.parentState])
           // The state from parent props should always be consistent with the current state
-          expect(state).toEqual(parentProps.parentState)
+          expect(state.string).toEqual(parentProps.parentState)
           return {}
         })(ChildContainer)
 

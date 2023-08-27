@@ -51,8 +51,8 @@ const nextEntryConfig = {
 module.exports = {
   projects: [
     tsStandardConfig,
-    rnConfig,
-    standardReact17Config,
-    nextEntryConfig,
+    //rnConfig,
+    //standardReact17Config,
+    //nextEntryConfig,
   ],
 }

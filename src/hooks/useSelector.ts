@@ -1,4 +1,4 @@
-import { useCallback, useDebugValue, useRef } from 'react'
+import { useCallback, useDebugValue, useMemo, useRef } from 'react'
 
 import {
   createReduxContextHook,
@@ -8,6 +8,9 @@ import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
+import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import { createCache } from '../utils/autotracking/autotracking'
+import { CacheWrapper } from '../utils/Subscription'
 
 export type CheckFrequency = 'never' | 'once' | 'always'
 
@@ -80,6 +83,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       getServerState,
       stabilityCheck: globalStabilityCheck,
       noopCheck: globalNoopCheck,
+      trackingNode,
     } = useReduxContext()!
 
     const firstRun = useRef(true)
@@ -150,11 +154,52 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       [selector, globalStabilityCheck, stabilityCheck]
     )
 
+    const latestWrappedSelectorRef = useRef(wrappedSelector)
+
+    // console.log(
+    //   'Writing latest selector. Same reference? ',
+    //   wrappedSelector === latestWrappedSelectorRef.current
+    // )
+    latestWrappedSelectorRef.current = wrappedSelector
+
+    const cache = useMemo(() => {
+      //console.log('Recreating cache')
+      const cache = createCache(() => {
+        // console.log('Wrapper cache called: ', store.getState())
+        //return latestWrappedSelectorRef.current(trackingNode.proxy as TState)
+        return wrappedSelector(trackingNode.proxy as TState)
+      })
+      return cache
+    }, [trackingNode, wrappedSelector])
+
+    const cacheWrapper = useRef({ cache } as CacheWrapper)
+
+    useIsomorphicLayoutEffect(() => {
+      cacheWrapper.current.cache = cache
+    })
+
+    const subscribeToStore = useMemo(() => {
+      const subscribeToStore = (onStoreChange: () => void) => {
+        const wrappedOnStoreChange = () => {
+          // console.log('wrappedOnStoreChange')
+          return onStoreChange()
+        }
+        console.log('Subscribing to store with tracking')
+        return subscription.addNestedSub(wrappedOnStoreChange, {
+          trigger: 'tracked',
+          cache: cacheWrapper.current,
+        })
+      }
+      return subscribeToStore
+    }, [subscription])
+
     const selectedState = useSyncExternalStoreWithSelector(
-      subscription.addNestedSub,
+      //subscription.addNestedSub,
+      subscribeToStore,
       store.getState,
+      //() => trackingNode.proxy as TState,
       getServerState || store.getState,
-      wrappedSelector,
+      cache.getValue,
       equalityFn
     )
 
