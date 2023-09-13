@@ -19,7 +19,6 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
           cache: 'yarn'
 
       - name: Install dependencies
@@ -50,16 +49,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['16.x']
         ts: ['4.7', '4.8', '4.9', '5.0']
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Use node ${{ matrix.node }}
+      - name: Use node
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
           cache: 'yarn'
 
       - name: Install deps
@@ -81,7 +78,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['16.x']
         example: ['rr-rsc-context']
     defaults:
       run:
@@ -90,10 +86,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Use node ${{ matrix.node }}
+      - name: Use node
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
           cache: 'yarn'
 
       - name: Install deps
