@@ -127,12 +127,24 @@ jobs:
       - name: Check folder contents
         run: ls -l .
 
+        # Some weird install diffs with cloning this repo and installing.
+        # Just kill the lockfiles for React-Redux and RTK and reinstall
+
+      - name: Remove React-Redux lockfile
+        run: rm yarn.lock && rm package.json
+
+      - name: Remove RTK lockfile
+        working-directory: ./redux-toolkit
+        run: rm yarn.lock && rm package.json
+
       - name: Install deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        # Some weird install diffs with cloning this repo and installing.
-        # Don't care about lockfile diffs, so let it change.
-        # Note the Bash-ism to unset the env var
-        run: CI= yarn install
+        run: rm yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+
+      - name: Install Playwright browser if necessary
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        continue-on-error: true
+        run: yarn playwright install
 
       - uses: actions/download-artifact@v2
         with:
