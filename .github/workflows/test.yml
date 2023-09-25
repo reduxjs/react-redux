@@ -97,6 +97,68 @@ jobs:
       - name: Run are-the-types-wrong
         run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs no-resolution
 
+  test-published-artifact:
+    name: Test Published Artifact ${{ matrix.example }}
+
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['16.x']
+        example: ['cra4', 'cra5', 'next', 'vite', 'node-standard', 'node-esm']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Use node ${{ matrix.node }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Clone RTK repo
+        run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
+
+      - name: Check out v2.0-integration
+        working-directory: ./redux-toolkit
+        run: git checkout v2.0-integration
+
+      - name: Check folder contents
+        run: ls -l .
+
+      - name: Install deps
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        # Some weird install diffs with cloning this repo and installing.
+        # Don't care about lockfile diffs, so let it change.
+        # Note the Bash-ism to unset the env var
+        run: CI= yarn install
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: package
+          path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+
+      - name: Check folder contents
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: ls -l .
+
+      - name: Install build artifact
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn add ./package.tgz
+
+      - name: Show installed package versions
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn info react-redux && yarn why react-redux
+
+      - name: Build example
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn build
+
+      - name: Run test step
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn test
+
   test-published-artifact-local:
     name: Test Published Artifact (Local) ${{ matrix.example }}
 
