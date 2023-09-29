@@ -109,7 +109,7 @@ jobs:
         example: ['cra4', 'cra5', 'next', 'vite', 'node-standard', 'node-esm']
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@v2
