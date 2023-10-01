@@ -97,6 +97,80 @@ jobs:
       - name: Run are-the-types-wrong
         run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs no-resolution
 
+  test-published-artifact:
+    name: Test Published Artifact ${{ matrix.example }}
+
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['16.x']
+        example: ['cra4', 'cra5', 'next', 'vite', 'node-standard', 'node-esm']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use node ${{ matrix.node }}
+        uses: actions/setup-node@v3.8.1
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Clone RTK repo
+        run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
+
+      - name: Check out v2.0-integration
+        working-directory: ./redux-toolkit
+        run: git checkout v2.0-integration
+
+      - name: Check folder contents
+        run: ls -l .
+
+        # Some weird install diffs with cloning this repo and installing.
+        # Just kill the lockfiles for React-Redux and RTK and reinstall
+
+      - name: Remove React-Redux lockfile
+        run: rm yarn.lock && rm package.json
+
+      - name: Remove RTK lockfile
+        working-directory: ./redux-toolkit
+        run: rm yarn.lock && rm package.json
+
+      - name: Install deps
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: rm yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn add msw@latest
+
+      - name: Install Playwright browser if necessary
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        continue-on-error: true
+        run: yarn playwright install
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: package
+          path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+
+      - name: Check folder contents
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: ls -l .
+
+      - name: Install build artifact
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn add ./package.tgz
+
+      - name: Show installed package versions
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn info react-redux && yarn why react-redux
+
+      - name: Build example
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn build
+
+      - name: Run test step
+        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        run: yarn test
+
   test-published-artifact-local:
     name: Test Published Artifact (Local) ${{ matrix.example }}
 
