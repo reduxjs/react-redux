@@ -6,6 +6,8 @@ import React, {
   useLayoutEffect,
   useState,
   useContext,
+  Suspense,
+  useEffect,
 } from 'react'
 import { createStore } from 'redux'
 import * as rtl from '@testing-library/react'
@@ -723,6 +725,130 @@ describe('React', () => {
           const expectedMaxUnmountTime = IS_REACT_18 ? 500 : 7000
           expect(elapsedTime).toBeLessThan(expectedMaxUnmountTime)
         })
+
+        it('keeps working when used inside a Suspense', async () => {
+          let result: number | undefined
+          let expectedResult: number | undefined
+          let lazyComponentAdded = false
+          let lazyComponentLoaded = false
+
+          // A lazy loaded component in the Suspense
+          // This component does nothing really. It is lazy loaded to trigger the issue
+          // Lazy loading this component will break other useSelectors in the same Suspense
+          // See issue https://github.com/reduxjs/react-redux/issues/1977
+          const OtherComp = () => {
+            useLayoutEffect(() => {
+              lazyComponentLoaded = true
+            }, [])
+
+            return <div></div>
+          }
+          let otherCompFinishLoading: () => void = () => {}
+          const OtherComponentLazy = React.lazy(
+            () =>
+              new Promise<{ default: React.ComponentType<any> }>((resolve) => {
+                otherCompFinishLoading = () =>
+                  resolve({
+                    default: OtherComp,
+                  })
+              })
+          )
+          let addOtherComponent: () => void = () => {}
+          const Dispatcher = React.memo(() => {
+            const [load, setLoad] = useState(false)
+
+            useEffect(() => {
+              addOtherComponent = () => setLoad(true)
+            }, [])
+            useEffect(() => {
+              lazyComponentAdded = true
+            })
+            return load ? <OtherComponentLazy /> : null
+          })
+          // End of lazy loading component
+
+          // The test component inside the suspense (uses the useSelector which breaks)
+          const CompInsideSuspense = () => {
+            const count = useNormalSelector((state) => state.count)
+
+            result = count
+            return (
+              <div>
+                {count}
+                <Dispatcher />
+              </div>
+            )
+          }
+          // The test component outside the suspense (uses the useSelector which keeps working - for comparison)
+          const CompOutsideSuspense = () => {
+            const count = useNormalSelector((state) => state.count)
+
+            expectedResult = count
+            return <div>{count}</div>
+          }
+
+          // Now, steps to reproduce
+          // step 1. make sure the component with the useSelector inside the Suspsense is rendered
+          //         -> it will register the subscription
+          // step 2. make sure the suspense is switched back to "Loading..." state by adding a component
+          //         -> this will remove our useSelector component from the page temporary!
+          // step 3. Finish loading the other component, so the suspense is no longer loading
+          //         -> this will re-add our <Provider> and useSelector component
+          // step 4. Check that the useSelectors in our re-added components still work
+
+          // step 1: render will render our component with the useSelector
+          rtl.render(
+            <>
+              <Suspense fallback={<div>Loading... </div>}>
+                <ProviderMock store={normalStore}>
+                  <CompInsideSuspense />
+                </ProviderMock>
+              </Suspense>
+              <ProviderMock store={normalStore}>
+                <CompOutsideSuspense />
+              </ProviderMock>
+            </>
+          )
+
+          // step 2: make sure the suspense is switched back to "Loading..." state by adding a component
+          rtl.act(() => {
+            addOtherComponent()
+          })
+          await rtl.waitFor(() => {
+            if (!lazyComponentAdded) {
+              throw new Error('Suspense is not back in loading yet')
+            }
+          })
+          expect(lazyComponentAdded).toEqual(true)
+
+          // step 3. Finish loading the other component, so the suspense is no longer loading
+          // This will re-add our components under the suspense, but will NOT rerender them!
+          rtl.act(() => {
+            otherCompFinishLoading()
+          })
+          await rtl.waitFor(() => {
+            if (!lazyComponentLoaded) {
+              throw new Error('Suspense is not back to loaded yet')
+            }
+          })
+          expect(lazyComponentLoaded).toEqual(true)
+
+          // step 4. Check that the useSelectors in our re-added components still work
+          // Do an update to the redux store
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
+
+          // Check the component *outside* the Suspense to check whether React rerendered
+          await rtl.waitFor(() => {
+            if (expectedResult !== 1) {
+              throw new Error('useSelector did not return 1 yet')
+            }
+          })
+
+          // Expect the useSelector *inside* the Suspense to also update (this was broken)
+          expect(result).toEqual(expectedResult)
+        })
       })
 
       describe('error handling for invalid arguments', () => {
@@ -805,6 +931,7 @@ describe('React', () => {
                 }),
                 selected: expect.any(Number),
                 selected2: expect.any(Number),
+                stack: expect.any(String),
               })
             )
           })
@@ -920,7 +1047,10 @@ describe('React', () => {
             )
 
             expect(consoleSpy).toHaveBeenCalledWith(
-              expect.stringContaining('returned the root state when called.')
+              expect.stringContaining('returned the root state when called.'),
+              expect.objectContaining({
+                stack: expect.any(String),
+              })
             )
           })
         })

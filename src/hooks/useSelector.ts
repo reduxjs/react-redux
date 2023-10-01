@@ -105,6 +105,12 @@ export function createSelectorHook(
             ) {
               const toCompare = selector(state)
               if (!equalityFn(selected, toCompare)) {
+                let stack: string | undefined = undefined
+                try {
+                  throw new Error()
+                } catch (e) {
+                  ;({ stack } = e as Error)
+                }
                 console.warn(
                   'Selector ' +
                     (selector.name || 'unknown') +
@@ -114,6 +120,7 @@ export function createSelectorHook(
                     state,
                     selected,
                     selected2: toCompare,
+                    stack,
                   }
                 )
               }
@@ -126,11 +133,18 @@ export function createSelectorHook(
             ) {
               // @ts-ignore
               if (selected === state) {
+                let stack: string | undefined = undefined
+                try {
+                  throw new Error()
+                } catch (e) {
+                  ;({ stack } = e as Error)
+                }
                 console.warn(
                   'Selector ' +
                     (selector.name || 'unknown') +
                     ' returned the root state when called. This can lead to unnecessary rerenders.' +
-                    '\nSelectors that return the entire state are almost certainly a mistake, as they will cause a rerender whenever *anything* in state changes.'
+                    '\nSelectors that return the entire state are almost certainly a mistake, as they will cause a rerender whenever *anything* in state changes.',
+                  { stack }
                 )
               }
             }
