@@ -99,9 +99,26 @@ export function createSubscription(store: any, parentSub?: Subscription) {
   let unsubscribe: VoidFunc | undefined
   let listeners: ListenerCollection = nullListeners
 
+  // Reasons to keep the subscription active
+  let subscriptionsAmount = 0
+
+  // Is this specific subscription subscribed (or only nested ones?)
+  let selfSubscribed = false
+
   function addNestedSub(listener: () => void) {
     trySubscribe()
-    return listeners.subscribe(listener)
+
+    const cleanupListener = listeners.subscribe(listener)
+
+    // cleanup nested sub
+    let removed = false
+    return () => {
+      if (!removed) {
+        removed = true
+        cleanupListener()
+        tryUnsubscribe()
+      }
+    }
   }
 
   function notifyNestedSubs() {
@@ -115,10 +132,11 @@ export function createSubscription(store: any, parentSub?: Subscription) {
   }
 
   function isSubscribed() {
-    return Boolean(unsubscribe)
+    return selfSubscribed
   }
 
   function trySubscribe() {
+    subscriptionsAmount++
     if (!unsubscribe) {
       unsubscribe = parentSub
         ? parentSub.addNestedSub(handleChangeWrapper)
@@ -129,11 +147,26 @@ export function createSubscription(store: any, parentSub?: Subscription) {
   }
 
   function tryUnsubscribe() {
-    if (unsubscribe) {
+    subscriptionsAmount--
+    if (unsubscribe && subscriptionsAmount === 0) {
       unsubscribe()
       unsubscribe = undefined
       listeners.clear()
       listeners = nullListeners
+    }
+  }
+
+  function trySubscribeSelf() {
+    if (!selfSubscribed) {
+      selfSubscribed = true
+      trySubscribe()
+    }
+  }
+
+  function tryUnsubscribeSelf() {
+    if (selfSubscribed) {
+      selfSubscribed = false
+      tryUnsubscribe()
     }
   }
 
@@ -142,8 +175,8 @@ export function createSubscription(store: any, parentSub?: Subscription) {
     notifyNestedSubs,
     handleChangeWrapper,
     isSubscribed,
-    trySubscribe,
-    tryUnsubscribe,
+    trySubscribe: trySubscribeSelf,
+    tryUnsubscribe: tryUnsubscribeSelf,
     getListeners: () => listeners,
   }
 
