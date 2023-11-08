@@ -28,6 +28,7 @@
       "import": "./dist/react-redux.alternate-renderers.mjs"
     }
   },
+  "sideEffects": "false",
   "files": [
     "dist",
     "es"
