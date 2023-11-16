@@ -2815,15 +2815,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-is@npm:^17":
-  version: 17.0.3
-  resolution: "@types/react-is@npm:17.0.3"
-  dependencies:
-    "@types/react": "*"
-  checksum: 6abb7c47d54f012272650df8a962a28bd82f219291e5ef8b4dfa7fe0bb98ae243b060bf9fbe8ceff6213141794855a006db194b490b00ffd15842ae19d0ce1f0
-  languageName: node
-  linkType: hard
-
 "@types/react-native@npm:^0.67.4":
   version: 0.67.4
   resolution: "@types/react-native@npm:0.67.4"
@@ -9391,7 +9382,6 @@ __metadata:
     "@types/object-assign": ^4.0.30
     "@types/react": ^18
     "@types/react-dom": ^18
-    "@types/react-is": ^17
     "@types/react-native": ^0.67.4
     "@types/use-sync-external-store": ^0.0.3
     "@typescript-eslint/eslint-plugin": ^4.28.0
@@ -9412,7 +9402,6 @@ __metadata:
     prettier: ^2.1.2
     react: 18.2.0
     react-dom: 18.2.0
-    react-is: ^18.0.0
     react-native: ^0.71.11
     react-test-renderer: 18.0.0
     redux: ^5.0.0-beta.0

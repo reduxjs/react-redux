@@ -72,7 +72,6 @@
   },
   "dependencies": {
     "@types/use-sync-external-store": "^0.0.3",
-    "react-is": "^18.0.0",
     "use-sync-external-store": "^1.0.0"
   },
   "devDependencies": {
@@ -97,7 +96,6 @@
     "@types/object-assign": "^4.0.30",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@types/react-is": "^17",
     "@types/react-native": "^0.67.4",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
     "@typescript-eslint/parser": "^4.28.0",
