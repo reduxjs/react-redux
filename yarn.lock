@@ -2419,23 +2419,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@reduxjs/toolkit@npm:^2.0.0-beta.0":
-  version: 2.0.0-beta.0
-  resolution: "@reduxjs/toolkit@npm:2.0.0-beta.0"
+"@reduxjs/toolkit@npm:^2.0.0-beta.4":
+  version: 2.0.0-beta.4
+  resolution: "@reduxjs/toolkit@npm:2.0.0-beta.4"
   dependencies:
     immer: ^10.0.2
-    redux: 5.0.0-beta.0
-    redux-thunk: 3.0.0-alpha.3
-    reselect: ^5.0.0-alpha.2
+    redux: ^5.0.0-beta.0
+    redux-thunk: ^3.0.0-beta.0
+    reselect: ^5.0.0-beta.0
   peerDependencies:
     react: ^16.9.0 || ^17.0.0 || ^18
-    react-redux: ^7.2.1 || ^8.0.2
+    react-redux: ^7.2.1 || ^8.0.2 || ^9.0.0-beta.0
   peerDependenciesMeta:
     react:
       optional: true
     react-redux:
       optional: true
-  checksum: e03ecca1ef61d1073908095cb43215b3f8254c0a81872d44b0f49788ade72bf303bffd43dee57a8f8acebf76fade7e0bfb3d049189aed4467cb98b2e5e7c5b01
+  checksum: f7fe690b26840485a0dbc4a367424fc6c96604d8f6cab17ccb216ce1320d9a5c2f81c13d4e93d14095de6b0196ac742bff43b4834494be258ee42559e9dd429c
   languageName: node
   linkType: hard
 
@@ -2782,13 +2782,6 @@ __metadata:
   version: 10.17.13
   resolution: "@types/node@npm:10.17.13"
   checksum: fe9f1574869344b0e58f5877c13903e4445356b921c976ca63ea2c8d286c3d4aded317011030dd4be7b94d5e3766a601cb7cfe3eda496bd6aef1846ab8c6c09b
-  languageName: node
-  linkType: hard
-
-"@types/object-assign@npm:^4.0.30":
-  version: 4.0.30
-  resolution: "@types/object-assign@npm:4.0.30"
-  checksum: 24e0471ddcd578b7ea72d5174e9cd6b68d78b5fa00f9f48cee38713c0e2886c6c3478c53c04d0508d16deb4370eed71ed0bb1f5b9aaa406e61f07ffed5da1d3b
   languageName: node
   linkType: hard
 
@@ -9372,14 +9365,13 @@ __metadata:
     "@babel/preset-env": ^7.12.1
     "@babel/preset-typescript": ^7.14.5
     "@microsoft/api-extractor": ^7.18.1
-    "@reduxjs/toolkit": ^2.0.0-beta.0
+    "@reduxjs/toolkit": ^2.0.0-beta.4
     "@testing-library/jest-dom": ^5.11.5
     "@testing-library/jest-native": ^3.4.3
     "@testing-library/react": 13.0.0
     "@testing-library/react-12": "npm:@testing-library/react@^12"
     "@testing-library/react-hooks": ^3.4.2
     "@testing-library/react-native": ^7.1.0
-    "@types/object-assign": ^4.0.30
     "@types/react": ^18
     "@types/react-dom": ^18
     "@types/react-native": ^0.67.4
@@ -9578,16 +9570,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"redux-thunk@npm:3.0.0-alpha.3":
-  version: 3.0.0-alpha.3
-  resolution: "redux-thunk@npm:3.0.0-alpha.3"
+"redux-thunk@npm:^3.0.0-beta.0":
+  version: 3.0.0-beta.0
+  resolution: "redux-thunk@npm:3.0.0-beta.0"
   peerDependencies:
-    redux: ^4
-  checksum: a5be77887b422b3182ff7fae617ec552cd5f830afb326d83af32a430c3eb439c942a38c3691e5c975119e37787974172dbc0139f7782cbfaeea5c1292fa123ed
+    redux: ^4 || ^5.0.0-beta.0
+  checksum: 1609e18a9fb56ab7403d760999996b50e136fcf7411ec9d809e9a4afa4187bf0ab545652c05ffbfca2e0397e59e6baf2ae0d35631a30bf8ba20af1205e98e0fe
   languageName: node
   linkType: hard
 
-"redux@npm:5.0.0-beta.0, redux@npm:^5.0.0-beta.0":
+"redux@npm:^5.0.0-beta.0":
   version: 5.0.0-beta.0
   resolution: "redux@npm:5.0.0-beta.0"
   checksum: 11df373e219f2f515ee1bda1a19a1ba5de02d8d5c874800ec353179dcd106eddd54432946fd0ab37c47f99f8fe53f820a6404c14da7f039a46022187e9469d2d
@@ -9727,10 +9719,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"reselect@npm:^5.0.0-alpha.2":
-  version: 5.0.0-alpha.2
-  resolution: "reselect@npm:5.0.0-alpha.2"
-  checksum: c47b66999800e1297721cbc4b2464b520fade9823c598d578759c9fba3eb6be03b184e13c20f30820cc18fe2688fc9fb4475f83e59d8f2347aa0d591e465637d
+"reselect@npm:^5.0.0-beta.0":
+  version: 5.0.0-beta.0
+  resolution: "reselect@npm:5.0.0-beta.0"
+  checksum: 462363aa730af93e396ff0d885f88fb8c43572b07f51c2a890d37f27edc3afecd300085916533e336142b3883f8532f35b5b1a2aaa1a70e9909aea48e5d3b98f
   languageName: node
   linkType: hard
 

@@ -30,8 +30,7 @@
   },
   "sideEffects": false,
   "files": [
-    "dist",
-    "es"
+    "dist"
   ],
   "scripts": {
     "build": "tsup",
@@ -86,14 +85,13 @@
     "@babel/preset-env": "^7.12.1",
     "@babel/preset-typescript": "^7.14.5",
     "@microsoft/api-extractor": "^7.18.1",
-    "@reduxjs/toolkit": "^2.0.0-beta.0",
+    "@reduxjs/toolkit": "^2.0.0-beta.4",
     "@testing-library/jest-dom": "^5.11.5",
     "@testing-library/jest-native": "^3.4.3",
     "@testing-library/react": "13.0.0",
     "@testing-library/react-12": "npm:@testing-library/react@^12",
     "@testing-library/react-hooks": "^3.4.2",
     "@testing-library/react-native": "^7.1.0",
-    "@types/object-assign": "^4.0.30",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-native": "^0.67.4",
