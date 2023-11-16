@@ -36,7 +36,7 @@ import {
   fetchCount,
 } from './counterApp'
 
-import objectAssign from 'object-assign'
+const objectAssign = Object.assign
 
 class Counter extends Component<any, any> {
   render() {
