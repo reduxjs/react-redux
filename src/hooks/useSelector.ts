@@ -1,4 +1,4 @@
-import { useCallback, useDebugValue, useRef } from 'react'
+import { useCallback, useDebugValue, useId, useRef, useState } from 'react'
 
 import {
   createReduxContextHook,
@@ -10,6 +10,18 @@ import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
 
 export type CheckFrequency = 'never' | 'once' | 'always'
+
+interface Measure {
+  duration: number
+  startTime: number
+  detail: { loc: string; trace: string; uid: string; code: string }
+}
+type Loc = string
+type Uid = string
+const measurements: Record<Loc, Record<Uid, Measure[]>> = {}
+// @ts-ignore
+// eslint-disable-next-line no-undef
+globalThis[Symbol.for('react-redux-selector-measurements')] = measurements
 
 export interface UseSelectorOptions<Selected = unknown> {
   equalityFn?: EqualityFn<Selected>
@@ -84,10 +96,31 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
 
     const firstRun = useRef(true)
 
+    const [trace] = useState<string>(() => {
+      try {
+        throw new Error()
+      } catch (e) {
+        return e.stack
+      }
+    })
+    const arr = trace.split('\n')
+    const loc = arr[arr.findIndex((x) => x.startsWith('useSelector')) + 1]
+    const uid = useId()
+
     const wrappedSelector = useCallback<typeof selector>(
       {
         [selector.name](state: TState) {
+          performance.mark('selectorStart')
           const selected = selector(state)
+          performance.mark('selectorEnd')
+          // @ts-ignore
+          const measure = performance.measure('selector', {
+            start: 'selectorStart',
+            end: 'selectorEnd',
+            detail: { trace, loc, uid, code: selector.toString() },
+          }) as any as Measure
+          ;((measurements[loc] ??= {})[uid] ??= []).push(measure)
+
           if (process.env.NODE_ENV !== 'production') {
             const finalStabilityCheck =
               typeof stabilityCheck === 'undefined'
