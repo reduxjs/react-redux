@@ -1,21 +1,21 @@
 import * as React from 'react'
 
-import {
-  createReduxContextHook,
-  useReduxContext as useDefaultReduxContext,
-} from './useReduxContext'
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
+import {
+  createReduxContextHook,
+  useReduxContext as useDefaultReduxContext,
+} from './useReduxContext'
 
 export type CheckFrequency = 'never' | 'once' | 'always'
 
 export interface UseSelectorOptions<Selected = unknown> {
   equalityFn?: EqualityFn<Selected>
   stabilityCheck?: CheckFrequency
-  noopCheck?: CheckFrequency
+  identityFunctionCheck?: CheckFrequency
 }
 
 export interface UseSelector {
@@ -62,7 +62,7 @@ export function createSelectorHook(
     const {
       equalityFn = refEquality,
       stabilityCheck = undefined,
-      noopCheck = undefined,
+      identityFunctionCheck = undefined,
     } = typeof equalityFnOrOptions === 'function'
       ? { equalityFn: equalityFnOrOptions }
       : equalityFnOrOptions
@@ -85,7 +85,7 @@ export function createSelectorHook(
       subscription,
       getServerState,
       stabilityCheck: globalStabilityCheck,
-      noopCheck: globalNoopCheck,
+      identityFunctionCheck: globalIdentityFunctionCheck,
     } = useReduxContext()
 
     const firstRun = React.useRef(true)
@@ -125,11 +125,11 @@ export function createSelectorHook(
                 )
               }
             }
-            const finalNoopCheck =
-              typeof noopCheck === 'undefined' ? globalNoopCheck : noopCheck
+            const finalIdentityFunctionCheck =
+              typeof identityFunctionCheck === 'undefined' ? globalIdentityFunctionCheck : identityFunctionCheck
             if (
-              finalNoopCheck === 'always' ||
-              (finalNoopCheck === 'once' && firstRun.current)
+              finalIdentityFunctionCheck === 'always' ||
+              (finalIdentityFunctionCheck === 'once' && firstRun.current)
             ) {
               // @ts-ignore
               if (selected === state) {

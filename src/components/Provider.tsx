@@ -32,8 +32,8 @@ export interface ProviderProps<
   /** Global configuration for the `useSelector` stability check */
   stabilityCheck?: CheckFrequency
 
-  /** Global configuration for the `useSelector` no-op check */
-  noopCheck?: CheckFrequency
+  /** Global configuration for the `useSelector` identity function check */
+  identityFunctionCheck?: CheckFrequency
 
   children: ReactNode
 }
@@ -44,7 +44,7 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>({
   children,
   serverState,
   stabilityCheck = 'once',
-  noopCheck = 'once',
+  identityFunctionCheck = 'once',
 }: ProviderProps<A, S>) {
   const contextValue = React.useMemo(() => {
     const subscription = createSubscription(store)
@@ -53,9 +53,9 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>({
       subscription,
       getServerState: serverState ? () => serverState : undefined,
       stabilityCheck,
-      noopCheck,
+      identityFunctionCheck,
     }
-  }, [store, serverState, stabilityCheck, noopCheck])
+  }, [store, serverState, stabilityCheck, identityFunctionCheck])
 
   const previousState = React.useMemo(() => store.getState(), [store])
 

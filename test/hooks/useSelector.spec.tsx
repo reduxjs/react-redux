@@ -33,14 +33,14 @@ import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 // disable checks by default
 function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
   stabilityCheck = 'never',
-  noopCheck = 'never',
+  identityFunctionCheck = 'never',
   ...props
 }: ProviderProps<A, S>) {
   return (
     <Provider
       {...props}
       stabilityCheck={stabilityCheck}
-      noopCheck={noopCheck}
+      identityFunctionCheck={identityFunctionCheck}
     />
   )
 }
@@ -1028,10 +1028,10 @@ describe('React', () => {
             expect(selector).toHaveBeenCalledTimes(4)
           })
         })
-        describe('no-op selector check', () => {
+        describe('identity function check', () => {
           it('warns for selectors that return the entire root state', () => {
             rtl.render(
-              <ProviderMock noopCheck="once" store={normalStore}>
+              <ProviderMock identityFunctionCheck="once" store={normalStore}>
                 <RenderSelector selector={(state) => state.count} />
               </ProviderMock>
             )
@@ -1041,7 +1041,7 @@ describe('React', () => {
             rtl.cleanup()
 
             rtl.render(
-              <ProviderMock noopCheck="once" store={normalStore}>
+              <ProviderMock identityFunctionCheck="once" store={normalStore}>
                 <RenderSelector selector={(state) => state} />
               </ProviderMock>
             )

@@ -53,7 +53,7 @@ export type CheckFrequency = 'never' | 'once' | 'always'
 interface UseSelectorOptions {
   equalityFn?: EqualityFn
   stabilityCheck?: CheckFrequency
-  noopCheck?: CheckFrequency
+  identityFunctionCheck?: CheckFrequency
 }
 
 const result: Selected = useSelector(
@@ -303,7 +303,7 @@ function Component() {
 }
 ```
 
-#### No-op selector check
+#### `identityFunctionCheck`
 
 In development, a check is conducted on the result returned by the selector. It warns in the console if the result is the same as the parameter passed in, i.e. the root state.
 
@@ -321,16 +321,16 @@ const user = useSelector((state) => state.auth.currentUser)
 By default, this will only happen when the selector is first called. You can configure the check in the Provider or at each `useSelector` call.
 
 ```tsx title="Global setting via context"
-<Provider store={store} noopCheck="always">
+<Provider store={store} identityFunctionCheck="always">
   {children}
 </Provider>
 ```
 
 ```tsx title="Individual hook setting"
 function Component() {
-  const count = useSelector(selectCount, { noopCheck: 'never' })
+  const count = useSelector(selectCount, { identityFunctionCheck: 'never' })
   // run once (default)
-  const user = useSelector(selectUser, { noopCheck: 'once' })
+  const user = useSelector(selectUser, { identityFunctionCheck: 'once' })
   // ...
 }
 ```
