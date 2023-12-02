@@ -10,12 +10,18 @@ import {
   useReduxContext as useDefaultReduxContext,
 } from './useReduxContext'
 
-export type CheckFrequency = 'never' | 'once' | 'always'
+/**
+ * The frequency of development mode checks.
+ *
+ * @since 8.1.0
+ * @internal
+ */
+export type DevModeCheckFrequency = 'never' | 'once' | 'always'
 
 export interface UseSelectorOptions<Selected = unknown> {
   equalityFn?: EqualityFn<Selected>
-  stabilityCheck?: CheckFrequency
-  identityFunctionCheck?: CheckFrequency
+  stabilityCheck?: DevModeCheckFrequency
+  identityFunctionCheck?: DevModeCheckFrequency
 }
 
 export interface UseSelector {
@@ -126,7 +132,9 @@ export function createSelectorHook(
               }
             }
             const finalIdentityFunctionCheck =
-              typeof identityFunctionCheck === 'undefined' ? globalIdentityFunctionCheck : identityFunctionCheck
+              typeof identityFunctionCheck === 'undefined'
+                ? globalIdentityFunctionCheck
+                : identityFunctionCheck
             if (
               finalIdentityFunctionCheck === 'always' ||
               (finalIdentityFunctionCheck === 'once' && firstRun.current)

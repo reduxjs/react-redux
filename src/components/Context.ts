@@ -1,7 +1,7 @@
 import type { Context } from 'react'
 import * as React from 'react'
 import type { Action, Store, UnknownAction } from 'redux'
-import type { CheckFrequency } from '../hooks/useSelector'
+import type { DevModeCheckFrequency } from '../hooks/useSelector'
 import type { Subscription } from '../utils/Subscription'
 
 export interface ReactReduxContextValue<
@@ -11,8 +11,8 @@ export interface ReactReduxContextValue<
   store: Store<SS, A>
   subscription: Subscription
   getServerState?: () => SS
-  stabilityCheck: CheckFrequency
-  identityFunctionCheck: CheckFrequency
+  stabilityCheck: DevModeCheckFrequency
+  identityFunctionCheck: DevModeCheckFrequency
 }
 
 const ContextKey = Symbol.for(`react-redux-context`)

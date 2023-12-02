@@ -1,11 +1,11 @@
 import type { Context, ReactNode } from 'react'
 import * as React from 'react'
-import type { ReactReduxContextValue } from './Context'
-import { ReactReduxContext } from './Context'
+import type { Action, Store, UnknownAction } from 'redux'
+import type { DevModeCheckFrequency } from '../hooks/useSelector'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import type { Action, Store, UnknownAction } from 'redux'
-import type { CheckFrequency } from '../hooks/useSelector'
+import type { ReactReduxContextValue } from './Context'
+import { ReactReduxContext } from './Context'
 
 export interface ProviderProps<
   A extends Action<string> = UnknownAction,
@@ -30,10 +30,10 @@ export interface ProviderProps<
   context?: Context<ReactReduxContextValue<S, A> | null>
 
   /** Global configuration for the `useSelector` stability check */
-  stabilityCheck?: CheckFrequency
+  stabilityCheck?: DevModeCheckFrequency
 
   /** Global configuration for the `useSelector` identity function check */
-  identityFunctionCheck?: CheckFrequency
+  identityFunctionCheck?: DevModeCheckFrequency
 
   children: ReactNode
 }
