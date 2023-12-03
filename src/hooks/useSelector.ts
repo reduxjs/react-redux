@@ -43,6 +43,8 @@ export interface DevModeChecks {
    * - `always` - Run every time the selector is called.
    * - `never` - Never run the identity function check.
    *
+   * **Note**: Previously referred to as `noopCheck`.
+   *
    * @default 'once'
    *
    * @since 9.0.0

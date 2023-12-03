@@ -45,6 +45,8 @@ export interface ProviderProps<
    * the `useSelector` identity function check, allowing you to specify how often
    * these checks should occur in development mode.
    *
+   * **Note**: Previously referred to as `noopCheck`.
+   *
    * @since 9.0.0
    */
   identityFunctionCheck?: DevModeCheckFrequency
