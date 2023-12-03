@@ -298,14 +298,24 @@ By default, this will only happen when the selector is first called. You can con
 
 ```tsx title="Individual hook setting"
 function Component() {
-  const count = useSelector(selectCount, { stabilityCheck: 'never' })
+  const count = useSelector(selectCount, {
+    devModeChecks: { stabilityCheck: 'never' },
+  })
   // run once (default)
-  const user = useSelector(selectUser, { stabilityCheck: 'once' })
+  const user = useSelector(selectUser, {
+    devModeChecks: { stabilityCheck: 'once' },
+  })
   // ...
 }
 ```
 
-#### `identityFunctionCheck`
+#### Identity Function (`state => state`) Check
+
+:::danger Breaking Change!
+
+This was previously referred to as `noopCheck`.
+
+:::
 
 In development, a check is conducted on the result returned by the selector. It warns in the console if the result is the same as the parameter passed in, i.e. the root state.
 
@@ -330,9 +340,13 @@ By default, this will only happen when the selector is first called. You can con
 
 ```tsx title="Individual hook setting"
 function Component() {
-  const count = useSelector(selectCount, { identityFunctionCheck: 'never' })
+  const count = useSelector(selectCount, {
+    devModeChecks: { identityFunctionCheck: 'never' },
+  })
   // run once (default)
-  const user = useSelector(selectUser, { identityFunctionCheck: 'once' })
+  const user = useSelector(selectUser, {
+    devModeChecks: { identityFunctionCheck: 'once' },
+  })
   // ...
 }
 ```
