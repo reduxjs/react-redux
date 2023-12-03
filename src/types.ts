@@ -3,6 +3,7 @@ import type {
   ComponentClass,
   ComponentType,
   FunctionComponent,
+  JSX,
 } from 'react'
 
 import type { Action, UnknownAction, Dispatch } from 'redux'
