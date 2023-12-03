@@ -52,8 +52,10 @@ export type DevModeCheckFrequency = 'never' | 'once' | 'always'
 
 interface UseSelectorOptions {
   equalityFn?: EqualityFn
-  stabilityCheck?: DevModeCheckFrequency
-  identityFunctionCheck?: DevModeCheckFrequency
+  devModeChecks?: {
+    stabilityCheck?: DevModeCheckFrequency
+    identityFunctionCheck?: DevModeCheckFrequency
+  }
 }
 
 const result: Selected = useSelector(
