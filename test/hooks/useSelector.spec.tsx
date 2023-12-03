@@ -1,34 +1,34 @@
 /*eslint-disable react/prop-types*/
 
-import React, {
-  useCallback,
-  useReducer,
-  useLayoutEffect,
-  useState,
-  useContext,
-  Suspense,
-  useEffect,
-} from 'react'
-import { createStore } from 'redux'
 import * as rtl from '@testing-library/react'
+import type { DispatchWithoutAction, FunctionComponent, ReactNode } from 'react'
+import React, {
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useState,
+} from 'react'
+import type { Action, AnyAction, Store } from 'redux'
+import { createStore } from 'redux'
+import type { UseSelectorOptions } from '../../src/hooks/useSelector'
+import type {
+  ProviderProps,
+  ReactReduxContextValue,
+  Subscription,
+  TypedUseSelectorHook,
+} from '../../src/index'
 import {
   Provider,
-  useSelector,
-  useDispatch,
-  shallowEqual,
+  ReactReduxContext,
   connect,
   createSelectorHook,
-  ReactReduxContext,
+  shallowEqual,
+  useDispatch,
+  useSelector,
 } from '../../src/index'
-import type {
-  TypedUseSelectorHook,
-  ReactReduxContextValue,
-  ProviderProps,
-  Subscription,
-} from '../../src/index'
-import type { FunctionComponent, DispatchWithoutAction, ReactNode } from 'react'
-import type { Store, AnyAction, Action } from 'redux'
-import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 
 // disable checks by default
 function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
@@ -984,7 +984,7 @@ describe('React', () => {
               <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector
                   selector={selector}
-                  options={{ stabilityCheck: 'never' }}
+                  options={{ devModeChecks: { stabilityCheck: 'never' } }}
                 />
               </ProviderMock>
             )
@@ -1014,7 +1014,7 @@ describe('React', () => {
               <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector
                   selector={selector}
-                  options={{ stabilityCheck: 'always' }}
+                  options={{ devModeChecks: { stabilityCheck: 'always' } }}
                 />
               </ProviderMock>
             )

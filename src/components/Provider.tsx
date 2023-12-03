@@ -29,10 +29,24 @@ export interface ProviderProps<
    */
   context?: Context<ReactReduxContextValue<S, A> | null>
 
-  /** Global configuration for the `useSelector` stability check */
+  /**
+   * Determines the frequency of stability checks for all selectors.
+   * This setting overrides the global configuration for
+   * the `useSelector` stability check, allowing you to specify how often
+   * these checks should occur in development mode.
+   *
+   * @since 8.1.0
+   */
   stabilityCheck?: DevModeCheckFrequency
 
-  /** Global configuration for the `useSelector` identity function check */
+  /**
+   * Determines the frequency of identity function checks for all selectors.
+   * This setting overrides the global configuration for
+   * the `useSelector` identity function check, allowing you to specify how often
+   * these checks should occur in development mode.
+   *
+   * @since 9.0.0
+   */
   identityFunctionCheck?: DevModeCheckFrequency
 
   children: ReactNode

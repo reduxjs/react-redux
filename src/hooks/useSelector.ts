@@ -18,10 +18,49 @@ import {
  */
 export type DevModeCheckFrequency = 'never' | 'once' | 'always'
 
+/**
+ * Represents the configuration for development mode checks.
+ *
+ * @since 9.0.0
+ * @internal
+ */
+export interface DevModeChecks {
+  /**
+   * Overrides the global stability check for the selector.
+   * - `once` - Run only the first time the selector is called.
+   * - `always` - Run every time the selector is called.
+   * - `never` - Never run the stability check.
+   *
+   * @default 'once'
+   *
+   * @since 8.1.0
+   */
+  stabilityCheck: DevModeCheckFrequency
+
+  /**
+   * Overrides the global identity function check for the selector.
+   * - `once` - Run only the first time the selector is called.
+   * - `always` - Run every time the selector is called.
+   * - `never` - Never run the identity function check.
+   *
+   * @default 'once'
+   *
+   * @since 9.0.0
+   */
+  identityFunctionCheck: DevModeCheckFrequency
+}
+
 export interface UseSelectorOptions<Selected = unknown> {
   equalityFn?: EqualityFn<Selected>
-  stabilityCheck?: DevModeCheckFrequency
-  identityFunctionCheck?: DevModeCheckFrequency
+
+  /**
+   * `useSelector` performs additional checks in development mode to help
+   * identify and warn about potential issues in selector behavior. This
+   * option allows you to customize the behavior of these checks per selector.
+   *
+   * @since 9.0.0
+   */
+  devModeChecks?: Partial<DevModeChecks>
 }
 
 export interface UseSelector {
@@ -65,13 +104,10 @@ export function createSelectorHook(
       | EqualityFn<NoInfer<Selected>>
       | UseSelectorOptions<NoInfer<Selected>> = {}
   ): Selected {
-    const {
-      equalityFn = refEquality,
-      stabilityCheck = undefined,
-      identityFunctionCheck = undefined,
-    } = typeof equalityFnOrOptions === 'function'
-      ? { equalityFn: equalityFnOrOptions }
-      : equalityFnOrOptions
+    const { equalityFn = refEquality, devModeChecks = {} } =
+      typeof equalityFnOrOptions === 'function'
+        ? { equalityFn: equalityFnOrOptions }
+        : equalityFnOrOptions
     if (process.env.NODE_ENV !== 'production') {
       if (!selector) {
         throw new Error(`You must pass a selector to useSelector`)
@@ -90,8 +126,8 @@ export function createSelectorHook(
       store,
       subscription,
       getServerState,
-      stabilityCheck: globalStabilityCheck,
-      identityFunctionCheck: globalIdentityFunctionCheck,
+      stabilityCheck,
+      identityFunctionCheck,
     } = useReduxContext()
 
     const firstRun = React.useRef(true)
@@ -101,10 +137,14 @@ export function createSelectorHook(
         [selector.name](state: TState) {
           const selected = selector(state)
           if (process.env.NODE_ENV !== 'production') {
-            const finalStabilityCheck =
-              typeof stabilityCheck === 'undefined'
-                ? globalStabilityCheck
-                : stabilityCheck
+            const {
+              identityFunctionCheck: finalIdentityFunctionCheck,
+              stabilityCheck: finalStabilityCheck,
+            } = {
+              stabilityCheck,
+              identityFunctionCheck,
+              ...devModeChecks,
+            }
             if (
               finalStabilityCheck === 'always' ||
               (finalStabilityCheck === 'once' && firstRun.current)
@@ -131,10 +171,6 @@ export function createSelectorHook(
                 )
               }
             }
-            const finalIdentityFunctionCheck =
-              typeof identityFunctionCheck === 'undefined'
-                ? globalIdentityFunctionCheck
-                : identityFunctionCheck
             if (
               finalIdentityFunctionCheck === 'always' ||
               (finalIdentityFunctionCheck === 'once' && firstRun.current)
@@ -161,7 +197,7 @@ export function createSelectorHook(
           return selected
         },
       }[selector.name],
-      [selector, globalStabilityCheck, stabilityCheck]
+      [selector, stabilityCheck, devModeChecks.stabilityCheck]
     )
 
     const selectedState = useSyncExternalStoreWithSelector(
