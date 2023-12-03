@@ -1,11 +1,11 @@
 import type { Context, ReactNode } from 'react'
 import * as React from 'react'
-import type { ReactReduxContextValue } from './Context'
-import { ReactReduxContext } from './Context'
+import type { Action, Store, UnknownAction } from 'redux'
+import type { DevModeCheckFrequency } from '../hooks/useSelector'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import type { Action, Store, UnknownAction } from 'redux'
-import type { CheckFrequency } from '../hooks/useSelector'
+import type { ReactReduxContextValue } from './Context'
+import { ReactReduxContext } from './Context'
 
 export interface ProviderProps<
   A extends Action<string> = UnknownAction,
@@ -29,11 +29,27 @@ export interface ProviderProps<
    */
   context?: Context<ReactReduxContextValue<S, A> | null>
 
-  /** Global configuration for the `useSelector` stability check */
-  stabilityCheck?: CheckFrequency
+  /**
+   * Determines the frequency of stability checks for all selectors.
+   * This setting overrides the global configuration for
+   * the `useSelector` stability check, allowing you to specify how often
+   * these checks should occur in development mode.
+   *
+   * @since 8.1.0
+   */
+  stabilityCheck?: DevModeCheckFrequency
 
-  /** Global configuration for the `useSelector` no-op check */
-  noopCheck?: CheckFrequency
+  /**
+   * Determines the frequency of identity function checks for all selectors.
+   * This setting overrides the global configuration for
+   * the `useSelector` identity function check, allowing you to specify how often
+   * these checks should occur in development mode.
+   *
+   * **Note**: Previously referred to as `noopCheck`.
+   *
+   * @since 9.0.0
+   */
+  identityFunctionCheck?: DevModeCheckFrequency
 
   children: ReactNode
 }
@@ -44,7 +60,7 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>({
   children,
   serverState,
   stabilityCheck = 'once',
-  noopCheck = 'once',
+  identityFunctionCheck = 'once',
 }: ProviderProps<A, S>) {
   const contextValue = React.useMemo(() => {
     const subscription = createSubscription(store)
@@ -53,9 +69,9 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>({
       subscription,
       getServerState: serverState ? () => serverState : undefined,
       stabilityCheck,
-      noopCheck,
+      identityFunctionCheck,
     }
-  }, [store, serverState, stabilityCheck, noopCheck])
+  }, [store, serverState, stabilityCheck, identityFunctionCheck])
 
   const previousState = React.useMemo(() => store.getState(), [store])
 
