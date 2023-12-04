@@ -9405,7 +9405,7 @@ __metadata:
     react-dom: 18.2.0
     react-native: ^0.71.11
     react-test-renderer: 18.0.0
-    redux: ^5.0.0-beta.0
+    redux: ^5.0.0
     rimraf: ^3.0.2
     ts-jest: ^29
     tsup: ^7.0.0
@@ -9417,7 +9417,7 @@ __metadata:
     react: ^18.0
     react-dom: ^18.0
     react-native: ">=0.71"
-    redux: ^5.0.0-rc.0
+    redux: ^5.0.0-rc
   peerDependenciesMeta:
     "@types/react":
       optional: true
@@ -9585,6 +9585,13 @@ __metadata:
   peerDependencies:
     redux: ^4 || ^5.0.0-beta.0
   checksum: 1609e18a9fb56ab7403d760999996b50e136fcf7411ec9d809e9a4afa4187bf0ab545652c05ffbfca2e0397e59e6baf2ae0d35631a30bf8ba20af1205e98e0fe
+  languageName: node
+  linkType: hard
+
+"redux@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "redux@npm:5.0.0"
+  checksum: be49160d4bd01e10108c425ade999f1b456204895c4bdd0c7825ab09efffded51955c5c242847406a7b3f273e9011a9c102848c512a099a75617b97b13d2cca8
   languageName: node
   linkType: hard
 
