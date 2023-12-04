@@ -1,7 +1,7 @@
 /*eslint-disable react/prop-types*/
 
 import React, { Component } from 'react'
-import { createStore, applyMiddleware } from 'redux'
+import { createStore, applyMiddleware, UnknownAction, Action } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
 import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
@@ -2130,9 +2130,10 @@ describe('React', () => {
           }
         }
 
-        const context = React.createContext<
-          ReactReduxContextValue<any, AnyAction>
-        >(null as any)
+        const context = React.createContext<ReactReduxContextValue<
+          any,
+          AnyAction
+        > | null>(null)
 
         let actualState
 
@@ -2171,9 +2172,10 @@ describe('React', () => {
           }
         }
 
-        const context = React.createContext<
-          ReactReduxContextValue<any, AnyAction>
-        >(null as any)
+        const context = React.createContext<ReactReduxContextValue<
+          any,
+          AnyAction
+        > | null>(null)
 
         let actualState
 
@@ -2278,9 +2280,7 @@ describe('React', () => {
         interface Store2State1Type {
           second: string
         }
-        interface ActionType {
-          type: string
-        }
+        type ActionType = UnknownAction
         type NoDispatchType = {}
         const c3Spy = jest.fn()
         const c2Spy = jest.fn()
@@ -2414,9 +2414,7 @@ describe('React', () => {
 
       it('should subscribe properly when a new store is provided via props', () => {
         type RootStateType = number
-        interface ActionType {
-          type: string
-        }
+        type ActionType = UnknownAction
         const store1 = createStore(
           (state: RootStateType = 0, action: ActionType) =>
             action.type === 'INC' ? state + 1 : state
@@ -2425,9 +2423,8 @@ describe('React', () => {
           (state: RootStateType = 0, action: ActionType) =>
             action.type === 'INC' ? state + 1 : state
         )
-        const customContext = React.createContext<ReactReduxContextValue>(
-          null as any
-        )
+        const customContext =
+          React.createContext<ReactReduxContextValue | null>(null)
 
         class A extends Component {
           render() {
@@ -2822,7 +2819,7 @@ describe('React', () => {
           )
           return null
           //@ts-ignore before typescript4.0, a catch could not have type annotations
-        } catch (error) {
+        } catch (error: any) {
           return error.message
         } finally {
           spy.mockRestore()
@@ -3129,15 +3126,16 @@ describe('React', () => {
       it('should use the latest props when updated between actions', () => {
         type RootStateType = number
         type PayloadType = () => void
-        interface ActionType {
-          type: string
+        interface ActionType extends Action<string> {
           payload?: PayloadType
         }
+
         const reactCallbackMiddleware = (store: MiddlewareAPI) => {
           let callback: () => void
 
-          return (next: ReduxDispatch) => (action: ActionType) => {
+          return (next: ReduxDispatch) => (action: UnknownAction) => {
             if (action.type === 'SET_COMPONENT_CALLBACK') {
+              // @ts-ignore
               callback = action.payload!
             }
 
@@ -3171,7 +3169,9 @@ describe('React', () => {
 
         const store = createStore(
           counter,
-          applyMiddleware(reactCallbackMiddleware)
+          applyMiddleware
+          // @ts-ignore
+          (reactCallbackMiddleware)
         )
 
         interface ChildrenTStatePropsType {

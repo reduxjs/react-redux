@@ -3,11 +3,12 @@ import type {
   ComponentClass,
   ComponentType,
   FunctionComponent,
+  JSX,
 } from 'react'
 
-import type { Action, AnyAction, Dispatch } from 'redux'
+import type { Action, UnknownAction, Dispatch } from 'redux'
 
-import type { NonReactStatics } from 'hoist-non-react-statics'
+import type { NonReactStatics } from './utils/hoistStatics'
 
 import type { ConnectProps } from './components/connect'
 
@@ -25,7 +26,7 @@ export type DistributiveOmit<T, K extends keyof T> = T extends unknown
   ? Omit<T, K>
   : never
 
-export interface DispatchProp<A extends Action = AnyAction> {
+export interface DispatchProp<A extends Action<string> = UnknownAction> {
   dispatch: Dispatch<A>
 }
 

@@ -48,12 +48,14 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 type RootState = ReturnType<typeof store.getState>
 type SelectorFn = <Selected>(state: RootState) => Selected
 type EqualityFn = (a: any, b: any) => boolean
-export type CheckFrequency = 'never' | 'once' | 'always'
+export type DevModeCheckFrequency = 'never' | 'once' | 'always'
 
 interface UseSelectorOptions {
   equalityFn?: EqualityFn
-  stabilityCheck?: CheckFrequency
-  noopCheck?: CheckFrequency
+  devModeChecks?: {
+    stabilityCheck?: DevModeCheckFrequency
+    identityFunctionCheck?: DevModeCheckFrequency
+  }
 }
 
 const result: Selected = useSelector(
@@ -296,14 +298,24 @@ By default, this will only happen when the selector is first called. You can con
 
 ```tsx title="Individual hook setting"
 function Component() {
-  const count = useSelector(selectCount, { stabilityCheck: 'never' })
+  const count = useSelector(selectCount, {
+    devModeChecks: { stabilityCheck: 'never' },
+  })
   // run once (default)
-  const user = useSelector(selectUser, { stabilityCheck: 'once' })
+  const user = useSelector(selectUser, {
+    devModeChecks: { stabilityCheck: 'once' },
+  })
   // ...
 }
 ```
 
-#### No-op selector check
+#### Identity Function (`state => state`) Check
+
+:::danger Breaking Change!
+
+This was previously referred to as `noopCheck`.
+
+:::
 
 In development, a check is conducted on the result returned by the selector. It warns in the console if the result is the same as the parameter passed in, i.e. the root state.
 
@@ -321,16 +333,20 @@ const user = useSelector((state) => state.auth.currentUser)
 By default, this will only happen when the selector is first called. You can configure the check in the Provider or at each `useSelector` call.
 
 ```tsx title="Global setting via context"
-<Provider store={store} noopCheck="always">
+<Provider store={store} identityFunctionCheck="always">
   {children}
 </Provider>
 ```
 
 ```tsx title="Individual hook setting"
 function Component() {
-  const count = useSelector(selectCount, { noopCheck: 'never' })
+  const count = useSelector(selectCount, {
+    devModeChecks: { identityFunctionCheck: 'never' },
+  })
   // run once (default)
-  const user = useSelector(selectUser, { noopCheck: 'once' })
+  const user = useSelector(selectUser, {
+    devModeChecks: { identityFunctionCheck: 'once' },
+  })
   // ...
 }
 ```

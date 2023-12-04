@@ -10,12 +10,12 @@ export function mapDispatchToPropsFactory<TDispatchProps, TOwnProps>(
     | undefined
 ) {
   return mapDispatchToProps && typeof mapDispatchToProps === 'object'
-    ? wrapMapToPropsConstant((dispatch: Dispatch<Action<unknown>>) =>
+    ? wrapMapToPropsConstant((dispatch: Dispatch<Action<string>>) =>
         // @ts-ignore
         bindActionCreators(mapDispatchToProps, dispatch)
       )
     : !mapDispatchToProps
-    ? wrapMapToPropsConstant((dispatch: Dispatch<Action<unknown>>) => ({
+    ? wrapMapToPropsConstant((dispatch: Dispatch<Action<string>>) => ({
         dispatch,
       }))
     : typeof mapDispatchToProps === 'function'

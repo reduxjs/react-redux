@@ -39,9 +39,10 @@ interface ProviderProps<A extends Action = AnyAction, S = any> {
    * to create a context to be used.
    * If this is used, you'll need to customize `connect` by supplying the same
    * context provided to the Provider.
-   * Initial value doesn't matter, as it is overwritten with the internal state of Provider.
+   * Set the initial value to null, and the hooks will error
+   * if this is not overwritten by Provider.
    */
-  context?: Context<ReactReduxContextValue<S, A>>
+  context?: Context<ReactReduxContextValue<S, A> | null>
 
   /** Global configuration for the `useSelector` stability check */
   stabilityCheck?: StabilityCheck

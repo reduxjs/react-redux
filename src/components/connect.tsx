@@ -1,8 +1,7 @@
 /* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
-import hoistStatics from 'hoist-non-react-statics'
 import type { ComponentType } from 'react'
 import * as React from 'react'
-import { isValidElementType, isContextConsumer } from 'react-is'
+import { isValidElementType, isContextConsumer } from '../utils/react-is'
 
 import type { Store } from 'redux'
 
@@ -31,6 +30,7 @@ import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import shallowEqual from '../utils/shallowEqual'
+import hoistStatics from '../utils/hoistStatics'
 import warning from '../utils/warning'
 
 import type {
@@ -491,15 +491,14 @@ function connect<
     type WrappedComponentProps = TProps &
       ConnectPropsMaybeWithoutContext<TProps>
 
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      !isValidElementType(WrappedComponent)
-    ) {
-      throw new Error(
-        `You must pass a component to the function returned by connect. Instead received ${stringifyComponent(
-          WrappedComponent
-        )}`
-      )
+    if (process.env.NODE_ENV !== 'production') {
+      const isValid = /*#__PURE__*/ isValidElementType(WrappedComponent)
+      if (!isValid)
+        throw new Error(
+          `You must pass a component to the function returned by connect. Instead received ${stringifyComponent(
+            WrappedComponent
+          )}`
+        )
     }
 
     const wrappedComponentName =
@@ -544,12 +543,22 @@ function connect<
       const ContextToUse: ReactReduxContextInstance = React.useMemo(() => {
         // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
         // Memoize the check that determines which context instance we should use.
-        return propsContext &&
-          propsContext.Consumer &&
-          // @ts-ignore
-          isContextConsumer(<propsContext.Consumer />)
-          ? propsContext
-          : Context
+        let ResultContext = Context
+        if (propsContext?.Consumer) {
+          if (process.env.NODE_ENV !== 'production') {
+            const isValid = /*#__PURE__*/ isContextConsumer(
+              // @ts-ignore
+              <propsContext.Consumer />
+            )
+            if (!isValid) {
+              throw new Error(
+                'You must pass a valid React context consumer as `props.context`'
+              )
+            }
+            ResultContext = propsContext
+          }
+        }
+        return ResultContext
       }, [propsContext, Context])
 
       // Retrieve the store and ancestor subscription via context, if available
@@ -584,7 +593,7 @@ function connect<
         : contextValue!.store
 
       const getServerState = didStoreComeFromContext
-        ? contextValue.getServerState
+        ? contextValue!.getServerState
         : store.getState
 
       const childPropsSelector = React.useMemo(() => {
@@ -797,10 +806,10 @@ function connect<
       const forwarded = _forwarded as ConnectedWrapperComponent
       forwarded.displayName = displayName
       forwarded.WrappedComponent = WrappedComponent
-      return hoistStatics(forwarded, WrappedComponent)
+      return /*#__PURE__*/ hoistStatics(forwarded, WrappedComponent)
     }
 
-    return hoistStatics(Connect, WrappedComponent)
+    return /*#__PURE__*/ hoistStatics(Connect, WrappedComponent)
   }
 
   return wrapWithConnect

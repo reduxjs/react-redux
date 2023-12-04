@@ -1,40 +1,27 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 
+import type { AnyAction, Dispatch, Store } from '@reduxjs/toolkit'
+import { configureStore } from '@reduxjs/toolkit'
 import * as React from 'react'
-import * as ReactDOM from 'react-dom'
-import { Store, Dispatch, configureStore, AnyAction } from '@reduxjs/toolkit'
-import {
-  connect,
-  ConnectedProps,
-  Provider,
-  DispatchProp,
-  MapStateToProps,
-  ReactReduxContext,
+import type {
   ReactReduxContextValue,
   Selector,
-  shallowEqual,
-  MapDispatchToProps,
-  useDispatch,
-  useSelector,
-  useStore,
+  TypedUseSelectorHook,
+} from '../../src/index'
+import {
   createDispatchHook,
   createSelectorHook,
   createStoreHook,
-  TypedUseSelectorHook,
+  shallowEqual,
+  useDispatch,
+  useSelector,
+  useStore,
 } from '../../src/index'
 
-import {
-  CounterState,
-  counterSlice,
-  increment,
-  incrementAsync,
-  AppDispatch,
-  AppThunk,
-  RootState,
-  fetchCount,
-} from './counterApp'
+import type { AppDispatch, RootState } from './counterApp'
+import { incrementAsync } from './counterApp'
 
-import { expectType, expectExactType } from '../typeTestHelpers'
+import { expectExactType, expectType } from '../typeTestHelpers'
 
 function preTypedHooksSetup() {
   // Standard hooks setup
@@ -170,7 +157,7 @@ function testUseSelector() {
   const correctlyInferred: State = useSelector(selector, shallowEqual)
   const correctlyInferred2: State = useSelector(selector, {
     equalityFn: shallowEqual,
-    stabilityCheck: 'never',
+    devModeChecks: { stabilityCheck: 'never' },
   })
   // @ts-expect-error
   const inferredTypeIsNotString: string = useSelector(selector, shallowEqual)
@@ -224,9 +211,10 @@ function testCreateHookFunctions() {
     type: 'TEST_ACTION'
   }
 
-  const Context = React.createContext<
-    ReactReduxContextValue<RootState, RootAction>
-  >(null as any)
+  const Context = React.createContext<ReactReduxContextValue<
+    RootState,
+    RootAction
+  > | null>(null)
 
   // No context tests
   expectType<() => Dispatch<AnyAction>>(createDispatchHook())

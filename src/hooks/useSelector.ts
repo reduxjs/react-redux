@@ -1,20 +1,68 @@
-import { useCallback, useDebugValue, useRef } from 'react'
+import * as React from 'react'
 
-import {
-  createReduxContextHook,
-  useReduxContext as useDefaultReduxContext,
-} from './useReduxContext'
+import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
+import {
+  createReduxContextHook,
+  useReduxContext as useDefaultReduxContext,
+} from './useReduxContext'
 
-export type CheckFrequency = 'never' | 'once' | 'always'
+/**
+ * The frequency of development mode checks.
+ *
+ * @since 8.1.0
+ * @internal
+ */
+export type DevModeCheckFrequency = 'never' | 'once' | 'always'
+
+/**
+ * Represents the configuration for development mode checks.
+ *
+ * @since 9.0.0
+ * @internal
+ */
+export interface DevModeChecks {
+  /**
+   * Overrides the global stability check for the selector.
+   * - `once` - Run only the first time the selector is called.
+   * - `always` - Run every time the selector is called.
+   * - `never` - Never run the stability check.
+   *
+   * @default 'once'
+   *
+   * @since 8.1.0
+   */
+  stabilityCheck: DevModeCheckFrequency
+
+  /**
+   * Overrides the global identity function check for the selector.
+   * - `once` - Run only the first time the selector is called.
+   * - `always` - Run every time the selector is called.
+   * - `never` - Never run the identity function check.
+   *
+   * **Note**: Previously referred to as `noopCheck`.
+   *
+   * @default 'once'
+   *
+   * @since 9.0.0
+   */
+  identityFunctionCheck: DevModeCheckFrequency
+}
 
 export interface UseSelectorOptions<Selected = unknown> {
   equalityFn?: EqualityFn<Selected>
-  stabilityCheck?: CheckFrequency
-  noopCheck?: CheckFrequency
+
+  /**
+   * `useSelector` performs additional checks in development mode to help
+   * identify and warn about potential issues in selector behavior. This
+   * option allows you to customize the behavior of these checks per selector.
+   *
+   * @since 9.0.0
+   */
+  devModeChecks?: Partial<DevModeChecks>
 }
 
 export interface UseSelector {
@@ -41,7 +89,12 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
-export function createSelectorHook(context = ReactReduxContext): UseSelector {
+export function createSelectorHook(
+  context: React.Context<ReactReduxContextValue<
+    any,
+    any
+  > | null> = ReactReduxContext
+): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
@@ -53,13 +106,10 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       | EqualityFn<NoInfer<Selected>>
       | UseSelectorOptions<NoInfer<Selected>> = {}
   ): Selected {
-    const {
-      equalityFn = refEquality,
-      stabilityCheck = undefined,
-      noopCheck = undefined,
-    } = typeof equalityFnOrOptions === 'function'
-      ? { equalityFn: equalityFnOrOptions }
-      : equalityFnOrOptions
+    const { equalityFn = refEquality, devModeChecks = {} } =
+      typeof equalityFnOrOptions === 'function'
+        ? { equalityFn: equalityFnOrOptions }
+        : equalityFnOrOptions
     if (process.env.NODE_ENV !== 'production') {
       if (!selector) {
         throw new Error(`You must pass a selector to useSelector`)
@@ -78,21 +128,25 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       store,
       subscription,
       getServerState,
-      stabilityCheck: globalStabilityCheck,
-      noopCheck: globalNoopCheck,
-    } = useReduxContext()!
+      stabilityCheck,
+      identityFunctionCheck,
+    } = useReduxContext()
 
-    const firstRun = useRef(true)
+    const firstRun = React.useRef(true)
 
-    const wrappedSelector = useCallback<typeof selector>(
+    const wrappedSelector = React.useCallback<typeof selector>(
       {
         [selector.name](state: TState) {
           const selected = selector(state)
           if (process.env.NODE_ENV !== 'production') {
-            const finalStabilityCheck =
-              typeof stabilityCheck === 'undefined'
-                ? globalStabilityCheck
-                : stabilityCheck
+            const {
+              identityFunctionCheck: finalIdentityFunctionCheck,
+              stabilityCheck: finalStabilityCheck,
+            } = {
+              stabilityCheck,
+              identityFunctionCheck,
+              ...devModeChecks,
+            }
             if (
               finalStabilityCheck === 'always' ||
               (finalStabilityCheck === 'once' && firstRun.current)
@@ -119,11 +173,9 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
                 )
               }
             }
-            const finalNoopCheck =
-              typeof noopCheck === 'undefined' ? globalNoopCheck : noopCheck
             if (
-              finalNoopCheck === 'always' ||
-              (finalNoopCheck === 'once' && firstRun.current)
+              finalIdentityFunctionCheck === 'always' ||
+              (finalIdentityFunctionCheck === 'once' && firstRun.current)
             ) {
               // @ts-ignore
               if (selected === state) {
@@ -147,7 +199,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
           return selected
         },
       }[selector.name],
-      [selector, globalStabilityCheck, stabilityCheck]
+      [selector, stabilityCheck, devModeChecks.stabilityCheck]
     )
 
     const selectedState = useSyncExternalStoreWithSelector(
@@ -158,7 +210,7 @@ export function createSelectorHook(context = ReactReduxContext): UseSelector {
       equalityFn
     )
 
-    useDebugValue(selectedState)
+    React.useDebugValue(selectedState)
 
     return selectedState
   }

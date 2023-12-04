@@ -2,27 +2,25 @@
 
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
+import type { Dispatch, ActionCreator } from 'redux'
 import {
   Store,
-  Dispatch,
   AnyAction,
-  ActionCreator,
   createStore,
   bindActionCreators,
   ActionCreatorsMapObject,
   Reducer,
 } from 'redux'
+import type { ReactReduxContext, MapDispatchToProps } from '../../src/index'
 import {
   connect,
   ConnectedProps,
   Provider,
   DispatchProp,
   MapStateToProps,
-  ReactReduxContext,
   ReactReduxContextValue,
   Selector,
   shallowEqual,
-  MapDispatchToProps,
   useDispatch,
   useSelector,
   useStore,

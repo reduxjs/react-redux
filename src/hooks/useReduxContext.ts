@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import * as React from 'react'
 import { ReactReduxContext } from '../components/Context'
 import type { ReactReduxContextValue } from '../components/Context'
 
@@ -10,8 +10,8 @@ import type { ReactReduxContextValue } from '../components/Context'
  * @returns {Function} A `useReduxContext` hook bound to the specified context.
  */
 export function createReduxContextHook(context = ReactReduxContext) {
-  return function useReduxContext(): ReactReduxContextValue | null {
-    const contextValue = useContext(context)
+  return function useReduxContext(): ReactReduxContextValue {
+    const contextValue = React.useContext(context)
 
     if (process.env.NODE_ENV !== 'production' && !contextValue) {
       throw new Error(
@@ -19,7 +19,7 @@ export function createReduxContextHook(context = ReactReduxContext) {
       )
     }
 
-    return contextValue
+    return contextValue!
   }
 }
 

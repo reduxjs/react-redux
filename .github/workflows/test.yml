@@ -52,6 +52,7 @@ jobs:
       matrix:
         node: ['16.x']
         ts: ['4.7', '4.8', '4.9', '5.0', '5.1', '5.2']
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -120,6 +121,10 @@ jobs:
       - name: Clone RTK repo
         run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
 
+      - name: Check out v2.0-integration
+        working-directory: ./redux-toolkit
+        run: git checkout v2.0-integration
+
       - name: Check folder contents
         run: ls -l .
 
@@ -135,7 +140,7 @@ jobs:
 
       - name: Install deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        run: rm yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn add msw@latest
+        run: rm yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
 
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
