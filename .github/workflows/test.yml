@@ -121,10 +121,6 @@ jobs:
       - name: Clone RTK repo
         run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
 
-      - name: Check out v2.0-integration
-        working-directory: ./redux-toolkit
-        run: git checkout v2.0-integration
-
       - name: Check folder contents
         run: ls -l .
 

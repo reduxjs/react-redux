@@ -3,7 +3,7 @@
 // Examples include React-Three-Fiber, Ink, etc.
 // We'll assume they're built with React 18 and thus have `useSyncExternalStore` available.
 
-import * as React from 'react'
+import { React } from './utils/react'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector.js'
 
 import { initializeUseSelector } from './hooks/useSelector'
