@@ -1,4 +1,5 @@
-import * as React from 'react'
+//import * as React from 'react'
+import { React } from '../utils/react'
 
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'

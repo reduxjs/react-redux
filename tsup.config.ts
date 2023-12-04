@@ -76,6 +76,15 @@ export default defineConfig((options) => {
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
     },
+    // React Native requires a separate entry point for `"react-native"` batch dep
+    {
+      ...commonOptions,
+      entry: {
+        'react-redux.react-native': 'src/react-native.ts',
+      },
+      format: ['esm'],
+      outExtension: () => ({ js: '.mjs' }),
+    },
     // CJS development
     {
       ...commonOptions,
