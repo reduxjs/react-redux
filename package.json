@@ -52,7 +52,7 @@
     "react": "^18.0",
     "react-dom": "^18.0",
     "react-native": ">=0.71",
-    "redux": "^5.0.0-rc"
+    "redux": "^5.0.0"
   },
   "peerDependenciesMeta": {
     "@types/react": {
