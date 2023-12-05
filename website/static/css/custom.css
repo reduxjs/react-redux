@@ -92,7 +92,10 @@ blockquote {
   background-color: var(--ifm-blockquote-color);
   border-left: 6px solid var(--ifm-blockquote-color-dark);
   border-radius: var(--ifm-global-radius);
+}
 
+html[data-theme='dark'] blockquote code {
+  background-color: var(--ifm-color-emphasis-800);
 }
 
 .docusaurus-highlight-code-line {
@@ -226,4 +229,3 @@ a:visited {
   fill: black;
   stroke: black;
 }
-
