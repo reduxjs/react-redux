@@ -83,7 +83,7 @@ export default defineConfig((options) => {
         'react-redux.react-native': 'src/react-native.ts',
       },
       format: ['esm'],
-      outExtension: () => ({ js: '.mjs' }),
+      outExtension: () => ({ js: '.js' }),
     },
     // CJS development
     {
