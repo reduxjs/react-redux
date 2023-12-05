@@ -1,6 +1,6 @@
 # React Redux
 
-Official React bindings for [Redux](https://github.com/reduxjs/redux).  
+Official React bindings for [Redux](https://github.com/reduxjs/redux).
 Performant and flexible.
 
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/reduxjs/react-redux/test.yml?style=flat-square) [![npm version](https://img.shields.io/npm/v/react-redux.svg?style=flat-square)](https://www.npmjs.com/package/react-redux)
@@ -9,16 +9,19 @@ Performant and flexible.
 
 ## Installation
 
-### Using Create React App
+### Create a React Redux App
 
-The recommended way to start new apps with React Redux is by using the [official Redux+JS/TS templates](https://github.com/reduxjs/cra-template-redux) for [Create React App](https://github.com/facebook/create-react-app), which takes advantage of [Redux Toolkit](https://redux-toolkit.js.org/).
+The recommended way to start new apps with React and Redux is by using [our official Redux+TS template for Vite](https://github.com/reduxjs/redux-templates), or by creating a new Next.js project using [Next's `with-redux` template](https://github.com/vercel/next.js/tree/canary/examples/with-redux).
 
-```sh
-# JS
-npx create-react-app my-app --template redux
+Both of these already have Redux Toolkit and React-Redux configured appropriately for that build tool, and come with a small example app that demonstrates how to use several of Redux Toolkit's features.
 
-# TS
-npx create-react-app my-app --template redux-typescript
+```bash
+# Vite with our Redux+TS template
+# (using the `degit` tool to clone and extract the template)
+npx degit reduxjs/redux-templates/packages/vite-template-redux my-app
+
+# Next.js using the `with-redux` template
+npx create-next-app --example with-redux my-app
 ```
 
 ### An Existing React App
