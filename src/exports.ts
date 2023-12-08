@@ -28,6 +28,7 @@ import { useStore, createStoreHook } from './hooks/useStore'
 
 import shallowEqual from './utils/shallowEqual'
 import type { Subscription } from './utils/Subscription'
+import { defaultNoopBatch } from './utils/batch'
 
 export * from './types'
 export type {
@@ -49,6 +50,13 @@ export type {
   ReactReduxContextValue,
   Subscription,
 }
+
+/**
+ * @deprecated As of React 18, batching is enabled by default for ReactDOM and React Native.
+ * This is now a no-op that immediately runs the callback.
+ */
+const batch = defaultNoopBatch
+
 export {
   Provider,
   ReactReduxContext,
@@ -60,4 +68,5 @@ export {
   useStore,
   createStoreHook,
   shallowEqual,
+  batch,
 }

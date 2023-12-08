@@ -67,24 +67,6 @@ export default defineConfig((options) => {
       outExtension: () => ({ js: '.mjs' }),
       minify: true,
     },
-    // "Alternate renderers" entry point with a no-op batch
-    {
-      ...commonOptions,
-      entry: {
-        'react-redux.alternate-renderers': 'src/alternate-renderers.ts',
-      },
-      format: ['esm'],
-      outExtension: () => ({ js: '.mjs' }),
-    },
-    // React Native requires a separate entry point for `"react-native"` batch dep
-    {
-      ...commonOptions,
-      entry: {
-        'react-redux.react-native': 'src/react-native.ts',
-      },
-      format: ['esm'],
-      outExtension: () => ({ js: '.js' }),
-    },
     // CJS development
     {
       ...commonOptions,
