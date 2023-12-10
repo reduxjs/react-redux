@@ -6,23 +6,10 @@
 import * as React from 'react'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector.js'
 
-import { unstable_batchedUpdates as batchInternal } from './utils/reactBatchedUpdates'
-import { setBatch } from './utils/batch'
-
 import { initializeUseSelector } from './hooks/useSelector'
 import { initializeConnect } from './components/connect'
 
 initializeUseSelector(useSyncExternalStoreWithSelector)
 initializeConnect(React.useSyncExternalStore)
-
-// Enable batched updates in our subscriptions for use
-// with standard React renderers (ReactDOM, React Native)
-setBatch(batchInternal)
-
-// Avoid needing `react-dom` in the final TS types
-// by providing a simpler type for `batch`
-const batch: (cb: () => void) => void = batchInternal
-
-export { batch }
 
 export * from './exports'

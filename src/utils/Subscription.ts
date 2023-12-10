@@ -1,4 +1,4 @@
-import { getBatch } from './batch'
+import { defaultNoopBatch as batch } from './batch'
 
 // encapsulates the subscription logic for connecting a component to the redux store, as
 // well as nesting subscriptions of descendant components, so that we can ensure the
@@ -13,7 +13,6 @@ type Listener = {
 }
 
 function createListenerCollection() {
-  const batch = getBatch()
   let first: Listener | null = null
   let last: Listener | null = null
 

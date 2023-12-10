@@ -53,12 +53,6 @@ describe('React Native', () => {
 
   afterEach(() => rtl.cleanup())
 
-  describe('batch', () => {
-    it('batch should be RN unstable_batchedUpdates', () => {
-      expect(batch).toBe(unstable_batchedUpdates)
-    })
-  })
-
   describe('useIsomorphicLayoutEffect', () => {
     it('useIsomorphicLayoutEffect should be useLayoutEffect', () => {
       expect(useIsomorphicLayoutEffect).toBe(useLayoutEffect)
