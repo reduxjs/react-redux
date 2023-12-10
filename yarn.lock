@@ -2808,15 +2808,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:^18.2.17":
-  version: 18.2.17
-  resolution: "@types/react-dom@npm:18.2.17"
-  dependencies:
-    "@types/react": "*"
-  checksum: 7a4e704ed4be6e0c3ccd8a22ff69386fe548304bf4db090513f42e059ff4c65f7a427790320051524d6578a2e4c9667bb7a80a4c989b72361c019fbe851d9385
-  languageName: node
-  linkType: hard
-
 "@types/react-native@npm:^0.67.4":
   version: 0.67.4
   resolution: "@types/react-native@npm:0.67.4"
@@ -2835,7 +2826,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^18.2.41":
+"@types/react@npm:*":
   version: 18.2.41
   resolution: "@types/react@npm:18.2.41"
   dependencies:
@@ -2843,6 +2834,17 @@ __metadata:
     "@types/scheduler": "*"
     csstype: ^3.0.2
   checksum: fcf4c598e5adc1be1dafaa5977ff7698b5b69c6b1473ce524a28d57fa04af3f1a1aa1193cf284542451d98ae5338d26270f8c6e1f7afda5bbbe6c3a4ba40b1d8
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:18.2.25":
+  version: 18.2.25
+  resolution: "@types/react@npm:18.2.25"
+  dependencies:
+    "@types/prop-types": "*"
+    "@types/scheduler": "*"
+    csstype: ^3.0.2
+  checksum: 177515cd44135d56191ec6c5c10edd490c96c175d37624d9c37bc2007c3abcf6cc2d2137d2a073d692cdc5129d5d5785bd60a6ddd315f695da5d8b989fa2afc5
   languageName: node
   linkType: hard
 
@@ -9381,8 +9383,7 @@ __metadata:
     "@testing-library/react-12": "npm:@testing-library/react@^12"
     "@testing-library/react-hooks": ^3.4.2
     "@testing-library/react-native": ^7.1.0
-    "@types/react": ^18.2.41
-    "@types/react-dom": ^18.2.17
+    "@types/react": 18.2.25
     "@types/react-native": ^0.67.4
     "@types/use-sync-external-store": ^0.0.3
     "@typescript-eslint/eslint-plugin": ^4.28.0
@@ -9412,20 +9413,11 @@ __metadata:
     typescript: ^5.0
     use-sync-external-store: ^1.0.0
   peerDependencies:
-    "@types/react": ^18.2.41
-    "@types/react-dom": ^18.2.17
+    "@types/react": ^18.2.25
     react: ^18.0
-    react-dom: ^18.0
-    react-native: ">=0.71"
     redux: ^5.0.0
   peerDependenciesMeta:
     "@types/react":
-      optional: true
-    "@types/react-dom":
-      optional: true
-    react-dom:
-      optional: true
-    react-native:
       optional: true
     redux:
       optional: true

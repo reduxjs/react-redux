@@ -48,24 +48,12 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "@types/react": "^18.2.41",
-    "@types/react-dom": "^18.2.17",
+    "@types/react": "^18.2.25",
     "react": "^18.0",
-    "react-dom": "^18.0",
-    "react-native": ">=0.71",
     "redux": "^5.0.0"
   },
   "peerDependenciesMeta": {
     "@types/react": {
-      "optional": true
-    },
-    "@types/react-dom": {
-      "optional": true
-    },
-    "react-dom": {
-      "optional": true
-    },
-    "react-native": {
       "optional": true
     },
     "redux": {
@@ -95,8 +83,7 @@
     "@testing-library/react-12": "npm:@testing-library/react@^12",
     "@testing-library/react-hooks": "^3.4.2",
     "@testing-library/react-native": "^7.1.0",
-    "@types/react": "^18.2.41",
-    "@types/react-dom": "^18.2.17",
+    "@types/react": "18.2.25",
     "@types/react-native": "^0.67.4",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
     "@typescript-eslint/parser": "^4.28.0",
