@@ -9415,9 +9415,12 @@ __metadata:
   peerDependencies:
     "@types/react": ^18.2.25
     react: ^18.0
+    react-native: ^0.69.0
     redux: ^5.0.0
   peerDependenciesMeta:
     "@types/react":
+      optional: true
+    react-native:
       optional: true
     redux:
       optional: true
