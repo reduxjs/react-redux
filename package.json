@@ -1,6 +1,6 @@
 {
   "name": "react-redux",
-  "version": "9.0.2",
+  "version": "9.0.3",
   "description": "Official React bindings for Redux",
   "keywords": [
     "react",
