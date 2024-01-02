@@ -224,42 +224,7 @@ export const App = () => {
 }
 ```
 
-However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that each component instance gets its own selector instance (see [here](https://github.com/reduxjs/reselect#q-can-i-share-a-selector-across-multiple-component-instances) for a more thorough explanation of why this is necessary):
-
-```jsx
-import React, { useMemo } from 'react'
-import { useSelector } from 'react-redux'
-import { createSelector } from 'reselect'
-
-const makeSelectCompletedTodosCount = () =>
-  createSelector(
-    (state) => state.todos,
-    (_, completed) => completed,
-    (todos, completed) =>
-      todos.filter((todo) => todo.completed === completed).length
-  )
-
-export const CompletedTodosCount = ({ completed }) => {
-  const selectCompletedTodosCount = useMemo(makeSelectCompletedTodosCount, [])
-
-  const matchingCount = useSelector((state) =>
-    selectCompletedTodosCount(state, completed)
-  )
-
-  return <div>{matchingCount}</div>
-}
-
-export const App = () => {
-  return (
-    <>
-      <span>Number of done todos:</span>
-      <CompletedTodosCount completed={true} />
-      <span>Number of unfinished todos:</span>
-      <CompletedTodosCount completed={false} />
-    </>
-  )
-}
-```
+However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that selector's memoization behavior is properly configured (see [here](https://reselect.js.org/faq/#can-i-share-a-selector-across-multiple-component-instances) for details).
 
 ### Development mode checks
 
