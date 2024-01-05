@@ -1,10 +1,5 @@
-import {
-  createSlice,
-  createAsyncThunk,
-  configureStore,
-  ThunkAction,
-  Action,
-} from '@reduxjs/toolkit'
+import type { Action, ThunkAction } from '@reduxjs/toolkit'
+import { configureStore, createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
 export interface CounterState {
   counter: number
@@ -46,6 +41,7 @@ const counterStore = configureStore({
   middleware: (gdm) => gdm(),
 })
 
+export type AppStore = typeof counterStore
 export type AppDispatch = typeof counterStore.dispatch
 export type RootState = ReturnType<typeof counterStore.getState>
 export type AppThunk<ReturnType = void> = ThunkAction<

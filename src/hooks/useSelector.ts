@@ -3,7 +3,7 @@ import { React } from '../utils/react'
 
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
-import type { EqualityFn, NoInfer } from '../types'
+import type { EqualityFn, NoInfer, TypedUseSelectorHook } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
 import {
@@ -75,7 +75,21 @@ export interface UseSelector {
     selector: (state: TState) => Selected,
     options?: UseSelectorOptions<Selected>
   ): Selected
+  withTypes: <TState>() => TypedUseSelectorHook<TState>
 }
+// export interface UseSelector<StateType = unknown> {
+//   <TState extends StateType = StateType, Selected = unknown>(
+//     selector: (state: TState) => Selected,
+//     equalityFn?: EqualityFn<Selected>
+//   ): Selected
+//   <TState extends StateType = StateType, Selected = unknown>(
+//     selector: (state: TState) => Selected,
+//     options?: UseSelectorOptions<Selected>
+//   ): Selected
+//   withTypes: <
+//     OverrideStateType extends StateType
+//   >() => UseSelector<OverrideStateType>
+// }
 
 let useSyncExternalStoreWithSelector = notInitialized as uSESWS
 export const initializeUseSelector = (fn: uSESWS) => {
@@ -101,12 +115,12 @@ export function createSelectorHook(
       ? useDefaultReduxContext
       : createReduxContextHook(context)
 
-  return function useSelector<TState, Selected extends unknown>(
+  const useSelector = <TState, Selected extends unknown>(
     selector: (state: TState) => Selected,
     equalityFnOrOptions:
       | EqualityFn<NoInfer<Selected>>
       | UseSelectorOptions<NoInfer<Selected>> = {}
-  ): Selected {
+  ): Selected => {
     const { equalityFn = refEquality, devModeChecks = {} } =
       typeof equalityFnOrOptions === 'function'
         ? { equalityFn: equalityFnOrOptions }
@@ -215,6 +229,12 @@ export function createSelectorHook(
 
     return selectedState
   }
+
+  Object.assign(useSelector, {
+    withTypes: () => useSelector,
+  })
+
+  return useSelector as UseSelector
 }
 
 /**

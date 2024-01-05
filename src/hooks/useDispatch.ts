@@ -1,9 +1,24 @@
-import type { Action, Dispatch, UnknownAction } from 'redux'
 import type { Context } from 'react'
+import type { Action, Dispatch, UnknownAction } from 'redux'
 
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
-import { useStore as useDefaultStore, createStoreHook } from './useStore'
+import { createStoreHook, useStore as useDefaultStore } from './useStore'
+
+export interface UseDispatch {
+  <
+    AppDispatch extends Dispatch<Action> = Dispatch<UnknownAction>
+  >(): AppDispatch
+  withTypes: <AppDispatch extends Dispatch<Action>>() => () => AppDispatch
+}
+// export interface UseDispatch<
+//   DispatchType extends Dispatch<UnknownAction> = Dispatch<UnknownAction>
+// > {
+//   <AppDispatch extends DispatchType = DispatchType>(): AppDispatch
+//   withTypes: <
+//     OverrideDispatchType extends DispatchType
+//   >() => UseDispatch<OverrideDispatchType>
+// }
 
 /**
  * Hook factory, which creates a `useDispatch` hook bound to a given context.
@@ -20,13 +35,19 @@ export function createDispatchHook<
     // @ts-ignore
     context === ReactReduxContext ? useDefaultStore : createStoreHook(context)
 
-  return function useDispatch<
+  const useDispatch = <
     AppDispatch extends Dispatch<A> = Dispatch<A>
-  >(): AppDispatch {
+  >(): AppDispatch => {
     const store = useStore()
     // @ts-ignore
     return store.dispatch
   }
+
+  Object.assign(useDispatch, {
+    withTypes: () => useDispatch,
+  })
+
+  return useDispatch as UseDispatch
 }
 
 /**

@@ -1055,6 +1055,12 @@ describe('React', () => {
           })
         })
       })
+
+      test('useSelector.withTypes', () => {
+        const useAppSelector = useSelector.withTypes<RootState>()
+
+        expect(useAppSelector).toBe(useSelector)
+      })
     })
 
     describe('createSelectorHook', () => {

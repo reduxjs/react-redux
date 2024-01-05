@@ -18,15 +18,20 @@ import {
   useStore,
 } from '../../src/index'
 
-import type { AppDispatch, RootState } from './counterApp'
+import type { AppDispatch, AppStore, RootState } from './counterApp'
 import { incrementAsync } from './counterApp'
 
 import { expectExactType, expectType } from '../typeTestHelpers'
 
 function preTypedHooksSetup() {
   // Standard hooks setup
-  const useAppDispatch = () => useDispatch<AppDispatch>()
-  const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+  const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+  // const useAppDispatch = () => useDispatch<AppDispatch>()
+  // const useAppSelector: UseSelector<RootState> = useSelector
+  const useAppSelector = useSelector.withTypes<RootState>()
+
+  useAppSelector((state) => state.counter)
+  const useAppStore = useStore.withTypes<AppStore>()
 
   function CounterComponent() {
     const dispatch = useAppDispatch()
@@ -84,7 +89,8 @@ function testShallowEqual() {
   )
   expectExactType<string>(selected1)
 
-  const useAppSelector: TypedUseSelectorHook<TestState> = useSelector
+  // const useAppSelector: UseSelector<TestState> = useSelector
+  const useAppSelector = useSelector.withTypes<TestState>()
 
   const selected2 = useAppSelector((state) => state.stateProp, shallowEqual)
   expectExactType<string>(selected2)
