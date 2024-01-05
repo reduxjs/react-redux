@@ -5,20 +5,15 @@ import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import { createStoreHook, useStore as useDefaultStore } from './useStore'
 
-export interface UseDispatch {
-  <
-    AppDispatch extends Dispatch<Action> = Dispatch<UnknownAction>
-  >(): AppDispatch
-  withTypes: <AppDispatch extends Dispatch<Action>>() => () => AppDispatch
+export interface UseDispatch<
+  DispatchType extends Dispatch<UnknownAction> = Dispatch<UnknownAction>
+> {
+  <AppDispatch extends DispatchType = DispatchType>(): AppDispatch
+
+  withTypes: <
+    OverrideDispatchType extends DispatchType
+  >() => UseDispatch<OverrideDispatchType>
 }
-// export interface UseDispatch<
-//   DispatchType extends Dispatch<UnknownAction> = Dispatch<UnknownAction>
-// > {
-//   <AppDispatch extends DispatchType = DispatchType>(): AppDispatch
-//   withTypes: <
-//     OverrideDispatchType extends DispatchType
-//   >() => UseDispatch<OverrideDispatchType>
-// }
 
 /**
  * Hook factory, which creates a `useDispatch` hook bound to a given context.
@@ -28,18 +23,14 @@ export interface UseDispatch {
  */
 export function createDispatchHook<
   S = unknown,
-  A extends Action<string> = UnknownAction
+  A extends Action = UnknownAction
   // @ts-ignore
 >(context?: Context<ReactReduxContextValue<S, A> | null> = ReactReduxContext) {
   const useStore =
-    // @ts-ignore
     context === ReactReduxContext ? useDefaultStore : createStoreHook(context)
 
-  const useDispatch = <
-    AppDispatch extends Dispatch<A> = Dispatch<A>
-  >(): AppDispatch => {
+  const useDispatch = () => {
     const store = useStore()
-    // @ts-ignore
     return store.dispatch
   }
 
@@ -47,7 +38,7 @@ export function createDispatchHook<
     withTypes: () => useDispatch,
   })
 
-  return useDispatch as UseDispatch
+  return useDispatch as UseDispatch<Dispatch<A>>
 }
 
 /**

@@ -3,7 +3,7 @@ import { React } from '../utils/react'
 
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
-import type { EqualityFn, NoInfer, TypedUseSelectorHook } from '../types'
+import type { EqualityFn, NoInfer } from '../types'
 import type { uSESWS } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
 import {
@@ -66,26 +66,16 @@ export interface UseSelectorOptions<Selected = unknown> {
   devModeChecks?: Partial<DevModeChecks>
 }
 
-export interface UseSelector {
-  <TState = unknown, Selected = unknown>(
+export interface UseSelector<StateType = unknown> {
+  <TState extends StateType = StateType, Selected = unknown>(
     selector: (state: TState) => Selected,
     equalityFnOrOptions?: EqualityFn<Selected> | UseSelectorOptions<Selected>
   ): Selected
-  withTypes: <TState>() => TypedUseSelectorHook<TState>
+
+  withTypes: <
+    OverrideStateType extends StateType
+  >() => UseSelector<OverrideStateType>
 }
-// export interface UseSelector<StateType = unknown> {
-//   <TState extends StateType = StateType, Selected = unknown>(
-//     selector: (state: TState) => Selected,
-//     equalityFn?: EqualityFn<Selected>
-//   ): Selected
-//   <TState extends StateType = StateType, Selected = unknown>(
-//     selector: (state: TState) => Selected,
-//     options?: UseSelectorOptions<Selected>
-//   ): Selected
-//   withTypes: <
-//     OverrideStateType extends StateType
-//   >() => UseSelector<OverrideStateType>
-// }
 
 let useSyncExternalStoreWithSelector = notInitialized as uSESWS
 export const initializeUseSelector = (fn: uSESWS) => {

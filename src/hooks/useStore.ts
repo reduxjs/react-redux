@@ -1,5 +1,5 @@
 import type { Context } from 'react'
-import type { Action as BasicAction, Store, UnknownAction } from 'redux'
+import type { Action, Store } from 'redux'
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import {
@@ -9,31 +9,25 @@ import {
 
 export type StoreAction<StoreType extends Store> = StoreType extends Store<
   any,
-  infer Action
+  infer ActionType
 >
-  ? Action
+  ? ActionType
   : never
 
-export interface UseStore {
-  <State = any, Action extends BasicAction = UnknownAction>(): Store<
-    State,
-    Action
-  >
+export interface UseStore<StoreType extends Store> {
+  (): StoreType
 
-  withTypes: <AppStore extends Store>() => () => AppStore
+  <
+    StateType extends ReturnType<StoreType['getState']> = ReturnType<
+      StoreType['getState']
+    >,
+    ActionType extends Action = StoreAction<Store>
+  >(): Store<StateType, ActionType>
+
+  withTypes: <
+    OverrideStoreType extends StoreType
+  >() => UseStore<OverrideStoreType>
 }
-// export interface UseStore<StoreType extends Store = Store> {
-//   <
-//     State extends ReturnType<StoreType['getState']> = ReturnType<
-//       StoreType['getState']
-//     >,
-//     Action extends BasicAction = StoreAction<Store>
-//   >(): Store<State, Action>
-
-//   withTypes: <
-//     OverrideStoreType extends StoreType
-//   >() => UseStore<OverrideStoreType>
-// }
 
 /**
  * Hook factory, which creates a `useStore` hook bound to a given context.
@@ -42,31 +36,30 @@ export interface UseStore {
  * @returns {Function} A `useStore` hook bound to the specified context.
  */
 export function createStoreHook<
-  S = unknown,
-  A extends BasicAction = BasicAction
+  StateType = unknown,
+  ActionType extends Action = Action
+>(
   // @ts-ignore
->(context?: Context<ReactReduxContextValue<S, A> | null> = ReactReduxContext) {
+  context?: Context<ReactReduxContextValue<
+    StateType,
+    ActionType
+  > | null> = ReactReduxContext
+) {
   const useReduxContext =
-    // @ts-ignore
     context === ReactReduxContext
       ? useDefaultReduxContext
       : // @ts-ignore
         createReduxContextHook(context)
-  const useStore = <
-    State = S,
-    Action2 extends BasicAction = A
-    // @ts-ignore
-  >() => {
+  const useStore = () => {
     const { store } = useReduxContext()
-    // @ts-ignore
-    return store as Store<State, Action2>
+    return store
   }
 
   Object.assign(useStore, {
     withTypes: () => useStore,
   })
 
-  return useStore as UseStore
+  return useStore as UseStore<Store<StateType, ActionType>>
 }
 
 /**
