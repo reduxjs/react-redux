@@ -5,9 +5,9 @@ import type { AppDispatch, AppStore, RootState } from './counterApp'
 import { incrementAsync } from './counterApp'
 
 function preTypedHooksSetupWithTypes() {
-  const useAppDispatch = useDispatch.withTypes<AppDispatch>()
-
   const useAppSelector = useSelector.withTypes<RootState>()
+
+  const useAppDispatch = useDispatch.withTypes<AppDispatch>()
 
   const useAppStore = useStore.withTypes<AppStore>()
 
