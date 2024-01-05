@@ -1,55 +1,45 @@
-import Provider from './components/Provider'
-import type { ProviderProps } from './components/Provider'
 import connect from './components/connect'
-import type {
+export type {
   Connect,
   ConnectProps,
   ConnectedProps,
 } from './components/connect'
-import type {
-  SelectorFactory,
-  Selector,
-  MapStateToProps,
-  MapStateToPropsFactory,
-  MapStateToPropsParam,
-  MapDispatchToPropsFunction,
-  MapDispatchToProps,
-  MapDispatchToPropsFactory,
-  MapDispatchToPropsParam,
-  MapDispatchToPropsNonObject,
-  MergeProps,
-} from './connect/selectorFactory'
-import { ReactReduxContext } from './components/Context'
-import type { ReactReduxContextValue } from './components/Context'
-
-import { useDispatch, createDispatchHook } from './hooks/useDispatch'
-import { useSelector, createSelectorHook } from './hooks/useSelector'
-import { useStore, createStoreHook } from './hooks/useStore'
 
 import shallowEqual from './utils/shallowEqual'
-import type { Subscription } from './utils/Subscription'
+
 import { defaultNoopBatch } from './utils/batch'
 
-export * from './types'
+export { ReactReduxContext } from './components/Context'
+export type { ReactReduxContextValue } from './components/Context'
+
+export type { ProviderProps } from './components/Provider'
+import Provider from './components/Provider'
+
 export type {
-  ProviderProps,
-  SelectorFactory,
-  Selector,
+  MapDispatchToProps,
+  MapDispatchToPropsFactory,
+  MapDispatchToPropsFunction,
+  MapDispatchToPropsNonObject,
+  MapDispatchToPropsParam,
   MapStateToProps,
   MapStateToPropsFactory,
   MapStateToPropsParam,
-  Connect,
-  ConnectProps,
-  ConnectedProps,
-  MapDispatchToPropsFunction,
-  MapDispatchToProps,
-  MapDispatchToPropsFactory,
-  MapDispatchToPropsParam,
-  MapDispatchToPropsNonObject,
   MergeProps,
-  ReactReduxContextValue,
-  Subscription,
-}
+  Selector,
+  SelectorFactory,
+} from './connect/selectorFactory'
+
+export { createDispatchHook, useDispatch } from './hooks/useDispatch'
+export type { UseDispatch } from './hooks/useDispatch'
+
+export { createSelectorHook, useSelector } from './hooks/useSelector'
+export type { UseSelector } from './hooks/useSelector'
+
+export { createStoreHook, useStore } from './hooks/useStore'
+
+export type { Subscription } from './utils/Subscription'
+
+export * from './types'
 
 /**
  * @deprecated As of React 18, batching is enabled by default for ReactDOM and React Native.
@@ -57,16 +47,4 @@ export type {
  */
 const batch = defaultNoopBatch
 
-export {
-  Provider,
-  ReactReduxContext,
-  connect,
-  useDispatch,
-  createDispatchHook,
-  useSelector,
-  createSelectorHook,
-  useStore,
-  createStoreHook,
-  shallowEqual,
-  batch,
-}
+export { Provider, batch, connect, shallowEqual }
