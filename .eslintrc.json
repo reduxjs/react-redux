@@ -1,69 +1,63 @@
 {
-  "parser": "@typescript-eslint/parser",
-  "extends": [
-    "eslint:recommended",
-    "plugin:import/recommended",
-    "plugin:react/recommended",
-    "plugin:prettier/recommended"
-    // "plugin:@typescript-eslint/recommended"
-  ],
-  "settings": {
-    "react": {
-      "version": "detect"
-    },
-    "import/ignore": [
-      "react-native"
-    ],
-    "import/resolver": {
-      "node": {
-        "extensions": [
-          ".js",
-          ".ts",
-          ".tsx"
-        ]
-      }
-    }
-  },
-  "parserOptions": {
-    "ecmaVersion": 6,
-    "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true,
-      "experimentalObjectRestSpread": true
-    }
-  },
   "env": {
     "browser": true,
-    "mocha": true,
     "node": true
   },
-  "rules": {
-    "valid-jsdoc": 2,
-    "react/jsx-uses-react": 1,
-    "react/jsx-no-undef": 2,
-    "react/jsx-wrap-multilines": 2,
-    "react/no-string-refs": 0,
-    "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": [
-      "error"
-    ],
-    "no-redeclare": "off",
-    "@typescript-eslint/no-redeclare": [
-      "error"
-    ],
-    "@typescript-eslint/consistent-type-imports": [
-      "error",
-      {
-        "prefer": "type-imports"
-      }
-    ]
-  },
-  "plugins": [
-    "@typescript-eslint",
-    "import",
-    "react"
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:import/recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended"
   ],
-  "globals": {
-    "JSX": true
-  }
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaFeatures": { "jsx": true },
+    "ecmaVersion": 2015,
+    "project": true,
+    "sourceType": "module"
+  },
+  "plugins": ["@typescript-eslint", "import", "react"],
+  "rules": {
+    "valid-jsdoc": [2]
+  },
+  "settings": {
+    "import/ignore": ["react-native"],
+    "import/resolver": { "node": { "extensions": [".js", ".ts", ".tsx"] } },
+    "react": { "version": "detect" }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.{ts,tsx,cts}"],
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:import/recommended",
+        "plugin:react/recommended",
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "rules": {
+        "@typescript-eslint/ban-ts-comment": [0],
+        "@typescript-eslint/no-redeclare": [2],
+        "@typescript-eslint/no-explicit-any": [0],
+        "@typescript-eslint/no-unused-vars": [0],
+        "@typescript-eslint/ban-types": [0],
+        "react/display-name": [0],
+        "react/jsx-no-undef": [2],
+        "react/jsx-uses-react": [1],
+        "react/jsx-wrap-multilines": [2],
+        "react/no-string-refs": [0],
+        "@typescript-eslint/consistent-type-imports": [
+          2,
+          { "fixStyle": "separate-type-imports" }
+        ],
+        "@typescript-eslint/consistent-type-exports": [2],
+        "valid-jsdoc": [2]
+      }
+    },
+    {
+      "files": ["**/test/**/*.{ts,tsx}"],
+      "parserOptions": { "project": "./test/tsconfig.test.json" }
+    }
+  ]
 }
