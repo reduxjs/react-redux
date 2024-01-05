@@ -69,11 +69,7 @@ export interface UseSelectorOptions<Selected = unknown> {
 export interface UseSelector {
   <TState = unknown, Selected = unknown>(
     selector: (state: TState) => Selected,
-    equalityFn?: EqualityFn<Selected>
-  ): Selected
-  <TState = unknown, Selected = unknown>(
-    selector: (state: TState) => Selected,
-    options?: UseSelectorOptions<Selected>
+    equalityFnOrOptions?: EqualityFn<Selected> | UseSelectorOptions<Selected>
   ): Selected
   withTypes: <TState>() => TypedUseSelectorHook<TState>
 }
