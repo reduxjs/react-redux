@@ -1,16 +1,16 @@
+import '@testing-library/jest-native/extend-expect'
+import * as rtl from '@testing-library/react-native'
 import React, { Component, useLayoutEffect } from 'react'
-import { View, Button, Text, unstable_batchedUpdates } from 'react-native'
-import { createStore, applyMiddleware } from 'redux'
+import { Button, Text, View, unstable_batchedUpdates } from 'react-native'
+import { applyMiddleware, createStore } from 'redux'
 import {
   Provider as ProviderMock,
-  connect,
   batch,
-  useSelector,
+  connect,
   useDispatch,
+  useSelector,
 } from '../../src/index'
 import { useIsomorphicLayoutEffect } from '../../src/utils/useIsomorphicLayoutEffect'
-import * as rtl from '@testing-library/react-native'
-import '@testing-library/jest-native/extend-expect'
 
 import type { MiddlewareAPI, Dispatch as ReduxDispatch } from 'redux'
 
@@ -128,7 +128,7 @@ describe('React Native', () => {
       const tester = rtl.render(
         <ProviderMock store={store}>
           <ConnectedContainer />
-        </ProviderMock>
+        </ProviderMock>,
       )
 
       expect(childMapStateInvokes).toBe(1)
@@ -206,11 +206,11 @@ describe('React Native', () => {
         }
       }
 
-      let outerComponent = React.createRef<OuterComponent>()
+      const outerComponent = React.createRef<OuterComponent>()
       rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={outerComponent} />
-        </ProviderMock>
+        </ProviderMock>,
       )
       outerComponent.current!.setState(({ count }) => ({ count: count + 1 }))
       store.dispatch({ type: '' })
@@ -272,8 +272,8 @@ describe('React Native', () => {
         counter,
         applyMiddleware(
           // @ts-ignore
-          reactCallbackMiddleware
-        )
+          reactCallbackMiddleware,
+        ),
       )
 
       interface ChildrenTStatePropsType {
@@ -290,7 +290,7 @@ describe('React Native', () => {
         OwnPropsType,
         RootStateType
       >((count) => ({ count }))(function (
-        props: OwnPropsType & ChildrenTStatePropsType
+        props: OwnPropsType & ChildrenTStatePropsType,
       ) {
         return (
           <View>
@@ -325,7 +325,7 @@ describe('React Native', () => {
         }
       }
 
-      let parent = React.createRef<Parent>()
+      const parent = React.createRef<Parent>()
       const rendered = rtl.render(<Parent ref={parent} />)
       expect(rendered.getByTestId('child-count').children).toEqual(['0'])
       expect(rendered.getByTestId('child-prop').children).toEqual(['a'])
@@ -388,11 +388,11 @@ describe('React Native', () => {
         }
       }
 
-      let outerComponent = React.createRef<OuterComponent>()
+      const outerComponent = React.createRef<OuterComponent>()
       rtl.render(
         <ProviderMock store={store}>
           <OuterComponent ref={outerComponent} />
-        </ProviderMock>
+        </ProviderMock>,
       )
 
       store.dispatch({ type: '' })
@@ -415,7 +415,7 @@ describe('React Native', () => {
       const store = createStore(reducer)
 
       let executionOrder: string[] = []
-      let expectedExecutionOrder = [
+      const expectedExecutionOrder = [
         'parent map',
         'parent render',
         'child map',
@@ -445,7 +445,7 @@ describe('React Native', () => {
       rtl.render(
         <ProviderMock store={store}>
           <Parent />
-        </ProviderMock>
+        </ProviderMock>,
       )
 
       executionOrder = []
@@ -480,7 +480,7 @@ describe('React Native', () => {
 
       const reducer = (
         state: RootStateType = INIT_STATE,
-        action: ActionType
+        action: ActionType,
       ) => {
         switch (action.type) {
           case 'TOGGLE':

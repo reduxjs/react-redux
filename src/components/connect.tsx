@@ -70,7 +70,7 @@ type EffectFunc = (...args: any[]) => void | ReturnType<React.EffectCallback>
 function useIsomorphicLayoutEffectWithArgs(
   effectFunc: EffectFunc,
   effectArgs: any[],
-  dependencies?: React.DependencyList
+  dependencies?: React.DependencyList,
 ) {
   useIsomorphicLayoutEffect(() => effectFunc(...effectArgs), dependencies)
 }
@@ -83,7 +83,7 @@ function captureWrapperProps(
   wrapperProps: unknown,
   // actualChildProps: unknown,
   childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
-  notifyNestedSubs: () => void
+  notifyNestedSubs: () => void,
 ) {
   // We want to capture the wrapper props and child props we used for later comparisons
   lastWrapperProps.current = wrapperProps
@@ -110,7 +110,7 @@ function subscribeUpdates(
   childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
   notifyNestedSubs: () => void,
   // forceComponentUpdateDispatch: React.Dispatch<any>,
-  additionalSubscribeListener: () => void
+  additionalSubscribeListener: () => void,
 ) {
   // If we're not subscribed to the store, nothing to do here
   if (!shouldHandleStateChanges) return () => {}
@@ -136,7 +136,7 @@ function subscribeUpdates(
       // to determine what the child props should be
       newChildProps = childPropsSelector(
         latestStoreState,
-        lastWrapperProps.current
+        lastWrapperProps.current,
       )
     } catch (e) {
       error = e
@@ -466,13 +466,13 @@ function connect<
 
     // the context consumer to use
     context = ReactReduxContext,
-  }: ConnectOptions<unknown, unknown, unknown, unknown> = {}
+  }: ConnectOptions<unknown, unknown, unknown, unknown> = {},
 ): unknown {
   if (process.env.NODE_ENV !== 'production') {
     if (pure !== undefined && !hasWarnedAboutDeprecatedPureOption) {
       hasWarnedAboutDeprecatedPureOption = true
       warning(
-        'The `pure` option has been removed. `connect` is now always a "pure/memoized" component'
+        'The `pure` option has been removed. `connect` is now always a "pure/memoized" component',
       )
     }
   }
@@ -486,7 +486,7 @@ function connect<
   const shouldHandleStateChanges = Boolean(mapStateToProps)
 
   const wrapWithConnect = <TProps,>(
-    WrappedComponent: ComponentType<TProps>
+    WrappedComponent: ComponentType<TProps>,
   ) => {
     type WrappedComponentProps = TProps &
       ConnectPropsMaybeWithoutContext<TProps>
@@ -496,8 +496,8 @@ function connect<
       if (!isValid)
         throw new Error(
           `You must pass a component to the function returned by connect. Instead received ${stringifyComponent(
-            WrappedComponent
-          )}`
+            WrappedComponent,
+          )}`,
         )
     }
 
@@ -529,7 +529,7 @@ function connect<
     }
 
     function ConnectFunction<TOwnProps>(
-      props: InternalConnectProps & TOwnProps
+      props: InternalConnectProps & TOwnProps,
     ) {
       const [propsContext, reactReduxForwardedRef, wrapperProps] =
         React.useMemo(() => {
@@ -548,11 +548,11 @@ function connect<
           if (process.env.NODE_ENV !== 'production') {
             const isValid = /*#__PURE__*/ isContextConsumer(
               // @ts-ignore
-              <propsContext.Consumer />
+              <propsContext.Consumer />,
             )
             if (!isValid) {
               throw new Error(
-                'You must pass a valid React context consumer as `props.context`'
+                'You must pass a valid React context consumer as `props.context`',
               )
             }
             ResultContext = propsContext
@@ -583,7 +583,7 @@ function connect<
           `Could not find "store" in the context of ` +
             `"${displayName}". Either wrap the root component in a <Provider>, ` +
             `or pass a custom React context provider to <Provider> and the corresponding ` +
-            `React context consumer to ${displayName} in connect options.`
+            `React context consumer to ${displayName} in connect options.`,
         )
       }
 
@@ -609,7 +609,7 @@ function connect<
         // connected to the store via props shouldn't use subscription from context, or vice versa.
         const subscription = createSubscription(
           store,
-          didStoreComeFromProps ? undefined : contextValue!.subscription
+          didStoreComeFromProps ? undefined : contextValue!.subscription,
         )
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
@@ -703,7 +703,7 @@ function connect<
             isMounted,
             childPropsFromStoreUpdate,
             notifyNestedSubs,
-            reactListener
+            reactListener,
           )
         }
 
@@ -730,10 +730,11 @@ function connect<
           actualChildPropsSelector,
           getServerState
             ? () => childPropsSelector(getServerState(), wrapperProps)
-            : actualChildPropsSelector
+            : actualChildPropsSelector,
         )
       } catch (err) {
         if (latestSubscriptionCallbackError.current) {
+          // eslint-disable-next-line no-extra-semi
           ;(
             err as Error
           ).message += `\nThe error may be correlated with this previous error:\n${latestSubscriptionCallbackError.current.stack}\n\n`
@@ -797,7 +798,7 @@ function connect<
     if (forwardRef) {
       const _forwarded = React.forwardRef(function forwardConnectRef(
         props,
-        ref
+        ref,
       ) {
         // @ts-ignore
         return <Connect {...props} reactReduxForwardedRef={ref} />

@@ -39,7 +39,7 @@ describe('React', () => {
               break
           }
           return newState
-        }
+        },
       )
 
       const mapStateSpy1 = jest.fn()
@@ -90,14 +90,14 @@ describe('React', () => {
       >(
         (
           state: RootStateType,
-          ownProps: Omit<RootStateType, 'byId'>
+          ownProps: Omit<RootStateType, 'byId'>,
         ): Component2Tstate => {
           mapStateSpy2()
 
           return {
             mappedProp: ownProps.list.map((id) => state.byId[id]),
           }
-        }
+        },
       )
       interface Component2PropsType {
         list: number[]
@@ -116,7 +116,7 @@ describe('React', () => {
       rtl.render(
         <ProviderMock store={store}>
           <Component1 />
-        </ProviderMock>
+        </ProviderMock>,
       )
 
       // 1. Initial render

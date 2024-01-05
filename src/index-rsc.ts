@@ -15,7 +15,7 @@ function throwNotSupportedError(
   ...args: any[]
 ): any {
   throw new Error(
-    'This function is not supported in React Server Components. Please only use this export in a Client Component.'
+    'This function is not supported in React Server Components. Please only use this export in a Client Component.',
   )
 }
 

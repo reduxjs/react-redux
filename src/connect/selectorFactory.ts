@@ -79,7 +79,7 @@ export function pureFinalPropsSelectorFactory<
     areStatesEqual,
     areOwnPropsEqual,
     areStatePropsEqual,
-  }: PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State>
+  }: PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State>,
 ) {
   let hasRunAtLeastOnce = false
   let state: State
@@ -136,7 +136,7 @@ export function pureFinalPropsSelectorFactory<
       nextState,
       state,
       nextOwnProps,
-      ownProps
+      ownProps,
     )
     state = nextState
     ownProps = nextOwnProps
@@ -149,7 +149,7 @@ export function pureFinalPropsSelectorFactory<
 
   return function pureFinalPropsSelector(
     nextState: State,
-    nextOwnProps: TOwnProps
+    nextOwnProps: TOwnProps,
   ) {
     return hasRunAtLeastOnce
       ? handleSubsequentCalls(nextState, nextOwnProps)
@@ -222,7 +222,7 @@ export default function finalPropsSelectorFactory<
     TDispatchProps,
     TMergedProps,
     State
-  >
+  >,
 ) {
   const mapStateToProps = initMapStateToProps(dispatch, options)
   const mapDispatchToProps = initMapDispatchToProps(dispatch, options)

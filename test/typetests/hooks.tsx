@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 
-import type { AnyAction, Dispatch, Store } from '@reduxjs/toolkit'
-import { configureStore } from '@reduxjs/toolkit'
-import * as React from 'react'
+import type { AnyAction, Dispatch, Store } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
+import * as React from 'react';
 import type {
   ReactReduxContextValue,
   Selector,
   TypedUseSelectorHook,
-} from '../../src/index'
+} from '../../src/index';
 import {
   createDispatchHook,
   createSelectorHook,
@@ -16,12 +16,12 @@ import {
   useDispatch,
   useSelector,
   useStore,
-} from '../../src/index'
+} from '../../src/index';
 
-import type { AppDispatch, RootState } from './counterApp'
-import { incrementAsync } from './counterApp'
+import type { AppDispatch, RootState } from './counterApp';
+import { incrementAsync } from './counterApp';
 
-import { expectExactType, expectType } from '../typeTestHelpers'
+import { expectExactType, expectType } from '../typeTestHelpers';
 
 function preTypedHooksSetup() {
   // Standard hooks setup
@@ -52,7 +52,7 @@ function TestSelector() {
   const simpleSelect: Selector<State, string> = (state: State) => state.key
   const notSimpleSelect: Selector<State, string, OwnProps> = (
     state: State,
-    ownProps: OwnProps
+    ownProps: OwnProps,
   ) => ownProps.key || state.key
 
   const ownProps = {}
@@ -80,7 +80,7 @@ function testShallowEqual() {
   // Additionally, it should infer its type from arguments and not become `any`
   const selected1 = useSelector(
     (state: TestState) => state.stateProp,
-    shallowEqual
+    shallowEqual,
   )
   expectExactType<string>(selected1)
 
@@ -118,7 +118,7 @@ function testUseDispatch() {
   const useThunkDispatch = () => useDispatch<AppDispatch>()
   const thunkDispatch = useThunkDispatch()
   const result: ReturnType<typeof actionCreator> = thunkDispatch(
-    thunkActionCreator(true)
+    thunkActionCreator(true),
   )
 }
 
@@ -219,9 +219,11 @@ function testCreateHookFunctions() {
   // No context tests
   expectType<() => Dispatch<AnyAction>>(createDispatchHook())
   expectType<
-    <Selected extends unknown>(
+    <Selected>(
       selector: (state: any) => Selected,
-      equalityFn?: ((previous: Selected, next: Selected) => boolean) | undefined
+      equalityFn?:
+        | ((previous: Selected, next: Selected) => boolean)
+        | undefined,
     ) => Selected
   >(createSelectorHook())
   expectType<() => Store<any, AnyAction>>(createStoreHook())
@@ -229,9 +231,11 @@ function testCreateHookFunctions() {
   // With context tests
   expectType<() => Dispatch<RootAction>>(createDispatchHook(Context))
   expectType<
-    <Selected extends unknown>(
+    <Selected>(
       selector: (state: RootState) => Selected,
-      equalityFn?: ((previous: Selected, next: Selected) => boolean) | undefined
+      equalityFn?:
+        | ((previous: Selected, next: Selected) => boolean)
+        | undefined,
     ) => Selected
   >(createSelectorHook(Context))
   expectType<() => Store<RootState, RootAction>>(createStoreHook(Context))

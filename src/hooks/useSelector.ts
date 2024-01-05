@@ -135,7 +135,7 @@ export function createSelectorHook(
   context: React.Context<ReactReduxContextValue<
     any,
     any
-  > | null> = ReactReduxContext
+  > | null> = ReactReduxContext,
 ): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
@@ -161,7 +161,7 @@ export function createSelectorHook(
       }
       if (typeof equalityFn !== 'function') {
         throw new Error(
-          `You must pass a function as an equality function to useSelector`
+          `You must pass a function as an equality function to useSelector`,
         )
       }
     }
@@ -199,6 +199,7 @@ export function createSelectorHook(
                 try {
                   throw new Error()
                 } catch (e) {
+                  // eslint-disable-next-line no-extra-semi
                   ;({ stack } = e as Error)
                 }
                 console.warn(
@@ -211,7 +212,7 @@ export function createSelectorHook(
                     selected,
                     selected2: toCompare,
                     stack,
-                  }
+                  },
                 )
               }
             }
@@ -225,6 +226,7 @@ export function createSelectorHook(
                 try {
                   throw new Error()
                 } catch (e) {
+                  // eslint-disable-next-line no-extra-semi
                   ;({ stack } = e as Error)
                 }
                 console.warn(
@@ -232,7 +234,7 @@ export function createSelectorHook(
                     (selector.name || 'unknown') +
                     ' returned the root state when called. This can lead to unnecessary rerenders.' +
                     '\nSelectors that return the entire state are almost certainly a mistake, as they will cause a rerender whenever *anything* in state changes.',
-                  { stack }
+                  { stack },
                 )
               }
             }
@@ -241,7 +243,7 @@ export function createSelectorHook(
           return selected
         },
       }[selector.name],
-      [selector, stabilityCheck, devModeChecks.stabilityCheck]
+      [selector, stabilityCheck, devModeChecks.stabilityCheck],
     )
 
     const selectedState = useSyncExternalStoreWithSelector(
@@ -249,7 +251,7 @@ export function createSelectorHook(
       store.getState,
       getServerState || store.getState,
       wrappedSelector,
-      equalityFn
+      equalityFn,
     )
 
     React.useDebugValue(selectedState)

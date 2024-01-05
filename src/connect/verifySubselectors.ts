@@ -9,7 +9,7 @@ function verify(selector: unknown, methodName: string): void {
   ) {
     if (!Object.prototype.hasOwnProperty.call(selector, 'dependsOnOwnProps')) {
       warning(
-        `The selector for ${methodName} of connect did not specify a value for dependsOnOwnProps.`
+        `The selector for ${methodName} of connect did not specify a value for dependsOnOwnProps.`,
       )
     }
   }
@@ -18,7 +18,7 @@ function verify(selector: unknown, methodName: string): void {
 export default function verifySubselectors(
   mapStateToProps: unknown,
   mapDispatchToProps: unknown,
-  mergeProps: unknown
+  mergeProps: unknown,
 ): void {
   verify(mapStateToProps, 'mapStateToProps')
   verify(mapDispatchToProps, 'mapDispatchToProps')

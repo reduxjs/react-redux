@@ -1,40 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 
 import * as React from 'react'
-import * as ReactDOM from 'react-dom'
-import type { Dispatch, ActionCreator } from 'redux'
-import {
-  Store,
-  AnyAction,
-  createStore,
-  bindActionCreators,
-  ActionCreatorsMapObject,
-  Reducer,
-} from 'redux'
-import type { ReactReduxContext, MapDispatchToProps } from '../../src/index'
-import {
-  connect,
-  ConnectedProps,
-  Provider,
-  DispatchProp,
-  MapStateToProps,
-  ReactReduxContextValue,
-  Selector,
-  shallowEqual,
-  useDispatch,
-  useSelector,
-  useStore,
-  createDispatchHook,
-  createSelectorHook,
-  createStoreHook,
-  TypedUseSelectorHook,
-} from '../../src/index'
+import type { ActionCreator, Dispatch } from 'redux'
+import type { MapDispatchToProps, ReactReduxContext } from '../../src/index'
+import { connect } from '../../src/index'
 
 // Test cases written in a way to isolate types and variables and verify the
 // output of `connect` to make sure the signature is what is expected
 
 const CustomContext = React.createContext(
-  null
+  null,
 ) as unknown as typeof ReactReduxContext
 
 function Empty() {
@@ -295,7 +270,7 @@ function MapStateAndNullishDispatch() {
 
   const TestDispatchPropsUndefined = connect(
     mapStateToProps,
-    undefined
+    undefined,
   )(TestComponent)
 
   const verifyNonUn = <TestDispatchPropsUndefined foo="bar" />
@@ -321,7 +296,7 @@ function MapDispatchFactory() {
 
   const TestUndefined = connect(
     undefined,
-    mapDispatchToPropsFactory
+    mapDispatchToPropsFactory,
   )(TestComponent)
 
   const verifyUndefined = <TestUndefined foo="bar" />
@@ -380,7 +355,7 @@ function MapStateFactoryAndDispatch() {
 
   const Test = connect(
     mapStateToPropsFactory,
-    mapDispatchToProps
+    mapDispatchToProps,
   )(TestComponent)
 
   const verify = <Test foo="bar" />
@@ -411,7 +386,7 @@ function MapStateFactoryAndDispatchFactory() {
 
   const Test = connect(
     mapStateToPropsFactory,
-    mapDispatchToPropsFactory
+    mapDispatchToPropsFactory,
   )(TestComponent)
 
   const verify = <Test foo="bar" />
@@ -442,13 +417,13 @@ function MapStateAndDispatchAndMerge() {
 
   const mergeProps = (
     stateProps: StateProps,
-    dispatchProps: DispatchProps
+    dispatchProps: DispatchProps,
   ) => ({ ...stateProps, ...dispatchProps })
 
   const Test = connect(
     mapStateToProps,
     mapDispatchToProps,
-    mergeProps
+    mergeProps,
   )(TestComponent)
 
   const verify = <Test foo="bar" />
@@ -511,7 +486,7 @@ function MapStateAndOptions() {
     null,
     {
       areStatePropsEqual,
-    }
+    },
   )(TestComponent)
 
   const verify = <Test foo="bar" />

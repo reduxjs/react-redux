@@ -8,19 +8,20 @@
 
 /*eslint-disable react/prop-types*/
 
-import React, { FunctionComponent } from 'react'
-import { renderToString } from 'react-dom/server'
-import { createStore } from 'redux'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import { Provider, connect } from '../../src/index'
+import type { FunctionComponent } from 'react'
+import React from 'react'
+import { renderToString } from 'react-dom/server'
 import type { Dispatch, Store } from 'redux'
+import { createStore } from 'redux'
+import { Provider, connect } from '../../src/index'
 
 describe('React', () => {
   describe('server rendering', () => {
     type ActionType = PayloadAction<{ greeting: string }>
     function greetingReducer(
       state = { greeting: 'Hello' },
-      action: ActionType
+      action: ActionType,
     ) {
       return action && action.payload ? action.payload : state
     }
@@ -43,7 +44,7 @@ describe('React', () => {
     }
 
     const ConnectedGreeting = connect<RootType, unknown, Props, RootType>(
-      (state) => state
+      (state) => state,
     )(Greeting)
 
     const Greeter = (props: any) => (
@@ -88,7 +89,7 @@ describe('React', () => {
       const markup = renderToString(
         <Provider store={store}>
           <Greeter greeted="world" />
-        </Provider>
+        </Provider>,
       )
       expect(markup).toContain('Hello world')
     })
@@ -101,7 +102,7 @@ describe('React', () => {
       renderToString(
         <Provider store={store}>
           <Greeter greeted="world" />
-        </Provider>
+        </Provider>,
       )
 
       expect(spy).toHaveBeenCalledTimes(0)
@@ -117,7 +118,7 @@ describe('React', () => {
       const markup = renderToString(
         <Provider store={store}>
           <Greeter greeted="world" />
-        </Provider>
+        </Provider>,
       )
 
       expect(markup).toContain('Hi world')
@@ -154,7 +155,7 @@ describe('React', () => {
             greeted="world"
           />
           <ConnectedDispatcher renderAction={renderAction} greeted="world" />
-        </Provider>
+        </Provider>,
       )
 
       expect(markup).toContain('Hi world')
@@ -191,7 +192,7 @@ describe('React', () => {
             greeted="world"
           />
           <ConnectedDispatcher renderAction={renderAction} greeted="world" />
-        </Provider>
+        </Provider>,
       )
 
       expect(markup).toContain('Hi world')

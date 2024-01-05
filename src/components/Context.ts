@@ -35,7 +35,7 @@ function getContext(): Context<ReactReduxContextValue | null> {
   let realContext = contextMap.get(React.createContext)
   if (!realContext) {
     realContext = React.createContext<ReactReduxContextValue | null>(
-      null as any
+      null as any,
     )
     if (process.env.NODE_ENV !== 'production') {
       realContext.displayName = 'ReactRedux'

@@ -15,7 +15,7 @@ describe('React', () => {
         const { result } = renderHook(() => useReduxContext())
 
         expect(result.error.message).toMatch(
-          /could not find react-redux context value/
+          /could not find react-redux context value/,
         )
 
         spy.mockRestore()
@@ -30,7 +30,7 @@ describe('React', () => {
         const { result } = renderHook(() => useCustomReduxContext())
 
         expect(result.error.message).toMatch(
-          /could not find react-redux context value/
+          /could not find react-redux context value/,
         )
 
         spy.mockRestore()
