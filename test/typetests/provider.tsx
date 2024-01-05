@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import React from 'react'
+import type { Store } from 'redux'
 import { Provider } from '../../src'
-import { Store } from 'redux'
 
 declare const store: Store<{ foo: string }>
 

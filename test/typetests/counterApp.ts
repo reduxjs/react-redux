@@ -1,10 +1,5 @@
-import {
-  createSlice,
-  createAsyncThunk,
-  configureStore,
-  ThunkAction,
-  Action,
-} from '@reduxjs/toolkit'
+import type { Action, ThunkAction } from '@reduxjs/toolkit'
+import { configureStore, createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
 export interface CounterState {
   counter: number
@@ -26,7 +21,7 @@ export const counterSlice = createSlice({
 
 export function fetchCount(amount = 1) {
   return new Promise<{ data: number }>((resolve) =>
-    setTimeout(() => resolve({ data: amount }), 500)
+    setTimeout(() => resolve({ data: amount }), 500),
   )
 }
 
@@ -36,7 +31,7 @@ export const incrementAsync = createAsyncThunk(
     const response = await fetchCount(amount)
     // The value we return becomes the `fulfilled` action payload
     return response.data
-  }
+  },
 )
 
 export const { increment } = counterSlice.actions

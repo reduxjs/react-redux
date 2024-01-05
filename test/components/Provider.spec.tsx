@@ -1,15 +1,15 @@
 /*eslint-disable react/prop-types*/
 
+import * as rtl from '@testing-library/react'
 import type { Dispatch } from 'react'
 import React, { Component } from 'react'
-import ReactDOM from 'react-dom'
-import { createStore } from 'redux'
-import { Provider, connect, ReactReduxContext } from '../../src/index'
-import * as rtl from '@testing-library/react'
-import type { ReactReduxContextValue } from '../../src'
 import type { Store } from 'redux'
+import { createStore } from 'redux'
+import type { ReactReduxContextValue } from '../../src'
+import { Provider, ReactReduxContext, connect } from '../../src/index'
 
 import '@testing-library/jest-dom/extend-expect'
+import * as ReactDOM from 'react-dom'
 
 const createExampleTextReducer =
   () =>
@@ -26,7 +26,7 @@ describe('React', () => {
           return (
             <ReactReduxContext.Consumer>
               {(props) => {
-                let { store } = props as ReactReduxContextValue
+                const { store } = props as ReactReduxContextValue
                 let text = ''
 
                 if (store) {
@@ -57,12 +57,12 @@ describe('React', () => {
         rtl.render(
           <Provider store={store}>
             <div />
-          </Provider>
-        )
+          </Provider>,
+        ),
       ).not.toThrow()
       //@ts-expect-error
       expect(() => rtl.render(<Provider store={store} />)).not.toThrow(
-        /children with exactly one child/
+        /children with exactly one child/,
       )
 
       expect(() =>
@@ -70,8 +70,8 @@ describe('React', () => {
           <Provider store={store}>
             <div />
             <div />
-          </Provider>
-        )
+          </Provider>,
+        ),
       ).not.toThrow(/a single React element child/)
       spy.mockRestore()
     })
@@ -83,13 +83,13 @@ describe('React', () => {
       const tester = rtl.render(
         <Provider store={store}>
           <Child />
-        </Provider>
+        </Provider>,
       )
       expect(spy).toHaveBeenCalledTimes(0)
       spy.mockRestore()
 
       expect(tester.getByTestId('store')).toHaveTextContent(
-        'store - example text'
+        'store - example text',
       )
     })
 
@@ -180,7 +180,7 @@ describe('React', () => {
       }
 
       const WrapperInner = connect<TStateProps, unknown, unknown, number>(
-        innerMapStateToProps
+        innerMapStateToProps,
       )(Inner)
 
       const outerStore = createStore(reducer)
@@ -195,13 +195,13 @@ describe('React', () => {
       }
 
       const WrapperOuter = connect<TStateProps, unknown, unknown, number>(
-        (state) => ({ count: state })
+        (state) => ({ count: state }),
       )(Outer)
 
       rtl.render(
         <Provider store={outerStore}>
           <WrapperOuter />
-        </Provider>
+        </Provider>,
       )
       expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
 
@@ -270,13 +270,13 @@ describe('React', () => {
         }
       }
       const WrapperContainer = connect<TStateProps, unknown, unknown, string>(
-        (state) => ({ state })
+        (state) => ({ state }),
       )(Container)
 
       const tester = rtl.render(
         <Provider store={store}>
           <WrapperContainer />
-        </Provider>
+        </Provider>,
       )
 
       expect(childMapStateInvokes).toBe(1)
@@ -323,7 +323,7 @@ describe('React', () => {
           <Provider store={store}>
             <div />
           </Provider>
-        </React.StrictMode>
+        </React.StrictMode>,
       )
 
       expect(spy).not.toHaveBeenCalled()
@@ -343,16 +343,18 @@ describe('React', () => {
         }
       }
 
-      const div = document.createElement('div')
+      const container = document.createElement('div')
+
+      // eslint-disable-next-line react/no-deprecated
       ReactDOM.render(
         <Provider store={store}>
           <div />
         </Provider>,
-        div
+        container,
       )
-
       expect(spy).toHaveBeenCalledTimes(0)
-      ReactDOM.unmountComponentAtNode(div)
+      // eslint-disable-next-line react/no-deprecated
+      ReactDOM.unmountComponentAtNode(container)
       expect(spy).toHaveBeenCalledTimes(1)
     })
 
@@ -379,7 +381,7 @@ describe('React', () => {
       const WrapperComponentA = connect<PropsType, unknown, unknown, StateType>(
         (state) => ({
           value: state.nestedA.value,
-        })
+        }),
       )(ComponentA)
 
       class ComponentB extends Component<PropsType> {
@@ -389,13 +391,13 @@ describe('React', () => {
       }
 
       const WrapperComponentB = connect<PropsType, unknown, unknown, StateType>(
-        (state) => ({ value: state.nestedB.value })
+        (state) => ({ value: state.nestedB.value }),
       )(ComponentB)
 
       const { getByTestId, rerender } = rtl.render(
         <Provider store={storeA}>
           <WrapperComponentA />
-        </Provider>
+        </Provider>,
       )
 
       expect(getByTestId('value')).toHaveTextContent('expectedA')
@@ -403,7 +405,7 @@ describe('React', () => {
       rerender(
         <Provider store={storeB}>
           <WrapperComponentB />
-        </Provider>
+        </Provider>,
       )
 
       expect(getByTestId('value')).toHaveTextContent('expectedB')

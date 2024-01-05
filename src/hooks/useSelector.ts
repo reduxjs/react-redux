@@ -69,11 +69,11 @@ export interface UseSelectorOptions<Selected = unknown> {
 export interface UseSelector {
   <TState = unknown, Selected = unknown>(
     selector: (state: TState) => Selected,
-    equalityFn?: EqualityFn<Selected>
+    equalityFn?: EqualityFn<Selected>,
   ): Selected
   <TState = unknown, Selected = unknown>(
     selector: (state: TState) => Selected,
-    options?: UseSelectorOptions<Selected>
+    options?: UseSelectorOptions<Selected>,
   ): Selected
 }
 
@@ -94,18 +94,18 @@ export function createSelectorHook(
   context: React.Context<ReactReduxContextValue<
     any,
     any
-  > | null> = ReactReduxContext
+  > | null> = ReactReduxContext,
 ): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
       ? useDefaultReduxContext
       : createReduxContextHook(context)
 
-  return function useSelector<TState, Selected extends unknown>(
+  return function useSelector<TState, Selected>(
     selector: (state: TState) => Selected,
     equalityFnOrOptions:
       | EqualityFn<NoInfer<Selected>>
-      | UseSelectorOptions<NoInfer<Selected>> = {}
+      | UseSelectorOptions<NoInfer<Selected>> = {},
   ): Selected {
     const { equalityFn = refEquality, devModeChecks = {} } =
       typeof equalityFnOrOptions === 'function'
@@ -120,7 +120,7 @@ export function createSelectorHook(
       }
       if (typeof equalityFn !== 'function') {
         throw new Error(
-          `You must pass a function as an equality function to useSelector`
+          `You must pass a function as an equality function to useSelector`,
         )
       }
     }
@@ -158,6 +158,7 @@ export function createSelectorHook(
                 try {
                   throw new Error()
                 } catch (e) {
+                  // eslint-disable-next-line no-extra-semi
                   ;({ stack } = e as Error)
                 }
                 console.warn(
@@ -170,7 +171,7 @@ export function createSelectorHook(
                     selected,
                     selected2: toCompare,
                     stack,
-                  }
+                  },
                 )
               }
             }
@@ -184,6 +185,7 @@ export function createSelectorHook(
                 try {
                   throw new Error()
                 } catch (e) {
+                  // eslint-disable-next-line no-extra-semi
                   ;({ stack } = e as Error)
                 }
                 console.warn(
@@ -191,7 +193,7 @@ export function createSelectorHook(
                     (selector.name || 'unknown') +
                     ' returned the root state when called. This can lead to unnecessary rerenders.' +
                     '\nSelectors that return the entire state are almost certainly a mistake, as they will cause a rerender whenever *anything* in state changes.',
-                  { stack }
+                  { stack },
                 )
               }
             }
@@ -200,7 +202,7 @@ export function createSelectorHook(
           return selected
         },
       }[selector.name],
-      [selector, stabilityCheck, devModeChecks.stabilityCheck]
+      [selector, stabilityCheck, devModeChecks.stabilityCheck],
     )
 
     const selectedState = useSyncExternalStoreWithSelector(
@@ -208,7 +210,7 @@ export function createSelectorHook(
       store.getState,
       getServerState || store.getState,
       wrappedSelector,
-      equalityFn
+      equalityFn,
     )
 
     React.useDebugValue(selectedState)

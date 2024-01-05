@@ -56,13 +56,13 @@ describe('React', () => {
       let normalStore: Store<NormalStateType, AnyAction>
       let renderedItems: any[] = []
       type RootState = ReturnType<typeof normalStore.getState>
-      let useNormalSelector: TypedUseSelectorHook<RootState> = useSelector
+      const useNormalSelector: TypedUseSelectorHook<RootState> = useSelector
 
       beforeEach(() => {
         normalStore = createStore(
           ({ count }: NormalStateType = { count: -1 }): NormalStateType => ({
             count: count + 1,
-          })
+          }),
         )
         renderedItems = []
       })
@@ -84,7 +84,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(result).toEqual(0)
@@ -105,7 +105,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(result).toEqual(0)
@@ -134,7 +134,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={store}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(renderedItems).toEqual([1])
@@ -164,7 +164,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Parent />
-            </ProviderMock>
+            </ProviderMock>,
           )
           // Parent component only
           expect(appSubscription!.getListeners().get().length).toBe(1)
@@ -195,7 +195,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Parent />
-            </ProviderMock>
+            </ProviderMock>,
           )
           // Parent + 1 child component
           expect(appSubscription!.getListeners().get().length).toBe(2)
@@ -241,7 +241,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           // With `useSyncExternalStore`, we get three renders of `<Comp>`:
@@ -277,7 +277,7 @@ describe('React', () => {
         rtl.render(
           <ProviderMock store={store}>
             <Comp />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         // The first render doesn't trigger dispatch
@@ -305,7 +305,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={store}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(renderedItems.length).toBe(1)
@@ -326,13 +326,13 @@ describe('React', () => {
             ({ count, stable }: StateType = { count: -1, stable: {} }) => ({
               count: count + 1,
               stable,
-            })
+            }),
           )
 
           const Comp = () => {
             const value = useSelector(
               (s: StateType) => Object.keys(s),
-              shallowEqual
+              shallowEqual,
             )
             renderedItems.push(value)
             return <div />
@@ -350,7 +350,7 @@ describe('React', () => {
             <ProviderMock store={store}>
               <Comp />
               <Comp2 />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(renderedItems.length).toBe(2)
@@ -384,7 +384,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={store}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(selector).toHaveBeenCalledTimes(1)
@@ -435,7 +435,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={store}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
@@ -460,7 +460,7 @@ describe('React', () => {
         rtl.render(
           <ProviderMock store={normalStore}>
             <Comp />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(renderedItems).toEqual([0])
@@ -507,7 +507,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Parent />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           const doDispatch = () => normalStore.dispatch({ type: '' })
@@ -576,7 +576,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Parent />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(() => {
@@ -624,7 +624,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Parent />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           normalStore.dispatch({ type: '' })
@@ -650,7 +650,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={normalStore}>
               <Comp />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(renderedItems.length).toBe(1)
@@ -701,7 +701,7 @@ describe('React', () => {
           const { getByText } = rtl.render(
             <ProviderMock store={store}>
               <App />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           const timeBefore = Date.now()
@@ -751,7 +751,7 @@ describe('React', () => {
                   resolve({
                     default: OtherComp,
                   })
-              })
+              }),
           )
           let addOtherComponent: () => void = () => {}
           const Dispatcher = React.memo(() => {
@@ -807,7 +807,7 @@ describe('React', () => {
               <ProviderMock store={normalStore}>
                 <CompOutsideSuspense />
               </ProviderMock>
-            </>
+            </>,
           )
 
           // step 2: make sure the suspense is switched back to "Loading..." state by adding a component
@@ -865,7 +865,7 @@ describe('React', () => {
         it('throws if equality function is not a function', () => {
           expect(() =>
             //@ts-expect-error
-            useNormalSelector((s) => s.count, 1)
+            useNormalSelector((s) => s.count, 1),
           ).toThrow()
         })
       })
@@ -902,7 +902,7 @@ describe('React', () => {
             rtl.render(
               <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector selector={selector} />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -916,14 +916,14 @@ describe('React', () => {
             rtl.render(
               <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector selector={unstableSelector} />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
 
             expect(consoleSpy).toHaveBeenCalledWith(
               expect.stringContaining(
-                'returned a different result when called with the same parameters'
+                'returned a different result when called with the same parameters',
               ),
               expect.objectContaining({
                 state: expect.objectContaining({
@@ -932,7 +932,7 @@ describe('React', () => {
                 selected: expect.any(Number),
                 selected2: expect.any(Number),
                 stack: expect.any(String),
-              })
+              }),
             )
           })
           it('uses provided equalityFn', () => {
@@ -946,7 +946,7 @@ describe('React', () => {
                   selector={unstableSelector}
                   options={{ equalityFn: shallowEqual }}
                 />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(unstableSelector).toHaveBeenCalledTimes(2)
@@ -956,7 +956,7 @@ describe('React', () => {
             rtl.render(
               <ProviderMock stabilityCheck="once" store={normalStore}>
                 <RenderSelector selector={selector} />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -971,7 +971,7 @@ describe('React', () => {
             rtl.render(
               <ProviderMock store={normalStore} stabilityCheck="never">
                 <RenderSelector selector={selector} />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(selector).toHaveBeenCalledTimes(1)
@@ -986,7 +986,7 @@ describe('React', () => {
                   selector={selector}
                   options={{ devModeChecks: { stabilityCheck: 'never' } }}
                 />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(selector).toHaveBeenCalledTimes(1)
@@ -995,7 +995,7 @@ describe('React', () => {
             rtl.render(
               <ProviderMock store={normalStore} stabilityCheck="always">
                 <RenderSelector selector={selector} />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -1016,7 +1016,7 @@ describe('React', () => {
                   selector={selector}
                   options={{ devModeChecks: { stabilityCheck: 'always' } }}
                 />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(selector).toHaveBeenCalledTimes(2)
@@ -1033,7 +1033,7 @@ describe('React', () => {
             rtl.render(
               <ProviderMock identityFunctionCheck="once" store={normalStore}>
                 <RenderSelector selector={(state) => state.count} />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(consoleSpy).not.toHaveBeenCalled()
@@ -1043,14 +1043,14 @@ describe('React', () => {
             rtl.render(
               <ProviderMock identityFunctionCheck="once" store={normalStore}>
                 <RenderSelector selector={(state) => state} />
-              </ProviderMock>
+              </ProviderMock>,
             )
 
             expect(consoleSpy).toHaveBeenCalledWith(
               expect.stringContaining('returned the root state when called.'),
               expect.objectContaining({
                 stack: expect.any(String),
-              })
+              }),
             )
           })
         })
@@ -1103,7 +1103,7 @@ describe('React', () => {
                 <DisplayDefaultCount />
               </DisplayCustomCount>
             </ProviderMock>
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(defaultCount).toBe(0)

@@ -12,7 +12,7 @@ export function defaultMergeProps<
 >(
   stateProps: TStateProps,
   dispatchProps: TDispatchProps,
-  ownProps: TOwnProps
+  ownProps: TOwnProps,
 ): TMergedProps {
   // @ts-ignore
   return { ...ownProps, ...stateProps, ...dispatchProps }
@@ -24,7 +24,7 @@ export function wrapMergePropsFunc<
   TOwnProps,
   TMergedProps
 >(
-  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
+  mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
 ): (
   dispatch: Dispatch<Action<string>>,
   options: {
@@ -34,7 +34,7 @@ export function wrapMergePropsFunc<
 ) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> {
   return function initMergePropsProxy(
     dispatch,
-    { displayName, areMergedPropsEqual }
+    { displayName, areMergedPropsEqual },
   ) {
     let hasRunOnce = false
     let mergedProps: TMergedProps
@@ -42,7 +42,7 @@ export function wrapMergePropsFunc<
     return function mergePropsProxy(
       stateProps: TStateProps,
       dispatchProps: TDispatchProps,
-      ownProps: TOwnProps
+      ownProps: TOwnProps,
     ) {
       const nextMergedProps = mergeProps(stateProps, dispatchProps, ownProps)
 
@@ -68,7 +68,7 @@ export function mergePropsFactory<
   TOwnProps,
   TMergedProps
 >(
-  mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
+  mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
 ) {
   return !mergeProps
     ? () => defaultMergeProps

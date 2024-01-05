@@ -167,7 +167,7 @@ describe('React', () => {
               <DynamicGreeting />
             </ExtraReducersProvider>
           </InjectReducersContext.Provider>
-        </Provider>
+        </Provider>,
       )
 
       getByText('Hello world')
@@ -193,7 +193,7 @@ describe('React', () => {
               <DynamicGreeting />
             </ExtraReducersProvider>
           </InjectReducersContext.Provider>
-        </Provider>
+        </Provider>,
       )
 
       expect(markup).toContain('Hello world')
