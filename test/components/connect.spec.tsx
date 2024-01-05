@@ -1,18 +1,20 @@
 /*eslint-disable react/prop-types*/
 
-import React, { Component } from 'react'
-import { createStore, applyMiddleware, UnknownAction, Action } from 'redux'
-import { Provider as ProviderMock, connect } from '../../src/index'
-import * as rtl from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
-import type { ReactNode, Dispatch, ElementType, MouseEvent } from 'react'
+import * as rtl from '@testing-library/react'
+import type { Dispatch, ElementType, MouseEvent, ReactNode } from 'react'
+import React, { Component } from 'react'
 import type {
-  Store,
-  Dispatch as ReduxDispatch,
+  Action,
   AnyAction,
   MiddlewareAPI,
+  Dispatch as ReduxDispatch,
+  Store,
+  UnknownAction,
 } from 'redux'
+import { applyMiddleware, createStore } from 'redux'
 import type { ReactReduxContextValue } from '../../src/index'
+import { Provider as ProviderMock, connect } from '../../src/index'
 
 const IS_REACT_18 = React.version.startsWith('18')
 
@@ -96,7 +98,7 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(tester.getByTestId('hi')).toHaveTextContent('there')
@@ -138,7 +140,7 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer pass="through" baz={50} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(tester.getByTestId('pass')).toHaveTextContent('through')
@@ -156,13 +158,13 @@ describe('React', () => {
           }
         }
         const ConnectedContainer = connect((state) => ({ string: state }))(
-          Container
+          Container,
         )
 
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(tester.getByTestId('string')).toHaveTextContent('')
 
@@ -202,7 +204,7 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(0)
         spy.mockRestore()
@@ -245,7 +247,7 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store as unknown as Store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(0)
         spy.mockRestore()
@@ -271,7 +273,7 @@ describe('React', () => {
         const Decorated = decorator(Container)
 
         expect(() => rtl.render(<Decorated />)).toThrow(
-          /Could not find "store"/
+          /Could not find "store"/,
         )
 
         spy.mockRestore()
@@ -382,7 +384,7 @@ describe('React', () => {
         }
         const ConnectedInnerContainer = connect<{}, {}, OwnerPropsType, {}>(
           () => ({}),
-          () => ({})
+          () => ({}),
         )(ConnectContainer)
 
         class HolderContainer extends Component<OwnerPropsType> {
@@ -390,12 +392,12 @@ describe('React', () => {
             return <ConnectedInnerContainer {...props} />
           }
         }
-        let container = React.createRef<HolderContainer>()
+        const container = React.createRef<HolderContainer>()
 
         const tester = rtl.render(
           <ProviderMock store={store}>
             <HolderContainer ref={container} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(tester.getByTestId('x')).toHaveTextContent('true')
@@ -427,16 +429,16 @@ describe('React', () => {
             return <ConnectedInner {...props} />
           }
         }
-        let container = React.createRef<HolderContainer>()
+        const container = React.createRef<HolderContainer>()
         const tester = rtl.render(
           <ProviderMock store={store}>
             <HolderContainer ref={container} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(tester.getAllByTitle('prop').length).toBe(2)
         expect(tester.getByTestId('dispatch')).toHaveTextContent(
-          '[function dispatch]'
+          '[function dispatch]',
         )
         expect(tester.getByTestId('x')).toHaveTextContent('true')
 
@@ -447,7 +449,7 @@ describe('React', () => {
 
         expect(tester.getAllByTitle('prop').length).toBe(1)
         expect(tester.getByTestId('dispatch')).toHaveTextContent(
-          '[function dispatch]'
+          '[function dispatch]',
         )
       })
 
@@ -541,7 +543,7 @@ describe('React', () => {
               }
               return merged
             })(),
-          })
+          }),
         )(Inner)
 
         class OuterContainer extends Component<{}, OuterContainerStateType> {
@@ -582,7 +584,7 @@ describe('React', () => {
         })
 
         expect(tester.getByTestId('stateThing')).toHaveTextContent(
-          'HELLO azbzcZ'
+          'HELLO azbzcZ',
         )
       })
 
@@ -604,17 +606,17 @@ describe('React', () => {
         }
         const ConnectedContainer = connect(
           (state) => state,
-          () => ({ exampleActionCreator })
+          () => ({ exampleActionCreator }),
         )(Container)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer pass="through" />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(tester.getByTestId('exampleActionCreator')).toHaveTextContent(
-          '[function exampleActionCreator]'
+          '[function exampleActionCreator]',
         )
         expect(tester.getByTestId('foo')).toHaveTextContent('bar')
       })
@@ -625,7 +627,7 @@ describe('React', () => {
         function makeContainer(
           mapState: any,
           mapDispatch: any,
-          mergeProps: any
+          mergeProps: any,
         ) {
           class Container extends Component {
             render() {
@@ -635,7 +637,7 @@ describe('React', () => {
           const ConnectedContainer = connect(
             mapState,
             mapDispatch,
-            mergeProps
+            mergeProps,
           )(Container)
           return React.createElement(ConnectedContainer)
         }
@@ -647,13 +649,13 @@ describe('React', () => {
             {makeContainer(
               () => 1,
               () => ({}),
-              () => ({})
+              () => ({}),
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -664,13 +666,13 @@ describe('React', () => {
             {makeContainer(
               () => 'hey',
               () => ({}),
-              () => ({})
+              () => ({}),
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -681,13 +683,13 @@ describe('React', () => {
             {makeContainer(
               () => new AwesomeMap(),
               () => ({}),
-              () => ({})
+              () => ({}),
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/
+          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -698,13 +700,13 @@ describe('React', () => {
             {makeContainer(
               () => ({}),
               () => 1,
-              () => ({})
+              () => ({}),
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -715,13 +717,13 @@ describe('React', () => {
             {makeContainer(
               () => ({}),
               () => 'hey',
-              () => ({})
+              () => ({}),
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -732,13 +734,13 @@ describe('React', () => {
             {makeContainer(
               () => ({}),
               () => new AwesomeMap(),
-              () => ({})
+              () => ({}),
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/
+          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -749,13 +751,13 @@ describe('React', () => {
             {makeContainer(
               () => ({}),
               () => ({}),
-              () => 1
+              () => 1,
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/
+          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -766,13 +768,13 @@ describe('React', () => {
             {makeContainer(
               () => ({}),
               () => ({}),
-              () => 'hey'
+              () => 'hey',
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/
+          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -783,13 +785,13 @@ describe('React', () => {
             {makeContainer(
               () => ({}),
               () => ({}),
-              () => new AwesomeMap()
+              () => new AwesomeMap(),
             )}
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/
+          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
         )
         spy.mockRestore()
       })
@@ -837,11 +839,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
         rtl.act(() => {
           outerComponent.current!.setFoo('BAR')
@@ -885,11 +887,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(invocationCount).toEqual(1)
         rtl.act(() => {
@@ -939,11 +941,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(invocationCount).toEqual(1)
@@ -998,11 +1000,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         rtl.act(() => {
@@ -1049,11 +1051,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(invocationCount).toEqual(1)
         rtl.act(() => {
@@ -1106,11 +1108,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(invocationCount).toEqual(1)
@@ -1147,12 +1149,12 @@ describe('React', () => {
           }
         }
         const ConnectedContainer = connect((state) => ({ string: state }))(
-          Container
+          Container,
         )
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(tester.getByTestId('string')).toHaveTextContent('a')
       })
@@ -1169,7 +1171,7 @@ describe('React', () => {
           }
         }
         const ConnectedApp = connect<AppProps, unknown, unknown, string>(
-          (state) => ({ hide: state === 'AB' })
+          (state) => ({ hide: state === 'AB' }),
         )(App)
 
         class Container extends Component {
@@ -1202,7 +1204,7 @@ describe('React', () => {
         const { unmount } = rtl.render(
           <ProviderMock store={store}>
             <ConnectedApp />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         try {
@@ -1218,8 +1220,8 @@ describe('React', () => {
         const store = createStore(() => ({}))
         let mapStateToPropsCalls = 0
 
-        let linkA = React.createRef<HTMLAnchorElement>()
-        let linkB = React.createRef<HTMLAnchorElement>()
+        const linkA = React.createRef<HTMLAnchorElement>()
+        const linkB = React.createRef<HTMLAnchorElement>()
 
         interface AppPropsType {
           children: ReactNode
@@ -1292,7 +1294,7 @@ describe('React', () => {
         const { unmount } = rtl.render(
           <ProviderMock store={store}>
             <RouterMock />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -1333,13 +1335,13 @@ describe('React', () => {
         const Connected = connect(
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           (state) => ({ calls: mapStateToPropsCalls++ }),
-          (dispatch) => ({ dispatch })
+          (dispatch) => ({ dispatch }),
         )(Container)
 
         const { unmount } = rtl.render(
           <ProviderMock store={store}>
             <Connected />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(mapStateToPropsCalls).toBe(1)
 
@@ -1361,7 +1363,7 @@ describe('React', () => {
         }
         const ConnectedInner = connect(
           () => ({ calls: ++mapStateToPropsCalls }),
-          (dispatch) => ({ dispatch })
+          (dispatch) => ({ dispatch }),
         )(Inner)
 
         let unmount: ReturnType<typeof rtl.render>['unmount']
@@ -1373,7 +1375,7 @@ describe('React', () => {
           unmount = rtl.render(
             <ProviderMock store={store}>
               <ConnectedInner />
-            </ProviderMock>
+            </ProviderMock>,
           ).unmount
         })
 
@@ -1399,7 +1401,7 @@ describe('React', () => {
         }
         function reducer(
           state: StateType = { data: null },
-          action: ActionType
+          action: ActionType,
         ) {
           switch (action.type) {
             case 'fetch':
@@ -1444,7 +1446,7 @@ describe('React', () => {
         const { unmount } = rtl.render(
           <ProviderMock store={store}>
             <ConnectedParent />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         unmount()
@@ -1480,13 +1482,13 @@ describe('React', () => {
           string
         >(
           (state) => ({ string: state }),
-          (dispatch) => ({ dispatch })
+          (dispatch) => ({ dispatch }),
         )(Container)
 
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(spy).toHaveBeenCalledTimes(1)
         expect(tester.getByTestId('string')).toHaveTextContent('')
@@ -1557,12 +1559,12 @@ describe('React', () => {
           (
             stateProps: { string: string },
             dispatchProps: { dispatch: ReduxDispatch },
-            parentProps
+            parentProps,
           ) => ({
             ...dispatchProps,
             ...stateProps,
             ...parentProps,
-          })
+          }),
         )(Container)
 
         const tree: { setState?: Dispatch<{ pass: PassType }> } = {}
@@ -1644,7 +1646,7 @@ describe('React', () => {
         expect(spy).toHaveBeenCalledTimes(5)
         expect(tester.getByTestId('string')).toHaveTextContent('a')
         expect(tester.getByTestId('pass')).toHaveTextContent(
-          '{"prop":"val","val":"otherval"}'
+          '{"prop":"val","val":"otherval"}',
         )
 
         obj2.val = 'mutation'
@@ -1655,7 +1657,7 @@ describe('React', () => {
         expect(spy).toHaveBeenCalledTimes(5)
         expect(tester.getByTestId('string')).toHaveTextContent('a')
         expect(tester.getByTestId('pass')).toHaveTextContent(
-          '{"prop":"val","val":"otherval"}'
+          '{"prop":"val","val":"otherval"}',
         )
       })
 
@@ -1678,7 +1680,7 @@ describe('React', () => {
         rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(renderCalls).toBe(1)
@@ -1713,7 +1715,7 @@ describe('React', () => {
         rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(renderCalls).toBe(1)
@@ -1757,13 +1759,13 @@ describe('React', () => {
           null,
           () => ({
             changed: false,
-          })
+          }),
         )(Container)
 
         rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(renderCalls).toBe(1)
@@ -1792,7 +1794,7 @@ describe('React', () => {
           const Comp = React.forwardRef<HTMLDivElement, PropsType>(
             function Comp(props: PropsType, ref) {
               return <A ref={ref}>{props.count}</A>
-            }
+            },
           )
           return Comp
         }
@@ -1826,7 +1828,7 @@ describe('React', () => {
           const tester = rtl.render(
             <ProviderMock store={store}>
               <WrappedContainer pass="through" />
-            </ProviderMock>
+            </ProviderMock>,
           )
 
           expect(tester.getByTestId('hi')).toHaveTextContent('there')
@@ -1840,8 +1842,8 @@ describe('React', () => {
               render() {
                 return <div />
               }
-            }
-          ).displayName
+            },
+          ).displayName,
         ).toBe('Connect(Foo)')
       })
 
@@ -1887,7 +1889,7 @@ describe('React', () => {
         type ConnectArgsType = [
           (null | boolean)?,
           (null | boolean)?,
-          (null | boolean)?
+          (null | boolean)?,
         ]
         function runCheck(...connectArgs: ConnectArgsType) {
           class Container extends Component {
@@ -1912,10 +1914,10 @@ describe('React', () => {
           const tester = rtl.render(
             <ProviderMock store={store}>
               <ConnectedContainer pass="through" />
-            </ProviderMock>
+            </ProviderMock>,
           )
           expect(tester.getAllByTestId('dispatch')[0]).toHaveTextContent(
-            '[function dispatch]'
+            '[function dispatch]',
           )
           expect(tester.queryByTestId('foo')).toBe(null)
           expect(tester.getAllByTestId('pass')[0]).toHaveTextContent('through')
@@ -1982,12 +1984,12 @@ describe('React', () => {
         })(C)
 
         const store = createStore((state: RootState = 0, action: ActionType) =>
-          action.type === 'INC' ? (state += 1) : state
+          action.type === 'INC' ? (state += 1) : state,
         )
         rtl.render(
           <ProviderMock store={store}>
             <ConnectedA />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         rtl.act(() => {
@@ -2043,12 +2045,12 @@ describe('React', () => {
 
         const store = createStore(
           (state: RootStateType = 0, action: ActionType) =>
-            action.type === 'INC' ? state + 1 : state
+            action.type === 'INC' ? state + 1 : state,
         )
         rtl.render(
           <ProviderMock store={store}>
             <ConnectedParent />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(mapStateToProps).toHaveBeenCalledTimes(1)
@@ -2102,12 +2104,12 @@ describe('React', () => {
 
         const store = createStore(
           (state: RootStateType = 0, action: ActionType) =>
-            action.type === 'INC' ? state + 1 : state
+            action.type === 'INC' ? state + 1 : state,
         )
         rtl.render(
           <ProviderMock store={store}>
             <ConnectedParent />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(mapStateToProps).toHaveBeenCalledTimes(0)
@@ -2147,7 +2149,7 @@ describe('React', () => {
           },
           undefined,
           undefined,
-          { context }
+          { context },
         )
         const Decorated = decorator(Container)
 
@@ -2159,7 +2161,7 @@ describe('React', () => {
             <ProviderMock store={store2}>
               <Decorated />
             </ProviderMock>
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(actualState).toEqual(expectedState)
@@ -2195,7 +2197,7 @@ describe('React', () => {
             <ProviderMock store={store2}>
               <Decorated context={context} />
             </ProviderMock>
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(actualState).toEqual(expectedState)
@@ -2225,7 +2227,7 @@ describe('React', () => {
           <ProviderMock store={store}>
             {/*@ts-expect-error*/}
             <Decorated context={nonContext} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(actualState).toEqual(expectedState)
@@ -2267,7 +2269,7 @@ describe('React', () => {
           <ProviderMock store={store}>
             {/*@ts-expect-error*/}
             <Decorated store={notActuallyAStore} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(rendered.getByTestId('store')).toHaveTextContent('42')
@@ -2337,7 +2339,7 @@ describe('React', () => {
 
         const reducer1 = (
           state: Store1State1Type = { first: '1' },
-          action: ActionType
+          action: ActionType,
         ) => {
           switch (action.type) {
             case 'CHANGE':
@@ -2349,7 +2351,7 @@ describe('React', () => {
 
         const reducer2 = (
           state: Store2State1Type = { second: '3' },
-          action: ActionType
+          action: ActionType,
         ) => {
           switch (action.type) {
             case 'CHANGE':
@@ -2373,7 +2375,7 @@ describe('React', () => {
             <ConnectedComp1>
               <ConnectedComp2 store={store2} />
             </ConnectedComp1>
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         // Initial render: C1/C3 read from store 1, C2 reads from store 2, one render each
@@ -2417,11 +2419,11 @@ describe('React', () => {
         type ActionType = UnknownAction
         const store1 = createStore(
           (state: RootStateType = 0, action: ActionType) =>
-            action.type === 'INC' ? state + 1 : state
+            action.type === 'INC' ? state + 1 : state,
         )
         const store2 = createStore(
           (state: RootStateType = 0, action: ActionType) =>
-            action.type === 'INC' ? state + 1 : state
+            action.type === 'INC' ? state + 1 : state,
         )
         const customContext =
           React.createContext<ReactReduxContextValue | null>(null)
@@ -2437,7 +2439,7 @@ describe('React', () => {
           undefined,
           {
             context: customContext,
-          }
+          },
         )(A)
 
         const mapStateToPropsB = jest.fn((state) => ({ count: state }))
@@ -2483,7 +2485,7 @@ describe('React', () => {
             <ProviderMock context={customContext} store={store2}>
               <ConnectedA />
             </ProviderMock>
-          </ProviderMock>
+          </ProviderMock>,
         )
         expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
         expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
@@ -2540,7 +2542,7 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store}>
             <Wrapper />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         await tester.findByTestId('loaded')
@@ -2583,7 +2585,7 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store}>
             <Wrapper />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(tester.getByTestId('a')).toHaveTextContent('42')
@@ -2643,7 +2645,7 @@ describe('React', () => {
               <ConnectedContainer name="a" />
               <ConnectedContainer name="b" />
             </div>
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         rtl.act(() => {
@@ -2670,6 +2672,7 @@ describe('React', () => {
         let secondaryOwnProps: OwnProps
         const mapStateFactory = function (factoryInitialState: RootStateType) {
           initialState = factoryInitialState
+          // eslint-disable-next-line prefer-rest-params
           initialOwnProps = arguments[1]
           return (state: RootStateType, props: OwnProps) => {
             secondaryOwnProps = props
@@ -2695,7 +2698,7 @@ describe('React', () => {
             <div>
               <ConnectedContainer name="a" />
             </div>
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         rtl.act(() => {
@@ -2741,7 +2744,7 @@ describe('React', () => {
         function mergeParentDispatch(
           stateProps: PassTStateProps,
           dispatchProps: TDispatchPropsType,
-          parentProps: OwnPropsType
+          parentProps: OwnPropsType,
         ): TMergeProps {
           return { ...stateProps, ...dispatchProps, name: parentProps.name }
         }
@@ -2762,7 +2765,7 @@ describe('React', () => {
         >(
           null,
           mapDispatchFactory,
-          mergeParentDispatch
+          mergeParentDispatch,
         )(Passthrough)
 
         type ContainerPropsType = {}
@@ -2794,7 +2797,7 @@ describe('React', () => {
         rtl.render(
           <ProviderMock store={store}>
             <Container />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         rtl.act(() => {
@@ -2815,7 +2818,7 @@ describe('React', () => {
           rtl.render(
             <ProviderMock store={store}>
               <Component pass="through" />
-            </ProviderMock>
+            </ProviderMock>,
           )
           return null
           //@ts-ignore before typescript4.0, a catch could not have type annotations
@@ -2891,7 +2894,7 @@ describe('React', () => {
           }
         }
         const ConnectedContainer = connect((state) => ({ string: state }))(
-          Container
+          Container,
         )
 
         rtl.render(
@@ -2899,14 +2902,14 @@ describe('React', () => {
             <ProviderMock store={store}>
               <ConnectedContainer />
             </ProviderMock>
-          </React.StrictMode>
+          </React.StrictMode>,
         )
 
         if (IS_REACT_18) {
           expect(spy).not.toHaveBeenCalled()
         } else {
           expect(spy.mock.calls[0]?.[0]).toEqual(
-            expect.stringContaining('was not wrapped in act')
+            expect.stringContaining('was not wrapped in act'),
           )
         }
 
@@ -2929,7 +2932,7 @@ describe('React', () => {
           () => ({}),
           // The `pure` option has been removed
           // @ts-ignore
-          { pure: true }
+          { pure: true },
         )(ContainerA)
 
         class ContainerB extends Component {
@@ -2944,19 +2947,19 @@ describe('React', () => {
           () => ({}),
           // The `pure` option has been removed
           // @ts-ignore
-          { pure: true }
+          { pure: true },
         )(ContainerB)
 
         rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainerA />
             <ConnectedContainerB />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy).toHaveBeenCalledWith(
-          'The `pure` option has been removed. `connect` is now always a "pure/memoized" component'
+          'The `pure` option has been removed. `connect` is now always a "pure/memoized" component',
         )
 
         spy.mockRestore()
@@ -3026,7 +3029,7 @@ describe('React', () => {
         const tester = rtl.render(
           <ProviderMock store={store}>
             <ConnectedContainer />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         expect(childMapStateInvokes).toBe(1)
@@ -3103,11 +3106,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
         rtl.act(() => {
           outerComponent.current!.setState(({ count }) => ({
@@ -3169,9 +3172,10 @@ describe('React', () => {
 
         const store = createStore(
           counter,
-          applyMiddleware
-          // @ts-ignore
-          (reactCallbackMiddleware)
+          applyMiddleware(
+            // @ts-ignore
+            reactCallbackMiddleware,
+          ),
         )
 
         interface ChildrenTStatePropsType {
@@ -3187,7 +3191,7 @@ describe('React', () => {
           ChildrenOwnProps,
           RootStateType
         >((count) => ({ count }))(function (
-          props: ChildrenTStatePropsType & ChildrenOwnProps
+          props: ChildrenTStatePropsType & ChildrenOwnProps,
         ) {
           return (
             <div
@@ -3224,7 +3228,7 @@ describe('React', () => {
           }
         }
 
-        let parent = React.createRef<Parent>()
+        const parent = React.createRef<Parent>()
         const rendered = rtl.render(<Parent ref={parent} />)
         expect(rendered.getByTestId('child').dataset.count).toEqual('0')
         expect(rendered.getByTestId('child').dataset.prop).toEqual('a')
@@ -3280,11 +3284,11 @@ describe('React', () => {
           }
         }
 
-        let outerComponent = React.createRef<OuterComponent>()
+        const outerComponent = React.createRef<OuterComponent>()
         rtl.render(
           <ProviderMock store={store}>
             <OuterComponent ref={outerComponent} />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         rtl.act(() => {
@@ -3309,7 +3313,7 @@ describe('React', () => {
         const store = createStore(reducer)
 
         let executionOrder: string[] = []
-        let expectedExecutionOrder = [
+        const expectedExecutionOrder = [
           'parent map',
           'parent render',
           'child map',
@@ -3339,7 +3343,7 @@ describe('React', () => {
         rtl.render(
           <ProviderMock store={store}>
             <Parent />
-          </ProviderMock>
+          </ProviderMock>,
         )
 
         executionOrder = []
@@ -3367,7 +3371,7 @@ describe('React', () => {
 
       const reducer = (
         state: RootStateType = initialState,
-        action: ActionType
+        action: ActionType,
       ) => {
         switch (action.type) {
           case 'DELETE_B': {
@@ -3398,7 +3402,7 @@ describe('React', () => {
 
       const listItemMapState = (
         state: RootStateType,
-        ownProps: ListItemOwnerProps
+        ownProps: ListItemOwnerProps,
       ) => {
         try {
           const item = state[ownProps.id]
@@ -3454,7 +3458,7 @@ describe('React', () => {
       rtl.render(
         <ProviderMock store={store}>
           <ConnectedApp />
-        </ProviderMock>
+        </ProviderMock>,
       )
 
       // This should execute without throwing an error by itself

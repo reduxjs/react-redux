@@ -1,40 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
-import { Component, ReactElement } from 'react'
-import React from 'react'
-import ReactDOM from 'react-dom'
-import {
-  configureStore,
-  createSlice,
-  createAsyncThunk,
-  Store,
-  Dispatch,
-  bindActionCreators,
-  AnyAction,
-  ThunkAction,
-  Action,
-} from '@reduxjs/toolkit'
-import {
-  MapStateToProps,
-  DispatchProp,
-  connect,
-  Provider,
+import type { AnyAction, Dispatch, Store } from '@reduxjs/toolkit'
+import { bindActionCreators } from '@reduxjs/toolkit'
+import type { ReactElement } from 'react'
+import React, { Component } from 'react'
+import { createRoot } from 'react-dom/client'
+import type {
   ConnectedProps,
-  useDispatch,
-  useSelector,
-  TypedUseSelectorHook,
+  DispatchProp,
+  MapStateToProps,
 } from '../../src/index'
+import { Provider, connect } from '../../src/index'
 import { expectType } from '../typeTestHelpers'
 
-import {
-  CounterState,
-  counterSlice,
-  increment,
-  incrementAsync,
-  AppDispatch,
-  AppThunk,
-  RootState,
-  fetchCount,
-} from './counterApp'
+import type { CounterState } from './counterApp'
+import { increment } from './counterApp'
 
 const objectAssign = Object.assign
 
@@ -71,23 +50,23 @@ interface ICounterDispatchProps {
 }
 connect<ICounterStateProps, ICounterDispatchProps, {}, CounterState>(
   () => mapStateToProps,
-  () => mapDispatchToProps
+  () => mapDispatchToProps,
 )(Counter)
 // only first argument
 connect<ICounterStateProps, {}, {}, CounterState>(() => mapStateToProps)(
-  Counter
+  Counter,
 )
 // wrap only one argument
 connect<ICounterStateProps, ICounterDispatchProps, {}, CounterState>(
   mapStateToProps,
-  () => mapDispatchToProps
+  () => mapDispatchToProps,
 )(Counter)
 // with extra arguments
 connect<ICounterStateProps, ICounterDispatchProps, {}, {}, CounterState>(
   () => mapStateToProps,
   () => mapDispatchToProps,
   (s: ICounterStateProps, d: ICounterDispatchProps) => objectAssign({}, s, d),
-  { forwardRef: true }
+  { forwardRef: true },
 )(Counter)
 
 class App extends Component<any, any> {
@@ -97,16 +76,23 @@ class App extends Component<any, any> {
   }
 }
 
-const targetEl = document.getElementById('root')
+const container = document.getElementById('root')
 
-ReactDOM.render(
-  <Provider store={store}>
-    <App />
-  </Provider>,
-  targetEl
-)
+if (container) {
+  const root = createRoot(container)
 
-declare var store: Store<TodoState>
+  root.render(
+    <Provider store={store}>
+      <App />
+    </Provider>,
+  )
+} else {
+  throw new Error(
+    "Root element with ID 'root' was not found in the document. Ensure there is a corresponding HTML element with the ID 'root' in your HTML file.",
+  )
+}
+
+declare let store: Store<TodoState>
 class MyRootComponent extends Component<any, any> {}
 class TodoApp extends Component<any, any> {}
 interface TodoState {
@@ -126,15 +112,22 @@ const addTodo = (userId: number, text: string) => ({
 })
 const actionCreators = { addTodo }
 type AddTodoAction = ReturnType<typeof addTodo>
-declare var todoActionCreators: { [type: string]: (...args: any[]) => any }
-declare var counterActionCreators: { [type: string]: (...args: any[]) => any }
+declare let todoActionCreators: { [type: string]: (...args: any[]) => any }
+declare let counterActionCreators: { [type: string]: (...args: any[]) => any }
 
-ReactDOM.render(
-  <Provider store={store}>
-    <MyRootComponent />
-  </Provider>,
-  document.body
-)
+if (container) {
+  const root = createRoot(container)
+
+  root.render(
+    <Provider store={store}>
+      <MyRootComponent />
+    </Provider>,
+  )
+} else {
+  throw new Error(
+    "Root element with ID 'root' was not found in the document. Ensure there is a corresponding HTML element with the ID 'root' in your HTML file.",
+  )
+}
 
 // Inject just dispatch and don't listen to store
 
@@ -193,7 +186,7 @@ function mapDispatchToProps5(dispatch: Dispatch<AnyAction>) {
   return {
     actions: bindActionCreators(
       objectAssign({}, todoActionCreators, counterActionCreators),
-      dispatch
+      dispatch,
     ),
   }
 }
@@ -205,7 +198,7 @@ connect(mapStateToProps2, mapDispatchToProps5)(TodoApp)
 function mapDispatchToProps6(dispatch: Dispatch<AnyAction>) {
   return bindActionCreators(
     objectAssign({}, todoActionCreators, counterActionCreators),
-    dispatch
+    dispatch,
   )
 }
 
@@ -224,7 +217,7 @@ connect(mapStateToProps3)(TodoApp)
 function mergeProps(
   stateProps: TodoState,
   dispatchProps: DispatchProps,
-  ownProps: TodoProps
+  ownProps: TodoProps,
 ): { addTodo: (userId: string) => void } & TodoState {
   return objectAssign({}, ownProps, {
     todos: stateProps.todos[ownProps.userId],
@@ -270,18 +263,22 @@ interface HelloMessageProps {
 function HelloMessage(props: HelloMessageProps) {
   return <div>Hello {props.name}</div>
 }
-let ConnectedHelloMessage = connect()(HelloMessage)
-ReactDOM.render(
-  <HelloMessage name="Sebastian" />,
-  document.getElementById('content')
-)
-ReactDOM.render(
-  <ConnectedHelloMessage name="Sebastian" />,
-  document.getElementById('content')
-)
+const ConnectedHelloMessage = connect()(HelloMessage)
+
+if (container) {
+  const root = createRoot(container)
+
+  root.render(<HelloMessage name="Sebastian" />)
+
+  root.render(<ConnectedHelloMessage name="Sebastian" />)
+} else {
+  throw new Error(
+    "Root element with ID 'root' was not found in the document. Ensure there is a corresponding HTML element with the ID 'root' in your HTML file.",
+  )
+}
 
 // stateless functions that uses mapStateToProps and mapDispatchToProps
-namespace TestStatelessFunctionWithMapArguments {
+function testStatelessFunctionWithMapArguments() {
   interface GreetingProps {
     name: string
     onClick: () => void
@@ -299,7 +296,7 @@ namespace TestStatelessFunctionWithMapArguments {
 
   const mapDispatchToProps = (
     dispatch: Dispatch<AnyAction>,
-    ownProps: GreetingProps
+    ownProps: GreetingProps,
   ) => {
     return {
       onClick: () => {
@@ -310,12 +307,12 @@ namespace TestStatelessFunctionWithMapArguments {
 
   const ConnectedGreeting = connect(
     mapStateToProps,
-    mapDispatchToProps
+    mapDispatchToProps,
   )(Greeting)
 }
 
 // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/8787
-namespace TestTOwnPropsInference {
+function testTOwnPropsInference() {
   interface OwnProps {
     own: string
   }
@@ -336,19 +333,19 @@ namespace TestTOwnPropsInference {
 
   function mapStateToPropsWithOwnProps(
     state: any,
-    ownProps: OwnProps
+    ownProps: OwnProps,
   ): StateProps {
     return { state: 'string' }
   }
 
   const ConnectedWithoutOwnProps = connect(mapStateToPropsWithoutOwnProps)(
-    OwnPropsComponent
+    OwnPropsComponent,
   )
   const ConnectedWithOwnProps = connect(mapStateToPropsWithOwnProps)(
-    OwnPropsComponent
+    OwnPropsComponent,
   )
   const ConnectedWithTypeHint = connect<StateProps, {}, OwnProps>(
-    mapStateToPropsWithoutOwnProps
+    mapStateToPropsWithoutOwnProps,
   )(OwnPropsComponent)
 
   // @ts-expect-error
@@ -390,12 +387,12 @@ namespace TestTOwnPropsInference {
     return { state: 'string' }
   }
   const ConnectedWithPickedOwnProps = connect(mapStateToPropsForPicked)(
-    AllPropsComponent
+    AllPropsComponent,
   )
   ;<ConnectedWithPickedOwnProps own="blah" />
 }
 
-namespace ConnectedPropsTest {
+function connectedPropsTest() {
   interface RootState {
     isOn: boolean
   }
@@ -428,6 +425,6 @@ namespace ConnectedPropsTest {
   type PropsFromRedux2 = ConnectedProps<typeof connector2>
 
   expectType<{ exampleThunk: (id: number) => Promise<string> }>(
-    {} as PropsFromRedux2
+    {} as PropsFromRedux2,
   )
 }

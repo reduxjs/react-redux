@@ -33,7 +33,7 @@ function createListenerCollection() {
     },
 
     get() {
-      let listeners: Listener[] = []
+      const listeners: Listener[] = []
       let listener = first
       while (listener) {
         listeners.push(listener)
@@ -45,7 +45,7 @@ function createListenerCollection() {
     subscribe(callback: () => void) {
       let isSubscribed = true
 
-      let listener: Listener = (last = {
+      const listener: Listener = (last = {
         callback,
         next: null,
         prev: last,

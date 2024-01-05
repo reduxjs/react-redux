@@ -1,15 +1,11 @@
-import React, { Suspense, useState, useEffect } from 'react'
+import type { PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, createStore } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
-import { renderToString } from 'react-dom/server'
+import React, { Suspense, useEffect, useState } from 'react'
 import { hydrateRoot } from 'react-dom/client'
-import { createStore, createSlice, PayloadAction } from '@reduxjs/toolkit'
-import {
-  Provider,
-  connect,
-  useSelector,
-  useDispatch,
-  ConnectedProps,
-} from '../../src/index'
+import { renderToString } from 'react-dom/server'
+import type { ConnectedProps } from '../../src/index'
+import { Provider, connect, useDispatch, useSelector } from '../../src/index'
 
 const IS_REACT_18 = React.version.startsWith('18')
 
@@ -99,7 +95,7 @@ describe('New v8 serverState behavior', () => {
   }
 
   const ConnectedGlobalCountButtonConnect = gcbConnector(
-    GlobalCountButtonConnect
+    GlobalCountButtonConnect,
   )
 
   function App() {
@@ -120,7 +116,7 @@ describe('New v8 serverState behavior', () => {
     return
   }
 
-  let consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
   afterEach(() => {
     jest.clearAllMocks()
@@ -137,7 +133,7 @@ describe('New v8 serverState behavior', () => {
     const markup = renderToString(
       <Provider store={ssrStore}>
         <App />
-      </Provider>
+      </Provider>,
     )
 
     // Pretend we have server-rendered HTML
@@ -157,7 +153,7 @@ describe('New v8 serverState behavior', () => {
         rootDiv,
         <Provider store={clientStore}>
           <App />
-        </Provider>
+        </Provider>,
       )
     })
 
@@ -165,7 +161,7 @@ describe('New v8 serverState behavior', () => {
     const [errorArg] = lastCall
     expect(errorArg).toBeInstanceOf(Error)
     expect(/There was an error while hydrating/.test(errorArg.message)).toBe(
-      true
+      true,
     )
 
     jest.resetAllMocks()
@@ -187,7 +183,7 @@ describe('New v8 serverState behavior', () => {
         rootDiv2,
         <Provider store={clientStore2} serverState={initialState}>
           <App />
-        </Provider>
+        </Provider>,
       )
     })
 

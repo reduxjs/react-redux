@@ -1,32 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, react/prop-types */
 import * as PropTypes from 'prop-types'
 import * as React from 'react'
-import * as ReactDOM from 'react-dom'
-import type { Store, Dispatch, AnyAction, ActionCreator, Reducer } from 'redux'
-import { createStore, bindActionCreators, ActionCreatorsMapObject } from 'redux'
+import type { ActionCreator, AnyAction, Dispatch, Reducer, Store } from 'redux'
+import { createStore } from 'redux'
 import type {
   Connect,
   ConnectedProps,
   DispatchProp,
   MapStateToProps,
 } from '../../src/index'
-import {
-  connect,
-  Provider,
-  ReactReduxContext,
-  ReactReduxContextValue,
-  Selector,
-  shallowEqual,
-  MapDispatchToProps,
-  useDispatch,
-  useSelector,
-  useStore,
-  createDispatchHook,
-  createSelectorHook,
-  createStoreHook,
-  TypedUseSelectorHook,
-} from '../../src/index'
-import { ConnectPropsMaybeWithoutContext } from '../../src/types'
+import { Provider, ReactReduxContext, connect } from '../../src/index'
 
 import { expectType } from '../typeTestHelpers'
 
@@ -34,7 +17,7 @@ import { expectType } from '../typeTestHelpers'
 // output of `connect` to make sure the signature is what is expected
 
 const CustomContext = React.createContext(
-  null
+  null,
 ) as unknown as typeof ReactReduxContext
 
 // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/16021
@@ -88,7 +71,7 @@ function TestMergedPropsInference() {
     mapDispatchToProps,
     (stateProps: undefined, dispatchProps: DispatchProps) => ({
       merged: 'merged',
-    })
+    }),
   )(MergedPropsComponent)
 
   const ConnectedWithOwn = connect<void, void, OwnProps, MergedProps>(
@@ -96,7 +79,7 @@ function TestMergedPropsInference() {
     undefined,
     () => ({
       merged: 'merged',
-    })
+    }),
   )(MergedPropsComponent)
 
   const ConnectedWithInferredDispatch = connect(
@@ -104,7 +87,7 @@ function TestMergedPropsInference() {
     undefined,
     (stateProps, dispatchProps, ownProps) => {
       expectType<DispatchProp<AnyAction>>(dispatchProps)
-    }
+    },
   )(MergedPropsComponent)
 }
 
@@ -123,7 +106,7 @@ function Issue16652() {
 
   const mapStateToProps = (
     state: any,
-    ownProps: PassedProps
+    ownProps: PassedProps,
   ): GeneratedStateProps => {
     return {
       comments: ownProps.commentIds.map((id) => ({ id })),
@@ -131,7 +114,7 @@ function Issue16652() {
   }
 
   const ConnectedCommentList = connect<GeneratedStateProps, {}, PassedProps>(
-    mapStateToProps
+    mapStateToProps,
   )(CommentList)
 
   ;<ConnectedCommentList commentIds={['a', 'b', 'c']} />
@@ -235,14 +218,14 @@ function TestInferredFunctionalComponentWithExplicitOwnProps() {
   const Header = connect(
     (
       { app: { title } }: { app: { title: string } },
-      { extraText }: { extraText: string }
+      { extraText }: { extraText: string },
     ) => ({
       title,
       extraText,
     }),
     (dispatch) => ({
       onClick: () => dispatch({ type: 'test' }),
-    })
+    }),
   )(({ title, extraText, onClick }: Props) => {
     return (
       <h1 onClick={onClick}>
@@ -266,7 +249,7 @@ function TestInferredFunctionalComponentWithImplicitOwnProps() {
     }),
     (dispatch) => ({
       onClick: () => dispatch({ type: 'test' }),
-    })
+    }),
   )(({ title, extraText, onClick }: Props) => {
     return (
       <h1 onClick={onClick}>
@@ -332,16 +315,16 @@ function TestWithoutTOwnPropsDecoratedInference() {
 
   // these decorations should compile, it is perfectly acceptable to receive props and ignore them
   const ConnectedWithOwnPropsClass = connect(mapStateToProps4)(
-    WithoutOwnPropsComponentClass
+    WithoutOwnPropsComponentClass,
   )
   const ConnectedWithOwnPropsStateless = connect(mapStateToProps4)(
-    WithoutOwnPropsComponentStateless
+    WithoutOwnPropsComponentStateless,
   )
   const ConnectedWithTypeHintClass = connect<StateProps, void, OwnProps>(
-    mapStateToProps4
+    mapStateToProps4,
   )(WithoutOwnPropsComponentClass)
   const ConnectedWithTypeHintStateless = connect<StateProps, void, OwnProps>(
-    mapStateToProps4
+    mapStateToProps4,
   )(WithoutOwnPropsComponentStateless)
 
   // This should compile
@@ -400,7 +383,7 @@ function TestWithoutTOwnPropsDecoratedInference() {
     return { state: 'string' }
   }
   const ConnectedWithPickedOwnProps = connect(mapStateToPropsForPicked)(
-    AllPropsComponent
+    AllPropsComponent,
   )
   ;<ConnectedWithPickedOwnProps own="blah" />
 }
@@ -588,7 +571,7 @@ function TestLibraryManagedAttributes() {
   ;<ConnectedComponent fn={() => {}} />
 
   const ConnectedComponent2 = connect<MapStateProps, void, ExternalOwnProps>(
-    mapStateToProps
+    mapStateToProps,
   )(Component)
   ;<ConnectedComponent2 fn={() => {}} />
 }
@@ -625,7 +608,7 @@ function TestPropTypes() {
   ;<ConnectedComponent fn={() => {}} bar={0} />
 
   const ConnectedComponent2 = connect<MapStateProps, void, OwnProps>(
-    mapStateToProps
+    mapStateToProps,
   )(Component)
   ;<ConnectedComponent2 fn={() => {}} bar={0} />
 }
@@ -689,6 +672,7 @@ function TestProviderContext() {
     static contextType = ReactReduxContext
   }
 
+  // eslint-disable-next-line no-extra-semi
   ;<Provider store={store}>
     <ComponentWithDefaultContext />
   </Provider>
@@ -779,7 +763,7 @@ function testRef() {
 
   const ConnectedFunctionalComponent = connect()(FunctionalComponent)
   const ConnectedForwardedFunctionalComponent = connect()(
-    ForwardedFunctionalComponent
+    ForwardedFunctionalComponent,
   )
   const ConnectedClassComponent = connect()(ClassComponent)
 

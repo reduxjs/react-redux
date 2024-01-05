@@ -26,7 +26,7 @@ export function wrapMapToPropsConstant(
         dependsOnOwnProps?: boolean
       }
     | ActionCreatorsMapObject
-    | ActionCreator<any>
+    | ActionCreator<any>,
 ) {
   return function initConstantSelector(dispatch: Dispatch) {
     const constant = getConstant(dispatch)
@@ -67,15 +67,15 @@ export function getDependsOnOwnProps(mapToProps: MapToProps) {
 //
 export function wrapMapToPropsFunc<P extends AnyProps = AnyProps>(
   mapToProps: MapToProps,
-  methodName: string
+  methodName: string,
 ) {
   return function initProxySelector(
     dispatch: Dispatch,
-    { displayName }: { displayName: string }
+    { displayName }: { displayName: string },
   ) {
     const proxy = function mapToPropsProxy(
       stateOrDispatch: StateOrDispatch,
-      ownProps?: P
+      ownProps?: P,
     ): MapToProps {
       return proxy.dependsOnOwnProps
         ? proxy.mapToProps(stateOrDispatch, ownProps)
@@ -87,7 +87,7 @@ export function wrapMapToPropsFunc<P extends AnyProps = AnyProps>(
 
     proxy.mapToProps = function detectFactoryAndVerify(
       stateOrDispatch: StateOrDispatch,
-      ownProps?: P
+      ownProps?: P,
     ): MapToProps {
       proxy.mapToProps = mapToProps
       proxy.dependsOnOwnProps = getDependsOnOwnProps(mapToProps)
