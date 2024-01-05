@@ -37,7 +37,7 @@ export interface UseDispatch<
    *
    * @example
    * ```ts
-   * const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+   * export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
    * ```
    *
    * @template OverrideDispatchType - The specific type of the dispatch function.

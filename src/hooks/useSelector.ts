@@ -106,7 +106,7 @@ export interface UseSelector<StateType = unknown> {
    *
    * @example
    * ```ts
-   * const useAppSelector = useSelector.withTypes<RootState>()
+   * export const useAppSelector = useSelector.withTypes<RootState>()
    * ```
    *
    * @template OverrideStateType - The specific type of state this hook operates on.

@@ -7,13 +7,13 @@ export type {
 
 import shallowEqual from './utils/shallowEqual'
 
+import Provider from './components/Provider'
 import { defaultNoopBatch } from './utils/batch'
 
 export { ReactReduxContext } from './components/Context'
 export type { ReactReduxContextValue } from './components/Context'
 
 export type { ProviderProps } from './components/Provider'
-import Provider from './components/Provider'
 
 export type {
   MapDispatchToProps,
@@ -36,6 +36,7 @@ export { createSelectorHook, useSelector } from './hooks/useSelector'
 export type { UseSelector } from './hooks/useSelector'
 
 export { createStoreHook, useStore } from './hooks/useStore'
+export type { UseStore } from './hooks/useStore'
 
 export type { Subscription } from './utils/Subscription'
 
