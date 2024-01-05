@@ -21,17 +21,12 @@ import {
 import type { AppDispatch, AppStore, RootState } from './counterApp'
 import { incrementAsync } from './counterApp'
 
-import { expectExactType, expectType } from '../typeTestHelpers'
+import { exactType, expectExactType, expectType } from '../typeTestHelpers'
 
 function preTypedHooksSetup() {
   // Standard hooks setup
-  const useAppDispatch = useDispatch.withTypes<AppDispatch>()
-  // const useAppDispatch = () => useDispatch<AppDispatch>()
-  // const useAppSelector: UseSelector<RootState> = useSelector
-  const useAppSelector = useSelector.withTypes<RootState>()
-
-  useAppSelector((state) => state.counter)
-  const useAppStore = useStore.withTypes<AppStore>()
+  const useAppDispatch = () => useDispatch<AppDispatch>()
+  const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
   function CounterComponent() {
     const dispatch = useAppDispatch()
@@ -241,4 +236,44 @@ function testCreateHookFunctions() {
     ) => Selected
   >(createSelectorHook(Context))
   expectType<() => Store<RootState, RootAction>>(createStoreHook(Context))
+}
+
+function preTypedHooksSetupWithTypes() {
+  const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+
+  const useAppSelector = useSelector.withTypes<RootState>()
+
+  const useAppStore = useStore.withTypes<AppStore>()
+
+  function CounterComponent() {
+    useAppSelector((state) => state.counter)
+
+    const dispatch = useAppDispatch()
+
+    expectExactType<AppDispatch>(dispatch)
+
+    const store = useAppStore()
+
+    expectExactType<AppStore>(store)
+
+    expectExactType<AppDispatch>(store.dispatch)
+
+    const state = store.getState()
+
+    expectExactType<RootState>(state)
+
+    expectExactType<number>(state.counter)
+
+    store.dispatch(incrementAsync(1))
+
+    exactType(store.dispatch, dispatch)
+
+    return (
+      <button
+        onClick={() => {
+          dispatch(incrementAsync(1))
+        }}
+      />
+    )
+  }
 }
