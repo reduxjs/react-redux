@@ -41,6 +41,7 @@ const counterStore = configureStore({
   middleware: (gdm) => gdm(),
 })
 
+export type AppStore = typeof counterStore
 export type AppDispatch = typeof counterStore.dispatch
 export type RootState = ReturnType<typeof counterStore.getState>
 export type AppThunk<ReturnType = void> = ThunkAction<

@@ -84,7 +84,7 @@ function testShallowEqual() {
   )
   expectExactType<string>(selected1)
 
-  const useAppSelector: TypedUseSelectorHook<TestState> = useSelector
+  const useAppSelector = useSelector.withTypes<TestState>()
 
   const selected2 = useAppSelector((state) => state.stateProp, shallowEqual)
   expectExactType<string>(selected2)

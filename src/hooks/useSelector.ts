@@ -66,15 +66,56 @@ export interface UseSelectorOptions<Selected = unknown> {
   devModeChecks?: Partial<DevModeChecks>
 }
 
-export interface UseSelector {
-  <TState = unknown, Selected = unknown>(
+/**
+ * Represents a custom hook that allows you to extract data from the
+ * Redux store state, using a selector function. The selector function
+ * takes the current state as an argument and returns a part of the state
+ * or some derived data. The hook also supports an optional equality
+ * function or options object to customize its behavior.
+ *
+ * @template StateType - The specific type of state this hook operates on.
+ *
+ * @public
+ */
+export interface UseSelector<StateType = unknown> {
+  /**
+   * A function that takes a selector function as its first argument.
+   * The selector function is responsible for selecting a part of
+   * the Redux store's state or computing derived data.
+   *
+   * @param selector - A function that receives the current state and returns a part of the state or some derived data.
+   * @param equalityFnOrOptions - An optional equality function or options object for customizing the behavior of the selector.
+   * @returns The selected part of the state or derived data.
+   *
+   * @template TState - The specific type of state this hook operates on.
+   * @template Selected - The type of the value that the selector function will return.
+   */
+  <TState extends StateType = StateType, Selected = unknown>(
     selector: (state: TState) => Selected,
-    equalityFn?: EqualityFn<Selected>,
+    equalityFnOrOptions?: EqualityFn<Selected> | UseSelectorOptions<Selected>
   ): Selected
-  <TState = unknown, Selected = unknown>(
-    selector: (state: TState) => Selected,
-    options?: UseSelectorOptions<Selected>,
-  ): Selected
+
+  /**
+   * Creates a "pre-typed" version of {@linkcode useSelector useSelector}
+   * where the `state` type is predefined.
+   *
+   * This allows you to set the `state` type once, eliminating the need to
+   * specify it with every {@linkcode useSelector useSelector} call.
+   *
+   * @returns A pre-typed `useSelector` with the state type already defined.
+   *
+   * @example
+   * ```ts
+   * export const useAppSelector = useSelector.withTypes<RootState>()
+   * ```
+   *
+   * @template OverrideStateType - The specific type of state this hook operates on.
+   *
+   * @since 9.1.0
+   */
+  withTypes: <
+    OverrideStateType extends StateType
+  >() => UseSelector<OverrideStateType>
 }
 
 let useSyncExternalStoreWithSelector = notInitialized as uSESWS
@@ -101,12 +142,12 @@ export function createSelectorHook(
       ? useDefaultReduxContext
       : createReduxContextHook(context)
 
-  return function useSelector<TState, Selected>(
+  const useSelector = <TState, Selected extends unknown>(
     selector: (state: TState) => Selected,
     equalityFnOrOptions:
       | EqualityFn<NoInfer<Selected>>
-      | UseSelectorOptions<NoInfer<Selected>> = {},
-  ): Selected {
+      | UseSelectorOptions<NoInfer<Selected>> = {}
+  ): Selected => {
     const { equalityFn = refEquality, devModeChecks = {} } =
       typeof equalityFnOrOptions === 'function'
         ? { equalityFn: equalityFnOrOptions }
@@ -217,6 +258,12 @@ export function createSelectorHook(
 
     return selectedState
   }
+
+  Object.assign(useSelector, {
+    withTypes: () => useSelector,
+  })
+
+  return useSelector as UseSelector
 }
 
 /**
