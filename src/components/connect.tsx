@@ -645,7 +645,6 @@ function connect<
       const lastWrapperProps = React.useRef(wrapperProps)
       const childPropsFromStoreUpdate = React.useRef<unknown>()
       const renderIsScheduled = React.useRef(false)
-      const isProcessingDispatch = React.useRef(false)
       const isMounted = React.useRef(false)
 
       const latestSubscriptionCallbackError = React.useRef<Error>()
