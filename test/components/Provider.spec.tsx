@@ -8,7 +8,6 @@ import { createStore } from 'redux'
 import type { ReactReduxContextValue } from '../../src'
 import { Provider, ReactReduxContext, connect } from '../../src/index'
 
-import '@testing-library/jest-dom/extend-expect'
 import * as ReactDOM from 'react-dom'
 
 const createExampleTextReducer =

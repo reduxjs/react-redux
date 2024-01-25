@@ -1,6 +1,5 @@
 /*eslint-disable react/prop-types*/
 
-import '@testing-library/jest-dom/extend-expect'
 import * as rtl from '@testing-library/react'
 import type { Dispatch, ElementType, MouseEvent, ReactNode } from 'react'
 import React, { Component } from 'react'
