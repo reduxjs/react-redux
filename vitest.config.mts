@@ -11,6 +11,7 @@ export default defineConfig({
   test: {
     typecheck: { tsconfig: './test/typetests/tsconfig.json' },
     environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
     globals: true,
     alias: {
       reselect: path.join(__dirname, 'src/index.ts'), // @remap-prod-remove-line
