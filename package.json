@@ -44,7 +44,7 @@
     "lint:fix": "eslint src test --fix",
     "prepare": "yarn clean && yarn build",
     "pretest": "yarn lint",
-    "test": "jest",
+    "test": "vitest --run",
     "type-tests": "yarn tsc -p test/typetests/tsconfig.json",
     "coverage": "codecov"
   },
