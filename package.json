@@ -45,6 +45,7 @@
     "prepare": "yarn clean && yarn build",
     "pretest": "yarn lint",
     "test": "vitest --run",
+    "test:watch": "vitest --watch",
     "type-tests": "yarn tsc -p test/typetests/tsconfig.json",
     "coverage": "codecov"
   },
