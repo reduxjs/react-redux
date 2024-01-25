@@ -14,7 +14,6 @@
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "rootDirs": ["./src", "./types"],
-    "types": ["vitest/globals", "vitest/importMeta"],
     "rootDir": "./src",
     "typeRoots": ["./node_modules/@types", "./types"]
   },
