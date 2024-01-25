@@ -5,12 +5,12 @@ import * as rtl from '@testing-library/react'
 import type { Dispatch, ElementType, MouseEvent, ReactNode } from 'react'
 import React, { Component } from 'react'
 import type {
-  Action,
-  AnyAction,
-  MiddlewareAPI,
-  Dispatch as ReduxDispatch,
-  Store,
-  UnknownAction,
+    Action,
+    AnyAction,
+    MiddlewareAPI,
+    Dispatch as ReduxDispatch,
+    Store,
+    UnknownAction,
 } from 'redux'
 import { applyMiddleware, createStore } from 'redux'
 import type { ReactReduxContextValue } from '../../src/index'
@@ -199,7 +199,7 @@ describe('React', () => {
           string: state,
         }))(Container)
 
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
         const tester = rtl.render(
           <ProviderMock store={store}>
@@ -243,7 +243,7 @@ describe('React', () => {
           string: state,
         }))(Container)
 
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         const tester = rtl.render(
           <ProviderMock store={store as unknown as Store}>
             <ConnectedContainer />
@@ -261,7 +261,7 @@ describe('React', () => {
       })
 
       it('should throw an error if the store is not in the props or context', () => {
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
         class Container extends Component {
           render() {
@@ -643,7 +643,7 @@ describe('React', () => {
         }
         class AwesomeMap {}
 
-        let spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        let spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -660,7 +660,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -677,7 +677,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -694,7 +694,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -711,7 +711,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -728,7 +728,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -745,7 +745,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -762,7 +762,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -779,7 +779,7 @@ describe('React', () => {
         spy.mockRestore()
         rtl.cleanup()
 
-        spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.render(
           <ProviderMock store={store}>
             {makeContainer(
@@ -1297,7 +1297,7 @@ describe('React', () => {
           </ProviderMock>,
         )
 
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.act(() => {
           linkA.current!.click()
           linkB.current!.click()
@@ -1345,7 +1345,7 @@ describe('React', () => {
         )
         expect(mapStateToPropsCalls).toBe(1)
 
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         unmount()
         expect(spy).toHaveBeenCalledTimes(0)
         expect(mapStateToPropsCalls).toBe(1)
@@ -1380,7 +1380,7 @@ describe('React', () => {
         })
 
         expect(mapStateToPropsCalls).toBe(1)
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         rtl.act(() => {
           store.dispatch({ type: 'APPEND', body: 'a' })
         })
@@ -1456,7 +1456,7 @@ describe('React', () => {
     describe('Performance optimizations and bail-outs', () => {
       it('should shallowly compare the selected state to prevent unnecessary updates', () => {
         const store: Store = createStore(stringBuilder)
-        const spy = jest.fn(() => ({}))
+        const spy = vi.fn(() => ({}))
         interface RenderProps {
           string: string
         }
@@ -1511,7 +1511,7 @@ describe('React', () => {
 
       it('should shallowly compare the merged state to prevent unnecessary updates', () => {
         const store: Store = createStore(stringBuilder)
-        const spy = jest.fn(() => ({}))
+        const spy = vi.fn(() => ({}))
         interface PassObjType {
           val?: string
           prop?: string
@@ -2023,7 +2023,7 @@ describe('React', () => {
           }
         }
 
-        const mapStateToProps = jest.fn((state) => ({ count: state }))
+        const mapStateToProps = vi.fn((state) => ({ count: state }))
 
         interface ChildrenTStateProps {
           count: RootStateType
@@ -2089,7 +2089,7 @@ describe('React', () => {
         }
         type ChildNoDisPatch = {}
         type ChildOwnProps = {}
-        const mapStateToProps = jest.fn((state) => ({ count: state }))
+        const mapStateToProps = vi.fn((state) => ({ count: state }))
         class Child extends Component<ChildTStateProps> {
           render() {
             return <div>{this.props.count}</div>
@@ -2284,9 +2284,9 @@ describe('React', () => {
         }
         type ActionType = UnknownAction
         type NoDispatchType = {}
-        const c3Spy = jest.fn()
-        const c2Spy = jest.fn()
-        const c1Spy = jest.fn()
+        const c3Spy = vi.fn()
+        const c2Spy = vi.fn()
+        const c1Spy = vi.fn()
 
         type Comp3TStatePropsType = Store1State1Type
         type Comp3NoDispatchType = NoDispatchType
@@ -2442,7 +2442,7 @@ describe('React', () => {
           },
         )(A)
 
-        const mapStateToPropsB = jest.fn((state) => ({ count: state }))
+        const mapStateToPropsB = vi.fn((state) => ({ count: state }))
         class B extends Component {
           render() {
             return <ConnectedC {...this.props} />
@@ -2452,7 +2452,7 @@ describe('React', () => {
           context: customContext,
         })(B)
 
-        const mapStateToPropsC = jest.fn((state) => ({ count: state }))
+        const mapStateToPropsC = vi.fn((state) => ({ count: state }))
         class C extends Component {
           render() {
             return <ConnectedD />
@@ -2467,7 +2467,7 @@ describe('React', () => {
         }
         type DNoDispatchType = {}
         type DOwnPropsType = {}
-        const mapStateToPropsD = jest.fn((state) => ({ count: state }))
+        const mapStateToPropsD = vi.fn((state) => ({ count: state }))
         class D extends Component<DTStatePropsType> {
           render() {
             return <div>{this.props.count}</div>
@@ -2812,7 +2812,7 @@ describe('React', () => {
     describe('Error handling for invalid arguments', () => {
       function renderWithBadConnect(Component: ElementType) {
         const store = createStore(() => ({}))
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
         try {
           rtl.render(
@@ -2885,7 +2885,7 @@ describe('React', () => {
         if (!React.StrictMode) {
           return
         }
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         const store: Store = createStore(stringBuilder)
 
         class Container extends Component {
@@ -2917,7 +2917,7 @@ describe('React', () => {
       })
 
       it('should warn one-time-only that `pure` options has been removed', () => {
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
         const store: Store = createStore(stringBuilder)
 
         class ContainerA extends Component {

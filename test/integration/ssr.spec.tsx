@@ -116,10 +116,10 @@ describe('New v8 serverState behavior', () => {
     return
   }
 
-  const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('Handles hydration correctly', async () => {
@@ -164,7 +164,7 @@ describe('New v8 serverState behavior', () => {
       true,
     )
 
-    jest.resetAllMocks()
+    vi.resetAllMocks()
 
     expect(consoleError.mock.calls.length).toBe(0)
 

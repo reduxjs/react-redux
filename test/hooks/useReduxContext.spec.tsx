@@ -2,15 +2,15 @@ import { renderHook } from '@testing-library/react-hooks'
 import { createContext } from 'react'
 import type { ReactReduxContextValue } from '../../src/components/Context'
 import {
-  createReduxContextHook,
-  useReduxContext,
+    createReduxContextHook,
+    useReduxContext,
 } from '../../src/hooks/useReduxContext'
 
 describe('React', () => {
   describe('hooks', () => {
     describe('useReduxContext', () => {
       it('throws if component is not wrapped in provider', () => {
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
         const { result } = renderHook(() => useReduxContext())
 
@@ -25,7 +25,7 @@ describe('React', () => {
       it('throws if component is not wrapped in provider', () => {
         const customContext = createContext<ReactReduxContextValue | null>(null)
         const useCustomReduxContext = createReduxContextHook(customContext)
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
         const { result } = renderHook(() => useCustomReduxContext())
 

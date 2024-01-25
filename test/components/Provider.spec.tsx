@@ -51,7 +51,7 @@ describe('React', () => {
     it('should not enforce a single child', () => {
       const store = createStore(() => ({}))
 
-      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       expect(() =>
         rtl.render(
@@ -79,7 +79,7 @@ describe('React', () => {
     it('should add the store to context', () => {
       const store = createStore(createExampleTextReducer())
 
-      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const tester = rtl.render(
         <Provider store={store}>
           <Child />
@@ -170,7 +170,7 @@ describe('React', () => {
         action.type === 'INC' ? state + 1 : state
 
       const innerStore = createStore(reducer)
-      const innerMapStateToProps = jest.fn<TStateProps, [number]>((state) => ({
+      const innerMapStateToProps = vi.fn<TStateProps, [number]>((state) => ({
         count: state,
       }))
       class Inner extends Component<TStateProps> {
@@ -315,7 +315,7 @@ describe('React', () => {
       if (!React.StrictMode) {
         return
       }
-      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const store = createStore(() => ({}))
 
       rtl.render(
@@ -334,7 +334,7 @@ describe('React', () => {
       const subscribe = store.subscribe
 
       // Keep track of unsubscribe by wrapping subscribe()
-      const spy = jest.fn(() => ({}))
+      const spy = vi.fn(() => ({}))
       store.subscribe = (listener) => {
         const unsubscribe = subscribe(listener)
         return () => {

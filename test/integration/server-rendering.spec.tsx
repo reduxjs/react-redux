@@ -97,7 +97,7 @@ describe('React', () => {
     it('should run in an SSR environment without logging warnings about useLayoutEffect', () => {
       const store: Store = createStore(greetingReducer)
 
-      const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       renderToString(
         <Provider store={store}>
