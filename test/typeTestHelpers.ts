@@ -47,7 +47,7 @@ export declare const exactType: <T, U>(
 ) => IfEquals<T, U>
 
 export function expectExactType<T>(t: T) {
-  return <U extends Equals<T, U>>(u: U) => {}
+  return <U extends T>(u: U & Equals<T, U>) => {}
 }
 
 type EnsureUnknown<T> = IsUnknown<T, any, never>
