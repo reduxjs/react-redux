@@ -1,11 +1,10 @@
 /*eslint-disable react/prop-types*/
 
+import * as rtl from '@testing-library/react'
 import React from 'react'
+import type { AnyAction } from 'redux'
 import { createStore } from 'redux'
 import { Provider as ProviderMock, connect } from '../../src/index'
-import * as rtl from '@testing-library/react'
-import '@testing-library/jest-dom/extend-expect'
-import type { AnyAction } from 'redux'
 
 const IS_REACT_18 = React.version.startsWith('18')
 
@@ -42,8 +41,8 @@ describe('React', () => {
         },
       )
 
-      const mapStateSpy1 = jest.fn()
-      const renderSpy1 = jest.fn()
+      const mapStateSpy1 = vi.fn()
+      const renderSpy1 = vi.fn()
 
       let component1StateList: number[]
 
@@ -76,8 +75,8 @@ describe('React', () => {
 
       const Component1 = component1Decorator(component1)
 
-      const mapStateSpy2 = jest.fn()
-      const renderSpy2 = jest.fn()
+      const mapStateSpy2 = vi.fn()
+      const renderSpy2 = vi.fn()
 
       interface Component2Tstate {
         mappedProp: string[]

@@ -10,16 +10,13 @@
     "jsx": "react",
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "./es",
+    "outDir": "dist",
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "rootDirs": ["./src", "./types"],
-    "rootDir": "./src",
-    "typeRoots": [
-      "./node_modules/@types",
-      "./types"
-    ]
+    "baseUrl": ".",
+    "rootDir": ".",
+    "types": ["vitest/globals", "vitest/importMeta"]
   },
-  "include": ["src/**/*", "types"],
   "exclude": ["node_modules", "dist", "test/**/*"]
 }

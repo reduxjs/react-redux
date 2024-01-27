@@ -3,31 +3,31 @@
 import * as rtl from '@testing-library/react'
 import type { DispatchWithoutAction, FunctionComponent, ReactNode } from 'react'
 import React, {
-  Suspense,
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useReducer,
-  useState,
+    Suspense,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useReducer,
+    useState,
 } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import { createStore } from 'redux'
 import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 import type {
-  ProviderProps,
-  ReactReduxContextValue,
-  Subscription,
-  TypedUseSelectorHook,
+    ProviderProps,
+    ReactReduxContextValue,
+    Subscription,
+    TypedUseSelectorHook,
 } from '../../src/index'
 import {
-  Provider,
-  ReactReduxContext,
-  connect,
-  createSelectorHook,
-  shallowEqual,
-  useDispatch,
-  useSelector,
+    Provider,
+    ReactReduxContext,
+    connect,
+    createSelectorHook,
+    shallowEqual,
+    useDispatch,
+    useSelector,
 } from '../../src/index'
 
 // disable checks by default
@@ -91,7 +91,7 @@ describe('React', () => {
         })
 
         it('selects the state and renders the component when the store updates', () => {
-          const selector = jest.fn((s: NormalStateType) => s.count)
+          const selector = vi.fn((s: NormalStateType) => s.count)
           let result: number | undefined
           const Comp = () => {
             const count = useNormalSelector(selector)
@@ -370,7 +370,7 @@ describe('React', () => {
             count: count + 1,
           }))
 
-          const selector = jest.fn((s: StateType) => {
+          const selector = vi.fn((s: StateType) => {
             return s.count
           })
           const renderedItems: number[] = []
@@ -406,7 +406,7 @@ describe('React', () => {
             count: count + 1,
           }))
 
-          const selector = jest.fn((s: StateType) => {
+          const selector = vi.fn((s: StateType) => {
             return s.count
           })
           const renderedItems: number[] = []
@@ -486,7 +486,7 @@ describe('React', () => {
           parentCount: number
         }
         it('ignores transient errors in selector (e.g. due to stale props)', () => {
-          const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+          const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
             const count = useNormalSelector((s) => s.count)
@@ -517,7 +517,7 @@ describe('React', () => {
         })
 
         it('Passes through errors thrown while rendering', () => {
-          const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+          const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
             const result = useSelector((count: number) => {
@@ -554,7 +554,7 @@ describe('React', () => {
         })
 
         it('re-throws errors from the selector that only occur during rendering', () => {
-          const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+          const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
             const count = useNormalSelector((s) => s.count)
@@ -589,7 +589,7 @@ describe('React', () => {
         })
 
         it.skip('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
-          const spy = jest.spyOn(console, 'error').mockImplementation(() => {})
+          const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
             const count = useNormalSelector((s) => s.count)
@@ -871,7 +871,7 @@ describe('React', () => {
       })
 
       describe('Development mode checks', () => {
-        const consoleSpy = jest
+        const consoleSpy = vi
           .spyOn(console, 'warn')
           .mockImplementation(() => {})
         afterEach(() => {
@@ -892,7 +892,7 @@ describe('React', () => {
           return null
         }
         describe('selector result stability check', () => {
-          const selector = jest.fn((state: NormalStateType) => state.count)
+          const selector = vi.fn((state: NormalStateType) => state.count)
 
           afterEach(() => {
             selector.mockClear()
@@ -911,7 +911,7 @@ describe('React', () => {
 
             rtl.cleanup()
 
-            const unstableSelector = jest.fn(() => Math.random())
+            const unstableSelector = vi.fn(() => Math.random())
 
             rtl.render(
               <ProviderMock stabilityCheck="once" store={normalStore}>
@@ -936,7 +936,7 @@ describe('React', () => {
             )
           })
           it('uses provided equalityFn', () => {
-            const unstableSelector = jest.fn((state: NormalStateType) => ({
+            const unstableSelector = vi.fn((state: NormalStateType) => ({
               count: state.count,
             }))
 
