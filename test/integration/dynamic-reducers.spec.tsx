@@ -1,13 +1,13 @@
 /*eslint-disable react/prop-types*/
 
+import * as rtl from '@testing-library/react'
+import type { ReactNode } from 'react'
 import React from 'react'
 import ReactDOMServer from 'react-dom/server'
-import { createStore, combineReducers } from 'redux'
-import { connect, Provider, ReactReduxContext } from '../../src/index'
-import * as rtl from '@testing-library/react'
 import type { Store } from 'redux'
-import type { ReactNode } from 'react'
+import { combineReducers, createStore } from 'redux'
 import type { ReactReduxContextValue } from '../../src/index'
+import { Provider, ReactReduxContext, connect } from '../../src/index'
 
 describe('React', () => {
   /*
@@ -180,7 +180,7 @@ describe('React', () => {
       // This generates errors for using useLayoutEffect in v7
       // We hide that error by disabling console.error here
 
-      jest.spyOn(console, 'error')
+      vi.spyOn(console, 'error')
       // eslint-disable-next-line no-console
       // @ts-ignore
       console.error.mockImplementation(() => {})

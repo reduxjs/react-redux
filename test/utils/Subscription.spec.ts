@@ -1,6 +1,6 @@
-import { createSubscription } from '../../src/utils/Subscription'
-import type { Subscription } from '../../src/utils/Subscription'
-import type { Store } from 'redux'
+import type { Store } from 'redux';
+import type { Subscription } from '../../src/utils/Subscription';
+import { createSubscription } from '../../src/utils/Subscription';
 
 describe('Subscription', () => {
   let notifications: string[]
@@ -9,7 +9,7 @@ describe('Subscription', () => {
 
   beforeEach(() => {
     notifications = []
-    store = { subscribe: () => jest.fn() } as unknown as Store
+    store = { subscribe: () => vi.fn() } as unknown as Store
 
     parent = createSubscription(store)
     parent.onStateChange = () => {}
