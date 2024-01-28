@@ -15,7 +15,7 @@ import { createStoreHook, useStore as useDefaultStore } from './useStore'
  * @public
  */
 export interface UseDispatch<
-  DispatchType extends Dispatch<UnknownAction> = Dispatch<UnknownAction>
+  DispatchType extends Dispatch<UnknownAction> = Dispatch<UnknownAction>,
 > {
   /**
    * Returns the dispatch function from the Redux store.
@@ -45,7 +45,7 @@ export interface UseDispatch<
    * @since 9.1.0
    */
   withTypes: <
-    OverrideDispatchType extends DispatchType
+    OverrideDispatchType extends DispatchType,
   >() => UseDispatch<OverrideDispatchType>
 }
 
@@ -57,13 +57,13 @@ export interface UseDispatch<
  */
 export function createDispatchHook<
   StateType = unknown,
-  ActionType extends Action = UnknownAction
+  ActionType extends Action = UnknownAction,
 >(
   // @ts-ignore
   context?: Context<ReactReduxContextValue<
     StateType,
     ActionType
-  > | null> = ReactReduxContext
+  > | null> = ReactReduxContext,
 ) {
   const useStore =
     context === ReactReduxContext ? useDefaultStore : createStoreHook(context)

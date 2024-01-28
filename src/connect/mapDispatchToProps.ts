@@ -15,11 +15,11 @@ export function mapDispatchToPropsFactory<TDispatchProps, TOwnProps>(
         bindActionCreators(mapDispatchToProps, dispatch),
       )
     : !mapDispatchToProps
-    ? wrapMapToPropsConstant((dispatch: Dispatch<Action<string>>) => ({
-        dispatch,
-      }))
-    : typeof mapDispatchToProps === 'function'
-    ? // @ts-ignore
-      wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps')
-    : createInvalidArgFactory(mapDispatchToProps, 'mapDispatchToProps')
+      ? wrapMapToPropsConstant((dispatch: Dispatch<Action<string>>) => ({
+          dispatch,
+        }))
+      : typeof mapDispatchToProps === 'function'
+        ? // @ts-ignore
+          wrapMapToPropsFunc(mapDispatchToProps, 'mapDispatchToProps')
+        : createInvalidArgFactory(mapDispatchToProps, 'mapDispatchToProps')
 }

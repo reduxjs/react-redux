@@ -9,7 +9,7 @@ import { ReactReduxContext } from './Context'
 
 export interface ProviderProps<
   A extends Action<string> = UnknownAction,
-  S = unknown
+  S = unknown,
 > {
   /**
    * The single Redux store in your application.

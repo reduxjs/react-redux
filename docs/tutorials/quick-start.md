@@ -80,7 +80,7 @@ root.render(
   // highlight-next-line
   <Provider store={store}>
     <App />
-  </Provider>
+  </Provider>,
 )
 ```
 

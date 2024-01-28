@@ -69,15 +69,15 @@ export type NonReactStatics<
   S extends React.ComponentType<any>,
   C extends {
     [key: string]: true
-  } = {}
+  } = {},
 > = {
   [key in Exclude<
     keyof S,
     S extends React.MemoExoticComponent<any>
       ? keyof typeof MEMO_STATICS | keyof C
       : S extends React.ForwardRefExoticComponent<any>
-      ? keyof typeof FORWARD_REF_STATICS | keyof C
-      : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
+        ? keyof typeof FORWARD_REF_STATICS | keyof C
+        : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
   >]: S[key]
 }
 
@@ -93,7 +93,7 @@ export default function hoistNonReactStatics<
   S extends React.ComponentType<any>,
   C extends {
     [key: string]: true
-  } = {}
+  } = {},
 >(targetComponent: T, sourceComponent: S): T & NonReactStatics<S, C> {
   if (typeof sourceComponent !== 'string') {
     // don't hoist over string (html) components
