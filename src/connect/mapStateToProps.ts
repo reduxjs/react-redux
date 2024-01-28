@@ -8,7 +8,7 @@ export function mapStateToPropsFactory<TStateProps, TOwnProps, State>(
   return !mapStateToProps
     ? wrapMapToPropsConstant(() => ({}))
     : typeof mapStateToProps === 'function'
-    ? // @ts-ignore
-      wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps')
-    : createInvalidArgFactory(mapStateToProps, 'mapStateToProps')
+      ? // @ts-ignore
+        wrapMapToPropsFunc(mapStateToProps, 'mapStateToProps')
+      : createInvalidArgFactory(mapStateToProps, 'mapStateToProps')
 }

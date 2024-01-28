@@ -1,6 +1,6 @@
-import type { Store } from 'redux';
-import type { Subscription } from '../../src/utils/Subscription';
-import { createSubscription } from '../../src/utils/Subscription';
+import type { Store } from 'redux'
+import type { Subscription } from '../../src/utils/Subscription'
+import { createSubscription } from '../../src/utils/Subscription'
 
 describe('Subscription', () => {
   let notifications: string[]

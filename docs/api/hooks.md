@@ -36,7 +36,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'))
 root.render(
   <Provider store={store}>
     <App />
-  </Provider>
+  </Provider>,
 )
 ```
 
@@ -174,7 +174,7 @@ import { createSelector } from 'reselect'
 
 const selectNumCompletedTodos = createSelector(
   (state) => state.todos,
-  (todos) => todos.filter((todo) => todo.completed).length
+  (todos) => todos.filter((todo) => todo.completed).length,
 )
 
 export const CompletedTodosCounter = () => {
@@ -203,12 +203,12 @@ const selectCompletedTodosCount = createSelector(
   (state) => state.todos,
   (_, completed) => completed,
   (todos, completed) =>
-    todos.filter((todo) => todo.completed === completed).length
+    todos.filter((todo) => todo.completed === completed).length,
 )
 
 export const CompletedTodosCount = ({ completed }) => {
   const matchingCount = useSelector((state) =>
-    selectCompletedTodosCount(state, completed)
+    selectCompletedTodosCount(state, completed),
   )
 
   return <div>{matchingCount}</div>
@@ -364,7 +364,7 @@ export const CounterComponent = ({ value }) => {
   const dispatch = useDispatch()
   const incrementCounter = useCallback(
     () => dispatch({ type: 'increment-counter' }),
-    [dispatch]
+    [dispatch],
   )
 
   return (
@@ -573,7 +573,7 @@ export function useActions(actions, deps) {
       }
       return bindActionCreators(actions, dispatch)
     },
-    deps ? [dispatch, ...deps] : [dispatch]
+    deps ? [dispatch, ...deps] : [dispatch],
   )
 }
 ```

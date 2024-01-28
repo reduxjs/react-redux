@@ -8,7 +8,7 @@ export function defaultMergeProps<
   TStateProps,
   TDispatchProps,
   TOwnProps,
-  TMergedProps
+  TMergedProps,
 >(
   stateProps: TStateProps,
   dispatchProps: TDispatchProps,
@@ -22,7 +22,7 @@ export function wrapMergePropsFunc<
   TStateProps,
   TDispatchProps,
   TOwnProps,
-  TMergedProps
+  TMergedProps,
 >(
   mergeProps: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
 ): (
@@ -30,7 +30,7 @@ export function wrapMergePropsFunc<
   options: {
     readonly displayName: string
     readonly areMergedPropsEqual: EqualityFn<TMergedProps>
-  }
+  },
 ) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> {
   return function initMergePropsProxy(
     dispatch,
@@ -66,13 +66,13 @@ export function mergePropsFactory<
   TStateProps,
   TDispatchProps,
   TOwnProps,
-  TMergedProps
+  TMergedProps,
 >(
   mergeProps?: MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>,
 ) {
   return !mergeProps
     ? () => defaultMergeProps
     : typeof mergeProps === 'function'
-    ? wrapMergePropsFunc(mergeProps)
-    : createInvalidArgFactory(mergeProps, 'mergeProps')
+      ? wrapMergePropsFunc(mergeProps)
+      : createInvalidArgFactory(mergeProps, 'mergeProps')
 }

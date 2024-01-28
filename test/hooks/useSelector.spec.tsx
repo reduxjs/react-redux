@@ -3,31 +3,31 @@
 import * as rtl from '@testing-library/react'
 import type { DispatchWithoutAction, FunctionComponent, ReactNode } from 'react'
 import React, {
-    Suspense,
-    useCallback,
-    useContext,
-    useEffect,
-    useLayoutEffect,
-    useReducer,
-    useState,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useState,
 } from 'react'
 import type { Action, AnyAction, Store } from 'redux'
 import { createStore } from 'redux'
 import type { UseSelectorOptions } from '../../src/hooks/useSelector'
 import type {
-    ProviderProps,
-    ReactReduxContextValue,
-    Subscription,
-    TypedUseSelectorHook,
+  ProviderProps,
+  ReactReduxContextValue,
+  Subscription,
+  TypedUseSelectorHook,
 } from '../../src/index'
 import {
-    Provider,
-    ReactReduxContext,
-    connect,
-    createSelectorHook,
-    shallowEqual,
-    useDispatch,
-    useSelector,
+  Provider,
+  ReactReduxContext,
+  connect,
+  createSelectorHook,
+  shallowEqual,
+  useDispatch,
+  useSelector,
 } from '../../src/index'
 
 // disable checks by default

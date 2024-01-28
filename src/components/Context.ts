@@ -6,7 +6,7 @@ import type { ProviderProps } from './Provider'
 
 export interface ReactReduxContextValue<
   SS = any,
-  A extends Action<string> = UnknownAction
+  A extends Action<string> = UnknownAction,
 > extends Pick<ProviderProps, 'stabilityCheck' | 'identityFunctionCheck'> {
   store: Store<SS, A>
   subscription: Subscription

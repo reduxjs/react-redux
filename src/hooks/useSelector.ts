@@ -92,7 +92,7 @@ export interface UseSelector<StateType = unknown> {
    */
   <TState extends StateType = StateType, Selected = unknown>(
     selector: (state: TState) => Selected,
-    equalityFnOrOptions?: EqualityFn<Selected> | UseSelectorOptions<Selected>
+    equalityFnOrOptions?: EqualityFn<Selected> | UseSelectorOptions<Selected>,
   ): Selected
 
   /**
@@ -114,7 +114,7 @@ export interface UseSelector<StateType = unknown> {
    * @since 9.1.0
    */
   withTypes: <
-    OverrideStateType extends StateType
+    OverrideStateType extends StateType,
   >() => UseSelector<OverrideStateType>
 }
 
@@ -146,7 +146,7 @@ export function createSelectorHook(
     selector: (state: TState) => Selected,
     equalityFnOrOptions:
       | EqualityFn<NoInfer<Selected>>
-      | UseSelectorOptions<NoInfer<Selected>> = {}
+      | UseSelectorOptions<NoInfer<Selected>> = {},
   ): Selected => {
     const { equalityFn = refEquality, devModeChecks = {} } =
       typeof equalityFnOrOptions === 'function'
