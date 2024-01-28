@@ -123,9 +123,9 @@ If your `mapDispatchToProps` function is declared as taking two parameters, it w
 
 The second parameter is normally referred to as `ownProps` by convention.
 
-```js
+```ts
 // binds on component re-rendering
-;<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
+<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 
 // binds on `props` change
 const mapDispatchToProps = (dispatch, ownProps) => ({
