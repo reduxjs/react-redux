@@ -15,5 +15,6 @@
     "skipLibCheck": true,
     "noImplicitReturns": false,
     "experimentalDecorators": true
-  }
+  },
+  "exclude": []
 }
