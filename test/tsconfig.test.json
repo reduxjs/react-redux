@@ -1,4 +1,5 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -13,6 +14,6 @@
     "baseUrl": ".",
     "skipLibCheck": true,
     "noImplicitReturns": false,
-    "experimentalDecorators": true,
+    "experimentalDecorators": true
   }
 }
