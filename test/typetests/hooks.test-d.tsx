@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
-
 import type { AnyAction, Dispatch, Store } from '@reduxjs/toolkit'
 import { configureStore } from '@reduxjs/toolkit'
-import * as React from 'react'
+import { createContext } from 'react'
 import type {
   ReactReduxContextValue,
   Selector,
   TypedUseSelectorHook,
+  UseSelector,
 } from '../../src/index'
 import {
   createDispatchHook,
@@ -17,226 +16,262 @@ import {
   useSelector,
   useStore,
 } from '../../src/index'
-
 import type { AppDispatch, RootState } from './counterApp'
 import { incrementAsync } from './counterApp'
 
-import { expectExactType, expectType } from '../typeTestHelpers'
+describe('type tests', () => {
+  test('pre-typed hooks setup', () => {
+    // Standard hooks setup
+    const useAppDispatch = () => useDispatch<AppDispatch>()
 
-function preTypedHooksSetup() {
-  // Standard hooks setup
-  const useAppDispatch = () => useDispatch<AppDispatch>()
-  const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+    const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
-  function CounterComponent() {
-    const dispatch = useAppDispatch()
+    function CounterComponent() {
+      const dispatch = useAppDispatch()
 
-    return (
-      <button
-        onClick={() => {
-          dispatch(incrementAsync(1))
-        }}
-      />
+      return (
+        <button
+          onClick={() => {
+            dispatch(incrementAsync(1))
+          }}
+        />
+      )
+    }
+  })
+
+  test('selector', () => {
+    interface OwnProps {
+      key?: string | undefined
+    }
+    interface State {
+      key: string
+    }
+
+    const simpleSelect: Selector<State, string> = (state: State) => state.key
+
+    const notSimpleSelect: Selector<State, string, OwnProps> = (
+      state: State,
+      ownProps: OwnProps,
+    ) => ownProps.key || state.key
+
+    const ownProps = {}
+
+    const state = { key: 'value' }
+
+    expectTypeOf(simpleSelect).toBeCallableWith(state)
+
+    expectTypeOf(notSimpleSelect).toBeCallableWith(state, ownProps)
+
+    expectTypeOf(simpleSelect).parameter(1).not.toMatchTypeOf(ownProps)
+
+    expectTypeOf(notSimpleSelect).parameters.not.toMatchTypeOf([state])
+  })
+
+  test('shallowEqual', () => {
+    expectTypeOf(shallowEqual).parameter(0).not.toBeNever()
+
+    expectTypeOf(shallowEqual).parameters.not.toMatchTypeOf<['a']>()
+
+    expectTypeOf(shallowEqual).toBeCallableWith('a', 'a')
+
+    expectTypeOf(shallowEqual).toBeCallableWith(
+      { test: 'test' },
+      { test: 'test' },
     )
-  }
-}
 
-function TestSelector() {
-  interface OwnProps {
-    key?: string | undefined
-  }
-  interface State {
-    key: string
-  }
+    expectTypeOf(shallowEqual).toBeCallableWith({ test: 'test' }, 'a')
 
-  const simpleSelect: Selector<State, string> = (state: State) => state.key
-  const notSimpleSelect: Selector<State, string, OwnProps> = (
-    state: State,
-    ownProps: OwnProps,
-  ) => ownProps.key || state.key
+    expectTypeOf(shallowEqual).returns.toBeBoolean()
 
-  const ownProps = {}
-  const state = { key: 'value' }
-  simpleSelect(state)
-  notSimpleSelect(state, ownProps)
-  // @ts-expect-error
-  simpleSelect(state, ownProps)
-  // @ts-expect-error
-  notSimpleSelect(state)
-}
-
-function testShallowEqual() {
-  // @ts-expect-error
-  shallowEqual()
-  // @ts-expect-error
-  shallowEqual('a')
-  shallowEqual('a', 'a')
-  shallowEqual({ test: 'test' }, { test: 'test' })
-  shallowEqual({ test: 'test' }, 'a')
-  const x: boolean = shallowEqual('a', 'a')
-
-  type TestState = { stateProp: string }
-
-  // Additionally, it should infer its type from arguments and not become `any`
-  const selected1 = useSelector(
-    (state: TestState) => state.stateProp,
-    shallowEqual,
-  )
-  expectExactType<string>(selected1)
-
-  const useAppSelector = useSelector.withTypes<TestState>()
-
-  const selected2 = useAppSelector((state) => state.stateProp, shallowEqual)
-  expectExactType<string>(selected2)
-}
-
-function testUseDispatch() {
-  const actionCreator = (selected: boolean) => ({
-    type: 'ACTION_CREATOR',
-    payload: selected,
-  })
-  const thunkActionCreator = (selected: boolean) => {
-    return (dispatch: Dispatch) => {
-      return dispatch(actionCreator(selected))
+    interface TestState {
+      stateProp: string
     }
-  }
 
-  const dispatch = useDispatch()
-  dispatch(actionCreator(true))
-  // @ts-expect-error
-  dispatch(thunkActionCreator(true))
-  // @ts-expect-error
-  dispatch(true)
+    // Additionally, it should infer its type from arguments and not become `any`
+    const selected1 = useSelector(
+      (state: TestState) => state.stateProp,
+      shallowEqual,
+    )
 
-  const store = configureStore({
-    reducer: (state = 0) => state,
+    expectTypeOf(selected1).toBeString()
+
+    const useAppSelector = useSelector.withTypes<TestState>()
+
+    const selected2 = useAppSelector((state) => state.stateProp, shallowEqual)
+
+    expectTypeOf(selected2).toBeString()
   })
 
-  type AppDispatch = typeof store.dispatch
+  test('useDispatch', () => {
+    const actionCreator = (selected: boolean) => ({
+      type: 'ACTION_CREATOR',
+      payload: selected,
+    })
 
-  // tslint:disable-next-line:no-unnecessary-callback-wrapper (required for the generic parameter)
-  const useThunkDispatch = () => useDispatch<AppDispatch>()
-  const thunkDispatch = useThunkDispatch()
-  const result: ReturnType<typeof actionCreator> = thunkDispatch(
-    thunkActionCreator(true),
-  )
-}
-
-function testUseSelector() {
-  interface State {
-    counter: number
-    active: string
-  }
-
-  const selector = (state: State) => {
-    return {
-      counter: state.counter,
-      active: state.active,
+    const thunkActionCreator = (selected: boolean) => {
+      return (dispatch: Dispatch) => {
+        return dispatch(actionCreator(selected))
+      }
     }
-  }
-  const { counter, active } = useSelector(selector)
-  counter === 1
-  // @ts-expect-error
-  counter === '321'
-  active === 'hi'
-  // @ts-expect-error
-  active === {}
 
-  // @ts-expect-error
-  const { extraneous } = useSelector(selector)
-  useSelector(selector)
+    const dispatch = useDispatch()
 
-  // @ts-expect-error
-  useSelector(selector, 'a')
-  useSelector(selector, (l, r) => l === r)
-  useSelector(selector, (l, r) => {
-    expectType<{ counter: number; active: string }>(l)
-    return l === r
+    expectTypeOf(dispatch).toBeCallableWith(actionCreator(true))
+
+    expectTypeOf(dispatch)
+      .parameter(0)
+      .not.toMatchTypeOf(thunkActionCreator(true))
+
+    expectTypeOf(dispatch).parameter(0).not.toMatchTypeOf(true)
+
+    const store = configureStore({
+      reducer: (state = 0) => state,
+    })
+
+    type AppDispatch = typeof store.dispatch
+
+    const useThunkDispatch = () => useDispatch<AppDispatch>()
+
+    const thunkDispatch = useThunkDispatch()
+
+    expectTypeOf(actionCreator).returns.toEqualTypeOf(
+      thunkDispatch(thunkActionCreator(true)),
+    )
   })
 
-  const correctlyInferred: State = useSelector(selector, shallowEqual)
-  const correctlyInferred2: State = useSelector(selector, {
-    equalityFn: shallowEqual,
-    devModeChecks: { stabilityCheck: 'never' },
+  test('useSelector', () => {
+    interface State {
+      counter: number
+      active: string
+    }
+
+    const selector = (state: State) => {
+      return {
+        counter: state.counter,
+        active: state.active,
+      }
+    }
+    const { counter, active } = useSelector(selector)
+
+    expectTypeOf(counter).toBeNumber()
+
+    expectTypeOf(counter).not.toBeString()
+
+    expectTypeOf(active).toBeString()
+
+    expectTypeOf(active).not.toBeObject()
+
+    expectTypeOf(useSelector(selector)).not.toHaveProperty('extraneous')
+
+    expectTypeOf(useSelector).parameters.not.toMatchTypeOf<
+      [typeof selector, 'a']
+    >()
+
+    useSelector(selector, (l, r) => l === r)
+
+    useSelector(selector, (l, r) => {
+      expectTypeOf(l).toEqualTypeOf<{ counter: number; active: string }>()
+
+      expectTypeOf(r).toEqualTypeOf<{ counter: number; active: string }>()
+      return l === r
+    })
+
+    expectTypeOf(useSelector(selector, shallowEqual)).toEqualTypeOf<State>()
+
+    expectTypeOf(
+      useSelector(selector, {
+        equalityFn: shallowEqual,
+        devModeChecks: { stabilityCheck: 'never' },
+      }),
+    ).toEqualTypeOf<State>()
+
+    expectTypeOf(useSelector(selector, shallowEqual)).not.toBeString()
+
+    const compare = (_l: number, _r: number) => true
+
+    useSelector(() => 1, compare)
+
+    const compare2 = (_l: number, _r: string) => true
+
+    // @ts-expect-error
+    useSelector(() => 1, compare2)
+
+    interface RootState {
+      property: string
+    }
+
+    const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector
+
+    const r = useTypedSelector((state) => {
+      expectTypeOf(state).toEqualTypeOf<RootState>()
+
+      return state.property
+    })
+
+    expectTypeOf(r).toBeString()
   })
-  // @ts-expect-error
-  const inferredTypeIsNotString: string = useSelector(selector, shallowEqual)
 
-  const compare = (_l: number, _r: number) => true
-  useSelector(() => 1, compare)
-  const compare2 = (_l: number, _r: string) => true
+  test('useStore', () => {
+    interface TypedState {
+      counter: number
+      active: boolean
+    }
+    interface TypedAction {
+      type: 'SET_STATE'
+    }
 
-  // @ts-expect-error
-  useSelector(() => 1, compare2)
+    const untypedStore = useStore()
 
-  interface RootState {
-    property: string
-  }
+    const state = untypedStore.getState()
 
-  const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector
+    expectTypeOf(state).toBeObject()
 
-  const r = useTypedSelector((state) => {
-    expectType<RootState>(state)
-    return state.property
+    const typedStore = useStore<TypedState, TypedAction>()
+
+    const typedState = typedStore.getState()
+
+    expectTypeOf(typedState).toHaveProperty('counter')
+
+    expectTypeOf(typedState).not.toHaveProperty('things')
   })
-  expectType<string>(r)
-}
 
-function testUseStore() {
-  interface TypedState {
-    counter: number
-    active: boolean
-  }
-  interface TypedAction {
-    type: 'SET_STATE'
-  }
+  test('createHook functions', () => {
+    // These should match the types of the hooks.
 
-  const untypedStore = useStore()
-  const state = untypedStore.getState()
-  expectType<unknown>(state)
+    interface RootState {
+      property: string
+    }
+    interface RootAction {
+      type: 'TEST_ACTION'
+    }
 
-  const typedStore = useStore<TypedState, TypedAction>()
-  const typedState = typedStore.getState()
-  typedState.counter
-  // @ts-expect-error
-  typedState.things.stuff
-}
+    const Context = createContext<ReactReduxContextValue<
+      RootState,
+      RootAction
+    > | null>(null)
 
-// These should match the types of the hooks.
-function testCreateHookFunctions() {
-  interface RootState {
-    property: string
-  }
-  interface RootAction {
-    type: 'TEST_ACTION'
-  }
+    test('no context', () => {
+      expectTypeOf(createDispatchHook()).toMatchTypeOf<
+        () => Dispatch<AnyAction>
+      >()
 
-  const Context = React.createContext<ReactReduxContextValue<
-    RootState,
-    RootAction
-  > | null>(null)
+      expectTypeOf(createSelectorHook()).toEqualTypeOf<UseSelector>()
 
-  // No context tests
-  expectType<() => Dispatch<AnyAction>>(createDispatchHook())
-  expectType<
-    <Selected>(
-      selector: (state: any) => Selected,
-      equalityFn?:
-        | ((previous: Selected, next: Selected) => boolean)
-        | undefined,
-    ) => Selected
-  >(createSelectorHook())
-  expectType<() => Store<any, AnyAction>>(createStoreHook())
+      expectTypeOf(createStoreHook()).toMatchTypeOf<
+        () => Store<any, AnyAction>
+      >()
+    })
 
-  // With context tests
-  expectType<() => Dispatch<RootAction>>(createDispatchHook(Context))
-  expectType<
-    <Selected>(
-      selector: (state: RootState) => Selected,
-      equalityFn?:
-        | ((previous: Selected, next: Selected) => boolean)
-        | undefined,
-    ) => Selected
-  >(createSelectorHook(Context))
-  expectType<() => Store<RootState, RootAction>>(createStoreHook(Context))
-}
+    test('with context', () => {
+      expectTypeOf(createDispatchHook(Context)).toMatchTypeOf<
+        () => Dispatch<RootAction>
+      >()
+
+      expectTypeOf(createSelectorHook(Context)).toEqualTypeOf<UseSelector>()
+
+      expectTypeOf(createStoreHook(Context)).toMatchTypeOf<
+        () => Store<RootState, RootAction>
+      >()
+    })
+  })
+})
