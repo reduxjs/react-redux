@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, react/prop-types */
-import * as PropTypes from 'prop-types'
-import * as React from 'react'
+import PropTypes from 'prop-types'
+import React from 'react'
 import type { ActionCreator, AnyAction, Dispatch, Reducer, Store } from 'redux'
 import { createStore } from 'redux'
 import type {
@@ -8,15 +7,14 @@ import type {
   ConnectedProps,
   DispatchProp,
   MapStateToProps,
+  ReactReduxContextValue,
 } from '../../src/index'
 import { Provider, ReactReduxContext, connect } from '../../src/index'
 
 // Test cases written in a way to isolate types and variables and verify the
 // output of `connect` to make sure the signature is what is expected
 
-const CustomContext = React.createContext(
-  null,
-) as unknown as typeof ReactReduxContext
+const CustomContext = React.createContext<ReactReduxContextValue | null>(null)
 
 describe('type tests', () => {
   test('MergedPropsInference', () => {
