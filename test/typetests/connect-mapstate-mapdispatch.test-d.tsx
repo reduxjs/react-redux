@@ -2,15 +2,16 @@
 
 import * as React from 'react'
 import type { ActionCreator, Dispatch } from 'redux'
-import type { MapDispatchToProps, ReactReduxContext } from '../../src/index'
+import type {
+  MapDispatchToProps,
+  ReactReduxContextValue,
+} from '../../src/index'
 import { connect } from '../../src/index'
 
 // Test cases written in a way to isolate types and variables and verify the
 // output of `connect` to make sure the signature is what is expected
 
-const CustomContext = React.createContext(
-  null,
-) as unknown as typeof ReactReduxContext
+const CustomContext = React.createContext<ReactReduxContextValue | null>(null)
 
 describe('type tests', () => {
   test('Empty', () => {
