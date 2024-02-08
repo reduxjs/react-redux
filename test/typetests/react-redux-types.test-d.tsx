@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 import type { AnyAction, Dispatch, Store } from '@reduxjs/toolkit'
 import { bindActionCreators } from '@reduxjs/toolkit'
 import type { ReactElement } from 'react'
@@ -37,6 +36,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>) {
 connect(mapStateToProps, mapDispatchToProps)(Counter)
 
 class CounterContainer extends Component<any, any> {}
+
 const ConnectedCounterContainer = connect(mapStateToProps)(CounterContainer)
 
 // Ensure connect's first two arguments can be replaced by wrapper functions
@@ -91,14 +91,19 @@ if (container) {
 }
 
 declare let store: Store<TodoState>
+
 class MyRootComponent extends Component<any, any> {}
+
 class TodoApp extends Component<any, any> {}
+
 interface TodoState {
   todos: string[] | string
 }
+
 interface TodoProps {
   userId: number
 }
+
 interface DispatchProps {
   addTodo(userId: number, text: string): void
   // action: Function
@@ -108,9 +113,13 @@ const addTodo = (userId: number, text: string) => ({
   type: 'todos/todoAdded',
   payload: { userId, text },
 })
+
 const actionCreators = { addTodo }
+
 type AddTodoAction = ReturnType<typeof addTodo>
+
 declare let todoActionCreators: { [type: string]: (...args: any[]) => any }
+
 declare let counterActionCreators: { [type: string]: (...args: any[]) => any }
 
 if (container) {
@@ -249,9 +258,9 @@ let anElement: ReactElement<TestProp>
 ;<ATestComponent property1={42} dummyField={123} />
 
 class NonComponent {}
+
 // this doesn't compile
-// @ts-expect-error
-connect()(NonComponent)
+expectTypeOf(connect()).parameter(0).not.toMatchTypeOf(NonComponent)
 
 // stateless functions
 interface HelloMessageProps {
@@ -346,10 +355,21 @@ describe('type tests', () => {
       mapStateToPropsWithoutOwnProps,
     )(OwnPropsComponent)
 
-    // @ts-expect-error
-    React.createElement(ConnectedWithoutOwnProps, { anything: 'goes!' })
+    expectTypeOf(React.createElement).parameters.not.toMatchTypeOf([
+      ConnectedWithoutOwnProps,
+      { anything: 'goes!' },
+    ] as const)
 
     // This compiles, as expected.
+    /**
+     * NOTE: We can't do
+     * ```
+     * expectTypeOf(React.createElement).toBeCallableWith(ConnectedWithOwnProps, {
+     *   own: 'string',
+     * })
+     * ```
+     * because `.toBeCallableWith()` does not work well with function overloads.
+     */
     React.createElement(ConnectedWithOwnProps, { own: 'string' })
 
     // This should not compile, which is good.
@@ -375,6 +395,7 @@ describe('type tests', () => {
     }
 
     type PickedOwnProps = Pick<AllProps, 'own'>
+
     type PickedStateProps = Pick<AllProps, 'state'>
 
     const mapStateToPropsForPicked: MapStateToProps<
@@ -384,6 +405,7 @@ describe('type tests', () => {
     > = (state: any): PickedStateProps => {
       return { state: 'string' }
     }
+
     const ConnectedWithPickedOwnProps = connect(mapStateToPropsForPicked)(
       AllPropsComponent,
     )
@@ -423,6 +445,7 @@ describe('type tests', () => {
     // Connect should "resolve thunks", so that instead of typing the return value of the
     // prop as the thunk function, it dives down and uses the return value of the thunk function itself
     const connector2 = connect(null, mapDispatch2)
+
     type PropsFromRedux2 = ConnectedProps<typeof connector2>
 
     expectTypeOf<{
