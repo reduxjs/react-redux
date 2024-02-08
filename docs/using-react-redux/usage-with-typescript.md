@@ -245,7 +245,7 @@ const MyComponent = (props: Props) => (
 // Typical usage: `connect` is called after the component is defined
 export default connect<StateProps, DispatchProps, OwnProps>(
   mapState,
-  mapDispatch
+  mapDispatch,
 )(MyComponent)
 ```
 

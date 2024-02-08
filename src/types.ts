@@ -87,7 +87,7 @@ export type GetLibraryManagedProps<C> = JSX.LibraryManagedAttributes<
 // and propTypes), as well as defines WrappedComponent.
 export type ConnectedComponent<
   C extends ComponentType<any>,
-  P
+  P,
 > = FunctionComponent<P> &
   NonReactStatics<C> & {
     WrappedComponent: C
@@ -108,9 +108,9 @@ export type Mapped<T> = Identity<{ [k in keyof T]: T[k] }>
 // Note> Most of the time TNeedsProps is empty, because the overloads in `Connect`
 // just pass in `{}`.  The real props we need come from the component.
 export type InferableComponentEnhancerWithProps<TInjectedProps, TNeedsProps> = <
-  C extends ComponentType<Matching<TInjectedProps, GetProps<C>>>
+  C extends ComponentType<Matching<TInjectedProps, GetProps<C>>>,
 >(
-  component: C
+  component: C,
 ) => ConnectedComponent<
   C,
   Mapped<
@@ -130,7 +130,7 @@ export type InferableComponentEnhancer<TInjectedProps> =
   InferableComponentEnhancerWithProps<TInjectedProps, {}>
 
 export type InferThunkActionCreatorType<
-  TActionCreator extends (...args: any[]) => any
+  TActionCreator extends (...args: any[]) => any,
 > = TActionCreator extends (
   ...args: infer TParams
 ) => (...args: any[]) => infer TReturn
@@ -168,11 +168,11 @@ export type ResolveThunks<TDispatchProps> = TDispatchProps extends {
 export interface TypedUseSelectorHook<TState> {
   <TSelected>(
     selector: (state: TState) => TSelected,
-    equalityFn?: EqualityFn<NoInfer<TSelected>>
+    equalityFn?: EqualityFn<NoInfer<TSelected>>,
   ): TSelected
   <Selected = unknown>(
     selector: (state: TState) => Selected,
-    options?: UseSelectorOptions<Selected>
+    options?: UseSelectorOptions<Selected>,
   ): Selected
 }
 

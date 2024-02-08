@@ -46,7 +46,7 @@ export interface UseStore<StoreType extends Store> {
     StateType extends ReturnType<StoreType['getState']> = ReturnType<
       StoreType['getState']
     >,
-    ActionType extends Action = ExtractStoreActionType<Store>
+    ActionType extends Action = ExtractStoreActionType<Store>,
   >(): Store<StateType, ActionType>
 
   /**
@@ -68,7 +68,7 @@ export interface UseStore<StoreType extends Store> {
    * @since 9.1.0
    */
   withTypes: <
-    OverrideStoreType extends StoreType
+    OverrideStoreType extends StoreType,
   >() => UseStore<OverrideStoreType>
 }
 
@@ -80,13 +80,13 @@ export interface UseStore<StoreType extends Store> {
  */
 export function createStoreHook<
   StateType = unknown,
-  ActionType extends Action = Action
+  ActionType extends Action = Action,
 >(
   // @ts-ignore
   context?: Context<ReactReduxContextValue<
     StateType,
     ActionType
-  > | null> = ReactReduxContext
+  > | null> = ReactReduxContext,
 ) {
   const useReduxContext =
     context === ReactReduxContext

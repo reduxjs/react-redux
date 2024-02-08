@@ -5,7 +5,7 @@ import type { EqualityFn, ExtendedEqualityFn } from '../types'
 
 export type SelectorFactory<S, TProps, TOwnProps, TFactoryOptions> = (
   dispatch: Dispatch<Action<string>>,
-  factoryOptions: TFactoryOptions
+  factoryOptions: TFactoryOptions,
 ) => Selector<S, TProps, TOwnProps>
 
 export type Selector<S, TProps, TOwnProps = null> = TOwnProps extends
@@ -16,12 +16,12 @@ export type Selector<S, TProps, TOwnProps = null> = TOwnProps extends
 
 export type MapStateToProps<TStateProps, TOwnProps, State> = (
   state: State,
-  ownProps: TOwnProps
+  ownProps: TOwnProps,
 ) => TStateProps
 
 export type MapStateToPropsFactory<TStateProps, TOwnProps, State> = (
   initialState: State,
-  ownProps: TOwnProps
+  ownProps: TOwnProps,
 ) => MapStateToProps<TStateProps, TOwnProps, State>
 
 export type MapStateToPropsParam<TStateProps, TOwnProps, State> =
@@ -32,7 +32,7 @@ export type MapStateToPropsParam<TStateProps, TOwnProps, State> =
 
 export type MapDispatchToPropsFunction<TDispatchProps, TOwnProps> = (
   dispatch: Dispatch<Action<string>>,
-  ownProps: TOwnProps
+  ownProps: TOwnProps,
 ) => TDispatchProps
 
 export type MapDispatchToProps<TDispatchProps, TOwnProps> =
@@ -41,7 +41,7 @@ export type MapDispatchToProps<TDispatchProps, TOwnProps> =
 
 export type MapDispatchToPropsFactory<TDispatchProps, TOwnProps> = (
   dispatch: Dispatch<Action<string>>,
-  ownProps: TOwnProps
+  ownProps: TOwnProps,
 ) => MapDispatchToPropsFunction<TDispatchProps, TOwnProps>
 
 export type MapDispatchToPropsParam<TDispatchProps, TOwnProps> =
@@ -55,7 +55,7 @@ export type MapDispatchToPropsNonObject<TDispatchProps, TOwnProps> =
 export type MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps> = (
   stateProps: TStateProps,
   dispatchProps: TDispatchProps,
-  ownProps: TOwnProps
+  ownProps: TOwnProps,
 ) => TMergedProps
 
 interface PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
@@ -69,7 +69,7 @@ export function pureFinalPropsSelectorFactory<
   TOwnProps,
   TDispatchProps,
   TMergedProps,
-  State
+  State,
 >(
   mapStateToProps: WrappedMapStateToProps<TStateProps, TOwnProps, State>,
   mapDispatchToProps: WrappedMapDispatchToProps<TDispatchProps, TOwnProps>,
@@ -181,19 +181,19 @@ export interface SelectorFactoryOptions<
   TOwnProps,
   TDispatchProps,
   TMergedProps,
-  State
+  State,
 > extends InitOptions<TStateProps, TOwnProps, TMergedProps, State> {
   readonly initMapStateToProps: (
     dispatch: Dispatch<Action<string>>,
-    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>
+    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>,
   ) => WrappedMapStateToProps<TStateProps, TOwnProps, State>
   readonly initMapDispatchToProps: (
     dispatch: Dispatch<Action<string>>,
-    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>
+    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>,
   ) => WrappedMapDispatchToProps<TDispatchProps, TOwnProps>
   readonly initMergeProps: (
     dispatch: Dispatch<Action<string>>,
-    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>
+    options: InitOptions<TStateProps, TOwnProps, TMergedProps, State>,
   ) => MergeProps<TStateProps, TDispatchProps, TOwnProps, TMergedProps>
 }
 
@@ -208,7 +208,7 @@ export default function finalPropsSelectorFactory<
   TOwnProps,
   TDispatchProps,
   TMergedProps,
-  State
+  State,
 >(
   dispatch: Dispatch<Action<string>>,
   {

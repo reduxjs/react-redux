@@ -4,12 +4,12 @@ import * as rtl from '@testing-library/react'
 import type { Dispatch, ElementType, MouseEvent, ReactNode } from 'react'
 import React, { Component } from 'react'
 import type {
-    Action,
-    AnyAction,
-    MiddlewareAPI,
-    Dispatch as ReduxDispatch,
-    Store,
-    UnknownAction,
+  Action,
+  AnyAction,
+  MiddlewareAPI,
+  Dispatch as ReduxDispatch,
+  Store,
+  UnknownAction,
 } from 'redux'
 import { applyMiddleware, createStore } from 'redux'
 import type { ReactReduxContextValue } from '../../src/index'

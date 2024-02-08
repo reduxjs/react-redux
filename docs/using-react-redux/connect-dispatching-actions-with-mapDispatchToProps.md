@@ -245,7 +245,7 @@ const boundIncrement = bindActionCreators(increment, dispatch)
 // binding an object full of action creators
 const boundActionCreators = bindActionCreators(
   { increment, decrement, reset },
-  dispatch
+  dispatch,
 )
 // returns
 // {

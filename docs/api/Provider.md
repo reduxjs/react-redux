@@ -87,7 +87,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'))
 root.render(
   <Provider store={store}>
     <App />
-  </Provider>
+  </Provider>,
 )
 ```
 
@@ -111,6 +111,6 @@ hydrateRoot(
   document.getElementById('root'),
   <Provider store={clientStore} serverState={preloadedState}>
     <App />
-  </Provider>
+  </Provider>,
 )
 ```

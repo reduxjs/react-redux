@@ -29,7 +29,7 @@ type Equals<T, U> = IsAny<
 >
 
 export type IsEqual<A, B> = (<G>() => G extends A ? 1 : 2) extends <
-  G
+  G,
 >() => G extends B ? 1 : 2
   ? true
   : false
@@ -38,12 +38,12 @@ export type IfEquals<
   T,
   U,
   TypeIfEquals = unknown,
-  TypeIfNotEquals = never
+  TypeIfNotEquals = never,
 > = IsEqual<T, U> extends true ? TypeIfEquals : TypeIfNotEquals
 
 export declare const exactType: <T, U>(
   draft: T & IfEquals<T, U>,
-  expected: U & IfEquals<T, U>
+  expected: U & IfEquals<T, U>,
 ) => IfEquals<T, U>
 
 export function expectExactType<T>(t: T) {

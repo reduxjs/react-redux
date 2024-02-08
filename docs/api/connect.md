@@ -123,7 +123,7 @@ If your `mapDispatchToProps` function is declared as taking two parameters, it w
 
 The second parameter is normally referred to as `ownProps` by convention.
 
-```js
+```ts
 // binds on component re-rendering
 <button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 
@@ -203,7 +203,7 @@ The fields in the plain object you return from it will be used as the props for 
 
 The return value of `mergeProps` is referred to as `mergedProps` and the fields will be used as the props for the wrapped component.
 
-> Note: Creating new values in mergeProps will cause re-renders. It is recommended that you memoize fields in order to avoid unnecessary re-renders. 
+> Note: Creating new values in mergeProps will cause re-renders. It is recommended that you memoize fields in order to avoid unnecessary re-renders.
 
 ### `options?: Object`
 
@@ -229,7 +229,7 @@ You may pass the context to your connected component either by passing it here a
 ```js
 // const MyContext = React.createContext();
 connect(mapStateToProps, mapDispatchToProps, null, { context: MyContext })(
-  MyComponent
+  MyComponent,
 )
 ```
 
@@ -450,7 +450,7 @@ function mapDispatchToProps(dispatch) {
   return {
     actions: bindActionCreators(
       { ...todoActionCreators, ...counterActionCreators },
-      dispatch
+      dispatch,
     ),
   }
 }
@@ -472,7 +472,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return bindActionCreators(
     { ...todoActionCreators, ...counterActionCreators },
-    dispatch
+    dispatch,
   )
 }
 
