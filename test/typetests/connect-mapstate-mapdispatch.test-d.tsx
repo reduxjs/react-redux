@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
-
-import * as React from 'react'
+import React from 'react'
 import type { ActionCreator, Dispatch } from 'redux'
 import type {
   MapDispatchToProps,
