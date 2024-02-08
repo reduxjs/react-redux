@@ -10,7 +10,7 @@
     "strict": true,
     "noEmit": true,
     "target": "es2018",
-    "jsx": "react",
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "skipLibCheck": true,
     "noImplicitReturns": false,
