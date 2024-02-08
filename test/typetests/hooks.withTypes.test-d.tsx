@@ -1,45 +1,47 @@
-import * as React from 'react'
 import { useDispatch, useSelector, useStore } from '../../src/index'
-import { exactType, expectExactType } from '../typeTestHelpers'
 import type { AppDispatch, AppStore, RootState } from './counterApp'
 import { incrementAsync } from './counterApp'
 
-function preTypedHooksSetupWithTypes() {
-  const useAppSelector = useSelector.withTypes<RootState>()
+describe('type tests', () => {
+  test('pre-typed hooks setup using `.withTypes()`', () => {
+    const useAppSelector = useSelector.withTypes<RootState>()
 
-  const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+    const useAppDispatch = useDispatch.withTypes<AppDispatch>()
 
-  const useAppStore = useStore.withTypes<AppStore>()
+    const useAppStore = useStore.withTypes<AppStore>()
 
-  function CounterComponent() {
-    useAppSelector((state) => state.counter)
+    const CounterComponent = () => {
+      expectTypeOf(useAppSelector).toBeCallableWith((state) => state.counter)
 
-    const dispatch = useAppDispatch()
+      const dispatch = useAppDispatch()
 
-    expectExactType<AppDispatch>(dispatch)
+      expectTypeOf(dispatch).toEqualTypeOf<AppDispatch>()
 
-    const store = useAppStore()
+      const store = useAppStore()
 
-    expectExactType<AppStore>(store)
+      expectTypeOf(store).toEqualTypeOf<AppStore>()
 
-    expectExactType<AppDispatch>(store.dispatch)
+      expectTypeOf(store.dispatch).toEqualTypeOf<AppDispatch>()
 
-    const state = store.getState()
+      const state = store.getState()
 
-    expectExactType<RootState>(state)
+      expectTypeOf(state).toEqualTypeOf<RootState>()
 
-    expectExactType<number>(state.counter)
+      expectTypeOf(state.counter).toBeNumber()
 
-    store.dispatch(incrementAsync(1))
+      // NOTE: We can't do `expectTypeOf(store.dispatch).toBeCallableWith(incrementAsync(1))`
+      // because `.toBeCallableWith()` does not work well with function overloads.
+      store.dispatch(incrementAsync(1))
 
-    exactType(store.dispatch, dispatch)
+      expectTypeOf(store.dispatch).toEqualTypeOf(dispatch)
 
-    return (
-      <button
-        onClick={() => {
-          dispatch(incrementAsync(1))
-        }}
-      />
-    )
-  }
-}
+      return (
+        <button
+          onClick={() => {
+            dispatch(incrementAsync(1))
+          }}
+        />
+      )
+    }
+  })
+})
