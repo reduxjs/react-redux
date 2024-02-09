@@ -12,7 +12,7 @@ import { connect } from '../../src/index'
 const CustomContext = React.createContext<ReactReduxContextValue | null>(null)
 
 describe('type tests', () => {
-  test('Empty', () => {
+  test('empty', () => {
     interface OwnProps {
       dispatch: Dispatch
       foo: string
@@ -25,7 +25,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapState', () => {
+  test('map state', () => {
     interface OwnProps {
       foo: string
     }
@@ -44,7 +44,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateWithDispatchProp', () => {
+  test('map state with dispatch prop', () => {
     interface OwnProps {
       foo: string
     }
@@ -64,7 +64,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateFactory', () => {
+  test('map state factory', () => {
     interface OwnProps {
       foo: string
     }
@@ -83,7 +83,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapDispatch', () => {
+  test('map dispatch', () => {
     interface OwnProps {
       foo: string
     }
@@ -104,7 +104,7 @@ describe('type tests', () => {
     const verifyUndefined = <TestUndefined foo="bar" />
   })
 
-  test('MapDispatchUnion', () => {
+  test('map dispatch union', () => {
     interface OwnProps {
       foo: string
     }
@@ -130,7 +130,7 @@ describe('type tests', () => {
     const verifyUndefined = <TestUndefined foo="bar" />
   })
 
-  test('MapDispatchWithThunkActionCreators', () => {
+  test('map dispatch with thunk action creators', () => {
     const simpleAction = (payload: boolean) => ({
       type: 'SIMPLE_ACTION',
       payload,
@@ -170,7 +170,7 @@ describe('type tests', () => {
     )
   })
 
-  test('MapManualDispatchThatLooksLikeThunk', () => {
+  test('map manual dispatch that looks like thunk', () => {
     interface OwnProps {
       foo: string
     }
@@ -210,7 +210,7 @@ describe('type tests', () => {
     )
   })
 
-  test('MapStateAndDispatchObject', () => {
+  test('map state and dispatch object', () => {
     interface ClickPayload {
       count: number
     }
@@ -242,7 +242,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateAndNullishDispatch', () => {
+  test('map state and nullish dispatch', () => {
     interface ClickPayload {
       count: number
     }
@@ -276,7 +276,7 @@ describe('type tests', () => {
     const verifyNonUn = <TestDispatchPropsUndefined foo="bar" />
   })
 
-  test('MapDispatchFactory', () => {
+  test('map dispatch factory', () => {
     interface OwnProps {
       foo: string
     }
@@ -302,7 +302,7 @@ describe('type tests', () => {
     const verifyUndefined = <TestUndefined foo="bar" />
   })
 
-  test('MapStateAndDispatch', () => {
+  test('map state and dispatch', () => {
     interface OwnProps {
       foo: string
     }
@@ -330,7 +330,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateFactoryAndDispatch', () => {
+  test('map state factory and dispatch', () => {
     interface OwnProps {
       foo: string
     }
@@ -361,7 +361,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateFactoryAndDispatchFactory', () => {
+  test('map state factory and dispatch factory', () => {
     interface OwnProps {
       foo: string
     }
@@ -392,7 +392,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateAndDispatchAndMerge', () => {
+  test('map state and dispatch and merge', () => {
     interface OwnProps {
       foo: string
     }
@@ -429,7 +429,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateAndMerge', () => {
+  test('map state and merge', () => {
     interface OwnProps {
       foo: string
     }
@@ -460,7 +460,7 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
-  test('MapStateAndOptions', () => {
+  test('map state and options', () => {
     interface State {
       state: string
     }

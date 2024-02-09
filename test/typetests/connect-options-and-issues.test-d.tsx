@@ -17,7 +17,7 @@ import { Provider, ReactReduxContext, connect } from '../../src/index'
 const CustomContext = React.createContext<ReactReduxContextValue | null>(null)
 
 describe('type tests', () => {
-  test('MergedPropsInference', () => {
+  test('merged props inference', () => {
     // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/16021
 
     interface StateProps {
@@ -89,7 +89,9 @@ describe('type tests', () => {
     )(MergedPropsComponent)
   })
 
-  test('issue #16652', () => {
+  test('issue #16652: expose dispatch with props', () => {
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/16652
+
     interface PassedProps {
       commentIds: string[]
     }
@@ -860,6 +862,8 @@ describe('type tests', () => {
   })
 
   test('issue #1187 connect accepts prop named context', () => {
+    // https://github.com/reduxjs/react-redux/issues/1187
+
     const mapStateToProps = (state: { name: string }) => {
       return {
         name: state.name,
