@@ -8,5 +8,5 @@
     "jsx": "react-jsx",
     "noImplicitReturns": false
   },
-  // "include": ["type-tests"]
+  "include": ["test/typetests"]
 }
