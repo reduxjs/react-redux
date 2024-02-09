@@ -57,7 +57,7 @@
     },
     {
       "files": ["**/test/**/*.{ts,tsx}"],
-      "parserOptions": { "project": "./test/tsconfig.test.json" }
+      "parserOptions": { "project": true }
     }
   ]
 }
