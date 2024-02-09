@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Options } from 'tsup'
 import { defineConfig } from 'tsup'
 
@@ -15,6 +16,15 @@ if (process.env.NODE_ENV === 'production') {
   )
 }
 
+// No __dirname under Node ESM
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const tsconfig = path.join(
+  __dirname,
+  './tsconfig.build.json',
+) satisfies Options['tsconfig']
+
 export default defineConfig((options) => {
   const commonOptions: Options = {
     entry: {
@@ -22,6 +32,7 @@ export default defineConfig((options) => {
     },
     sourcemap: true,
     target: 'es2020',
+    tsconfig,
     ...options,
   }
 
