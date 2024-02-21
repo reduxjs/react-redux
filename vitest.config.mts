@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename)
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['test/setup.ts'],
     globals: true,
     alias: {
       // this mapping is disabled as we want `dist` imports in the tests only to be used for "type-only" imports which don't play a role for jest
