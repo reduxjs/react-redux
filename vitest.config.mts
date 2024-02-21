@@ -8,7 +8,6 @@ const __dirname = path.dirname(__filename)
 
 export default defineConfig({
   test: {
-    typecheck: { tsconfig: './test/typetests/tsconfig.json' },
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
