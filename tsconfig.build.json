@@ -2,7 +2,9 @@
   // For building the library.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "./src"
   },
   "include": ["src"]
 }

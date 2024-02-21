@@ -4,7 +4,9 @@
   // we are using during development.
   "extends": "./tsconfig.test.json",
   "compilerOptions": {
-    "allowJs": true
+    "allowJs": true,
+    "checkJs": true,
+    "rootDir": "."
   },
-  "include": ["."],
+  "include": ["."]
 }
