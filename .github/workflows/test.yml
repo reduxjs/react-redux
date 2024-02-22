@@ -146,7 +146,9 @@ jobs:
 
       - name: Install deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        run: rm yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
+        run: rm yarn.lock && yarn install
 
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
