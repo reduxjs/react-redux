@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master, v9.0-integration]
+    branches: [master]
   pull_request:
-    branches: [master, v9.0-integration]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -116,7 +116,7 @@ jobs:
             'node-standard',
             'node-esm',
             'react-native',
-            'expo'
+            'expo',
           ]
     steps:
       - name: Checkout repo
