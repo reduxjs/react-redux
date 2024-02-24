@@ -3,12 +3,8 @@ import { bindActionCreators } from '@reduxjs/toolkit'
 import type { ReactElement } from 'react'
 import React, { Component } from 'react'
 import { createRoot } from 'react-dom/client'
-import type {
-  ConnectedProps,
-  DispatchProp,
-  MapStateToProps,
-} from '../../src/index'
-import { Provider, connect } from '../../src/index'
+import type { ConnectedProps, DispatchProp, MapStateToProps } from 'react-redux'
+import { Provider, connect } from 'react-redux'
 import type { CounterState } from './counterApp'
 import { increment } from './counterApp'
 

@@ -1,4 +1,4 @@
-import { useDispatch, useSelector, useStore } from '../../src/index'
+import { useDispatch, useSelector, useStore } from 'react-redux'
 import type { AppDispatch, AppStore, RootState } from './counterApp'
 import { incrementAsync } from './counterApp'
 

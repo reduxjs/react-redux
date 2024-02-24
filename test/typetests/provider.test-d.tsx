@@ -1,5 +1,5 @@
+import { Provider } from 'react-redux'
 import type { Store } from 'redux'
-import { Provider } from '../../src'
 
 declare const store: Store<{ foo: string }>
 

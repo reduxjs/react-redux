@@ -25,9 +25,6 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Run test suite
-        run: yarn test
-
       - name: Collect coverage
         run: yarn coverage
 
@@ -41,6 +38,42 @@ jobs:
         with:
           name: package
           path: ./package.tgz
+
+  test-dist:
+    name: Test against dist
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20.x']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Install deps
+        run: yarn install
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: .
+
+      - run: ls -lah
+
+      - name: Install build artifact
+        run: yarn add ./package.tgz
+
+      - run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json ./vitest.config.mts
+
+      - name: Run tests, against dist
+        run: yarn test
 
   test-types:
     name: Test Types with TypeScript ${{ matrix.ts }}

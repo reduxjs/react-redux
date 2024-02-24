@@ -1,15 +1,15 @@
 import PropTypes from 'prop-types'
 import React from 'react'
-import type { ActionCreator, AnyAction, Dispatch, Reducer, Store } from 'redux'
-import { createStore } from 'redux'
 import type {
   Connect,
   ConnectedProps,
   DispatchProp,
   MapStateToProps,
   ReactReduxContextValue,
-} from '../../src/index'
-import { Provider, ReactReduxContext, connect } from '../../src/index'
+} from 'react-redux'
+import { Provider, ReactReduxContext, connect } from 'react-redux'
+import type { ActionCreator, AnyAction, Dispatch, Reducer, Store } from 'redux'
+import { createStore } from 'redux'
 
 // Test cases written in a way to isolate types and variables and verify the
 // output of `connect` to make sure the signature is what is expected

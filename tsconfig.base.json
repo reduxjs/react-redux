@@ -15,6 +15,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
+    "paths": {
+      "@internal/*": ["./src/*"],
+      "react-redux": ["./src/index.ts"] // @remap-prod-remove-line
+    },
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
