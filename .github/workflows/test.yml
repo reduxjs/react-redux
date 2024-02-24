@@ -83,7 +83,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
+        node: ['20.x']
         ts: ['4.7', '4.8', '4.9', '5.0', '5.1', '5.2', '5.3']
 
     steps:
@@ -115,7 +115,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
+        node: ['20.x']
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -139,7 +139,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
+        node: ['20.x']
         example:
           [
             'cra4',
@@ -226,7 +226,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
+        node: ['20.x']
         example: ['rr-rsc-context']
     defaults:
       run:
