@@ -15,10 +15,7 @@ if (process.env.NODE_ENV === 'production') {
   )
 }
 
-const tsconfig = path.join(
-  import.meta.dirname,
-  './tsconfig.build.json',
-) satisfies Options['tsconfig']
+const tsconfig = 'tsconfig.build.json' satisfies Options['tsconfig']
 
 export default defineConfig((options) => {
   const commonOptions: Options = {
