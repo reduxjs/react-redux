@@ -7107,7 +7107,7 @@ __metadata:
     redux: ^5.0.0
     rimraf: ^3.0.2
     tsup: ^7.0.0
-    typescript: ^5.0
+    typescript: ^5.4.2
     use-sync-external-store: ^1.0.0
     vitest: ^1.2.1
   peerDependencies:
@@ -8523,13 +8523,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.0":
-  version: 5.3.3
-  resolution: "typescript@npm:5.3.3"
+"typescript@npm:^5.4.2":
+  version: 5.4.2
+  resolution: "typescript@npm:5.4.2"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 2007ccb6e51bbbf6fde0a78099efe04dc1c3dfbdff04ca3b6a8bc717991862b39fd6126c0c3ebf2d2d98ac5e960bcaa873826bb2bb241f14277034148f41f6a2
+  checksum: 96d80fde25a09bcb04d399082fb27a808a9e17c2111e43849d2aafbd642d835e4f4ef0de09b0ba795ec2a700be6c4c2c3f62bf4660c05404c948727b5bbfb32a
   languageName: node
   linkType: hard
 
