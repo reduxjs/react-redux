@@ -129,7 +129,7 @@ jobs:
           cache: 'yarn'
 
       - name: Cache React Native build artifacts
-        if: contains(['react-native', 'expo'], matrix.example)
+        if: contains(fromJson('["react-native", "expo"]'), matrix.example)
         uses: actions/cache@v4
         with:
           path: |
