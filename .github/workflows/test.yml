@@ -138,15 +138,12 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-            ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/android/.gradle
-            ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/.expo
           key: test-published-artifact-${{ matrix.example }}-gradle
 
       - name: Cache example deps
         uses: actions/cache@v4
         with:
-          path: |
-            ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/node_modules
+          path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/node_modules
           key: test-published-artifact-${{ matrix.example }}-node_modules
 
       - name: Check folder contents
