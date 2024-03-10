@@ -128,6 +128,16 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
 
+      - name: Cache React Native build artifacts
+        if: matrix.example == 'react-native'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/android/.gradle
+          key: test-published-artifact-${{ matrix.example }}-${{ hashFiles('**/*.gradle*') }}
+
       - name: Clone RTK repo
         run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
 
