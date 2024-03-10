@@ -156,7 +156,7 @@ jobs:
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         continue-on-error: true
-        run: yarn playwright install
+        run: yarn playwright install || true
 
       - uses: actions/download-artifact@v4
         with:
