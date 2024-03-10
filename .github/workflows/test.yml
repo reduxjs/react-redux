@@ -137,7 +137,7 @@ jobs:
             ~/.gradle/wrapper
             ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/android/.gradle
             ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/.expo
-          key: test-published-artifact-${{ matrix.example }}-${{ hashFiles('**/*.gradle*') }}
+          key: test-published-artifact-${{ matrix.example }}-${{ hashFiles(format('./redux-toolkit/examples/publish-ci/{0}/android/.gradle', matrix.example)) }}
 
       - name: Clone RTK repo
         run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
