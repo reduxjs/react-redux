@@ -145,21 +145,9 @@ jobs:
       - name: Check folder contents
         run: ls -l .
 
-        # Some weird install diffs with cloning this repo and installing.
-        # Just kill the lockfiles for React-Redux and RTK and reinstall
-
-      - name: Remove React-Redux lockfile
-        run: rm yarn.lock && rm package.json
-
-      - name: Remove RTK lockfile
-        working-directory: ./redux-toolkit
-        run: rm yarn.lock && rm package.json
-
-      - name: Install deps
+      - name: Install example deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        env:
-          YARN_ENABLE_IMMUTABLE_INSTALLS: false
-        run: rm yarn.lock && yarn install
+        run: yarn install
 
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
@@ -192,8 +180,6 @@ jobs:
 
       - name: Build example
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        env:
-          NODE_OPTIONS: --openssl-legacy-provider
         run: yarn build
 
       - name: Run test step
