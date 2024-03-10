@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master, v9.0-integration]
+    branches: [master]
   pull_request:
-    branches: [master, v9.0-integration]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'yarn'
@@ -34,7 +34,7 @@ jobs:
       - name: Pack
         run: yarn pack
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: package
           path: ./package.tgz
@@ -88,10 +88,10 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -118,9 +118,9 @@ jobs:
         node: ['20.x']
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package
           path: .
@@ -156,7 +156,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v3.8.1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -179,14 +179,16 @@ jobs:
 
       - name: Install deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        run: rm yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
+        run: rm yarn.lock && yarn install
 
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         continue-on-error: true
         run: yarn playwright install
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: package
           path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
@@ -212,7 +214,9 @@ jobs:
 
       - name: Build example
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        run: NODE_OPTIONS=--openssl-legacy-provider yarn build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: yarn build
 
       - name: Run test step
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
@@ -233,10 +237,10 @@ jobs:
         working-directory: ./examples/publish-ci/${{ matrix.example }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -247,7 +251,7 @@ jobs:
       - name: Remove existing React-Redux
         run: yarn remove react-redux
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package
           path: ./examples/publish-ci/${{ matrix.example }}
