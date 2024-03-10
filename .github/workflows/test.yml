@@ -140,6 +140,7 @@ jobs:
             ~/.gradle/wrapper
             ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/android/.gradle
             ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/.expo
+            ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/node_modules
           key: test-published-artifact-${{ matrix.example }}
 
       - name: Check folder contents
