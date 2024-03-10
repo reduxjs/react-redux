@@ -131,15 +131,6 @@ jobs:
       - name: Clone RTK repo
         run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
 
-      - name: Cache React Native build artifacts
-        if: contains(fromJson('["react-native", "expo"]'), matrix.example)
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: test-published-artifact-${{ matrix.example }}-gradle
-
       - name: Cache example deps
         uses: actions/cache@v4
         with:
@@ -183,6 +174,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build example
+        if: '!contains(fromJson(''["react-native", "expo"]''), matrix.example)'
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         env:
           NODE_OPTIONS: --openssl-legacy-provider
