@@ -49,10 +49,10 @@ jobs:
         node: ['20.x']
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -60,7 +60,7 @@ jobs:
       - name: Install deps
         run: yarn install
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package
           path: .
