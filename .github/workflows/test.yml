@@ -128,6 +128,9 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
 
+      - name: Clone RTK repo
+        run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
+
       - name: Cache React Native build artifacts
         if: contains(fromJson('["react-native", "expo"]'), matrix.example)
         uses: actions/cache@v4
@@ -138,9 +141,6 @@ jobs:
             ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/android/.gradle
             ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/.expo
           key: test-published-artifact-${{ matrix.example }}
-
-      - name: Clone RTK repo
-        run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
 
       - name: Check folder contents
         run: ls -l .
