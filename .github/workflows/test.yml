@@ -129,13 +129,14 @@ jobs:
           cache: 'yarn'
 
       - name: Cache React Native build artifacts
-        if: matrix.example == 'react-native'
+        if: contains(['react-native', 'expo'], matrix.example)
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
             ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/android/.gradle
+            ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/.expo
           key: test-published-artifact-${{ matrix.example }}-${{ hashFiles('**/*.gradle*') }}
 
       - name: Clone RTK repo
