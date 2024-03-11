@@ -166,15 +166,7 @@ jobs:
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn info react-redux && yarn why react-redux
 
-      - name: Set up JDK 17 for React Native build
-        if: matrix.example == 'react-native'
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17.x'
-          distribution: 'temurin'
-
       - name: Build example
-        if: '!contains(fromJson(''["react-native", "expo"]''), matrix.example)'
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         env:
           NODE_OPTIONS: --openssl-legacy-provider
