@@ -5,6 +5,7 @@ coverage
 es
 temp/
 react-redux-*/
+redux-toolkit/
 .vscode/
 
 .cache/
