@@ -164,29 +164,23 @@ jobs:
       - name: Clone RTK repo
         run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
 
+      - name: Cache example deps
+        uses: actions/cache@v4
+        with:
+          path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/node_modules
+          key: test-published-artifact-${{ matrix.example }}-node_modules
+
       - name: Check folder contents
         run: ls -l .
 
-        # Some weird install diffs with cloning this repo and installing.
-        # Just kill the lockfiles for React-Redux and RTK and reinstall
-
-      - name: Remove React-Redux lockfile
-        run: rm yarn.lock && rm package.json
-
-      - name: Remove RTK lockfile
-        working-directory: ./redux-toolkit
-        run: rm yarn.lock && rm package.json
-
-      - name: Install deps
+      - name: Install example deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        env:
-          YARN_ENABLE_IMMUTABLE_INSTALLS: false
-        run: rm yarn.lock && yarn install
+        run: yarn install
 
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         continue-on-error: true
-        run: yarn playwright install
+        run: yarn playwright install || true
 
       - uses: actions/download-artifact@v4
         with:
@@ -204,13 +198,6 @@ jobs:
       - name: Show installed package versions
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn info react-redux && yarn why react-redux
-
-      - name: Set up JDK 17 for React Native build
-        if: matrix.example == 'react-native'
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17.x'
-          distribution: 'temurin'
 
       - name: Build example
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
