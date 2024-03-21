@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [master, v9.0-integration]
+    branches: [master]
   pull_request:
-    branches: [master, v9.0-integration]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -14,12 +14,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
           cache: 'yarn'
 
       - name: Install dependencies
@@ -37,7 +37,7 @@ jobs:
       - name: Pack
         run: yarn pack
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: package
           path: ./package.tgz
@@ -50,15 +50,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
-        ts: ['4.7', '4.8', '4.9', '5.0', '5.1', '5.2', '5.3']
+        node: ['20.x']
+        ts: ['4.7', '4.8', '4.9', '5.0', '5.1', '5.2', '5.3', '5.4']
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -82,12 +82,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
+        node: ['20.x']
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package
           path: .
@@ -106,7 +106,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
+        node: ['20.x']
         example:
           [
             'cra4',
@@ -123,7 +123,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v3.8.1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -131,29 +131,25 @@ jobs:
       - name: Clone RTK repo
         run: git clone https://github.com/reduxjs/redux-toolkit.git ./redux-toolkit
 
+      - name: Cache example deps
+        uses: actions/cache@v4
+        with:
+          path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/node_modules
+          key: test-published-artifact-${{ matrix.example }}-node_modules
+
       - name: Check folder contents
         run: ls -l .
 
-        # Some weird install diffs with cloning this repo and installing.
-        # Just kill the lockfiles for React-Redux and RTK and reinstall
-
-      - name: Remove React-Redux lockfile
-        run: rm yarn.lock && rm package.json
-
-      - name: Remove RTK lockfile
-        working-directory: ./redux-toolkit
-        run: rm yarn.lock && rm package.json
-
-      - name: Install deps
+      - name: Install example deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        run: rm yarn.lock && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+        run: yarn install
 
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         continue-on-error: true
-        run: yarn playwright install
+        run: yarn playwright install || true
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: package
           path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
@@ -170,16 +166,11 @@ jobs:
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn info react-redux && yarn why react-redux
 
-      - name: Set up JDK 17 for React Native build
-        if: matrix.example == 'react-native'
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17.x'
-          distribution: 'temurin'
-
       - name: Build example
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
-        run: NODE_OPTIONS=--openssl-legacy-provider yarn build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+        run: yarn build
 
       - name: Run test step
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
@@ -193,17 +184,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x']
+        node: ['20.x']
         example: ['rr-rsc-context']
     defaults:
       run:
         working-directory: ./examples/publish-ci/${{ matrix.example }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Use node ${{ matrix.node }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
@@ -214,7 +205,7 @@ jobs:
       - name: Remove existing React-Redux
         run: yarn remove react-redux
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: package
           path: ./examples/publish-ci/${{ matrix.example }}
