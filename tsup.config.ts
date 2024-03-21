@@ -1,7 +1,7 @@
-import { defineConfig, Options } from 'tsup'
-
-import path from 'path'
-import fs from 'fs'
+import fs from 'node:fs'
+import path from 'node:path'
+import type { Options } from 'tsup'
+import { defineConfig } from 'tsup'
 
 function writeCommonJSEntry() {
   fs.writeFileSync(
@@ -11,17 +11,20 @@ if (process.env.NODE_ENV === 'production') {
   module.exports = require('./react-redux.production.min.cjs')
 } else {
   module.exports = require('./react-redux.development.cjs')
-}`
+}`,
   )
 }
 
+const tsconfig = 'tsconfig.build.json' satisfies Options['tsconfig']
+
 export default defineConfig((options) => {
-  const commonOptions: Partial<Options> = {
+  const commonOptions: Options = {
     entry: {
       'react-redux': 'src/index.ts',
     },
     sourcemap: true,
     target: 'es2020',
+    tsconfig,
     ...options,
   }
 
@@ -93,9 +96,9 @@ export default defineConfig((options) => {
       outDir: './dist/cjs/',
       outExtension: () => ({ js: '.cjs' }),
       minify: true,
-      onSuccess: () => {
+      onSuccess: async () => {
         writeCommonJSEntry()
       },
     },
-  ]
+  ] as Options[]
 })

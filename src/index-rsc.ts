@@ -10,25 +10,25 @@ const _check2: typeof rsc = {} as typeof normal
 
 // -------------------------------------------------------------------------------------
 
-function throwNotSupportedError(
+const throwNotSupportedError = ((
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ...args: any[]
-): any {
+): any => {
   throw new Error(
     'This function is not supported in React Server Components. Please only use this export in a Client Component.',
   )
-}
+}) as any
 
 export {
-  throwNotSupportedError as batch,
   throwNotSupportedError as Provider,
+  throwNotSupportedError as batch,
   throwNotSupportedError as connect,
-  throwNotSupportedError as useSelector,
-  throwNotSupportedError as useDispatch,
-  throwNotSupportedError as useStore,
   throwNotSupportedError as createDispatchHook,
   throwNotSupportedError as createSelectorHook,
   throwNotSupportedError as createStoreHook,
+  throwNotSupportedError as useDispatch,
+  throwNotSupportedError as useSelector,
+  throwNotSupportedError as useStore,
 }
 export const ReactReduxContext = {} as any
 export { default as shallowEqual } from './utils/shallowEqual'
