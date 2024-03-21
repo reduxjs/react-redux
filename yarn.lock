@@ -6958,12 +6958,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.1.1":
-  version: 3.1.1
-  resolution: "prettier@npm:3.1.1"
+"prettier@npm:^3.2.5":
+  version: 3.2.5
+  resolution: "prettier@npm:3.2.5"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 10/26a249f321b97d26c04483f1bf2eeb22e082a76f4222a2c922bebdc60111691aad4ec3979610e83942e0b956058ec361d9e9c81c185172264eb6db9aa678082b
+  checksum: 10/d509f9da0b70e8cacc561a1911c0d99ec75117faed27b95cc8534cb2349667dee6351b0ca83fa9d5703f14127faa52b798de40f5705f02d843da133fc3aa416a
   languageName: node
   linkType: hard
 
@@ -7145,7 +7145,7 @@ __metadata:
     eslint-plugin-react: "npm:^7.33.2"
     glob: "npm:^7.1.6"
     jsdom: "npm:^24.0.0"
-    prettier: "npm:^3.1.1"
+    prettier: "npm:^3.2.5"
     react: "npm:18.2.0"
     react-dom: "npm:18.2.0"
     react-test-renderer: "npm:18.0.0"
