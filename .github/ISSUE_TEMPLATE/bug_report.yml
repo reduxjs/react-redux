@@ -1,6 +1,6 @@
 name: 🐛 Bug Report
 description: Something isn't working correctly.
-body: 
+body:
   - type: markdown
     attributes:
       value: |
@@ -50,6 +50,6 @@ body:
     attributes:
       label: Did this work in previous versions of React Redux?
       options:
-      - label: "Yes"
+        - label: 'Yes'
     validations:
       required: false

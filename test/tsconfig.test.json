@@ -13,6 +13,6 @@
     "baseUrl": ".",
     "skipLibCheck": true,
     "noImplicitReturns": false,
-    "experimentalDecorators": true,
+    "experimentalDecorators": true
   }
 }

@@ -1,6 +1,6 @@
 name: 👍 Feature Request
 description: I'd like React Redux to do something new.
-body: 
+body:
   - type: markdown
     attributes:
       value: |

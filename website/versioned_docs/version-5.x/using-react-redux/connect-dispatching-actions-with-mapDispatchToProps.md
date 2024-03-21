@@ -1,8 +1,8 @@
 ---
 id: connect-mapdispatch
-title: "Connect: Dispatching Actions with mapDispatchToProps"
+title: 'Connect: Dispatching Actions with mapDispatchToProps'
 hide_title: true
-sidebar_label: "Connect: Dispatching Actions with mapDispatchToProps"
+sidebar_label: 'Connect: Dispatching Actions with mapDispatchToProps'
 ---
 
 # Connect: Dispatching Actions with `mapDispatchToProps`
@@ -27,15 +27,12 @@ The `mapDispatchToProps` functions are normally referred to as `mapDispatch` for
 If you don't specify the second argument to `connect()`, your component will receive `dispatch` by default. For example:
 
 ```js
-connect()(MyComponent);
+connect()(MyComponent)
 // which is equivalent with
-connect(
-  null,
-  null
-)(MyComponent);
+connect(null, null)(MyComponent)
 
 // or
-connect(mapStateToProps /** no second argument */)(MyComponent);
+connect(mapStateToProps /** no second argument */)(MyComponent)
 ```
 
 Once you have connected your component in this way, your component receives `props.dispatch`. You may use it to dispatch actions to the store.
@@ -44,12 +41,12 @@ Once you have connected your component in this way, your component receives `pro
 function Counter({ count, dispatch }) {
   return (
     <div>
-      <button onClick={() => dispatch({ type: "DECREMENT" })}>-</button>
+      <button onClick={() => dispatch({ type: 'DECREMENT' })}>-</button>
       <span>{count}</span>
-      <button onClick={() => dispatch({ type: "INCREMENT" })}>+</button>
-      <button onClick={() => dispatch({ type: "RESET" })}>reset</button>
+      <button onClick={() => dispatch({ type: 'INCREMENT' })}>+</button>
+      <button onClick={() => dispatch({ type: 'RESET' })}>reset</button>
     </div>
-  );
+  )
 }
 ```
 
@@ -85,11 +82,11 @@ This allows more components to dispatch actions, while keeping them "unaware" of
 // making Todo able to dispatch the toggleTodo action
 const TodoList = ({ todos, toggleTodo }) => (
   <div>
-    {todos.map(todo => (
+    {todos.map((todo) => (
       <Todo todo={todo} onClick={toggleTodo} />
     ))}
   </div>
-);
+)
 ```
 
 This is what React-Redux’s `connect` does — it encapsulates the logic of talking to the Redux store and lets you not worry about it. And this is what you should totally make full use of in your implementation.
@@ -120,29 +117,29 @@ The `mapDispatchToProps` function will be called with `dispatch` as the first ar
 You will normally make use of this by returning new functions that call `dispatch()` inside themselves, and either pass in a plain action object directly or pass in the result of an action creator.
 
 ```js
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     // dispatching plain actions
-    increment: () => dispatch({ type: "INCREMENT" }),
-    decrement: () => dispatch({ type: "DECREMENT" }),
-    reset: () => dispatch({ type: "RESET" })
-  };
-};
+    increment: () => dispatch({ type: 'INCREMENT' }),
+    decrement: () => dispatch({ type: 'DECREMENT' }),
+    reset: () => dispatch({ type: 'RESET' }),
+  }
+}
 ```
 
 You will also likely want to forward arguments to your action creators:
 
 ```js
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     // explicitly forwarding arguments
-    onClick: event => dispatch(trackClick(event)),
+    onClick: (event) => dispatch(trackClick(event)),
 
     // implicitly forwarding arguments
     onReceiveImpressions: (...impressions) =>
-      dispatch(trackImpressions(impressions))
-  };
-};
+      dispatch(trackImpressions(impressions)),
+  }
+}
 ```
 
 **`ownProps` ( optional )**
@@ -153,12 +150,12 @@ This means, instead of re-binding new `props` to action dispatchers upon compone
 
 ```js
 // binds on component re-rendering
-<button onClick={() => this.props.toggleTodo(this.props.todoId)} />;
+;<button onClick={() => this.props.toggleTodo(this.props.todoId)} />
 
 // binds on `props` change
 const mapDispatchToProps = (dispatch, ownProps) => {
-  toggleTodo: () => dispatch(toggleTodo(ownProps.todoId));
-};
+  toggleTodo: () => dispatch(toggleTodo(ownProps.todoId))
+}
 ```
 
 ### Return
@@ -169,18 +166,18 @@ Your `mapDispatchToProps` function should return a plain object:
 - If you use action creators ( as oppose to plain object actions ) inside `dispatch`, it is a convention to simply name the field key the same name as the action creator:
 
 ```js
-const increment = () => ({ type: "INCREMENT" });
-const decrement = () => ({ type: "DECREMENT" });
-const reset = () => ({ type: "RESET" });
+const increment = () => ({ type: 'INCREMENT' })
+const decrement = () => ({ type: 'DECREMENT' })
+const reset = () => ({ type: 'RESET' })
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     // dispatching actions returned by action creators
     increment: () => dispatch(increment()),
     decrement: () => dispatch(decrement()),
-    reset: () => dispatch(reset())
-  };
-};
+    reset: () => dispatch(reset()),
+  }
+}
 ```
 
 The return of the `mapDispatchToProps` function will be merged to your connected component as props. You may call them directly to dispatch its action.
@@ -194,7 +191,7 @@ function Counter({ count, increment, decrement, reset }) {
       <button onClick={increment}>+</button>
       <button onClick={reset}>reset</button>
     </div>
-  );
+  )
 }
 ```
 
@@ -214,18 +211,21 @@ Wrapping these functions by hand is tedious, so Redux provides a function to sim
 The wrapper functions generated by `bindActionCreators` will automatically forward all of their arguments, so you don't need to do that by hand.
 
 ```js
-import { bindActionCreators } from "redux";
+import { bindActionCreators } from 'redux'
 
-const increment = () => ({ type: "INCREMENT" });
-const decrement = () => ({ type: "DECREMENT" });
-const reset = () => ({ type: "RESET" });
+const increment = () => ({ type: 'INCREMENT' })
+const decrement = () => ({ type: 'DECREMENT' })
+const reset = () => ({ type: 'RESET' })
 
 // binding an action creator
 // returns (...args) => dispatch(increment(...args))
-const boundIncrement = bindActionCreators(increment, dispatch);
+const boundIncrement = bindActionCreators(increment, dispatch)
 
 // binding an object full of action creators
-const boundActionCreators = bindActionCreators({ increment, decrement, reset }, dispatch);
+const boundActionCreators = bindActionCreators(
+  { increment, decrement, reset },
+  dispatch,
+)
 // returns
 // {
 //   increment: (...args) => dispatch(increment(...args)),
@@ -237,18 +237,15 @@ const boundActionCreators = bindActionCreators({ increment, decrement, reset }, 
 To use `bindActionCreators` in our `mapDispatchToProps` function:
 
 ```js
-import { bindActionCreators } from "redux";
+import { bindActionCreators } from 'redux'
 // ...
 
 function mapDispatchToProps(dispatch) {
-  return bindActionCreators({ increment, decrement, reset }, dispatch);
+  return bindActionCreators({ increment, decrement, reset }, dispatch)
 }
 
 // component receives props.increment, props.decrement, props.reset
-connect(
-  null,
-  mapDispatchToProps
-)(Counter);
+connect(null, mapDispatchToProps)(Counter)
 ```
 
 ### Manually Injecting `dispatch`
@@ -256,14 +253,14 @@ connect(
 If the `mapDispatchToProps` argument is supplied, the component will no longer receive the default `dispatch`. You may bring it back by adding it manually to the return of your `mapDispatchToProps`, although most of the time you shouldn’t need to do this:
 
 ```js
-import { bindActionCreators } from "redux";
+import { bindActionCreators } from 'redux'
 // ...
 
 function mapDispatchToProps(dispatch) {
   return {
     dispatch,
-    ...bindActionCreators({ increment, decrement, reset }, dispatch)
-  };
+    ...bindActionCreators({ increment, decrement, reset }, dispatch),
+  }
 }
 ```
 
@@ -282,7 +279,7 @@ Note that:
 
 ```js
 // React-Redux does this for you automatically:
-dispatch => bindActionCreators(mapDispatchToProps, dispatch);
+;(dispatch) => bindActionCreators(mapDispatchToProps, dispatch)
 ```
 
 Therefore, our `mapDispatchToProps` can simply be:
@@ -291,8 +288,8 @@ Therefore, our `mapDispatchToProps` can simply be:
 const mapDispatchToProps = {
   increment,
   decrement,
-  reset
-};
+  reset,
+}
 ```
 
 Since the actual name of the variable is up to you, you might want to give it a name like `actionCreators`, or even define the object inline in the call to `connect`:
@@ -337,7 +334,7 @@ In another words, if you do:
 
 ```js
 // component receives `dispatch`
-connect(mapStateToProps /** no second argument*/)(Component);
+connect(mapStateToProps /** no second argument*/)(Component)
 ```
 
 **2. Your customized `mapDispatchToProps` function return specifically contains `dispatch`**
@@ -345,26 +342,26 @@ connect(mapStateToProps /** no second argument*/)(Component);
 You may bring back `dispatch` by providing your customized `mapDispatchToProps` function:
 
 ```js
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     increment: () => dispatch(increment()),
     decrement: () => dispatch(decrement()),
     reset: () => dispatch(reset()),
-    dispatch
-  };
-};
+    dispatch,
+  }
+}
 ```
 
 Or alternatively, with `bindActionCreators`:
 
 ```js
-import { bindActionCreators } from "redux";
+import { bindActionCreators } from 'redux'
 
 function mapDispatchToProps(dispatch) {
   return {
     dispatch,
-    ...bindActionCreators({ increment, decrement, reset }, dispatch)
-  };
+    ...bindActionCreators({ increment, decrement, reset }, dispatch),
+  }
 }
 ```
 
@@ -377,10 +374,7 @@ There are discussions regarding whether to provide `dispatch` to your components
 Yes. You can skip the first parameter by passing `undefined` or `null`. Your component will not subscribe to the store, and will still receive the dispatch props defined by `mapStateToProps`.
 
 ```js
-connect(
-  null,
-  mapDispatchToProps
-)(MyComponent);
+connect(null, mapDispatchToProps)(MyComponent)
 ```
 
 ### Can I call `store.dispatch`?

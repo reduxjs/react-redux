@@ -28,21 +28,21 @@ yarn add react-redux
 React-Redux provides `<Provider />`, which makes the Redux store available to the rest of your app:
 
 ```js
-import React from "react";
-import ReactDOM from "react-dom";
+import React from 'react'
+import ReactDOM from 'react-dom'
 
-import { Provider } from "react-redux";
-import store from "./store";
+import { Provider } from 'react-redux'
+import store from './store'
 
-import App from "./App";
+import App from './App'
 
-const rootElement = document.getElementById("root");
+const rootElement = document.getElementById('root')
 ReactDOM.render(
   <Provider store={store}>
     <App />
   </Provider>,
-  rootElement
-);
+  rootElement,
+)
 ```
 
 React-Redux provides a `connect` function for you to connect your component to the store.
@@ -50,21 +50,18 @@ React-Redux provides a `connect` function for you to connect your component to t
 Normally, you’ll call `connect` in this way:
 
 ```js
-import { connect } from "react-redux";
-import { increment, decrement, reset } from "./actionCreators";
+import { connect } from 'react-redux'
+import { increment, decrement, reset } from './actionCreators'
 
 // const Counter = ...
 
 const mapStateToProps = (state /*, ownProps*/) => {
   return {
-    counter: state.counter
-  };
-};
+    counter: state.counter,
+  }
+}
 
-const mapDispatchToProps = { increment, decrement, reset };
+const mapDispatchToProps = { increment, decrement, reset }
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Counter);
+export default connect(mapStateToProps, mapDispatchToProps)(Counter)
 ```
