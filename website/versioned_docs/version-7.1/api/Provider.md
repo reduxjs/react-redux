@@ -68,7 +68,7 @@ ReactDOM.render(
   <Provider store={store}>
     <App />
   </Provider>,
-  document.getElementById('root')
+  document.getElementById('root'),
 )
 ```
 
@@ -95,6 +95,6 @@ ReactDOM.render(
       <Route path="/bar" component={Bar} />
     </Router>
   </Provider>,
-  document.getElementById('root')
+  document.getElementById('root'),
 )
 ```

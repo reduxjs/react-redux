@@ -125,7 +125,7 @@ function Home() {
             <Link
               className={classnames(
                 'button button--secondary button--lg',
-                styles.getStarted
+                styles.getStarted,
               )}
               to={useBaseUrl('introduction/getting-started')}
             >

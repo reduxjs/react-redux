@@ -32,7 +32,7 @@ ReactDOM.render(
   <Provider store={store}>
     <App />
   </Provider>,
-  document.getElementById('root')
+  document.getElementById('root'),
 )
 ```
 
@@ -107,7 +107,7 @@ import React from 'react'
 import { useSelector } from 'react-redux'
 
 export const CounterComponent = () => {
-  const counter = useSelector(state => state.counter)
+  const counter = useSelector((state) => state.counter)
   return <div>{counter}</div>
 }
 ```
@@ -118,8 +118,8 @@ Using props via closure to determine what to extract:
 import React from 'react'
 import { useSelector } from 'react-redux'
 
-export const TodoListItem = props => {
-  const todo = useSelector(state => state.todos[props.id])
+export const TodoListItem = (props) => {
+  const todo = useSelector((state) => state.todos[props.id])
   return <div>{todo.text}</div>
 }
 ```
@@ -136,8 +136,8 @@ import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
 const selectNumCompletedTodos = createSelector(
-  state => state.todos,
-  todos => todos.filter(todo => todo.completed).length
+  (state) => state.todos,
+  (todos) => todos.filter((todo) => todo.completed).length,
 )
 
 export const CompletedTodosCounter = () => {
@@ -163,15 +163,15 @@ import { useSelector } from 'react-redux'
 import { createSelector } from 'reselect'
 
 const selectCompletedTodosCount = createSelector(
-  state => state.todos,
+  (state) => state.todos,
   (_, completed) => completed,
   (todos, completed) =>
-    todos.filter(todo => todo.completed === completed).length
+    todos.filter((todo) => todo.completed === completed).length,
 )
 
 export const CompletedTodosCount = ({ completed }) => {
-  const matchingCount = useSelector(state =>
-    selectCompletedTodosCount(state, completed)
+  const matchingCount = useSelector((state) =>
+    selectCompletedTodosCount(state, completed),
   )
 
   return <div>{matchingCount}</div>
@@ -196,17 +196,17 @@ import { createSelector } from 'reselect'
 
 const makeSelectCompletedTodosCount = () =>
   createSelector(
-    state => state.todos,
+    (state) => state.todos,
     (_, completed) => completed,
     (todos, completed) =>
-      todos.filter(todo => todo.completed === completed).length
+      todos.filter((todo) => todo.completed === completed).length,
   )
 
 export const CompletedTodosCount = ({ completed }) => {
   const selectCompletedTodosCount = useMemo(makeSelectCompletedTodosCount, [])
 
-  const matchingCount = useSelector(state =>
-    selectCompletedTodosCount(state, completed)
+  const matchingCount = useSelector((state) =>
+    selectCompletedTodosCount(state, completed),
   )
 
   return <div>{matchingCount}</div>
@@ -224,7 +224,6 @@ export const App = () => {
 }
 ```
 
-
 ## `useDispatch()`
 
 ```js
@@ -232,7 +231,6 @@ const dispatch = useDispatch()
 ```
 
 This hook returns a reference to the `dispatch` function from the Redux store. You may use it to dispatch actions as needed.
-
 
 #### Examples
 
@@ -264,7 +262,7 @@ export const CounterComponent = ({ value }) => {
   const dispatch = useDispatch()
   const incrementCounter = useCallback(
     () => dispatch({ type: 'increment-counter' }),
-    [dispatch]
+    [dispatch],
   )
 
   return (
@@ -479,3 +477,4 @@ export function useShallowEqualSelector(selector) {
 ### Additional considerations when using hooks
 
 There are some architectural trade offs to take into consideration when deciding whether to use hooks or not. Mark Erikson summarizes these nicely in his two blog posts [Thoughts on React Hooks, Redux, and Separation of Concerns](https://blog.isquaredsoftware.com/2019/07/blogged-answers-thoughts-on-hooks/) and [Hooks, HOCs, and Tradeoffs](https://blog.isquaredsoftware.com/2019/09/presentation-hooks-hocs-tradeoffs/).
+````

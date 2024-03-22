@@ -12,32 +12,37 @@ function NotFound() {
   const context = useDocusaurusContext()
   const { siteConfig = {} } = context
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://buttons.github.io/buttons.js";
-    script.async = true;
-    document.body.appendChild(script);
+    const script = document.createElement('script')
+    script.src = 'https://buttons.github.io/buttons.js'
+    script.async = true
+    document.body.appendChild(script)
   }, [])
 
   const getTrackingScript = () => {
-    if (!siteConfig.themeConfig || !siteConfig.themeConfig.googleAnalytics || !siteConfig.themeConfig.googleAnalytics.gaTrackingId) {
-      return null;
+    if (
+      !siteConfig.themeConfig ||
+      !siteConfig.themeConfig.googleAnalytics ||
+      !siteConfig.themeConfig.googleAnalytics.gaTrackingId
+    ) {
+      return null
     }
-    
-    return {__html:`
+
+    return {
+      __html: `
       ga('create', "${siteConfig.gaTrackingId}");
       ga('send', {
         hitType: 'event',
         eventCategory: '404 Response',
         eventAction: window.location.href,
         eventLabel: document.referrer
-      });`
+      });`,
     }
-  };
-  const trackingScript = getTrackingScript();
- 
+  }
+  const trackingScript = getTrackingScript()
+
   return (
     <Layout title="Page Not Found">
-      {trackingScript && <script dangerouslySetInnerHTML={trackingScript}/>}
+      {trackingScript && <script dangerouslySetInnerHTML={trackingScript} />}
       <div className="error-page">
         <div className="error-message">
           <div className="error-message-container container">
@@ -48,7 +53,7 @@ function NotFound() {
         </div>
       </div>
     </Layout>
-  );
+  )
 }
 
-export default NotFound;
+export default NotFound

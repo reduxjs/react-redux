@@ -15,8 +15,6 @@
       "version-6.x/api/provider",
       "version-6.x/api/connect-advanced"
     ],
-    "Guides": [
-      "version-6.x/troubleshooting"
-    ]
+    "Guides": ["version-6.x/troubleshooting"]
   }
 }

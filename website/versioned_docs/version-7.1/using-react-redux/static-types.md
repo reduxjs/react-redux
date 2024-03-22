@@ -22,7 +22,7 @@ Both `mapState` and `useSelector` depend on declaring the type of the complete R
 export const rootReducer = combineReducers({
   posts: postsReducer,
   comments: commentsReducer,
-  users: usersReducer
+  users: usersReducer,
 })
 
 export type RootState = ReturnType<typeof rootReducer>
@@ -60,7 +60,7 @@ export const useTypedSelector: TypedUseSelectorHook<RootState> = useSelector
 // my-component.tsx
 import { useTypedSelector } from './reducer.ts'
 
-const isOn = useTypedSelector(state => state.isOn)
+const isOn = useTypedSelector((state) => state.isOn)
 ```
 
 ### Typing the `useDispatch` hook
@@ -105,11 +105,11 @@ interface OwnProps {
 type Props = StateProps & DispatchProps & OwnProps
 
 const mapState = (state: RootState) => ({
-  isOn: state.isOn
+  isOn: state.isOn,
 })
 
 const mapDispatch = {
-  toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
 }
 
 const MyComponent = (props: Props) => (
@@ -123,7 +123,7 @@ const MyComponent = (props: Props) => (
 // Typical usage: `connect` is called after the component is defined
 export default connect<StateProps, DispatchProps, OwnProps>(
   mapState,
-  mapDispatch
+  mapDispatch,
 )(MyComponent)
 ```
 
@@ -131,11 +131,11 @@ It is also possible to shorten this somewhat, by inferring the types of `mapStat
 
 ```ts
 const mapState = (state: RootState) => ({
-  isOn: state.isOn
+  isOn: state.isOn,
 })
 
 const mapDispatch = {
-  toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
 }
 
 type StateProps = ReturnType<typeof mapState>
@@ -160,17 +160,14 @@ interface RootState {
 }
 
 const mapState = (state: RootState) => ({
-  isOn: state.isOn
+  isOn: state.isOn,
 })
 
 const mapDispatch = {
-  toggleOn: () => ({ type: 'TOGGLE_IS_ON' })
+  toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
 }
 
-const connector = connect(
-  mapState,
-  mapDispatch
-)
+const connector = connect(mapState, mapDispatch)
 
 // The inferred type will look like:
 // {isOn: boolean, toggleOn: () => void}

@@ -28,18 +28,13 @@ type Equals<T, U> = IsAny<
   IsAny<U, never, [T] extends [U] ? ([U] extends [T] ? any : never) : never>
 >
 
-export type IsEqual<A, B> = (<G>() => G extends A ? 1 : 2) extends <
-  G,
->() => G extends B ? 1 : 2
-  ? true
-  : false
+export type IsEqual<A, B> =
+  (<G>() => G extends A ? 1 : 2) extends <G>() => G extends B ? 1 : 2
+    ? true
+    : false
 
-export type IfEquals<
-  T,
-  U,
-  TypeIfEquals = unknown,
-  TypeIfNotEquals = never,
-> = IsEqual<T, U> extends true ? TypeIfEquals : TypeIfNotEquals
+export type IfEquals<T, U, TypeIfEquals = unknown, TypeIfNotEquals = never> =
+  IsEqual<T, U> extends true ? TypeIfEquals : TypeIfNotEquals
 
 export declare const exactType: <T, U>(
   draft: T & IfEquals<T, U>,

@@ -100,7 +100,7 @@
     "eslint-plugin-react": "^7.33.2",
     "glob": "^7.1.6",
     "jsdom": "^24.0.0",
-    "prettier": "^3.1.1",
+    "prettier": "^3.2.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-test-renderer": "18.0.0",
