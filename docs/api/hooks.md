@@ -47,7 +47,7 @@ From there, you may import any of the listed React Redux hooks APIs and use them
 ```ts
 type RootState = ReturnType<typeof store.getState>
 type SelectorFn = <Selected>(state: RootState) => Selected
-type EqualityFn = (a: any, b: any) => boolean
+type EqualityFn = <Selected>(a: Selected, b: Selected) => boolean
 export type DevModeCheckFrequency = 'never' | 'once' | 'always'
 
 interface UseSelectorOptions {
@@ -59,8 +59,8 @@ interface UseSelectorOptions {
 }
 
 const result: Selected = useSelector(
-  selector: SelectorFunction,
-  options?: EqualityFn | UseSelectorOptions
+  selector: SelectorFn,
+  equalityFnOrOptions?: EqualityFn | UseSelectorOptions
 )
 ```
 
