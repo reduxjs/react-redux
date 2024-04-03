@@ -59,7 +59,7 @@ interface UseSelectorOptions {
 }
 
 const result: Selected = useSelector(
-  selector: SelectorFunction,
+  selector: SelectorFn,
   options?: EqualityFn | UseSelectorOptions
 )
 ```
