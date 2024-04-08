@@ -93,10 +93,8 @@ jobs:
           path: .
 
       # Note: We currently expect "FalseCJS" failures for Node16 + `moduleResolution: "node16",
-      # and the `/alternateRenderers" entry point will not resolve under Node10.
-      # Skipping these is dangerous, but we'll leave it for now.
       - name: Run are-the-types-wrong
-        run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs no-resolution
+        run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
 
   test-published-artifact:
     name: Test Published Artifact ${{ matrix.example }}
