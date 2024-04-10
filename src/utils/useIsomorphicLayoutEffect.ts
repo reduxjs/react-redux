@@ -16,6 +16,18 @@ export const canUseDOM = !!(
   typeof window.document.createElement !== 'undefined'
 )
 
+// Under React Native, we know that we always want to use useLayoutEffect
+
+/**
+ * Checks if the code is running in a React Native environment.
+ *
+ * @see {@link https://github.com/facebook/react-native/issues/1331 Reference}
+ */
+export const isReactNative =
+  typeof navigator !== 'undefined' && navigator.product === 'ReactNative'
+
 export const useIsomorphicLayoutEffect = canUseDOM
   ? React.useLayoutEffect
-  : React.useEffect
+  : isReactNative
+    ? React.useLayoutEffect
+    : React.useEffect
