@@ -651,7 +651,9 @@ function connect<
       /**
        * @todo Change this to `React.useRef<Error>(undefined)` after upgrading to React 19.
        */
-      const latestSubscriptionCallbackError = React.useRef<Error | undefined>(undefined)
+      const latestSubscriptionCallbackError = React.useRef<Error | undefined>(
+        undefined,
+      )
 
       useIsomorphicLayoutEffect(() => {
         isMounted.current = true
@@ -756,11 +758,11 @@ function connect<
       const renderedWrappedComponent = React.useMemo(() => {
         return (
           // @ts-ignore
-          (<WrappedComponent
+          <WrappedComponent
             {...actualChildProps}
             ref={reactReduxForwardedRef}
-          />)
-        );
+          />
+        )
       }, [reactReduxForwardedRef, WrappedComponent, actualChildProps])
 
       // If React sees the exact same element reference as last time, it bails out of re-rendering
