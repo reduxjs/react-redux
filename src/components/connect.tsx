@@ -641,13 +641,17 @@ function connect<
       }, [didStoreComeFromProps, contextValue, subscription])
 
       // Set up refs to coordinate values between the subscription effect and the render logic
-      const lastChildProps = React.useRef<unknown>()
+      const lastChildProps = React.useRef<unknown>(undefined)
       const lastWrapperProps = React.useRef(wrapperProps)
-      const childPropsFromStoreUpdate = React.useRef<unknown>()
+      const childPropsFromStoreUpdate = React.useRef<unknown>(undefined)
       const renderIsScheduled = React.useRef(false)
       const isMounted = React.useRef(false)
 
-      const latestSubscriptionCallbackError = React.useRef<Error>()
+      // TODO: Change this to `React.useRef<Error>(undefined)` after upgrading to React 19.
+      /**
+       * @todo Change this to `React.useRef<Error>(undefined)` after upgrading to React 19.
+       */
+      const latestSubscriptionCallbackError = React.useRef<Error | undefined>(undefined)
 
       useIsomorphicLayoutEffect(() => {
         isMounted.current = true
@@ -752,11 +756,11 @@ function connect<
       const renderedWrappedComponent = React.useMemo(() => {
         return (
           // @ts-ignore
-          <WrappedComponent
+          (<WrappedComponent
             {...actualChildProps}
             ref={reactReduxForwardedRef}
-          />
-        )
+          />)
+        );
       }, [reactReduxForwardedRef, WrappedComponent, actualChildProps])
 
       // If React sees the exact same element reference as last time, it bails out of re-rendering
