@@ -647,7 +647,11 @@ function connect<
       const renderIsScheduled = React.useRef(false)
       const isMounted = React.useRef(false)
 
-      const latestSubscriptionCallbackError = React.useRef<Error>(undefined)
+      // TODO: Change this to `React.useRef<Error>(undefined)` after upgrading to React 19.
+      /**
+       * @todo Change this to `React.useRef<Error>(undefined)` after upgrading to React 19.
+       */
+      const latestSubscriptionCallbackError = React.useRef<Error | undefined>(undefined)
 
       useIsomorphicLayoutEffect(() => {
         isMounted.current = true
