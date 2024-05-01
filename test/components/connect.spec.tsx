@@ -1,7 +1,7 @@
 /*eslint-disable react/prop-types*/
 
 import * as rtl from '@testing-library/react'
-import type { Dispatch, ElementType, MouseEvent, ReactNode } from 'react'
+import type { Dispatch, ElementType, MouseEvent, ReactNode, JSX } from 'react'
 import React, { Component } from 'react'
 import type {
   Action,
