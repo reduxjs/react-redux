@@ -83,6 +83,7 @@
     "@testing-library/react": "^14.1.2",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/node": "^20.11.6",
+    "@types/prop-types": "^15.7.12",
     "@types/react": "18.2.25",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "@typescript-eslint/parser": "^6.17.0",
