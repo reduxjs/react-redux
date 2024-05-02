@@ -801,8 +801,8 @@ function testRef() {
     ref={(ref: number) => {}}
   ></ConnectedForwardedFunctionalComponent>
 
-  // Should be able to use all refs including legacy string
-  const classLegacyRef: React.LegacyRef<ClassComponent> | undefined = undefined
+  // Should be able to use all refs (except legacy string refs, which go away in React 19)
+  const classLegacyRef: React.Ref<ClassComponent> | undefined = undefined
   ;<ConnectedClassComponent ref={classLegacyRef}></ConnectedClassComponent>
   ;<ConnectedClassComponent
     ref={React.createRef<ClassComponent>()}
@@ -810,7 +810,8 @@ function testRef() {
   ;<ConnectedClassComponent
     ref={(ref: ClassComponent) => {}}
   ></ConnectedClassComponent>
-  ;<ConnectedClassComponent ref={''}></ConnectedClassComponent>
+  // TODO Can make this an expected error if we target React 19 exclusively
+  // ;<ConnectedClassComponent ref={''}></ConnectedClassComponent>
   // ref type should be the typeof the wrapped component
   ;<ConnectedClassComponent
     // @ts-expect-error
