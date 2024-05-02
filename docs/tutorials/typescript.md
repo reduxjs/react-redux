@@ -51,13 +51,12 @@ Since those are types, it's safe to export them directly from your store setup f
 
 ```ts title="app/store.ts"
 import { configureStore } from '@reduxjs/toolkit'
+import counterSlice from './counterSlice.ts'
 // ...
 
 const store = configureStore({
   reducer: {
-    posts: postsReducer,
-    comments: commentsReducer,
-    users: usersReducer,
+    counter: counterSlice,
   },
 })
 
