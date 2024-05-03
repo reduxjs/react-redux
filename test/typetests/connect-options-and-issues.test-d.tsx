@@ -801,13 +801,13 @@ describe('type tests', () => {
       ref={(ref: number) => {}}
     />
 
-    // Should be able to use all refs including legacy string
-    const classLegacyRef: React.LegacyRef<ClassComponent> | undefined =
-      undefined
+    // Should be able to use all refs (except legacy string refs, which go away in React 19)
+    const classLegacyRef: React.Ref<ClassComponent> | undefined = undefined
     ;<ConnectedClassComponent ref={classLegacyRef} />
     ;<ConnectedClassComponent ref={React.createRef<ClassComponent>()} />
     ;<ConnectedClassComponent ref={(ref: ClassComponent) => {}} />
-    ;<ConnectedClassComponent ref={''} />
+    // TODO Can make this an expected error if we target React 19 exclusively
+    // ;<ConnectedClassComponent ref={''} />
     ;<ConnectedClassComponent
       // @ts-expect-error ref type should be the typeof the wrapped component
       ref={React.createRef<string>()}
