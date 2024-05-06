@@ -105,7 +105,7 @@
     "rimraf": "^3.0.2",
     "tsup": "^7.0.0",
     "typescript": "^5.4.5",
-    "vitest": "^1.5.3"
+    "vitest": "^1.6.0"
   },
   "packageManager": "yarn@4.1.0"
 }
