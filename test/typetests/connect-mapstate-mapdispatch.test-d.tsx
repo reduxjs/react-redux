@@ -1,9 +1,6 @@
 import React from 'react'
 import type { ActionCreator, Dispatch } from 'redux'
-import type {
-  MapDispatchToProps,
-  ReactReduxContextValue,
-} from 'react-redux'
+import type { MapDispatchToProps, ReactReduxContextValue } from 'react-redux'
 import { connect } from 'react-redux'
 
 // Test cases written in a way to isolate types and variables and verify the
