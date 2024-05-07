@@ -4,10 +4,10 @@ import * as rtl from '@testing-library/react'
 import type { ReactNode } from 'react'
 import React from 'react'
 import ReactDOMServer from 'react-dom/server'
+import type { ReactReduxContextValue } from 'react-redux'
+import { Provider, ReactReduxContext, connect } from 'react-redux'
 import type { Store } from 'redux'
 import { combineReducers, createStore } from 'redux'
-import type { ReactReduxContextValue } from '../../src/index'
-import { Provider, ReactReduxContext, connect } from '../../src/index'
 
 describe('React', () => {
   /*

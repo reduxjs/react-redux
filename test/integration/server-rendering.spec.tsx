@@ -12,9 +12,9 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 import type { FunctionComponent } from 'react'
 import React from 'react'
 import { renderToString } from 'react-dom/server'
+import { Provider, connect } from 'react-redux'
 import type { Dispatch, Store } from 'redux'
 import { createStore } from 'redux'
-import { Provider, connect } from '../../src/index'
 
 describe('React', () => {
   describe('server rendering', () => {

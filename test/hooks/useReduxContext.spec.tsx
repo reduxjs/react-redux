@@ -1,10 +1,10 @@
-import { renderHook } from '@testing-library/react-hooks'
-import { createContext } from 'react'
-import type { ReactReduxContextValue } from '../../src/components/Context'
 import {
   createReduxContextHook,
   useReduxContext,
-} from '../../src/hooks/useReduxContext'
+} from '@internal/hooks/useReduxContext'
+import { renderHook } from '@testing-library/react-hooks'
+import { createContext } from 'react'
+import type { ReactReduxContextValue } from 'react-redux'
 
 describe('React', () => {
   describe('hooks', () => {
