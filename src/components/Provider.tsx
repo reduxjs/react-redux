@@ -91,7 +91,6 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>({
 
   const Context = context || ReactReduxContext
 
-  // @ts-ignore 'AnyAction' is assignable to the constraint of type 'A', but 'A' could be instantiated with a different subtype
   return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
 

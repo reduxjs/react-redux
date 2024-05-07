@@ -180,10 +180,7 @@ describe('React', () => {
       // This generates errors for using useLayoutEffect in v7
       // We hide that error by disabling console.error here
 
-      vi.spyOn(console, 'error')
-      // eslint-disable-next-line no-console
-      // @ts-ignore
-      console.error.mockImplementation(() => {})
+      const consoleErrorSpy =  vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const markup = ReactDOMServer.renderToString(
         <Provider store={store}>
@@ -199,9 +196,7 @@ describe('React', () => {
       expect(markup).toContain('Hello world')
       expect(markup).toContain('Hello dynamic world')
 
-      // eslint-disable-next-line no-console
-      // @ts-ignore
-      console.error.mockRestore()
+      consoleErrorSpy.mockRestore()
     })
   })
 })
