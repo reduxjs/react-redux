@@ -1,10 +1,10 @@
-import fs from 'node:fs'
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { Options } from 'tsup'
 import { defineConfig } from 'tsup'
 
-function writeCommonJSEntry() {
-  fs.writeFileSync(
+async function writeCommonJSEntry() {
+  await fs.writeFile(
     path.join('dist/cjs/', 'index.js'),
     `'use strict'
 if (process.env.NODE_ENV === 'production') {
@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === 'production') {
 
 const tsconfig = 'tsconfig.build.json' satisfies Options['tsconfig']
 
-export default defineConfig((options) => {
+export default defineConfig((options): Options[] => {
   const commonOptions: Options = {
     entry: {
       'react-redux': 'src/index.ts',
@@ -97,8 +97,8 @@ export default defineConfig((options) => {
       outExtension: () => ({ js: '.cjs' }),
       minify: true,
       onSuccess: async () => {
-        writeCommonJSEntry()
+        await writeCommonJSEntry()
       },
     },
-  ] as Options[]
+  ]
 })
