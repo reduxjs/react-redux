@@ -1,10 +1,10 @@
-import { renderHook } from '@testing-library/react-hooks'
-import { createContext } from 'react'
-import type { ReactReduxContextValue } from '../../src/components/Context'
 import {
   createReduxContextHook,
   useReduxContext,
-} from '../../src/hooks/useReduxContext'
+} from '@internal/hooks/useReduxContext'
+import { renderHook } from '@testing-library/react-hooks'
+import { createContext } from 'react'
+import type { ReactReduxContextValue } from 'react-redux'
 
 describe('React', () => {
   describe('hooks', () => {
@@ -14,7 +14,7 @@ describe('React', () => {
 
         const { result } = renderHook(() => useReduxContext())
 
-        expect(result.error.message).toMatch(
+        expect(result.error?.message).toMatch(
           /could not find react-redux context value/,
         )
 
@@ -29,7 +29,7 @@ describe('React', () => {
 
         const { result } = renderHook(() => useCustomReduxContext())
 
-        expect(result.error.message).toMatch(
+        expect(result.error?.message).toMatch(
           /could not find react-redux context value/,
         )
 

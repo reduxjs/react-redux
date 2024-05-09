@@ -4,10 +4,10 @@ import * as rtl from '@testing-library/react'
 import type { ReactNode } from 'react'
 import React from 'react'
 import ReactDOMServer from 'react-dom/server'
+import type { ReactReduxContextValue } from 'react-redux'
+import { Provider, ReactReduxContext, connect } from 'react-redux'
 import type { Store } from 'redux'
 import { combineReducers, createStore } from 'redux'
-import type { ReactReduxContextValue } from '../../src/index'
-import { Provider, ReactReduxContext, connect } from '../../src/index'
 
 describe('React', () => {
   /*
@@ -180,10 +180,7 @@ describe('React', () => {
       // This generates errors for using useLayoutEffect in v7
       // We hide that error by disabling console.error here
 
-      vi.spyOn(console, 'error')
-      // eslint-disable-next-line no-console
-      // @ts-ignore
-      console.error.mockImplementation(() => {})
+      const consoleErrorSpy =  vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const markup = ReactDOMServer.renderToString(
         <Provider store={store}>
@@ -199,9 +196,7 @@ describe('React', () => {
       expect(markup).toContain('Hello world')
       expect(markup).toContain('Hello dynamic world')
 
-      // eslint-disable-next-line no-console
-      // @ts-ignore
-      console.error.mockRestore()
+      consoleErrorSpy.mockRestore()
     })
   })
 })

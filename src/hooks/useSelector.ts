@@ -142,7 +142,7 @@ export function createSelectorHook(
       ? useDefaultReduxContext
       : createReduxContextHook(context)
 
-  const useSelector = <TState, Selected extends unknown>(
+  const useSelector = <TState, Selected>(
     selector: (state: TState) => Selected,
     equalityFnOrOptions:
       | EqualityFn<NoInfer<Selected>>

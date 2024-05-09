@@ -519,7 +519,6 @@ function connect<
       WrappedComponent,
       // @ts-ignore
       initMapStateToProps,
-      // @ts-ignore
       initMapDispatchToProps,
       initMergeProps,
       areStatesEqual,
