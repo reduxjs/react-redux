@@ -1,4 +1,4 @@
-import shallowEqual from '../../src/utils/shallowEqual'
+import { shallowEqual } from 'react-redux'
 
 describe('Utils', () => {
   describe('shallowEqual', () => {

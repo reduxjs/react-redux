@@ -1,17 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, no-inner-declarations */
 import type { AnyAction, Dispatch, Store } from '@reduxjs/toolkit'
 import { bindActionCreators } from '@reduxjs/toolkit'
 import type { ReactElement } from 'react'
 import React, { Component } from 'react'
 import { createRoot } from 'react-dom/client'
-import type {
-  ConnectedProps,
-  DispatchProp,
-  MapStateToProps,
-} from '../../src/index'
-import { Provider, connect } from '../../src/index'
-import { expectType } from '../typeTestHelpers'
-
+import type { ConnectedProps, DispatchProp, MapStateToProps } from 'react-redux'
+import { Provider, connect } from 'react-redux'
 import type { CounterState } from './counterApp'
 import { increment } from './counterApp'
 
@@ -39,6 +32,7 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>) {
 connect(mapStateToProps, mapDispatchToProps)(Counter)
 
 class CounterContainer extends Component<any, any> {}
+
 const ConnectedCounterContainer = connect(mapStateToProps)(CounterContainer)
 
 // Ensure connect's first two arguments can be replaced by wrapper functions
@@ -93,14 +87,19 @@ if (container) {
 }
 
 declare let store: Store<TodoState>
+
 class MyRootComponent extends Component<any, any> {}
+
 class TodoApp extends Component<any, any> {}
+
 interface TodoState {
   todos: string[] | string
 }
+
 interface TodoProps {
   userId: number
 }
+
 interface DispatchProps {
   addTodo(userId: number, text: string): void
   // action: Function
@@ -110,9 +109,13 @@ const addTodo = (userId: number, text: string) => ({
   type: 'todos/todoAdded',
   payload: { userId, text },
 })
+
 const actionCreators = { addTodo }
+
 type AddTodoAction = ReturnType<typeof addTodo>
+
 declare let todoActionCreators: { [type: string]: (...args: any[]) => any }
+
 declare let counterActionCreators: { [type: string]: (...args: any[]) => any }
 
 if (container) {
@@ -239,8 +242,7 @@ class TestComponent extends Component<TestProp, TestState> {}
 const WrappedTestComponent = connect()(TestComponent)
 
 // return value of the connect()(TestComponent) is of the type TestComponent
-let ATestComponent: React.ComponentType<TestProp>
-ATestComponent = TestComponent
+let ATestComponent: React.ComponentType<TestProp> = TestComponent
 ATestComponent = WrappedTestComponent
 
 let anElement: ReactElement<TestProp>
@@ -252,9 +254,9 @@ let anElement: ReactElement<TestProp>
 ;<ATestComponent property1={42} dummyField={123} />
 
 class NonComponent {}
+
 // this doesn't compile
-// @ts-expect-error
-connect()(NonComponent)
+expectTypeOf(connect()).parameter(0).not.toMatchTypeOf(NonComponent)
 
 // stateless functions
 interface HelloMessageProps {
@@ -277,154 +279,173 @@ if (container) {
   )
 }
 
-// stateless functions that uses mapStateToProps and mapDispatchToProps
-function testStatelessFunctionWithMapArguments() {
-  interface GreetingProps {
-    name: string
-    onClick: () => void
-  }
-
-  function Greeting(props: GreetingProps) {
-    return <div>Hello {props.name}</div>
-  }
-
-  const mapStateToProps = (state: any, ownProps: GreetingProps) => {
-    return {
-      name: 'Connected! ' + ownProps.name,
+describe('type tests', () => {
+  test('stateless functions that uses mapStateToProps and mapDispatchToProps', () => {
+    interface GreetingProps {
+      name: string
+      onClick: () => void
     }
-  }
 
-  const mapDispatchToProps = (
-    dispatch: Dispatch<AnyAction>,
-    ownProps: GreetingProps,
-  ) => {
-    return {
-      onClick: () => {
-        dispatch({ type: 'GREETING', name: ownProps.name })
-      },
+    function Greeting(props: GreetingProps) {
+      return <div>Hello {props.name}</div>
     }
-  }
 
-  const ConnectedGreeting = connect(
-    mapStateToProps,
-    mapDispatchToProps,
-  )(Greeting)
-}
-
-// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/8787
-function testTOwnPropsInference() {
-  interface OwnProps {
-    own: string
-  }
-
-  interface StateProps {
-    state: string
-  }
-
-  class OwnPropsComponent extends React.Component<OwnProps & StateProps, {}> {
-    render() {
-      return <div />
+    const mapStateToProps = (state: any, ownProps: GreetingProps) => {
+      return {
+        name: `Connected! ${ownProps.name}`,
+      }
     }
-  }
 
-  function mapStateToPropsWithoutOwnProps(state: any): StateProps {
-    return { state: 'string' }
-  }
-
-  function mapStateToPropsWithOwnProps(
-    state: any,
-    ownProps: OwnProps,
-  ): StateProps {
-    return { state: 'string' }
-  }
-
-  const ConnectedWithoutOwnProps = connect(mapStateToPropsWithoutOwnProps)(
-    OwnPropsComponent,
-  )
-  const ConnectedWithOwnProps = connect(mapStateToPropsWithOwnProps)(
-    OwnPropsComponent,
-  )
-  const ConnectedWithTypeHint = connect<StateProps, {}, OwnProps>(
-    mapStateToPropsWithoutOwnProps,
-  )(OwnPropsComponent)
-
-  // @ts-expect-error
-  React.createElement(ConnectedWithoutOwnProps, { anything: 'goes!' })
-
-  // This compiles, as expected.
-  React.createElement(ConnectedWithOwnProps, { own: 'string' })
-
-  // This should not compile, which is good.
-  // @ts-expect-error
-  React.createElement(ConnectedWithOwnProps, { missingOwn: true })
-
-  // This compiles, as expected.
-  React.createElement(ConnectedWithTypeHint, { own: 'string' })
-
-  // This should not compile, which is good.
-  // @ts-expect-error
-  React.createElement(ConnectedWithTypeHint, { missingOwn: true })
-
-  interface AllProps {
-    own: string
-    state: string
-  }
-
-  class AllPropsComponent extends React.Component<AllProps & DispatchProp> {
-    render() {
-      return <div />
+    const mapDispatchToProps = (
+      dispatch: Dispatch<AnyAction>,
+      ownProps: GreetingProps,
+    ) => {
+      return {
+        onClick: () => {
+          dispatch({ type: 'GREETING', name: ownProps.name })
+        },
+      }
     }
-  }
 
-  type PickedOwnProps = Pick<AllProps, 'own'>
-  type PickedStateProps = Pick<AllProps, 'state'>
-
-  const mapStateToPropsForPicked: MapStateToProps<
-    PickedStateProps,
-    PickedOwnProps,
-    {}
-  > = (state: any): PickedStateProps => {
-    return { state: 'string' }
-  }
-  const ConnectedWithPickedOwnProps = connect(mapStateToPropsForPicked)(
-    AllPropsComponent,
-  )
-  ;<ConnectedWithPickedOwnProps own="blah" />
-}
-
-function connectedPropsTest() {
-  interface RootState {
-    isOn: boolean
-  }
-
-  const mapState1 = (state: RootState) => ({
-    isOn: state.isOn,
+    const ConnectedGreeting = connect(
+      mapStateToProps,
+      mapDispatchToProps,
+    )(Greeting)
   })
 
-  const mapDispatch1 = {
-    toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
-  }
+  test('OwnProps inference', () => {
+    // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/8787
 
-  const connector1 = connect(mapState1, mapDispatch1)
+    interface OwnProps {
+      own: string
+    }
 
-  // The inferred type will look like:
-  // {isOn: boolean, toggleOn: () => void}
-  type PropsFromRedux1 = ConnectedProps<typeof connector1>
+    interface StateProps {
+      state: string
+    }
 
-  expectType<{ isOn: boolean; toggleOn: () => void }>({} as PropsFromRedux1)
+    class OwnPropsComponent extends React.Component<OwnProps & StateProps, {}> {
+      render() {
+        return <div />
+      }
+    }
 
-  const exampleThunk = (id: number) => async (dispatch: Dispatch) => {
-    return 'test'
-  }
+    function mapStateToPropsWithoutOwnProps(state: any): StateProps {
+      return { state: 'string' }
+    }
 
-  const mapDispatch2 = { exampleThunk }
+    function mapStateToPropsWithOwnProps(
+      state: any,
+      ownProps: OwnProps,
+    ): StateProps {
+      return { state: 'string' }
+    }
 
-  // Connect should "resolve thunks", so that instead of typing the return value of the
-  // prop as the thunk function, it dives down and uses the return value of the thunk function itself
-  const connector2 = connect(null, mapDispatch2)
-  type PropsFromRedux2 = ConnectedProps<typeof connector2>
+    const ConnectedWithoutOwnProps = connect(mapStateToPropsWithoutOwnProps)(
+      OwnPropsComponent,
+    )
+    const ConnectedWithOwnProps = connect(mapStateToPropsWithOwnProps)(
+      OwnPropsComponent,
+    )
+    const ConnectedWithTypeHint = connect<StateProps, {}, OwnProps>(
+      mapStateToPropsWithoutOwnProps,
+    )(OwnPropsComponent)
 
-  expectType<{ exampleThunk: (id: number) => Promise<string> }>(
-    {} as PropsFromRedux2,
-  )
-}
+    expectTypeOf(React.createElement).parameters.not.toMatchTypeOf([
+      ConnectedWithoutOwnProps,
+      { anything: 'goes!' },
+    ] as const)
+
+    // This compiles, as expected.
+    /**
+     * NOTE: We can't do
+     * ```
+     * expectTypeOf(React.createElement).toBeCallableWith(ConnectedWithOwnProps, {
+     *   own: 'string',
+     * })
+     * ```
+     * because `.toBeCallableWith()` does not work well with function overloads.
+     */
+    React.createElement(ConnectedWithOwnProps, { own: 'string' })
+
+    // This should not compile, which is good.
+    // @ts-expect-error
+    React.createElement(ConnectedWithOwnProps, { missingOwn: true })
+
+    // This compiles, as expected.
+    React.createElement(ConnectedWithTypeHint, { own: 'string' })
+
+    // This should not compile, which is good.
+    // @ts-expect-error
+    React.createElement(ConnectedWithTypeHint, { missingOwn: true })
+
+    interface AllProps {
+      own: string
+      state: string
+    }
+
+    class AllPropsComponent extends React.Component<AllProps & DispatchProp> {
+      render() {
+        return <div />
+      }
+    }
+
+    type PickedOwnProps = Pick<AllProps, 'own'>
+
+    type PickedStateProps = Pick<AllProps, 'state'>
+
+    const mapStateToPropsForPicked: MapStateToProps<
+      PickedStateProps,
+      PickedOwnProps,
+      {}
+    > = (state: any): PickedStateProps => {
+      return { state: 'string' }
+    }
+
+    const ConnectedWithPickedOwnProps = connect(mapStateToPropsForPicked)(
+      AllPropsComponent,
+    )
+    ;<ConnectedWithPickedOwnProps own="blah" />
+  })
+
+  test('connected props', () => {
+    interface RootState {
+      isOn: boolean
+    }
+
+    const mapState1 = (state: RootState) => ({
+      isOn: state.isOn,
+    })
+
+    const mapDispatch1 = {
+      toggleOn: () => ({ type: 'TOGGLE_IS_ON' }),
+    }
+
+    const connector1 = connect(mapState1, mapDispatch1)
+
+    // The inferred type will look like:
+    // {isOn: boolean, toggleOn: () => void}
+    type PropsFromRedux1 = ConnectedProps<typeof connector1>
+
+    assertType<{
+      isOn: boolean
+      toggleOn: () => void
+    }>({} as PropsFromRedux1)
+
+    const exampleThunk = (id: number) => async (dispatch: Dispatch) => {
+      return 'test'
+    }
+
+    const mapDispatch2 = { exampleThunk }
+
+    // Connect should "resolve thunks", so that instead of typing the return value of the
+    // prop as the thunk function, it dives down and uses the return value of the thunk function itself
+    const connector2 = connect(null, mapDispatch2)
+
+    type PropsFromRedux2 = ConnectedProps<typeof connector2>
+
+    expectTypeOf<{
+      exampleThunk: (id: number) => Promise<string>
+    }>().toEqualTypeOf<PropsFromRedux2>()
+  })
+})
