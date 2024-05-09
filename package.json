@@ -36,7 +36,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "yarn clean && tsup",
     "clean": "rimraf lib dist es coverage",
     "api-types": "api-extractor run --local",
     "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
@@ -44,9 +44,9 @@
     "lint:fix": "eslint src test --fix",
     "prepare": "yarn clean && yarn build",
     "pretest": "yarn lint",
-    "test": "vitest --run",
+    "test": "vitest --run --typecheck",
     "test:watch": "vitest --watch",
-    "type-tests": "yarn tsc -p test/typetests/tsconfig.json",
+    "type-tests": "tsc --noEmit -p tsconfig.test.json",
     "coverage": "codecov"
   },
   "peerDependencies": {
@@ -104,8 +104,8 @@
     "redux": "^5.0.0",
     "rimraf": "^3.0.2",
     "tsup": "^7.0.0",
-    "typescript": "^5.4.2",
-    "vitest": "^1.2.1"
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
   },
   "packageManager": "yarn@4.1.0"
 }

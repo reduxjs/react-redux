@@ -1,6 +1,6 @@
 import type { Action, ThunkAction } from '@reduxjs/toolkit'
 import { configureStore, createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import { useDispatch, useSelector, useStore } from '../../src'
+import { useDispatch, useSelector, useStore } from 'react-redux'
 
 export interface CounterState {
   counter: number

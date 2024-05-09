@@ -4,8 +4,8 @@ import * as rtl from '@testing-library/react'
 import React, { Suspense, useEffect, useState } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
-import type { ConnectedProps } from '../../src/index'
-import { Provider, connect, useDispatch, useSelector } from '../../src/index'
+import type { ConnectedProps } from 'react-redux'
+import { Provider, connect, useDispatch, useSelector } from 'react-redux'
 
 const IS_REACT_18 = React.version.startsWith('18')
 
