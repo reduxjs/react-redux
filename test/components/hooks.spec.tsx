@@ -146,6 +146,7 @@ describe('React', () => {
 
       // 2. Batched update from nested subscriber / C1 re-render
       // Not sure why the differences across versions here
+      // TODO: Figure out why this is 3 in React 18 but 2 in React 19
       const numFinalRenders = IS_REACT_18 ? 3 : 2
       expect(renderSpy2).toHaveBeenCalledTimes(numFinalRenders)
     })
