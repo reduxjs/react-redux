@@ -82,8 +82,6 @@ describe('React', () => {
       return action.type === 'APPEND' ? prev + action.body : prev
     }
 
-    afterEach(() => rtl.cleanup())
-
     describe('Core subscription and prop passing behavior', () => {
       it('should receive the store state in the context', () => {
         const store = createStore(() => ({ hi: 'there' }))
