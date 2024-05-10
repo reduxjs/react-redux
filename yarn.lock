@@ -7081,15 +7081,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:18.2.0":
-  version: 18.2.0
-  resolution: "react-dom@npm:18.2.0"
+"react-dom@npm:19.0.0-beta-04b058868c-20240508":
+  version: 19.0.0-beta-04b058868c-20240508
+  resolution: "react-dom@npm:19.0.0-beta-04b058868c-20240508"
   dependencies:
-    loose-envify: "npm:^1.1.0"
-    scheduler: "npm:^0.23.0"
+    scheduler: "npm:0.25.0-beta-04b058868c-20240508"
   peerDependencies:
-    react: ^18.2.0
-  checksum: 10/ca5e7762ec8c17a472a3605b6f111895c9f87ac7d43a610ab7024f68cd833d08eda0625ce02ec7178cc1f3c957cf0b9273cdc17aa2cd02da87544331c43b1d21
+    react: 19.0.0-beta-04b058868c-20240508
+  checksum: 10/4ee57e8dd72460e74d7fac5904df7340c206297cebe16b4dbc04a551942ddb39a22d9ede68ce6833f12ad0366cb18ea48220a0a5750419cc3d32098733bf9993
   languageName: node
   linkType: hard
 
@@ -7161,8 +7160,8 @@ __metadata:
     glob: "npm:^7.1.6"
     jsdom: "npm:^24.0.0"
     prettier: "npm:^3.1.1"
-    react: "npm:18.2.0"
-    react-dom: "npm:18.2.0"
+    react: "npm:19.0.0-beta-04b058868c-20240508"
+    react-dom: "npm:19.0.0-beta-04b058868c-20240508"
     react-test-renderer: "npm:18.0.0"
     redux: "npm:^5.0.0"
     rimraf: "npm:^3.0.2"
@@ -7207,12 +7206,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:18.2.0":
-  version: 18.2.0
-  resolution: "react@npm:18.2.0"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10/b9214a9bd79e99d08de55f8bef2b7fc8c39630be97c4e29d7be173d14a9a10670b5325e94485f74cd8bff4966ef3c78ee53c79a7b0b9b70cba20aa8973acc694
+"react@npm:19.0.0-beta-04b058868c-20240508":
+  version: 19.0.0-beta-04b058868c-20240508
+  resolution: "react@npm:19.0.0-beta-04b058868c-20240508"
+  checksum: 10/2b18ca52af66d3bf3fdbe689ea9c19b673c5c041d5f00c4f91651d9ab414462558213cf843f538f605792dd3964ecf1a92de020dced297968c2061edb296bca4
   languageName: node
   linkType: hard
 
@@ -7720,21 +7717,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"scheduler@npm:0.25.0-beta-04b058868c-20240508":
+  version: 0.25.0-beta-04b058868c-20240508
+  resolution: "scheduler@npm:0.25.0-beta-04b058868c-20240508"
+  checksum: 10/7331426ef52b3aa63f74b1292f3cad50c47f25e318957e6cade73f19ea42c2f5461b83e2e7f86f2f41b684876543ecced0b9623d7b15f926c9a81434bde28873
+  languageName: node
+  linkType: hard
+
 "scheduler@npm:^0.21.0":
   version: 0.21.0
   resolution: "scheduler@npm:0.21.0"
   dependencies:
     loose-envify: "npm:^1.1.0"
   checksum: 10/216dbe36490f8c3133eee8352061803c377de6eb80d4a8f7f290819a721a21135aba145db28ad3e34056115f1a8c0d7e1cd477cebd3d01f6d98e28cc31fc702a
-  languageName: node
-  linkType: hard
-
-"scheduler@npm:^0.23.0":
-  version: 0.23.0
-  resolution: "scheduler@npm:0.23.0"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10/0c4557aa37bafca44ff21dc0ea7c92e2dbcb298bc62eae92b29a39b029134f02fb23917d6ebc8b1fa536b4184934314c20d8864d156a9f6357f3398aaf7bfda8
   languageName: node
   linkType: hard
 
