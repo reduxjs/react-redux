@@ -754,8 +754,7 @@ describe('type tests', () => {
     myHoc1(Test)
 
     const myHoc2 = <P,>(C: React.FC<P>): React.ComponentType<P> => C
-    // TODO Figure out the error here
-    // myHoc2(Test)
+    myHoc2(Test)
   })
 
   test('Ref', () => {
