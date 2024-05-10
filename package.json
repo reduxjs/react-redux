@@ -81,7 +81,6 @@
     "@reduxjs/toolkit": "^2.0.0-beta.4",
     "@testing-library/jest-dom": "^6.4.5",
     "@testing-library/react": "^15.0.7",
-    "@testing-library/react-hooks": "^8.0.1",
     "@types/node": "^20.11.6",
     "@types/prop-types": "^15.7.12",
     "@types/react": "npm:types-react@19.0.0-beta.1",
