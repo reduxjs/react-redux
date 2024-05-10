@@ -2378,6 +2378,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-dom@npm:types-react-dom@19.0.0-beta.1":
+  version: 19.0.0-beta.1
+  resolution: "types-react-dom@npm:19.0.0-beta.1"
+  dependencies:
+    "@types/react": "npm:*"
+  checksum: 10/679cfba702ff7a301f9781e81992536a142edac0bc093b09addd98d8a87bbbd67d454fa2a661c9fdebe553ed3e9f11276ca6e9fb6341beee6d81d723750b0c5e
+  languageName: node
+  linkType: hard
+
 "@types/react@npm:*":
   version: 18.2.41
   resolution: "@types/react@npm:18.2.41"
@@ -2389,14 +2398,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:18.2.25":
-  version: 18.2.25
-  resolution: "@types/react@npm:18.2.25"
+"@types/react@npm:types-react@19.0.0-beta.1":
+  version: 19.0.0-beta.1
+  resolution: "types-react@npm:19.0.0-beta.1"
   dependencies:
-    "@types/prop-types": "npm:*"
-    "@types/scheduler": "npm:*"
     csstype: "npm:^3.0.2"
-  checksum: 10/e777471a58bde47a710c7a1906eb9fcafa793671179fc9c0187694f916da043adac5ebd4b87c8cc14c42fd4979376e7a6acabae02b99450c2a5e198155880161
+  checksum: 10/12a242d19768b529ee3783b479ef229b439d78efbefa5a662e810ac3afb96fd4f93c506603feffb69bb43c31441062404641c8ec13af689524cacb18f99ef986
   languageName: node
   linkType: hard
 
@@ -7145,7 +7152,8 @@ __metadata:
     "@testing-library/react-hooks": "npm:^8.0.1"
     "@types/node": "npm:^20.11.6"
     "@types/prop-types": "npm:^15.7.12"
-    "@types/react": "npm:18.2.25"
+    "@types/react": "npm:types-react@19.0.0-beta.1"
+    "@types/react-dom": "npm:types-react-dom@19.0.0-beta.1"
     "@types/use-sync-external-store": "npm:^0.0.3"
     "@typescript-eslint/eslint-plugin": "npm:^6.17.0"
     "@typescript-eslint/parser": "npm:^6.17.0"
