@@ -1,6 +1,7 @@
 /*eslint-disable react/prop-types*/
 
 import type { UseSelectorOptions } from '@internal/hooks/useSelector'
+import { IS_REACT_19 } from '@internal/utils/react-is'
 import * as rtl from '@testing-library/react'
 import type { DispatchWithoutAction, FunctionComponent, ReactNode } from 'react'
 import React, {
@@ -722,7 +723,7 @@ describe('React', () => {
           // although I can't imagine why, and if I remove the `useSelector` calls both tests drop to ~50ms.
           // So, we'll modify our expectations here depending on whether this is an 18 or 17 compat test,
           // and give some buffer time to allow for variations in test machines.
-          const expectedMaxUnmountTime = IS_REACT_18 ? 500 : 7000
+          const expectedMaxUnmountTime = IS_REACT_18 || IS_REACT_19 ? 500 : 7000
           expect(elapsedTime).toBeLessThan(expectedMaxUnmountTime)
         })
 
