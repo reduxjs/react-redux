@@ -8,8 +8,6 @@ import { Provider, ReactReduxContext, connect } from 'react-redux'
 import type { Store } from 'redux'
 import { createStore } from 'redux'
 
-import * as ReactDOM from 'react-dom'
-
 const createExampleTextReducer =
   () =>
   (state = 'example text') =>
@@ -342,18 +340,16 @@ describe('React', () => {
         }
       }
 
-      const container = document.createElement('div')
-
-      // eslint-disable-next-line react/no-deprecated
-      ReactDOM.render(
+      const { unmount } = rtl.render(
         <Provider store={store}>
           <div />
         </Provider>,
-        container,
       )
+
       expect(spy).toHaveBeenCalledTimes(0)
-      // eslint-disable-next-line react/no-deprecated
-      ReactDOM.unmountComponentAtNode(container)
+
+      unmount()
+
       expect(spy).toHaveBeenCalledTimes(1)
     })
 
