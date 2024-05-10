@@ -10,8 +10,6 @@ const IS_REACT_18 = React.version.startsWith('18')
 
 describe('React', () => {
   describe('connect', () => {
-    afterEach(() => rtl.cleanup())
-
     it('should render on useEffect hook state update', () => {
       interface RootStateType {
         byId: {
