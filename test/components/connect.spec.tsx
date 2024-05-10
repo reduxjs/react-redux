@@ -1,5 +1,6 @@
 /*eslint-disable react/prop-types*/
 
+import { IS_REACT_19 } from '@internal/utils/react-is'
 import * as rtl from '@testing-library/react'
 import type { Dispatch, ElementType, JSX, MouseEvent, ReactNode } from 'react'
 import React, { Component } from 'react'
@@ -2904,7 +2905,7 @@ describe('React', () => {
           </React.StrictMode>,
         )
 
-        if (IS_REACT_18) {
+        if (IS_REACT_18 || IS_REACT_19) {
           expect(spy).not.toHaveBeenCalled()
         } else {
           expect(spy.mock.calls[0]?.[0]).toEqual(
