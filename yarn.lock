@@ -6100,15 +6100,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:18.3.1":
-  version: 18.3.1
-  resolution: "react-dom@npm:18.3.1"
+"react-dom@npm:19.0.0-rc.1":
+  version: 19.0.0-rc.1
+  resolution: "react-dom@npm:19.0.0-rc.1"
   dependencies:
-    loose-envify: "npm:^1.1.0"
-    scheduler: "npm:^0.23.2"
+    scheduler: "npm:0.25.0-rc.1"
   peerDependencies:
-    react: ^18.3.1
-  checksum: 10/3f4b73a3aa083091173b29812b10394dd06f4ac06aff410b74702cfb3aa29d7b0ced208aab92d5272919b612e5cda21aeb1d54191848cf6e46e9e354f3541f81
+    react: 19.0.0-rc.1
+  checksum: 10/9c3f79fe8f8fd10e8a86476df1670d3920f1c1083e56285b5c31d96ca18d223e9d1e78b6b5534ce7ab90a57e2d47ca96d2b3ced3a08a993c937c7f49561b337d
   languageName: node
   linkType: hard
 
@@ -6168,8 +6167,8 @@ __metadata:
     eslint-plugin-react: "npm:^7.34.2"
     jsdom: "npm:^24.1.0"
     prettier: "npm:^3.3.3"
-    react: "npm:18.3.1"
-    react-dom: "npm:18.3.1"
+    react: "npm:19.0.0-rc.1"
+    react-dom: "npm:19.0.0-rc.1"
     react-test-renderer: "npm:18.3.1"
     redux: "npm:^5.0.1"
     rimraf: "npm:^5.0.7"
@@ -6215,12 +6214,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:18.3.1":
-  version: 18.3.1
-  resolution: "react@npm:18.3.1"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10/261137d3f3993eaa2368a83110466fc0e558bc2c7f7ae7ca52d94f03aac945f45146bd85e5f481044db1758a1dbb57879e2fcdd33924e2dde1bdc550ce73f7bf
+"react@npm:19.0.0-rc.1":
+  version: 19.0.0-rc.1
+  resolution: "react@npm:19.0.0-rc.1"
+  checksum: 10/4da93b26f6d8ca24a4657551fe9e6db92b42e6d8cb54821e3c2c8c5af2098094e5d997b261314a2b5723ad1e0a444a63312b7645f72394f21660da38ea4554f1
   languageName: node
   linkType: hard
 
@@ -6608,6 +6605,13 @@ __metadata:
   dependencies:
     xmlchars: "npm:^2.2.0"
   checksum: 10/97b50daf6ca3a153e89842efa18a862e446248296622b7473c169c84c823ee8a16e4a43bac2f73f11fc8cb9168c73fbb0d73340f26552bac17970e9052367aa9
+  languageName: node
+  linkType: hard
+
+"scheduler@npm:0.25.0-rc.1":
+  version: 0.25.0-rc.1
+  resolution: "scheduler@npm:0.25.0-rc.1"
+  checksum: 10/b9dbc9e406ab4af245c3c7cfd1d39e983aa6184ab941cfd7ee5dc1695854280a5dee556f7f81d9e0f392dbe4f2f85966f2b6988beed39f1d5f5e844b1db02c60
   languageName: node
   linkType: hard
 
