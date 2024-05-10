@@ -15,8 +15,6 @@ const createExampleTextReducer =
 
 describe('React', () => {
   describe('Provider', () => {
-    afterEach(() => rtl.cleanup())
-
     const createChild = (storeKey = 'store') => {
       class Child extends Component {
         render() {

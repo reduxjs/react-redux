@@ -68,8 +68,6 @@ describe('React', () => {
         renderedItems = []
       })
 
-      afterEach(() => rtl.cleanup())
-
       describe('core subscription behavior', () => {
         it('selects the state on initial render', () => {
           let result: number | undefined
