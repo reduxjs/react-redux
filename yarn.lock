@@ -6203,8 +6203,8 @@ __metadata:
     use-sync-external-store: "npm:^1.2.2"
     vitest: "npm:^1.6.0"
   peerDependencies:
-    "@types/react": ^18.2.25
-    react: ^18.0
+    "@types/react": ^18.2.25 || ^19
+    react: ^18.0 || ^19
     redux: ^5.0.0
   peerDependenciesMeta:
     "@types/react":
