@@ -38,7 +38,7 @@ jobs:
           path: ./package.tgz
 
   test-types:
-    name: Test Types with TypeScript ${{ matrix.ts }}
+    name: Test Types with TypeScript ${{ matrix.ts }} and React ${{ matrix.react.version }}
 
     needs: [build]
     runs-on: ubuntu-latest
@@ -79,6 +79,9 @@ jobs:
 
       - name: Install deps
         run: yarn install
+
+      - name: Install React ${{ matrix.react.version }} and React-DOM ${{ matrix.react.react-dom.version }}
+        run: yarn add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
 
       - name: Install TypeScript ${{ matrix.ts }}
         run: yarn add typescript@${{ matrix.ts }}
@@ -243,7 +246,7 @@ jobs:
         run: yarn build
 
   test-dist:
-    name: Run local tests against build artifact
+    name: Run local tests against build artifact (React ${{ matrix.react.version }})
     needs: [build]
     runs-on: ubuntu-latest
     strategy:
@@ -285,6 +288,9 @@ jobs:
 
       - name: Check folder contents
         run: ls -lah
+
+      - name: Install React ${{ matrix.react.version }} and React-DOM ${{ matrix.react.react-dom.version }}
+        run: yarn add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
 
       - name: Install build artifact
         run: yarn add ./package.tgz
