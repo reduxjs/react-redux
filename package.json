@@ -99,7 +99,6 @@
     "prettier": "^3.3.3",
     "react": "19.0.0-rc.1",
     "react-dom": "19.0.0-rc.1",
-    "react-test-renderer": "18.3.1",
     "redux": "^5.0.1",
     "rimraf": "^5.0.7",
     "tsup": "7.0.0",
