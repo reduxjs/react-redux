@@ -6200,7 +6200,7 @@ __metadata:
     tsup: "npm:7.0.0"
     typescript: "npm:^5.5.4"
     typescript-eslint: "npm:^7.12.0"
-    use-sync-external-store: "npm:^1.2.2"
+    use-sync-external-store: "npm:^1.2.2 || ^1.4.0-rc"
     vitest: "npm:^1.6.0"
   peerDependencies:
     "@types/react": ^18.2.25 || ^19
@@ -7548,12 +7548,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.2.2":
-  version: 1.2.2
-  resolution: "use-sync-external-store@npm:1.2.2"
+"use-sync-external-store@npm:^1.2.2 || ^1.4.0-rc":
+  version: 1.4.0-rc-fb9a90fa48-20240614
+  resolution: "use-sync-external-store@npm:1.4.0-rc-fb9a90fa48-20240614"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0
-  checksum: 10/671e9c190aab9a8374a5d468c6ba17f52c38b6fae970110bc196fc1e2b57204149aea9619be49a1bb5207fb6e51d8afd19c3bcb94afe61813fed039821461dc0
+    react: 19.0.0-rc-fb9a90fa48-20240614
+  checksum: 10/5b31aef4df66f5172dc65170151c68bf838558a8beb4674193279aa8c1a03e3f58a30afbb7a2619d9271a5c7132a8b20cfecc4b5530440539245c1f6bd5b5aae
   languageName: node
   linkType: hard
 
