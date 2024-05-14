@@ -63,7 +63,7 @@
     }
   },
   "dependencies": {
-    "@types/use-sync-external-store": "^0.0.6",
+    "@types/use-sync-external-store": "npm:types-use-sync-external-store@rc",
     "use-sync-external-store": "^1.2.2 || ^1.4.0-rc"
   },
   "devDependencies": {

@@ -2233,10 +2233,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/use-sync-external-store@npm:^0.0.6":
-  version: 0.0.6
-  resolution: "@types/use-sync-external-store@npm:0.0.6"
-  checksum: 10/a95ce330668501ad9b1c5b7f2b14872ad201e552a0e567787b8f1588b22c7040c7c3d80f142cbb9f92d13c4ea41c46af57a20f2af4edf27f224d352abcfe4049
+"@types/use-sync-external-store@npm:types-use-sync-external-store@rc":
+  version: 19.0.0-rc.1
+  resolution: "types-use-sync-external-store@npm:19.0.0-rc.1"
+  checksum: 10/a57e1e6fcd8b34716432ada9cef9a6a1fbfc70b0c34d97442c997cf70895929ff85a574eb82e15799d024e90251ec28f3f1e4afada780a951b49c7cb84558501
   languageName: node
   linkType: hard
 
@@ -6181,7 +6181,7 @@ __metadata:
     "@types/prop-types": "npm:^15.7.12"
     "@types/react": "npm:types-react@rc"
     "@types/react-dom": "npm:types-react-dom@rc"
-    "@types/use-sync-external-store": "npm:^0.0.6"
+    "@types/use-sync-external-store": "npm:types-use-sync-external-store@rc"
     babel-eslint: "npm:^10.1.0"
     codecov: "npm:^3.8.3"
     cross-env: "npm:^7.0.3"
