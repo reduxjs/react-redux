@@ -2403,10 +2403,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/use-sync-external-store@npm:^0.0.3":
-  version: 0.0.3
-  resolution: "@types/use-sync-external-store@npm:0.0.3"
-  checksum: 10/161ddb8eec5dbe7279ac971531217e9af6b99f7783213566d2b502e2e2378ea19cf5e5ea4595039d730aa79d3d35c6567d48599f69773a02ffcff1776ec2a44e
+"@types/use-sync-external-store@npm:types-use-sync-external-store@19.0.0-beta.1 || ^0.0.3":
+  version: 19.0.0-beta.1
+  resolution: "types-use-sync-external-store@npm:19.0.0-beta.1"
+  checksum: 10/c7c9fe6c2036cedcbcedbd9c3b62f2e9236868e32a836900f54e90ec0bb9d220f06ec80f68d805e9f8787dde5416325060537db2e151619a9c02b597bd6f0417
   languageName: node
   linkType: hard
 
@@ -7052,7 +7052,7 @@ __metadata:
     "@types/prop-types": "npm:^15.7.12"
     "@types/react": "npm:types-react@19.0.0-beta.1"
     "@types/react-dom": "npm:types-react-dom@19.0.0-beta.1"
-    "@types/use-sync-external-store": "npm:^0.0.3"
+    "@types/use-sync-external-store": "npm:types-use-sync-external-store@19.0.0-beta.1 || ^0.0.3"
     "@typescript-eslint/eslint-plugin": "npm:^6.17.0"
     "@typescript-eslint/parser": "npm:^6.17.0"
     babel-eslint: "npm:^10.1.0"
