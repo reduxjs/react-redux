@@ -4,38 +4,46 @@ import type { Check, SizeLimitConfig } from 'size-limit'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
-const getAllEntryPoints = async () => {
-  const pkgJson = await import('./package.json', { with: { type: 'json' } })
+const getAllPackageEntryPoints = async () => {
+  const packageJson = await import('./package.json', { with: { type: 'json' } })
 
-  const entryPoints = Object.entries(pkgJson.exports['.'])
+  const packageExports = Object.entries(packageJson.exports['.'])
     .filter(([condition]) => condition !== 'types')
-    .map(([, entryPoint]) =>
+    .map(([_condition, entryPoint]) =>
       path.isAbsolute(entryPoint) ? `./${entryPoint}` : entryPoint,
     )
 
-  return entryPoints
+  return [...new Set(packageExports)]
 }
 
 const getAllImports = async (
   entryPoint: string,
   index: number,
 ): Promise<SizeLimitConfig> => {
-  const allImports = await import(entryPoint)
+  const allNamedImports = await import(entryPoint)
 
-  return Object.keys(allImports)
+  return Object.keys(allNamedImports)
     .map<Check>((namedImport) => ({
       path: entryPoint,
-      name: `${namedImport} (${entryPoint})`,
+      name: `import { ${namedImport} } from "${entryPoint}"`,
       import: `{ ${namedImport} }`,
     }))
-    .concat({
-      path: entryPoint,
-      name: `${index + 1}. Entry point: ${entryPoint}`,
-      import: '*',
-    })
+    .concat([
+      {
+        path: entryPoint,
+        name: `import * from "${entryPoint}"`,
+        import: '*',
+      },
+      {
+        path: entryPoint,
+        name: `import "${entryPoint}"`,
+      },
+    ])
 }
 
-const config: Promise<SizeLimitConfig> = (async () =>
-  (await Promise.all((await getAllEntryPoints()).map(getAllImports))).flat())()
+const sizeLimitConfig: Promise<SizeLimitConfig> = (async () =>
+  (
+    await Promise.all((await getAllPackageEntryPoints()).map(getAllImports))
+  ).flat())()
 
-export default config
+export default sizeLimitConfig
