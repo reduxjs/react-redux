@@ -27,6 +27,10 @@ const getAllImports = async (
       path: entryPoint,
       name: `import { ${namedImport} } from "${entryPoint}"`,
       import: `{ ${namedImport} }`,
+      modifyWebpackConfig: (config) => {
+        config.optimization.nodeEnv = 'development'
+        return config
+      },
     }))
     .concat([
       {
@@ -41,9 +45,38 @@ const getAllImports = async (
     ])
 }
 
+const setNodeEnv = (
+  nodeEnv: 'development' | 'production',
+): Check['modifyWebpackConfig'] => {
+  return (config) => {
+    config.optimization.nodeEnv = nodeEnv
+    return config
+  }
+}
+
+const getAllImportsWithNodeEnv = async (
+  nodeEnv: 'development' | 'production',
+) => {
+  const allPackageEntryPoints = await getAllPackageEntryPoints()
+
+  const allImportsFromAllEntryPoints = (
+    await Promise.all(allPackageEntryPoints.map(getAllImports))
+  ).flat()
+
+  const allImportsWithNodeEnv = allImportsFromAllEntryPoints.map(
+    (importsFromEntryPoint) => ({
+      ...importsFromEntryPoint,
+      name: `${importsFromEntryPoint.name} ('${nodeEnv}' mode)`,
+      modifyWebpackConfig: setNodeEnv(nodeEnv),
+    }),
+  )
+
+  return allImportsWithNodeEnv
+}
+
+const allNodeEnvs = ['development', 'production'] as const
+
 const sizeLimitConfig: Promise<SizeLimitConfig> = (async () =>
-  (
-    await Promise.all((await getAllPackageEntryPoints()).map(getAllImports))
-  ).flat())()
+  (await Promise.all(allNodeEnvs.map(getAllImportsWithNodeEnv))).flat())()
 
 export default sizeLimitConfig
