@@ -2232,24 +2232,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@size-limit/file@npm:^11.1.2":
-  version: 11.1.2
-  resolution: "@size-limit/file@npm:11.1.2"
+"@size-limit/file@npm:^11.1.3":
+  version: 11.1.3
+  resolution: "@size-limit/file@npm:11.1.3"
   peerDependencies:
-    size-limit: 11.1.2
-  checksum: 10/37baba93a2af2ba0358e7c8772ceb866c860c8e95c90b0e0c537533be2519ea626636e635720213938844db9185e45532e991ff4dcccc0aac21fa644cbb45780
+    size-limit: 11.1.3
+  checksum: 10/2a42d0e8ed6249be7ee08f5c78bcb4984245962cf7a6065ee16f6ecb2779e40a917a1343a6ae527669caf052e224f331e47bb4264169d6bf4ce5f09c51cfe133
   languageName: node
   linkType: hard
 
-"@size-limit/webpack@npm:^11.1.2":
-  version: 11.1.2
-  resolution: "@size-limit/webpack@npm:11.1.2"
+"@size-limit/webpack@npm:^11.1.3":
+  version: 11.1.3
+  resolution: "@size-limit/webpack@npm:11.1.3"
   dependencies:
-    nanoid: "npm:^5.0.6"
+    nanoid: "npm:^5.0.7"
     webpack: "npm:^5.91.0"
   peerDependencies:
-    size-limit: 11.1.2
-  checksum: 10/0a302ce51c018d193cab089485aaca937438d010cab59feb08be036840423b91c8d6a403895ac598ee5b563f7137302eac79a0f82803b65e3a18177c105327ed
+    size-limit: 11.1.3
+  checksum: 10/df7a8c95c6b896c07126b452b02227081732bc8139a8c4c8b20aadcbfb495278e63c5f3cdc7d3b2f9ceb8ebb35e35bfa9d021d4c69c99bd3a3d5ba55b1be0449
   languageName: node
   linkType: hard
 
@@ -6900,7 +6900,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nanoid@npm:^5.0.6":
+"nanoid@npm:^5.0.7":
   version: 5.0.7
   resolution: "nanoid@npm:5.0.7"
   bin:
@@ -7643,8 +7643,8 @@ __metadata:
     "@babel/preset-typescript": "npm:^7.14.5"
     "@microsoft/api-extractor": "npm:^7.18.1"
     "@reduxjs/toolkit": "npm:^2.0.0-beta.4"
-    "@size-limit/file": "npm:^11.1.2"
-    "@size-limit/webpack": "npm:^11.1.2"
+    "@size-limit/file": "npm:^11.1.3"
+    "@size-limit/webpack": "npm:^11.1.3"
     "@testing-library/jest-dom": "npm:^6.3.0"
     "@testing-library/react": "npm:^14.1.2"
     "@testing-library/react-hooks": "npm:^8.0.1"
@@ -7670,7 +7670,7 @@ __metadata:
     react-test-renderer: "npm:18.0.0"
     redux: "npm:^5.0.0"
     rimraf: "npm:^3.0.2"
-    size-limit: "npm:^11.1.2"
+    size-limit: "npm:^11.1.3"
     tsup: "npm:^7.0.0"
     typescript: "npm:^5.4.5"
     use-sync-external-store: "npm:^1.0.0"
@@ -8418,9 +8418,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"size-limit@npm:^11.1.2":
-  version: 11.1.2
-  resolution: "size-limit@npm:11.1.2"
+"size-limit@npm:^11.1.3":
+  version: 11.1.3
+  resolution: "size-limit@npm:11.1.3"
   dependencies:
     bytes-iec: "npm:^3.1.1"
     chokidar: "npm:^3.6.0"
@@ -8431,7 +8431,7 @@ __metadata:
     picocolors: "npm:^1.0.0"
   bin:
     size-limit: bin.js
-  checksum: 10/09457f8268c8affe4c263c4f836ca5aa53c6885ae53369483d290f67e93c662cb4f80fd5445ae8ff64a0d2faf0c2da07c29af1ae76a085e12698ba6d25b66d24
+  checksum: 10/ed464d8327ac0000e05aacf40fd1b109b5240c73c5207bf1d209ba44c397c203dfeb78cc7e184dc81867ff033975ec048d941235adab8bd0b8403445f6774392
   languageName: node
   linkType: hard
 
