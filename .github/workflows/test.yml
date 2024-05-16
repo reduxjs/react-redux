@@ -55,10 +55,10 @@ jobs:
               react-dom: { version: '^18', types: '^18' },
             },
             {
-              version: 'beta',
+              version: 'rc',
               types: 'npm:types-react@19.0.0-beta.1',
               react-dom:
-                { version: 'beta', types: 'npm:types-react-dom@19.0.0-beta.1' },
+                { version: 'rc', types: 'npm:types-react-dom@19.0.0-beta.1' },
             },
           ]
 
@@ -260,10 +260,10 @@ jobs:
               react-dom: { version: '^18', types: '^18' },
             },
             {
-              version: 'beta',
+              version: 'rc',
               types: 'npm:types-react@19.0.0-beta.1',
               react-dom:
-                { version: 'beta', types: 'npm:types-react-dom@19.0.0-beta.1' },
+                { version: 'rc', types: 'npm:types-react-dom@19.0.0-beta.1' },
             },
           ]
 
