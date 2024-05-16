@@ -111,15 +111,16 @@ describe('New v8 serverState behavior', () => {
 
   const Spinner = () => <div />
 
-  if (!IS_REACT_18) {
-    it('Dummy test for React 17, ignore', () => {})
-    return
-  }
-
-  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const consoleErrorSpy = vi
+    .spyOn(console, 'error')
+    .mockImplementation(() => {})
 
   afterEach(() => {
-    vi.clearAllMocks()
+    consoleErrorSpy.mockClear()
+  })
+
+  afterAll(() => {
+    consoleErrorSpy.mockRestore()
   })
 
   it('Handles hydration correctly', async () => {
@@ -154,19 +155,21 @@ describe('New v8 serverState behavior', () => {
         <Provider store={clientStore}>
           <App />
         </Provider>,
+        {
+          onRecoverableError: (error, errorInfo) => {
+            console.error('Hydration error')
+          },
+        },
       )
     })
 
-    const [lastCall = []] = consoleError.mock.calls.slice(-1)
-    const [errorArg] = lastCall
-    expect(errorArg).toBeInstanceOf(Error)
-    expect(/There was an error while hydrating/.test(errorArg.message)).toBe(
-      true,
-    )
+    expect(consoleErrorSpy).toHaveBeenCalledOnce()
 
-    vi.resetAllMocks()
+    expect(consoleErrorSpy).toHaveBeenLastCalledWith('Hydration error')
 
-    expect(consoleError.mock.calls.length).toBe(0)
+    consoleErrorSpy.mockClear()
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
 
     document.body.removeChild(rootDiv)
 
@@ -187,7 +190,7 @@ describe('New v8 serverState behavior', () => {
       )
     })
 
-    expect(consoleError.mock.calls.length).toBe(0)
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
 
     // Buttons should both exist, and have the updated count due to later render
     const button1 = rtl.screen.getByText('useSelector:Hydrated. Count: 1')
