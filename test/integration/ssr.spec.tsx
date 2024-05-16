@@ -163,7 +163,7 @@ describe('New v8 serverState behavior', () => {
       )
     })
 
-    expect(consoleErrorSpy).toHaveBeenCalledOnce()
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(IS_REACT_18 ? 8 : 1)
 
     expect(consoleErrorSpy).toHaveBeenLastCalledWith('Hydration error')
 
