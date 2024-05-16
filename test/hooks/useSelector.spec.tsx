@@ -108,7 +108,7 @@ describe('React', () => {
           )
 
           expect(result).toEqual(0)
-          expect(selector).toHaveBeenCalledTimes(1)
+          expect(selector).toHaveBeenCalledOnce()
 
           rtl.act(() => {
             normalStore.dispatch({ type: '' })
@@ -386,7 +386,7 @@ describe('React', () => {
             </ProviderMock>,
           )
 
-          expect(selector).toHaveBeenCalledTimes(1)
+          expect(selector).toHaveBeenCalledOnce()
           expect(renderedItems.length).toEqual(1)
 
           rtl.act(() => {
@@ -973,7 +973,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(1)
+            expect(selector).toHaveBeenCalledOnce()
 
             rtl.cleanup()
 
@@ -988,7 +988,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(1)
+            expect(selector).toHaveBeenCalledOnce()
           })
           it('always runs check if context or hook specifies', () => {
             rtl.render(
