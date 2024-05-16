@@ -198,7 +198,7 @@ describe('React', () => {
           <WrapperOuter />
         </Provider>,
       )
-      expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
+      expect(innerMapStateToProps).toHaveBeenCalledOnce()
 
       rtl.act(() => {
         innerStore.dispatch({ type: 'INC' })
@@ -348,7 +348,7 @@ describe('React', () => {
 
       unmount()
 
-      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy).toHaveBeenCalledOnce()
     })
 
     it('should handle store and children change in a the same render', () => {

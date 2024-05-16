@@ -651,7 +651,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -668,7 +668,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -685,7 +685,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -702,7 +702,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -719,7 +719,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -736,7 +736,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -753,7 +753,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mergeProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -770,7 +770,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mergeProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -787,7 +787,7 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy.mock.calls[0][0]).toMatch(
           /mergeProps\(\) in Connect\(Container\) must return a plain object/,
         )
@@ -1488,7 +1488,7 @@ describe('React', () => {
             <ConnectedContainer />
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(tester.getByTestId('string')).toHaveTextContent('')
         rtl.act(() => {
           store.dispatch({ type: 'APPEND', body: 'a' })
@@ -1583,7 +1583,7 @@ describe('React', () => {
         }
 
         const tester = rtl.render(<Root />)
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(tester.getByTestId('string')).toHaveTextContent('')
         expect(tester.getByTestId('pass')).toHaveTextContent('')
 
@@ -2051,7 +2051,7 @@ describe('React', () => {
           </ProviderMock>,
         )
 
-        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+        expect(mapStateToProps).toHaveBeenCalledOnce()
         rtl.act(() => {
           store.dispatch({ type: 'INC' })
         })
@@ -2114,11 +2114,11 @@ describe('React', () => {
         rtl.act(() => {
           store.dispatch({ type: 'INC' })
         })
-        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+        expect(mapStateToProps).toHaveBeenCalledOnce()
         rtl.act(() => {
           store.dispatch({ type: 'INC' })
         })
-        expect(mapStateToProps).toHaveBeenCalledTimes(1)
+        expect(mapStateToProps).toHaveBeenCalledOnce()
       })
     })
 
@@ -2381,9 +2381,9 @@ describe('React', () => {
         expect(tester.getByTestId('b')).toHaveTextContent('3')
         expect(tester.getByTestId('c')).toHaveTextContent('1')
 
-        expect(c3Spy).toHaveBeenCalledTimes(1)
-        expect(c2Spy).toHaveBeenCalledTimes(1)
-        expect(c1Spy).toHaveBeenCalledTimes(1)
+        expect(c3Spy).toHaveBeenCalledOnce()
+        expect(c2Spy).toHaveBeenCalledOnce()
+        expect(c1Spy).toHaveBeenCalledOnce()
 
         rtl.act(() => {
           store1.dispatch({ type: 'CHANGE' })
@@ -2395,7 +2395,7 @@ describe('React', () => {
         expect(tester.getByTestId('c')).toHaveTextContent('2')
 
         expect(c3Spy).toHaveBeenCalledTimes(2)
-        expect(c2Spy).toHaveBeenCalledTimes(1)
+        expect(c2Spy).toHaveBeenCalledOnce()
         expect(c1Spy).toHaveBeenCalledTimes(2)
 
         rtl.act(() => {
@@ -2485,16 +2485,16 @@ describe('React', () => {
             </ProviderMock>
           </ProviderMock>,
         )
-        expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
-        expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
-        expect(mapStateToPropsD).toHaveBeenCalledTimes(1)
+        expect(mapStateToPropsB).toHaveBeenCalledOnce()
+        expect(mapStateToPropsC).toHaveBeenCalledOnce()
+        expect(mapStateToPropsD).toHaveBeenCalledOnce()
 
         rtl.act(() => {
           store1.dispatch({ type: 'INC' })
         })
 
-        expect(mapStateToPropsB).toHaveBeenCalledTimes(1)
-        expect(mapStateToPropsC).toHaveBeenCalledTimes(1)
+        expect(mapStateToPropsB).toHaveBeenCalledOnce()
+        expect(mapStateToPropsC).toHaveBeenCalledOnce()
         expect(mapStateToPropsD).toHaveBeenCalledTimes(2)
 
         rtl.act(() => {
@@ -2955,7 +2955,7 @@ describe('React', () => {
           </ProviderMock>,
         )
 
-        expect(spy).toHaveBeenCalledTimes(1)
+        expect(spy).toHaveBeenCalledOnce()
         expect(spy).toHaveBeenCalledWith(
           'The `pure` option has been removed. `connect` is now always a "pure/memoized" component',
         )
