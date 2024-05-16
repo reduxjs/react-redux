@@ -80,7 +80,7 @@ describe('React', () => {
           <Child />
         </Provider>,
       )
-      expect(spy).toHaveBeenCalledTimes(0)
+      expect(spy).not.toHaveBeenCalled()
       spy.mockRestore()
 
       expect(tester.getByTestId('store')).toHaveTextContent(
@@ -344,7 +344,7 @@ describe('React', () => {
         </Provider>,
       )
 
-      expect(spy).toHaveBeenCalledTimes(0)
+      expect(spy).not.toHaveBeenCalled()
 
       unmount()
 
