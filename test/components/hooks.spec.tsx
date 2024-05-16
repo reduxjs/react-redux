@@ -117,17 +117,17 @@ describe('React', () => {
       )
 
       // 1. Initial render
-      expect(mapStateSpy1).toHaveBeenCalledTimes(1)
+      expect(mapStateSpy1).toHaveBeenCalledOnce()
 
       // 1.Initial render
       // 2. C1 useEffect
       expect(renderSpy1).toHaveBeenCalledTimes(2)
 
       // 1. Initial render
-      expect(mapStateSpy2).toHaveBeenCalledTimes(1)
+      expect(mapStateSpy2).toHaveBeenCalledOnce()
 
       // 1. Initial render
-      expect(renderSpy2).toHaveBeenCalledTimes(1)
+      expect(renderSpy2).toHaveBeenCalledOnce()
 
       rtl.act(() => {
         store.dispatch({ type: 'FOO' })
