@@ -1,8 +1,5 @@
-import { fileURLToPath } from 'node:url'
 import type { Check, SizeLimitConfig } from 'size-limit'
 import type { Configuration } from 'webpack'
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 /**
  * An array of all possible Node environments.
