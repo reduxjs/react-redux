@@ -105,7 +105,7 @@ describe('React', () => {
         </Provider>,
       )
 
-      expect(spy).toHaveBeenCalledTimes(0)
+      expect(spy).not.toHaveBeenCalled()
 
       spy.mockRestore()
     })
