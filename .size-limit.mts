@@ -64,13 +64,14 @@ const getAllPackageEntryPoints = async () => {
 
   const packageExports = await collectPackageJsonExports(packageJson.exports)
 
-  return [...new Set(packageExports)]
+  return [...packageExports]
 }
 
 /**
  * Gets all import configurations for a given entry point.
- * This function dynamically imports the specified entry point and generates a size limit configuration
- * for each named export found within the module. It includes configurations for named imports,
+ * This function dynamically imports the specified entry point and
+ * generates a size limit configuration for each named export found
+ * within the module. It includes configurations for named imports,
  * wildcard imports, and the default import.
  *
  * @param entryPoint - The entry point to import.
