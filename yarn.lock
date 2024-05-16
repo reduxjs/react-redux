@@ -2232,24 +2232,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@size-limit/file@npm:^11.1.3":
-  version: 11.1.3
-  resolution: "@size-limit/file@npm:11.1.3"
+"@size-limit/file@npm:^11.1.4":
+  version: 11.1.4
+  resolution: "@size-limit/file@npm:11.1.4"
   peerDependencies:
-    size-limit: 11.1.3
-  checksum: 10/2a42d0e8ed6249be7ee08f5c78bcb4984245962cf7a6065ee16f6ecb2779e40a917a1343a6ae527669caf052e224f331e47bb4264169d6bf4ce5f09c51cfe133
+    size-limit: 11.1.4
+  checksum: 10/6f2670af16434d4755a215b784a1177143f3627469b4ada6e9403fc479c1e9df46f0b331ea1af2121e246e936340e881459061fedc0fbf5adf5dee1de8e8175a
   languageName: node
   linkType: hard
 
-"@size-limit/webpack@npm:^11.1.3":
-  version: 11.1.3
-  resolution: "@size-limit/webpack@npm:11.1.3"
+"@size-limit/webpack@npm:^11.1.4":
+  version: 11.1.4
+  resolution: "@size-limit/webpack@npm:11.1.4"
   dependencies:
     nanoid: "npm:^5.0.7"
     webpack: "npm:^5.91.0"
   peerDependencies:
-    size-limit: 11.1.3
-  checksum: 10/df7a8c95c6b896c07126b452b02227081732bc8139a8c4c8b20aadcbfb495278e63c5f3cdc7d3b2f9ceb8ebb35e35bfa9d021d4c69c99bd3a3d5ba55b1be0449
+    size-limit: 11.1.4
+  checksum: 10/e2d40158d4fc1be884cfa79755d62a3b9db73e9899d2d15d52ef3929fb0e35bc188e74bc6989c0e77c9e6ac4aa7feb4f66fb74ccd6100e0b9c7c4a5a5fbd0038
   languageName: node
   linkType: hard
 
@@ -7381,6 +7381,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"picocolors@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "picocolors@npm:1.0.1"
+  checksum: 10/fa68166d1f56009fc02a34cdfd112b0dd3cf1ef57667ac57281f714065558c01828cdf4f18600ad6851cbe0093952ed0660b1e0156bddf2184b6aaf5817553a5
+  languageName: node
+  linkType: hard
+
 "picomatch@npm:^2.0.4, picomatch@npm:^2.2.1, picomatch@npm:^2.2.3":
   version: 2.3.0
   resolution: "picomatch@npm:2.3.0"
@@ -7643,8 +7650,8 @@ __metadata:
     "@babel/preset-typescript": "npm:^7.14.5"
     "@microsoft/api-extractor": "npm:^7.18.1"
     "@reduxjs/toolkit": "npm:^2.0.0-beta.4"
-    "@size-limit/file": "npm:^11.1.3"
-    "@size-limit/webpack": "npm:^11.1.3"
+    "@size-limit/file": "npm:^11.1.4"
+    "@size-limit/webpack": "npm:^11.1.4"
     "@testing-library/jest-dom": "npm:^6.3.0"
     "@testing-library/react": "npm:^14.1.2"
     "@testing-library/react-hooks": "npm:^8.0.1"
@@ -7670,7 +7677,7 @@ __metadata:
     react-test-renderer: "npm:18.0.0"
     redux: "npm:^5.0.0"
     rimraf: "npm:^3.0.2"
-    size-limit: "npm:^11.1.3"
+    size-limit: "npm:^11.1.4"
     tsup: "npm:^7.0.0"
     typescript: "npm:^5.4.5"
     use-sync-external-store: "npm:^1.0.0"
@@ -8418,9 +8425,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"size-limit@npm:^11.1.3":
-  version: 11.1.3
-  resolution: "size-limit@npm:11.1.3"
+"size-limit@npm:^11.1.4":
+  version: 11.1.4
+  resolution: "size-limit@npm:11.1.4"
   dependencies:
     bytes-iec: "npm:^3.1.1"
     chokidar: "npm:^3.6.0"
@@ -8428,10 +8435,10 @@ __metadata:
     jiti: "npm:^1.21.0"
     lilconfig: "npm:^3.1.1"
     nanospinner: "npm:^1.1.0"
-    picocolors: "npm:^1.0.0"
+    picocolors: "npm:^1.0.1"
   bin:
     size-limit: bin.js
-  checksum: 10/ed464d8327ac0000e05aacf40fd1b109b5240c73c5207bf1d209ba44c397c203dfeb78cc7e184dc81867ff033975ec048d941235adab8bd0b8403445f6774392
+  checksum: 10/153828b0b2d0bc7b772c51bac666d862b8b709c4c37d3915fb90cb4dfe61e79120d4f82e8cf6d74ccbe6f0b547dc33a3f1a269f0fe76f3e88241f7c17051eb94
   languageName: node
   linkType: hard
 
