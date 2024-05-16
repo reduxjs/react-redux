@@ -149,9 +149,22 @@ const getAllImportsWithNodeEnv = async (nodeEnv: NodeEnv) => {
  * @returns A promise that resolves to the size limit configuration object.
  */
 const getSizeLimitConfig = async (): Promise<SizeLimitConfig> => {
+  const packageJson = await import('./package.json', { with: { type: 'json' } })
+
   const sizeLimitConfig = (
     await Promise.all(allNodeEnvs.map(getAllImportsWithNodeEnv))
   ).flat()
+
+  if ('dependencies' in packageJson) {
+    const sizeLimitConfigWithoutDependencies = sizeLimitConfig.map<Check>(
+      (check) => ({
+        ...check,
+        name: `${check.name} (excluding dependencies)`,
+        ignore: Object.keys(packageJson.dependencies),
+      }),
+    )
+    return sizeLimitConfig.concat(sizeLimitConfigWithoutDependencies)
+  }
 
   return sizeLimitConfig
 }
