@@ -7072,7 +7072,7 @@ __metadata:
     rimraf: "npm:^3.0.2"
     tsup: "npm:^7.0.0"
     typescript: "npm:^5.4.5"
-    use-sync-external-store: "npm:^1.0.0 || ^1.4.0-rc-915b914b3a-20240515"
+    use-sync-external-store: "npm:^1.0.0 || ^1.4.0-rc-3f1436cca1-20240516"
     vitest: "npm:^1.6.0"
   peerDependencies:
     "@types/react": ^18.2.25 || ^19
@@ -8704,7 +8704,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.0.0 || ^1.4.0-rc-915b914b3a-20240515":
+"use-sync-external-store@npm:^1.0.0 || ^1.4.0-rc-3f1436cca1-20240516":
   version: 1.4.0-rc-915b914b3a-20240515
   resolution: "use-sync-external-store@npm:1.4.0-rc-915b914b3a-20240515"
   peerDependencies:
