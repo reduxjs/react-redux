@@ -7072,7 +7072,7 @@ __metadata:
     rimraf: "npm:^3.0.2"
     tsup: "npm:^7.0.0"
     typescript: "npm:^5.4.5"
-    use-sync-external-store: "npm:^1.0.0 || ^1.4.0-rc-3f1436cca1-20240516"
+    use-sync-external-store: "npm:^1.0.0 || ^1.4.0-rc-935180c7e0-20240524"
     vitest: "npm:^1.6.0"
   peerDependencies:
     "@types/react": ^18.2.25 || ^19
@@ -8704,12 +8704,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.0.0 || ^1.4.0-rc-3f1436cca1-20240516":
-  version: 1.4.0-rc-915b914b3a-20240515
-  resolution: "use-sync-external-store@npm:1.4.0-rc-915b914b3a-20240515"
+"use-sync-external-store@npm:^1.0.0 || ^1.4.0-rc-935180c7e0-20240524":
+  version: 1.4.0-rc-f994737d14-20240522
+  resolution: "use-sync-external-store@npm:1.4.0-rc-f994737d14-20240522"
   peerDependencies:
-    react: 19.0.0-rc-915b914b3a-20240515
-  checksum: 10/7275b68a2f377628239924693e0b70ff3d3f979476dcc02b142a7ba7369232775aac544f9e404c80bf705eeea52f662e1587cdd91a96fcfac951116034e87331
+    react: 19.0.0-rc-f994737d14-20240522
+  checksum: 10/fa2554ba7d01e21ec8483eb1a76d9ec1a466a0c265c855dd38c217bfdacfd3523be2a4017b483a36b76dba5c7aba09f36f3c26533e37d855177b8a4d20d122ab
   languageName: node
   linkType: hard
 
