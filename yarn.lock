@@ -2705,10 +2705,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/use-sync-external-store@npm:types-use-sync-external-store@19.0.0-beta.1 || ^0.0.6":
-  version: 19.0.0-beta.1
-  resolution: "types-use-sync-external-store@npm:19.0.0-beta.1"
-  checksum: 10/c7c9fe6c2036cedcbcedbd9c3b62f2e9236868e32a836900f54e90ec0bb9d220f06ec80f68d805e9f8787dde5416325060537db2e151619a9c02b597bd6f0417
+"@types/use-sync-external-store@npm:types-use-sync-external-store@rc":
+  version: 19.0.0-rc.0
+  resolution: "types-use-sync-external-store@npm:19.0.0-rc.0"
+  checksum: 10/aea8d2ff0ab98d260e5ee2fc91122d38abd747967299da7025e375327e2d07d22bfb417a56bb770cad2d1949e9054b50f3b8844a05ad1a4213115e8c67762215
   languageName: node
   linkType: hard
 
@@ -6912,7 +6912,7 @@ __metadata:
     "@types/prop-types": "npm:^15.7.12"
     "@types/react": "npm:types-react@rc"
     "@types/react-dom": "npm:types-react-dom@rc"
-    "@types/use-sync-external-store": "npm:types-use-sync-external-store@19.0.0-beta.1 || ^0.0.6"
+    "@types/use-sync-external-store": "npm:types-use-sync-external-store@rc"
     babel-eslint: "npm:^10.1.0"
     codecov: "npm:^3.8.3"
     cross-env: "npm:^7.0.3"
@@ -6931,7 +6931,7 @@ __metadata:
     tsup: "npm:7.0.0"
     typescript: "npm:^5.5.4"
     typescript-eslint: "npm:^7.12.0"
-    use-sync-external-store: "npm:^1.2.2 || ^1.4.0-rc-935180c7e0-20240524"
+    use-sync-external-store: "npm:^1.0.0 || ^1.4.0-rc-935180c7e0-20240524"
     vitest: "npm:^1.6.0"
   peerDependencies:
     "@types/react": ^18.2.25 || ^19
@@ -8410,12 +8410,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.2.2 || ^1.4.0-rc-935180c7e0-20240524":
-  version: 1.4.0-rc-fb9a90fa48-20240614
-  resolution: "use-sync-external-store@npm:1.4.0-rc-fb9a90fa48-20240614"
+"use-sync-external-store@npm:^1.0.0 || ^1.4.0-rc-935180c7e0-20240524":
+  version: 1.4.0-rc-f994737d14-20240522
+  resolution: "use-sync-external-store@npm:1.4.0-rc-f994737d14-20240522"
   peerDependencies:
-    react: 19.0.0-rc-fb9a90fa48-20240614
-  checksum: 10/5b31aef4df66f5172dc65170151c68bf838558a8beb4674193279aa8c1a03e3f58a30afbb7a2619d9271a5c7132a8b20cfecc4b5530440539245c1f6bd5b5aae
+    react: 19.0.0-rc-f994737d14-20240522
+  checksum: 10/fa2554ba7d01e21ec8483eb1a76d9ec1a466a0c265c855dd38c217bfdacfd3523be2a4017b483a36b76dba5c7aba09f36f3c26533e37d855177b8a4d20d122ab
   languageName: node
   linkType: hard
 
