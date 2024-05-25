@@ -59,9 +59,8 @@ jobs:
             },
             {
               version: 'rc',
-              types: 'npm:types-react@19.0.0-beta.1',
-              react-dom:
-                { version: 'rc', types: 'npm:types-react-dom@19.0.0-beta.1' },
+              types: 'npm:types-react@rc',
+              react-dom: { version: 'rc', types: 'npm:types-react-dom@rc' },
             },
           ]
 
@@ -266,9 +265,8 @@ jobs:
             },
             {
               version: 'rc',
-              types: 'npm:types-react@19.0.0-beta.1',
-              react-dom:
-                { version: 'rc', types: 'npm:types-react-dom@19.0.0-beta.1' },
+              types: 'npm:types-react@rc',
+              react-dom: { version: 'rc', types: 'npm:types-react-dom@rc' },
             },
           ]
 

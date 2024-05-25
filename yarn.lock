@@ -2677,12 +2677,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:types-react-dom@19.0.0-beta.1":
-  version: 19.0.0-beta.1
-  resolution: "types-react-dom@npm:19.0.0-beta.1"
+"@types/react-dom@npm:types-react-dom@rc":
+  version: 19.0.0-rc.0
+  resolution: "types-react-dom@npm:19.0.0-rc.0"
   dependencies:
     "@types/react": "npm:*"
-  checksum: 10/679cfba702ff7a301f9781e81992536a142edac0bc093b09addd98d8a87bbbd67d454fa2a661c9fdebe553ed3e9f11276ca6e9fb6341beee6d81d723750b0c5e
+  checksum: 10/edcf0d1f1d9c1186f627a08cccf3f9c60cd3ad3f678a420572184ce09d99ee0dc7db31dc76e00069cfcd60aeb48f49bf4ccad9334eace4895ecc3c180d3e30a6
   languageName: node
   linkType: hard
 
@@ -2696,12 +2696,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:types-react@19.0.0-beta.1":
-  version: 19.0.0-beta.1
-  resolution: "types-react@npm:19.0.0-beta.1"
+"@types/react@npm:types-react@rc":
+  version: 19.0.0-rc.0
+  resolution: "types-react@npm:19.0.0-rc.0"
   dependencies:
     csstype: "npm:^3.0.2"
-  checksum: 10/12a242d19768b529ee3783b479ef229b439d78efbefa5a662e810ac3afb96fd4f93c506603feffb69bb43c31441062404641c8ec13af689524cacb18f99ef986
+  checksum: 10/e7d9357f8e0b7b48fea99a5254976c97ded9aa21527ebb7649a1035d0ca47d2b520bee9b5ee90b1d0133f5e848e9f1d6e8a3e48b51a431476163dbd60f4e5929
   languageName: node
   linkType: hard
 
@@ -6910,8 +6910,8 @@ __metadata:
     "@testing-library/react": "npm:^15.0.7"
     "@types/node": "npm:^20.14.2"
     "@types/prop-types": "npm:^15.7.12"
-    "@types/react": "npm:types-react@19.0.0-beta.1"
-    "@types/react-dom": "npm:types-react-dom@19.0.0-beta.1"
+    "@types/react": "npm:types-react@rc"
+    "@types/react-dom": "npm:types-react-dom@rc"
     "@types/use-sync-external-store": "npm:types-use-sync-external-store@19.0.0-beta.1 || ^0.0.6"
     babel-eslint: "npm:^10.1.0"
     codecov: "npm:^3.8.3"
