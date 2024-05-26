@@ -20,35 +20,26 @@ const packageJsonEntryPoints = new Set<string>()
  * Recursively collects entry points from the `package.json` exports field.
  *
  * @param packageJsonExports - The exports field from `package.json`.
- * @returns - A set of package entry points.
+ * @returns A set of package entry points.
  */
-const collectPackageJsonExports = async (
+const collectPackageJsonExports = (
   packageJsonExports:
     | string
     | Record<string, any>
     | null
     | typeof import('./package.json').exports,
 ) => {
-  if (typeof packageJsonExports === 'string') {
+  if (
+    typeof packageJsonExports === 'string' &&
+    packageJsonExports.endsWith('js')
+  ) {
     packageJsonEntryPoints.add(
       packageJsonExports.startsWith('./')
         ? packageJsonExports
         : `./${packageJsonExports}`,
     )
-
-    return packageJsonEntryPoints
-  }
-
-  if (typeof packageJsonExports === 'object' && packageJsonExports !== null) {
-    await Promise.all(
-      Object.entries(packageJsonExports)
-        .filter(
-          ([condition]) =>
-            condition !== './package.json' && condition !== 'types',
-        )
-        .map(([_condition, entryPoint]) => entryPoint)
-        .map(collectPackageJsonExports),
-    )
+  } else if (packageJsonExports && typeof packageJsonExports === 'object') {
+    Object.values(packageJsonExports).forEach(collectPackageJsonExports)
   }
 
   return packageJsonEntryPoints
@@ -62,7 +53,7 @@ const collectPackageJsonExports = async (
 const getAllPackageEntryPoints = async () => {
   const packageJson = await import('./package.json', { with: { type: 'json' } })
 
-  const packageExports = await collectPackageJsonExports(packageJson.exports)
+  const packageExports = collectPackageJsonExports(packageJson.exports)
 
   return [...packageExports]
 }
@@ -82,9 +73,9 @@ const getAllImportsForEntryPoint = async (
   entryPoint: string,
   index: number,
 ): Promise<SizeLimitConfig> => {
-  const allNamedImports: typeof import('./src/index') = await import(entryPoint)
+  const allNamedImports = Object.keys(await import(entryPoint))
 
-  return Object.keys(allNamedImports)
+  return allNamedImports
     .map<Check>((namedImport) => ({
       path: entryPoint,
       name: `${index + 1}. import { ${namedImport} } from "${entryPoint}"`,
@@ -112,6 +103,7 @@ const getAllImportsForEntryPoint = async (
 const setNodeEnv = (nodeEnv: NodeEnv) => {
   const modifyWebpackConfig = ((config: Configuration) => {
     ;(config.optimization ??= {}).nodeEnv = nodeEnv
+
     return config
   }) satisfies Check['modifyWebpackConfig']
 
