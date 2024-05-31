@@ -148,7 +148,7 @@ export function createSelectorHook(
       | EqualityFn<NoInfer<Selected>>
       | UseSelectorOptions<NoInfer<Selected>> = {},
   ): Selected => {
-    const { equalityFn = refEquality, devModeChecks = {} } =
+    const { equalityFn = refEquality } =
       typeof equalityFnOrOptions === 'function'
         ? { equalityFn: equalityFnOrOptions }
         : equalityFnOrOptions
@@ -166,13 +166,9 @@ export function createSelectorHook(
       }
     }
 
-    const {
-      store,
-      subscription,
-      getServerState,
-      stabilityCheck,
-      identityFunctionCheck,
-    } = useReduxContext()
+    const reduxContext = useReduxContext()
+
+    const { store, subscription, getServerState } = reduxContext
 
     const firstRun = React.useRef(true)
 
@@ -181,6 +177,11 @@ export function createSelectorHook(
         [selector.name](state: TState) {
           const selected = selector(state)
           if (process.env.NODE_ENV !== 'production') {
+            const { devModeChecks = {} } =
+              typeof equalityFnOrOptions === 'function'
+                ? {}
+                : equalityFnOrOptions
+            const { identityFunctionCheck, stabilityCheck } = reduxContext
             const {
               identityFunctionCheck: finalIdentityFunctionCheck,
               stabilityCheck: finalStabilityCheck,
@@ -243,7 +244,7 @@ export function createSelectorHook(
           return selected
         },
       }[selector.name],
-      [selector, stabilityCheck, devModeChecks.stabilityCheck],
+      [selector],
     )
 
     const selectedState = useSyncExternalStoreWithSelector(
