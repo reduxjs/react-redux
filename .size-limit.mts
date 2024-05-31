@@ -51,7 +51,9 @@ const collectPackageJsonExports = (
  * @returns A promise that resolves to an array of unique package entry points.
  */
 const getAllPackageEntryPoints = async () => {
-  const packageJson = await import('./package.json', { with: { type: 'json' } })
+  const packageJson = (
+    await import('./package.json', { with: { type: 'json' } })
+  ).default
 
   const packageExports = collectPackageJsonExports(packageJson.exports)
 
@@ -73,7 +75,9 @@ const getAllImportsForEntryPoint = async (
   entryPoint: string,
   index: number,
 ): Promise<SizeLimitConfig> => {
-  const allNamedImports = Object.keys(await import(entryPoint))
+  const allNamedImports = Object.keys(await import(entryPoint)).filter(
+    (namedImport) => namedImport !== 'default',
+  )
 
   return allNamedImports
     .map<Check>((namedImport) => ({
@@ -142,7 +146,9 @@ const getAllImportsWithNodeEnv = async (nodeEnv: NodeEnv) => {
  * @returns A promise that resolves to the size limit configuration object.
  */
 const getSizeLimitConfig = async (): Promise<SizeLimitConfig> => {
-  const packageJson = await import('./package.json', { with: { type: 'json' } })
+  const packageJson = (
+    await import('./package.json', { with: { type: 'json' } })
+  ).default
 
   const sizeLimitConfig = (
     await Promise.all(allNodeEnvs.map(getAllImportsWithNodeEnv))
