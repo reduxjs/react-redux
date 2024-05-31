@@ -1,6 +1,6 @@
 import type { Context } from 'react'
-import { React } from '../utils/react'
 import type { Action, Store, UnknownAction } from 'redux'
+import { React } from '../utils/react'
 import type { Subscription } from '../utils/Subscription'
 import type { ProviderProps } from './Provider'
 
@@ -13,7 +13,7 @@ export interface ReactReduxContextValue<
   getServerState?: () => SS
 }
 
-const ContextKey = Symbol.for(`react-redux-context`)
+const ContextKey = /* @__PURE__ */ Symbol.for(`react-redux-context`)
 const gT: {
   [ContextKey]?: Map<
     typeof React.createContext,
