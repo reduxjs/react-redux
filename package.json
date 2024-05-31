@@ -16,7 +16,6 @@
   "main": "dist/cjs/index.js",
   "react-native": "./dist/react-redux.legacy-esm.js",
   "types": "dist/react-redux.d.mts",
-  "browser": "./dist/react-redux.browser.mjs",
   "exports": {
     "./package.json": "./package.json",
     ".": {
