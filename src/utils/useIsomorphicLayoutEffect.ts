@@ -26,5 +26,8 @@ export const canUseDOM = !!(
 export const isReactNative =
   typeof navigator !== 'undefined' && navigator.product === 'ReactNative'
 
-export const useIsomorphicLayoutEffect =
+const getUseIsomorphicLayoutEffect = () =>
   canUseDOM || isReactNative ? React.useLayoutEffect : React.useEffect
+
+export const useIsomorphicLayoutEffect =
+  /* @__PURE__ */ getUseIsomorphicLayoutEffect()
