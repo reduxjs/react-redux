@@ -23,7 +23,7 @@ export default defineConfig((options): Options[] => {
       'react-redux': 'src/index.ts',
     },
     sourcemap: true,
-    target: 'es2020',
+    clean: true,
     tsconfig,
     ...options,
   }
@@ -32,10 +32,11 @@ export default defineConfig((options): Options[] => {
     // Standard ESM, embedded `process.env.NODE_ENV` checks
     {
       ...commonOptions,
+      name: 'Modern ESM',
+      target: 'esnext',
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
       dts: true,
-      clean: true,
     },
     // ESM for RSC
     {
@@ -48,21 +49,24 @@ export default defineConfig((options): Options[] => {
       dts: false,
     },
     // Support Webpack 4 by pointing `"module"` to a file with a `.js` extension
+    // and optional chaining compiled away
     {
       ...commonOptions,
+      name: 'Legacy ESM, Webpack 4',
       entry: {
         'react-redux.legacy-esm': 'src/index.ts',
       },
-      target: 'es2017',
       format: ['esm'],
       outExtension: () => ({ js: '.js' }),
+      target: 'es2017',
     },
-    // Browser-ready ESM, production + minified
     {
       ...commonOptions,
+      name: 'Browser-ready ESM, production + minified',
       entry: {
         'react-redux.browser': 'src/index.ts',
       },
+      platform: 'browser',
       define: {
         'process.env.NODE_ENV': JSON.stringify('production'),
       },
@@ -70,9 +74,9 @@ export default defineConfig((options): Options[] => {
       outExtension: () => ({ js: '.mjs' }),
       minify: true,
     },
-    // CJS development
     {
       ...commonOptions,
+      name: 'CJS Development',
       entry: {
         'react-redux.development': 'src/index.ts',
       },
@@ -83,9 +87,9 @@ export default defineConfig((options): Options[] => {
       outDir: './dist/cjs/',
       outExtension: () => ({ js: '.cjs' }),
     },
-    // CJS production
     {
       ...commonOptions,
+      name: 'CJS production',
       entry: {
         'react-redux.production.min': 'src/index.ts',
       },
