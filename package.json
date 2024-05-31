@@ -15,18 +15,18 @@
   "module": "dist/react-redux.legacy-esm.js",
   "main": "dist/cjs/index.js",
   "react-native": "./dist/react-redux.legacy-esm.js",
-  "types": "dist/react-redux.d.ts",
+  "types": "dist/react-redux.d.mts",
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "types": "./dist/react-redux.d.ts",
+      "types": "./dist/react-redux.d.mts",
       "react-server": "./dist/rsc.mjs",
       "react-native": "./dist/react-redux.legacy-esm.js",
       "import": "./dist/react-redux.mjs",
       "default": "./dist/cjs/index.js"
     },
     "./alternate-renderers": {
-      "types": "./dist/react-redux.d.ts",
+      "types": "./dist/react-redux.d.mts",
       "import": "./dist/react-redux.mjs",
       "default": "./dist/cjs/index.js"
     }
