@@ -26,7 +26,7 @@ const isDOM = /* @__PURE__ */ canUseDOM()
  *
  * @see {@link https://github.com/facebook/react-native/issues/1331 Reference}
  */
-export const isRunningInReactNative = () =>
+const isRunningInReactNative = () =>
   typeof navigator !== 'undefined' && navigator.product === 'ReactNative'
 
 const isReactNative = /* @__PURE__ */ isRunningInReactNative()
