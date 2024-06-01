@@ -6857,14 +6857,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:19.0.0-rc-935180c7e0-20240524":
-  version: 19.0.0-rc-935180c7e0-20240524
-  resolution: "react-dom@npm:19.0.0-rc-935180c7e0-20240524"
+"react-dom@npm:19.0.0-rc-6d3110b4d9-20240531":
+  version: 19.0.0-rc-6d3110b4d9-20240531
+  resolution: "react-dom@npm:19.0.0-rc-6d3110b4d9-20240531"
   dependencies:
-    scheduler: "npm:0.25.0-rc-935180c7e0-20240524"
+    scheduler: "npm:0.25.0-rc-6d3110b4d9-20240531"
   peerDependencies:
-    react: 19.0.0-rc-935180c7e0-20240524
-  checksum: 10/65c465756ac1d474ee9694083fd9df40e18b71752e126936bb4f63008c8f1850986256a572a488f24e8cdb008aa681474419ab92b860d6ab84174c4f7561dfc0
+    react: 19.0.0-rc-6d3110b4d9-20240531
+  checksum: 10/a951a8b347d532d2c497fc24bacb1a14ae4763cc69d8e761970caf8c16218c2287bc34529649122c1e4b9abadc33730f8f943ec86f0a58cebd28d9cebf0d38a2
   languageName: node
   linkType: hard
 
@@ -6924,8 +6924,8 @@ __metadata:
     eslint-plugin-react: "npm:^7.34.2"
     jsdom: "npm:^24.1.0"
     prettier: "npm:^3.3.3"
-    react: "npm:19.0.0-rc-935180c7e0-20240524"
-    react-dom: "npm:19.0.0-rc-935180c7e0-20240524"
+    react: "npm:19.0.0-rc-6d3110b4d9-20240531"
+    react-dom: "npm:19.0.0-rc-6d3110b4d9-20240531"
     redux: "npm:^5.0.1"
     rimraf: "npm:^5.0.7"
     tsup: "npm:7.0.0"
@@ -6946,10 +6946,10 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"react@npm:19.0.0-rc-935180c7e0-20240524":
-  version: 19.0.0-rc-935180c7e0-20240524
-  resolution: "react@npm:19.0.0-rc-935180c7e0-20240524"
-  checksum: 10/c201f2e7fc9661766332b57c46f2af81e8ceb0963ad95260565e0ee72ebefec72d8b4ae5bc1affeeb44d40f909ca8f1ad0d082add918a353b0a527d9a007f083
+"react@npm:19.0.0-rc-6d3110b4d9-20240531":
+  version: 19.0.0-rc-6d3110b4d9-20240531
+  resolution: "react@npm:19.0.0-rc-6d3110b4d9-20240531"
+  checksum: 10/2988a2d5d237c99d0076bcbb9f10128f2f6726616290c8d97446c8b49f4b278e5966c34b3ea76d78c0e6364dd7f670803ad7b52e6913206db29b720dcd45880a
   languageName: node
   linkType: hard
 
@@ -7368,10 +7368,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"scheduler@npm:0.25.0-rc-935180c7e0-20240524":
-  version: 0.25.0-rc-935180c7e0-20240524
-  resolution: "scheduler@npm:0.25.0-rc-935180c7e0-20240524"
-  checksum: 10/bf78b33a294e216b3bf64a935775430d445c6a963298a8b898dda730ff7bcc4f41cbcf5d163eb246f29b2c81219d8a38697f5b5715111e3e18d690e33545f244
+"scheduler@npm:0.25.0-rc-6d3110b4d9-20240531":
+  version: 0.25.0-rc-6d3110b4d9-20240531
+  resolution: "scheduler@npm:0.25.0-rc-6d3110b4d9-20240531"
+  checksum: 10/954014d67f7afb3dde3b4166d206fd0a421e52fbf62536d039656515a8ac4682727c08d71ef0bd58b7a7b3c2e4d64f3041a559221c0fb664e084cb456ff690bd
   languageName: node
   linkType: hard
 
