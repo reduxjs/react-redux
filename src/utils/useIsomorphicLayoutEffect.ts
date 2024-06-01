@@ -10,11 +10,14 @@ import { React } from '../utils/react'
 // subscription is created and an inconsistent state may be observed
 
 // Matches logic in React's `shared/ExecutionEnvironment` file
-export const canUseDOM = !!(
-  typeof window !== 'undefined' &&
-  typeof window.document !== 'undefined' &&
-  typeof window.document.createElement !== 'undefined'
-)
+const canUseDOM = () =>
+  !!(
+    typeof window !== 'undefined' &&
+    typeof window.document !== 'undefined' &&
+    typeof window.document.createElement !== 'undefined'
+  )
+
+const isDOM = /* @__PURE__ */ canUseDOM()
 
 // Under React Native, we know that we always want to use useLayoutEffect
 
@@ -23,11 +26,13 @@ export const canUseDOM = !!(
  *
  * @see {@link https://github.com/facebook/react-native/issues/1331 Reference}
  */
-export const isReactNative =
+export const isRunningInReactNative = () =>
   typeof navigator !== 'undefined' && navigator.product === 'ReactNative'
 
+const isReactNative = /* @__PURE__ */ isRunningInReactNative()
+
 const getUseIsomorphicLayoutEffect = () =>
-  canUseDOM || isReactNative ? React.useLayoutEffect : React.useEffect
+  isDOM || isReactNative ? React.useLayoutEffect : React.useEffect
 
 export const useIsomorphicLayoutEffect =
   /* @__PURE__ */ getUseIsomorphicLayoutEffect()
