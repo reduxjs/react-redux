@@ -6931,7 +6931,7 @@ __metadata:
     tsup: "npm:7.0.0"
     typescript: "npm:^5.5.4"
     typescript-eslint: "npm:^7.12.0"
-    use-sync-external-store: "npm:^1.0.0 || ^1.4.0-rc-935180c7e0-20240524"
+    use-sync-external-store: "npm:^1.0.0 || ^1.4.0-rc-6d3110b4d9-20240531"
     vitest: "npm:^1.6.0"
   peerDependencies:
     "@types/react": ^18.2.25 || ^19
@@ -8410,7 +8410,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.0.0 || ^1.4.0-rc-935180c7e0-20240524":
+"use-sync-external-store@npm:^1.0.0 || ^1.4.0-rc-6d3110b4d9-20240531":
   version: 1.4.0-rc-f994737d14-20240522
   resolution: "use-sync-external-store@npm:1.4.0-rc-f994737d14-20240522"
   peerDependencies:
