@@ -6834,14 +6834,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:19.0.0-rc-6d3110b4d9-20240531":
-  version: 19.0.0-rc-6d3110b4d9-20240531
-  resolution: "react-dom@npm:19.0.0-rc-6d3110b4d9-20240531"
+"react-dom@npm:19.0.0-rc.0":
+  version: 19.0.0-rc.0
+  resolution: "react-dom@npm:19.0.0-rc.0"
   dependencies:
-    scheduler: "npm:0.25.0-rc-6d3110b4d9-20240531"
+    scheduler: "npm:0.25.0-rc.0"
   peerDependencies:
-    react: 19.0.0-rc-6d3110b4d9-20240531
-  checksum: 10/a951a8b347d532d2c497fc24bacb1a14ae4763cc69d8e761970caf8c16218c2287bc34529649122c1e4b9abadc33730f8f943ec86f0a58cebd28d9cebf0d38a2
+    react: 19.0.0-rc.0
+  checksum: 10/c35465c35c638e95f85bc48b495b42f1dd61eb1e67e357ac4a7f639fdde527162a82190f85531670906a60901cf75fc526eefbbbf475c3a85ef893a001d03ad3
   languageName: node
   linkType: hard
 
@@ -6901,8 +6901,8 @@ __metadata:
     eslint-plugin-react: "npm:^7.34.2"
     jsdom: "npm:^24.1.0"
     prettier: "npm:^3.3.3"
-    react: "npm:19.0.0-rc-6d3110b4d9-20240531"
-    react-dom: "npm:19.0.0-rc-6d3110b4d9-20240531"
+    react: "npm:19.0.0-rc.0"
+    react-dom: "npm:19.0.0-rc.0"
     redux: "npm:^5.0.1"
     rimraf: "npm:^5.0.7"
     tsup: "npm:7.0.0"
@@ -6923,10 +6923,10 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"react@npm:19.0.0-rc-6d3110b4d9-20240531":
-  version: 19.0.0-rc-6d3110b4d9-20240531
-  resolution: "react@npm:19.0.0-rc-6d3110b4d9-20240531"
-  checksum: 10/2988a2d5d237c99d0076bcbb9f10128f2f6726616290c8d97446c8b49f4b278e5966c34b3ea76d78c0e6364dd7f670803ad7b52e6913206db29b720dcd45880a
+"react@npm:19.0.0-rc.0":
+  version: 19.0.0-rc.0
+  resolution: "react@npm:19.0.0-rc.0"
+  checksum: 10/a6409939a79bdadd4c8fbb211a4ed670e5ed986dc7c946b855e5d6694e956122e2cbae4bd88360920a8e0758813de7b198ebc03e8fb4b1bea53f6433b2bfec6b
   languageName: node
   linkType: hard
 
@@ -7345,10 +7345,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"scheduler@npm:0.25.0-rc-6d3110b4d9-20240531":
-  version: 0.25.0-rc-6d3110b4d9-20240531
-  resolution: "scheduler@npm:0.25.0-rc-6d3110b4d9-20240531"
-  checksum: 10/954014d67f7afb3dde3b4166d206fd0a421e52fbf62536d039656515a8ac4682727c08d71ef0bd58b7a7b3c2e4d64f3041a559221c0fb664e084cb456ff690bd
+"scheduler@npm:0.25.0-rc.0":
+  version: 0.25.0-rc.0
+  resolution: "scheduler@npm:0.25.0-rc.0"
+  checksum: 10/17ccb28107b76d73d191e815540e90bd1d41d6530c09bf08e667ad97734a98c9881f49ac99e29952bb698f5a205c941d521cfd7459374a5d6cde692f84292c5d
   languageName: node
   linkType: hard
 
