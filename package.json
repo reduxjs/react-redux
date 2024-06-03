@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@types/use-sync-external-store": "npm:types-use-sync-external-store@rc",
-    "use-sync-external-store": "^1.0.0 || ^1.4.0-rc-6d3110b4d9-20240531"
+    "use-sync-external-store": "^1.0.0 || ^1.4.0-rc.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.7",
