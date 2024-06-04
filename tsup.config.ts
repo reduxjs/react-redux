@@ -70,8 +70,8 @@ export default defineConfig((options): Options[] => {
         'react-redux.browser': 'src/index.ts',
       },
       platform: 'browser',
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
+      env: {
+        NODE_ENV: 'production'
       },
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
@@ -83,8 +83,8 @@ export default defineConfig((options): Options[] => {
       entry: {
         'react-redux.development': 'src/index.ts',
       },
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('development'),
+      env: {
+        NODE_ENV: 'development'
       },
       format: ['cjs'],
       outDir: './dist/cjs/',
@@ -96,8 +96,8 @@ export default defineConfig((options): Options[] => {
       entry: {
         'react-redux.production.min': 'src/index.ts',
       },
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
+      env: {
+        NODE_ENV: 'production'
       },
       format: ['cjs'],
       outDir: './dist/cjs/',
