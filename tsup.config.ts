@@ -24,6 +24,7 @@ export default defineConfig((options): Options[] => {
     },
     sourcemap: true,
     clean: true,
+    target: ['esnext'],
     tsconfig,
     ...options,
   }
@@ -33,7 +34,6 @@ export default defineConfig((options): Options[] => {
     {
       ...commonOptions,
       name: 'Modern ESM',
-      target: 'esnext',
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
       dts: true,
@@ -59,7 +59,7 @@ export default defineConfig((options): Options[] => {
       },
       format: ['esm'],
       outExtension: () => ({ js: '.js' }),
-      target: 'es2017',
+      target: ['es2017'],
     },
 
     // Meant to be served up via CDNs like `unpkg`.
@@ -70,8 +70,8 @@ export default defineConfig((options): Options[] => {
         'react-redux.browser': 'src/index.ts',
       },
       platform: 'browser',
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
+      env: {
+        NODE_ENV: 'production'
       },
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
@@ -83,10 +83,10 @@ export default defineConfig((options): Options[] => {
       entry: {
         'react-redux.development': 'src/index.ts',
       },
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('development'),
+      env: {
+        NODE_ENV: 'development'
       },
-      format: 'cjs',
+      format: ['cjs'],
       outDir: './dist/cjs/',
       outExtension: () => ({ js: '.cjs' }),
     },
@@ -96,10 +96,10 @@ export default defineConfig((options): Options[] => {
       entry: {
         'react-redux.production.min': 'src/index.ts',
       },
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
+      env: {
+        NODE_ENV: 'production'
       },
-      format: 'cjs',
+      format: ['cjs'],
       outDir: './dist/cjs/',
       outExtension: () => ({ js: '.cjs' }),
       minify: true,
