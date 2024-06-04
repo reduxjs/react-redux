@@ -38,6 +38,7 @@ export default defineConfig((options): Options[] => {
       outExtension: () => ({ js: '.mjs' }),
       dts: true,
     },
+
     // ESM for RSC
     {
       ...commonOptions,
@@ -48,6 +49,7 @@ export default defineConfig((options): Options[] => {
       outExtension: () => ({ js: '.mjs' }),
       dts: false,
     },
+
     // Support Webpack 4 by pointing `"module"` to a file with a `.js` extension
     // and optional chaining compiled away
     {
@@ -60,9 +62,11 @@ export default defineConfig((options): Options[] => {
       outExtension: () => ({ js: '.js' }),
       target: 'es2017',
     },
+
+    // Meant to be served up via CDNs like `unpkg`.
     {
       ...commonOptions,
-      name: 'Browser-ready ESM, production + minified',
+      name: 'Browser-ready ESM',
       entry: {
         'react-redux.browser': 'src/index.ts',
       },
