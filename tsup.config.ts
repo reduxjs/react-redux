@@ -38,10 +38,9 @@ export default defineConfig((options): Options[] => {
       outExtension: () => ({ js: '.mjs' }),
       dts: true,
     },
-
-    // ESM for RSC
     {
       ...commonOptions,
+      name: 'ESM for RSC',
       entry: {
         rsc: 'src/index-rsc.ts',
       },
