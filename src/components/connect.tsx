@@ -211,6 +211,77 @@ function strictEqual(a: unknown, b: unknown) {
   return a === b
 }
 
+// The store _must_ exist as either a prop or in context.
+// We'll check to see if it _looks_ like a Redux store first.
+// This allows us to pass through a `store` prop that is just a plain value.
+const parseStoreFrom = (
+  propStore: Store | undefined,
+  contextValue: ReactReduxContextValue | null,
+  displayName: string,
+): {
+  didStoreComeFromProps: boolean
+  didStoreComeFromContext: boolean
+
+  store: ReactReduxContextValue['store']
+  getServerState: ReactReduxContextValue['getServerState']
+  subscription: ReactReduxContextValue['subscription'] | undefined
+} => {
+  const didStoreComeFromProps = Boolean(
+    propStore &&
+      Boolean(propStore) &&
+      Boolean(propStore.getState) &&
+      Boolean(propStore.dispatch),
+  )
+
+  const didStoreComeFromContext = Boolean(
+    contextValue && Boolean(contextValue) && Boolean(contextValue.store),
+  )
+
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    !didStoreComeFromProps &&
+    !didStoreComeFromContext
+  ) {
+    throw new Error(
+      `Could not find "store" in the context of ` +
+        `"${displayName}". Either wrap the root component in a <Provider>, ` +
+        `or pass a custom React context provider to <Provider> and the corresponding ` +
+        `React context consumer to ${displayName} in connect options.`,
+    )
+  }
+
+  const base = {
+    didStoreComeFromContext,
+    didStoreComeFromProps,
+  }
+
+  if (didStoreComeFromProps) {
+    // The store _must_ exist as either a prop.
+    if (!propStore) {
+      throw new Error('The `store` prop is not existed')
+    }
+
+    return {
+      ...base,
+      store: propStore,
+      getServerState: propStore.getState,
+      subscription: undefined,
+    }
+  }
+
+  // The store _must_ exist as in context.
+  if (!contextValue) {
+    throw new Error('The context value is not existed')
+  }
+
+  return {
+    ...base,
+    store: contextValue.store,
+    getServerState: contextValue.getServerState,
+    subscription: contextValue.subscription,
+  }
+}
+
 /**
  * Infers the type of props that a connector will inject into a component.
  */
@@ -566,34 +637,13 @@ function connect<
       // The store _must_ exist as either a prop or in context.
       // We'll check to see if it _looks_ like a Redux store first.
       // This allows us to pass through a `store` prop that is just a plain value.
-      const didStoreComeFromProps =
-        Boolean(props.store) &&
-        Boolean(props.store!.getState) &&
-        Boolean(props.store!.dispatch)
-      const didStoreComeFromContext =
-        Boolean(contextValue) && Boolean(contextValue!.store)
-
-      if (
-        process.env.NODE_ENV !== 'production' &&
-        !didStoreComeFromProps &&
-        !didStoreComeFromContext
-      ) {
-        throw new Error(
-          `Could not find "store" in the context of ` +
-            `"${displayName}". Either wrap the root component in a <Provider>, ` +
-            `or pass a custom React context provider to <Provider> and the corresponding ` +
-            `React context consumer to ${displayName} in connect options.`,
-        )
-      }
-
-      // Based on the previous check, one of these must be true
-      const store: Store = didStoreComeFromProps
-        ? props.store!
-        : contextValue!.store
-
-      const getServerState = didStoreComeFromContext
-        ? contextValue!.getServerState
-        : store.getState
+      const {
+        didStoreComeFromContext,
+        didStoreComeFromProps,
+        store,
+        subscription: storeSubscription,
+        getServerState,
+      } = parseStoreFrom(props.store, contextValue, displayName)
 
       const childPropsSelector = React.useMemo(() => {
         // The child props selector needs the store reference as an input.
@@ -606,10 +656,7 @@ function connect<
 
         // This Subscription's source should match where store came from: props vs. context. A component
         // connected to the store via props shouldn't use subscription from context, or vice versa.
-        const subscription = createSubscription(
-          store,
-          didStoreComeFromProps ? undefined : contextValue!.subscription,
-        )
+        const subscription = createSubscription(store, storeSubscription)
 
         // `notifyNestedSubs` is duplicated to handle the case where the component is unmounted in
         // the middle of the notification loop, where `subscription` will then be null. This can
@@ -619,7 +666,7 @@ function connect<
           subscription.notifyNestedSubs.bind(subscription)
 
         return [subscription, notifyNestedSubs]
-      }, [store, didStoreComeFromProps, contextValue])
+      }, [store, storeSubscription])
 
       // Determine what {store, subscription} value should be put into nested context, if necessary,
       // and memoize that value to avoid unnecessary context updates.
