@@ -7345,7 +7345,7 @@ __metadata:
     react-test-renderer: "npm:18.3.1"
     redux: "npm:^5.0.1"
     rimraf: "npm:^5.0.7"
-    tsup: "npm:^7.2.0"
+    tsup: "npm:7.0.0"
     typescript: "npm:^5.4.5"
     typescript-eslint: "npm:^7.12.0"
     use-sync-external-store: "npm:^1.2.2"
@@ -8638,9 +8638,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsup@npm:^7.2.0":
-  version: 7.2.0
-  resolution: "tsup@npm:7.2.0"
+"tsup@npm:7.0.0":
+  version: 7.0.0
+  resolution: "tsup@npm:7.0.0"
   dependencies:
     bundle-require: "npm:^4.0.0"
     cac: "npm:^6.7.12"
@@ -8670,7 +8670,7 @@ __metadata:
   bin:
     tsup: dist/cli-default.js
     tsup-node: dist/cli-node.js
-  checksum: 10/dea55a1a8911643f2c040527737c2b9982c03d39311c734fe3675680ad89b390784b9973fa890f1c5c816463930c70be9552801b0e5a58d2aa75b5375936cc8c
+  checksum: 10/2dded18403fe75cafc11be34571b5b3abed41b895e5c83d1006852cb8da8fdccbddf50352a3f68fa527cc9a12819fbe3c2d4fdb397141cb04c563a0427552492
   languageName: node
   linkType: hard
 
