@@ -1,5 +1,6 @@
-//import * as React from 'react'
+// import * as React from 'react'
 import { React } from '../utils/react'
+import type { Context } from 'react'
 
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
@@ -132,10 +133,7 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
 export function createSelectorHook(
-  context: React.Context<ReactReduxContextValue<
-    any,
-    any
-  > | null> = ReactReduxContext,
+  context: Context<ReactReduxContextValue<any, any> | null> = ReactReduxContext,
 ): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
