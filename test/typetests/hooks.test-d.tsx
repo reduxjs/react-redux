@@ -224,7 +224,7 @@ describe('type tests', () => {
 
     const state = untypedStore.getState()
 
-    expectTypeOf(state).toBeObject()
+    expectTypeOf(state).toBeUnknown()
 
     const typedStore = useStore<TypedState, TypedAction>()
 
