@@ -3,7 +3,7 @@
 // The useSyncExternalStoreWithSelector has to be imported, but we can use the
 // non-shim version. This shaves off the byte size of the shim.
 
-import * as React from 'react'
+import { React } from './utils/react'
 import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector.js'
 
 import { initializeUseSelector } from './hooks/useSelector'
