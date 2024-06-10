@@ -2,7 +2,7 @@ import {
   createReduxContextHook,
   useReduxContext,
 } from '@internal/hooks/useReduxContext'
-import { renderHook } from '@testing-library/react-hooks'
+import { renderHook } from '@testing-library/react'
 import { createContext } from 'react'
 import type { ReactReduxContextValue } from 'react-redux'
 
@@ -12,12 +12,9 @@ describe('React', () => {
       it('throws if component is not wrapped in provider', () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-        const { result } = renderHook(() => useReduxContext())
-
-        expect(result.error?.message).toMatch(
+        expect(() => renderHook(() => useReduxContext())).toThrow(
           /could not find react-redux context value/,
         )
-
         spy.mockRestore()
       })
     })
@@ -27,9 +24,7 @@ describe('React', () => {
         const useCustomReduxContext = createReduxContextHook(customContext)
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-        const { result } = renderHook(() => useCustomReduxContext())
-
-        expect(result.error?.message).toMatch(
+        expect(() => renderHook(() => useCustomReduxContext())).toThrow(
           /could not find react-redux context value/,
         )
 
