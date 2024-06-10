@@ -36,7 +36,6 @@ export default defineConfig((options): Options[] => {
       name: 'Modern ESM',
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
-      dts: true,
     },
     {
       ...commonOptions,
@@ -71,7 +70,7 @@ export default defineConfig((options): Options[] => {
       },
       platform: 'browser',
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
       },
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
@@ -84,7 +83,7 @@ export default defineConfig((options): Options[] => {
         'react-redux.development': 'src/index.ts',
       },
       env: {
-        NODE_ENV: 'development'
+        NODE_ENV: 'development',
       },
       format: ['cjs'],
       outDir: './dist/cjs/',
@@ -97,7 +96,7 @@ export default defineConfig((options): Options[] => {
         'react-redux.production.min': 'src/index.ts',
       },
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
       },
       format: ['cjs'],
       outDir: './dist/cjs/',
@@ -106,6 +105,12 @@ export default defineConfig((options): Options[] => {
       onSuccess: async () => {
         await writeCommonJSEntry()
       },
+    },
+    {
+      ...commonOptions,
+      name: 'CJS Type definitions',
+      format: ['cjs'],
+      dts: { only: true },
     },
   ]
 })
