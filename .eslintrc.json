@@ -23,7 +23,9 @@
   },
   "settings": {
     "import/ignore": ["react-native"],
-    "import/resolver": { "node": { "extensions": [".js", ".ts", ".tsx"] } },
+    "import/resolver": {
+      "typescript": { "extensions": [".js", ".ts", ".tsx"] }
+    },
     "react": { "version": "detect" }
   },
   "overrides": [

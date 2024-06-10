@@ -15,7 +15,6 @@ describe('React', () => {
         expect(() => renderHook(() => useReduxContext())).toThrowError(
           /could not find react-redux context value/,
         )
-
         spy.mockRestore()
       })
     })
