@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react-hooks'
+import { renderHook } from '@testing-library/react'
 import React from 'react'
 import type { ProviderProps, ReactReduxContextValue } from 'react-redux'
 import {
@@ -32,7 +32,7 @@ describe('React', () => {
         const useCustomDispatch = createDispatchHook(nestedContext)
         const { result } = renderHook(() => useDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }: ProviderProps) => (
+          wrapper: ({ children, ...props }) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}
@@ -45,7 +45,7 @@ describe('React', () => {
 
         const { result: result2 } = renderHook(() => useCustomDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }: ProviderProps) => (
+          wrapper: ({ children, ...props }) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}
