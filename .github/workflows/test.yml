@@ -77,9 +77,11 @@ jobs:
         run: yarn add ./package.tgz
 
       - name: Erase path aliases
-        run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json ./vitest.config.mts
+        run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json
 
       - name: Test types
+        env:
+          TEST_DIST: true
         run: |
           yarn tsc --version
           yarn type-tests
@@ -264,7 +266,9 @@ jobs:
         run: yarn add ./package.tgz
 
       - name: Erase path aliases
-        run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json ./vitest.config.mts
+        run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json
 
       - name: Run local tests against the build artifact
+        env:
+          TEST_DIST: true
         run: yarn test
