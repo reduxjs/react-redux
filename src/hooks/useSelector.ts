@@ -129,7 +129,7 @@ const refEquality: EqualityFn<any> = (a, b) => a === b
 /**
  * Hook factory, which creates a `useSelector` hook bound to a given context.
  *
- * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
 export function createSelectorHook(

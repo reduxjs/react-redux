@@ -52,7 +52,7 @@ export interface UseDispatch<
 /**
  * Hook factory, which creates a `useDispatch` hook bound to a given context.
  *
- * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useDispatch` hook bound to the specified context.
  */
 export function createDispatchHook<

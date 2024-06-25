@@ -75,7 +75,7 @@ export interface UseStore<StoreType extends Store> {
 /**
  * Hook factory, which creates a `useStore` hook bound to a given context.
  *
- * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useStore` hook bound to the specified context.
  */
 export function createStoreHook<
