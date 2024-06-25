@@ -1,11 +1,9 @@
 //import * as React from 'react'
 import { React } from '../utils/react'
-
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector.js'
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
-import type { uSESWS } from '../utils/useSyncExternalStore'
-import { notInitialized } from '../utils/useSyncExternalStore'
 import {
   createReduxContextHook,
   useReduxContext as useDefaultReduxContext,
@@ -116,11 +114,6 @@ export interface UseSelector<StateType = unknown> {
   withTypes: <
     OverrideStateType extends StateType,
   >() => UseSelector<OverrideStateType>
-}
-
-let useSyncExternalStoreWithSelector = notInitialized as uSESWS
-export const initializeUseSelector = (fn: uSESWS) => {
-  useSyncExternalStoreWithSelector = fn
 }
 
 const refEquality: EqualityFn<any> = (a, b) => a === b
