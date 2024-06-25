@@ -28,7 +28,6 @@ import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { uSES } from '../utils/useSyncExternalStore'
-import { notInitialized } from '../utils/useSyncExternalStore'
 import warning from '../utils/warning'
 import type {
   ReactReduxContextInstance,
@@ -36,9 +35,9 @@ import type {
 } from './Context'
 import { ReactReduxContext } from './Context'
 
-let useSyncExternalStore = notInitialized as uSES
+// let useSyncExternalStore = notInitialized as uSES
 export const initializeConnect = (fn: uSES) => {
-  useSyncExternalStore = fn
+  return fn
 }
 
 // Define some constant arrays just to avoid re-creating these
@@ -413,6 +412,10 @@ export interface Connect<DefaultState = unknown> {
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
   // tslint:enable:no-unnecessary-generics
 }
+
+const useSyncExternalStore = /* @__PURE__ */ initializeConnect(
+  React.useSyncExternalStore,
+)
 
 let hasWarnedAboutDeprecatedPureOption = false
 
