@@ -108,7 +108,7 @@ export default defineConfig((options): Options[] => {
     },
     {
       ...commonOptions,
-      name: 'Type definitions',
+      name: 'CJS Type definitions',
       format: ['cjs'],
       dts: { only: true },
     },
