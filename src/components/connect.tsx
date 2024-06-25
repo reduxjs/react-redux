@@ -29,8 +29,6 @@ import { mergePropsFactory } from '../connect/mergeProps'
 import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import shallowEqual from '../utils/shallowEqual'
-import hoistStatics from '../utils/hoistStatics'
 import warning from '../utils/warning'
 
 import type {
@@ -38,14 +36,6 @@ import type {
   ReactReduxContextInstance,
 } from './Context'
 import { ReactReduxContext } from './Context'
-
-import type { uSES } from '../utils/useSyncExternalStore'
-import { notInitialized } from '../utils/useSyncExternalStore'
-
-let useSyncExternalStore = notInitialized as uSES
-export const initializeConnect = (fn: uSES) => {
-  useSyncExternalStore = fn
-}
 
 // Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
@@ -726,7 +716,7 @@ function connect<
       let actualChildProps: Record<string, unknown>
 
       try {
-        actualChildProps = useSyncExternalStore(
+        actualChildProps = React.useSyncExternalStore(
           // TODO We're passing through a big wrapper that does a bunch of extra side effects besides subscribing
           subscribeForReact,
           // TODO This is incredibly hacky. We've already processed the store update and calculated new child props,
