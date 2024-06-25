@@ -1,7 +1,7 @@
 import type { Context, ReactNode } from 'react'
-import { React } from '../utils/react'
 import type { Action, Store, UnknownAction } from 'redux'
 import type { DevModeCheckFrequency } from '../hooks/useSelector'
+import { React } from '../utils/react'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { ReactReduxContextValue } from './Context'

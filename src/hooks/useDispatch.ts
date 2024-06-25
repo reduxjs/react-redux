@@ -1,6 +1,5 @@
 import type { Context } from 'react'
 import type { Action, Dispatch, UnknownAction } from 'redux'
-
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import { createStoreHook, useStore as useDefaultStore } from './useStore'

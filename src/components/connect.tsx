@@ -1,46 +1,40 @@
-/* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
+/* eslint-disable valid-jsdoc */
 import type { ComponentType } from 'react'
-import { React } from '../utils/react'
-import { isValidElementType, isContextConsumer } from '../utils/react-is'
-
 import type { Store } from 'redux'
-
-import type {
-  ConnectedComponent,
-  InferableComponentEnhancer,
-  InferableComponentEnhancerWithProps,
-  ResolveThunks,
-  DispatchProp,
-  ConnectPropsMaybeWithoutContext,
-} from '../types'
-
-import type {
-  MapStateToPropsParam,
-  MapDispatchToPropsParam,
-  MergeProps,
-  MapDispatchToPropsNonObject,
-  SelectorFactoryOptions,
-} from '../connect/selectorFactory'
-import defaultSelectorFactory from '../connect/selectorFactory'
 import { mapDispatchToPropsFactory } from '../connect/mapDispatchToProps'
 import { mapStateToPropsFactory } from '../connect/mapStateToProps'
 import { mergePropsFactory } from '../connect/mergeProps'
-
+import type {
+  MapDispatchToPropsNonObject,
+  MapDispatchToPropsParam,
+  MapStateToPropsParam,
+  MergeProps,
+  SelectorFactoryOptions,
+} from '../connect/selectorFactory'
+import defaultSelectorFactory from '../connect/selectorFactory'
+import type {
+  ConnectedComponent,
+  ConnectPropsMaybeWithoutContext,
+  DispatchProp,
+  InferableComponentEnhancer,
+  InferableComponentEnhancerWithProps,
+  ResolveThunks,
+} from '../types'
+import hoistStatics from '../utils/hoistStatics'
+import { React } from '../utils/react'
+import { isContextConsumer, isValidElementType } from '../utils/react-is'
+import shallowEqual from '../utils/shallowEqual'
 import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import shallowEqual from '../utils/shallowEqual'
-import hoistStatics from '../utils/hoistStatics'
-import warning from '../utils/warning'
-
-import type {
-  ReactReduxContextValue,
-  ReactReduxContextInstance,
-} from './Context'
-import { ReactReduxContext } from './Context'
-
 import type { uSES } from '../utils/useSyncExternalStore'
 import { notInitialized } from '../utils/useSyncExternalStore'
+import warning from '../utils/warning'
+import type {
+  ReactReduxContextInstance,
+  ReactReduxContextValue,
+} from './Context'
+import { ReactReduxContext } from './Context'
 
 let useSyncExternalStore = notInitialized as uSES
 export const initializeConnect = (fn: uSES) => {
