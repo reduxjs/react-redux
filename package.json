@@ -33,7 +33,8 @@
   },
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "yarn clean && tsup",
