@@ -23,7 +23,7 @@ export type DevModeCheckFrequency = 'never' | 'once' | 'always'
  * @since 9.0.0
  * @internal
  */
-export interface DevModeChecks {
+interface DevModeChecks {
   /**
    * Overrides the global stability check for the selector.
    * - `once` - Run only the first time the selector is called.
