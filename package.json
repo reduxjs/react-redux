@@ -79,7 +79,7 @@
     "@babel/preset-typescript": "^7.24.7",
     "@microsoft/api-extractor": "^7.47.0",
     "@reduxjs/toolkit": "^2.2.5",
-    "@testing-library/dom": "^10.1.0",
+    "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.4.5",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^20.14.2",
