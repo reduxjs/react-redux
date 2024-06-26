@@ -213,7 +213,7 @@ export type ConnectedProps<TConnector> =
       : TInjectedProps
     : never
 
-export interface ConnectOptions<
+interface ConnectOptions<
   State = unknown,
   TStateProps = {},
   TOwnProps = {},
