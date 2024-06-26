@@ -18,7 +18,7 @@ function defaultMergeProps<
   return { ...ownProps, ...stateProps, ...dispatchProps }
 }
 
-export function wrapMergePropsFunc<
+function wrapMergePropsFunc<
   TStateProps,
   TDispatchProps,
   TOwnProps,
