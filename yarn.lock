@@ -2132,7 +2132,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/dom@npm:^10.1.0":
+"@testing-library/dom@npm:^10.4.0":
   version: 10.4.0
   resolution: "@testing-library/dom@npm:10.4.0"
   dependencies:
@@ -6147,7 +6147,7 @@ __metadata:
     "@babel/preset-typescript": "npm:^7.24.7"
     "@microsoft/api-extractor": "npm:^7.47.0"
     "@reduxjs/toolkit": "npm:^2.2.5"
-    "@testing-library/dom": "npm:^10.1.0"
+    "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.4.5"
     "@testing-library/react": "npm:^16.0.0"
     "@types/node": "npm:^20.14.2"
