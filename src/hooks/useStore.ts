@@ -15,7 +15,7 @@ import {
  * @since 9.1.0
  * @internal
  */
-export type ExtractStoreActionType<StoreType extends Store> =
+type ExtractStoreActionType<StoreType extends Store> =
   StoreType extends Store<any, infer ActionType> ? ActionType : never
 
 /**
