@@ -12,7 +12,7 @@ describe('React', () => {
       it('throws if component is not wrapped in provider', () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-        expect(() => renderHook(() => useReduxContext())).toThrow(
+        expect(() => renderHook(() => useReduxContext())).toThrowError(
           /could not find react-redux context value/,
         )
         spy.mockRestore()
@@ -24,7 +24,7 @@ describe('React', () => {
         const useCustomReduxContext = createReduxContextHook(customContext)
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-        expect(() => renderHook(() => useCustomReduxContext())).toThrow(
+        expect(() => renderHook(() => useCustomReduxContext())).toThrowError(
           /could not find react-redux context value/,
         )
 

@@ -6,7 +6,11 @@
  * Copyright 2015, Yahoo! Inc.
  * Copyrights licensed under the New BSD License. See the accompanying LICENSE file for terms.
  */
-import type * as React from 'react'
+import type {
+  ComponentType,
+  ForwardRefExoticComponent,
+  MemoExoticComponent,
+} from 'react'
 import { ForwardRef, Memo, isMemo } from '../utils/react-is'
 
 const REACT_STATICS = {
@@ -66,16 +70,16 @@ function getStatics(component: any) {
 }
 
 export type NonReactStatics<
-  S extends React.ComponentType<any>,
+  S extends ComponentType<any>,
   C extends {
     [key: string]: true
   } = {},
 > = {
   [key in Exclude<
     keyof S,
-    S extends React.MemoExoticComponent<any>
+    S extends MemoExoticComponent<any>
       ? keyof typeof MEMO_STATICS | keyof C
-      : S extends React.ForwardRefExoticComponent<any>
+      : S extends ForwardRefExoticComponent<any>
         ? keyof typeof FORWARD_REF_STATICS | keyof C
         : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
   >]: S[key]
@@ -89,8 +93,8 @@ const getPrototypeOf = Object.getPrototypeOf
 const objectPrototype = Object.prototype
 
 export default function hoistNonReactStatics<
-  T extends React.ComponentType<any>,
-  S extends React.ComponentType<any>,
+  T extends ComponentType<any>,
+  S extends ComponentType<any>,
   C extends {
     [key: string]: true
   } = {},
