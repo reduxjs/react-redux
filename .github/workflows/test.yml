@@ -106,7 +106,7 @@ jobs:
 
       # Note: We currently expect "FalseCJS" failures for Node16 + `moduleResolution: "node16",
       - name: Run are-the-types-wrong
-        run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
+        run: npx @arethetypeswrong/cli@latest ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
 
   test-published-artifact:
     name: Test Published Artifact ${{ matrix.example }}

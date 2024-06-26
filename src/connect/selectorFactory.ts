@@ -1,7 +1,7 @@
-import type { Dispatch, Action } from 'redux'
 import type { ComponentType } from 'react'
-import verifySubselectors from './verifySubselectors'
+import type { Action, Dispatch } from 'redux'
 import type { EqualityFn, ExtendedEqualityFn } from '../types'
+import verifySubselectors from './verifySubselectors'
 
 export type SelectorFactory<S, TProps, TOwnProps, TFactoryOptions> = (
   dispatch: Dispatch<Action<string>>,
@@ -64,7 +64,7 @@ interface PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
   readonly areOwnPropsEqual: EqualityFn<TOwnProps>
 }
 
-export function pureFinalPropsSelectorFactory<
+function pureFinalPropsSelectorFactory<
   TStateProps,
   TOwnProps,
   TDispatchProps,
@@ -167,7 +167,7 @@ interface WrappedMapDispatchToProps<TDispatchProps, TOwnProps> {
   readonly dependsOnOwnProps: boolean
 }
 
-export interface InitOptions<TStateProps, TOwnProps, TMergedProps, State>
+interface InitOptions<TStateProps, TOwnProps, TMergedProps, State>
   extends PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
   readonly shouldHandleStateChanges: boolean
   readonly displayName: string

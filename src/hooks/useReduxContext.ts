@@ -1,12 +1,12 @@
-import { React } from '../utils/react'
-import { ReactReduxContext } from '../components/Context'
 import type { ReactReduxContextValue } from '../components/Context'
+import { ReactReduxContext } from '../components/Context'
+import { React } from '../utils/react'
 
 /**
  * Hook factory, which creates a `useReduxContext` hook bound to a given context. This is a low-level
  * hook that you should usually not need to call directly.
  *
- * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useReduxContext` hook bound to the specified context.
  */
 export function createReduxContextHook(context = ReactReduxContext) {

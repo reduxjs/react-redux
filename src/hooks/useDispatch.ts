@@ -1,6 +1,5 @@
 import type { Context } from 'react'
 import type { Action, Dispatch, UnknownAction } from 'redux'
-
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import { createStoreHook, useStore as useDefaultStore } from './useStore'
@@ -52,7 +51,7 @@ export interface UseDispatch<
 /**
  * Hook factory, which creates a `useDispatch` hook bound to a given context.
  *
- * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useDispatch` hook bound to the specified context.
  */
 export function createDispatchHook<

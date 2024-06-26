@@ -1,11 +1,9 @@
-//import * as React from 'react'
-import { React } from '../utils/react'
-
+import type { Context } from 'react'
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector.js'
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
-import type { uSESWS } from '../utils/useSyncExternalStore'
-import { notInitialized } from '../utils/useSyncExternalStore'
+import { React } from '../utils/react'
 import {
   createReduxContextHook,
   useReduxContext as useDefaultReduxContext,
@@ -25,7 +23,7 @@ export type DevModeCheckFrequency = 'never' | 'once' | 'always'
  * @since 9.0.0
  * @internal
  */
-export interface DevModeChecks {
+interface DevModeChecks {
   /**
    * Overrides the global stability check for the selector.
    * - `once` - Run only the first time the selector is called.
@@ -118,24 +116,16 @@ export interface UseSelector<StateType = unknown> {
   >() => UseSelector<OverrideStateType>
 }
 
-let useSyncExternalStoreWithSelector = notInitialized as uSESWS
-export const initializeUseSelector = (fn: uSESWS) => {
-  useSyncExternalStoreWithSelector = fn
-}
-
 const refEquality: EqualityFn<any> = (a, b) => a === b
 
 /**
  * Hook factory, which creates a `useSelector` hook bound to a given context.
  *
- * @param {React.Context} [context=ReactReduxContext] Context passed to your `<Provider>`.
+ * @param [context=ReactReduxContext] Context passed to your `<Provider>`.
  * @returns {Function} A `useSelector` hook bound to the specified context.
  */
 export function createSelectorHook(
-  context: React.Context<ReactReduxContextValue<
-    any,
-    any
-  > | null> = ReactReduxContext,
+  context: Context<ReactReduxContextValue<any, any> | null> = ReactReduxContext,
 ): UseSelector {
   const useReduxContext =
     context === ReactReduxContext
@@ -148,7 +138,7 @@ export function createSelectorHook(
       | EqualityFn<NoInfer<Selected>>
       | UseSelectorOptions<NoInfer<Selected>> = {},
   ): Selected => {
-    const { equalityFn = refEquality, devModeChecks = {} } =
+    const { equalityFn = refEquality } =
       typeof equalityFnOrOptions === 'function'
         ? { equalityFn: equalityFnOrOptions }
         : equalityFnOrOptions
@@ -166,13 +156,9 @@ export function createSelectorHook(
       }
     }
 
-    const {
-      store,
-      subscription,
-      getServerState,
-      stabilityCheck,
-      identityFunctionCheck,
-    } = useReduxContext()
+    const reduxContext = useReduxContext()
+
+    const { store, subscription, getServerState } = reduxContext
 
     const firstRun = React.useRef(true)
 
@@ -181,6 +167,11 @@ export function createSelectorHook(
         [selector.name](state: TState) {
           const selected = selector(state)
           if (process.env.NODE_ENV !== 'production') {
+            const { devModeChecks = {} } =
+              typeof equalityFnOrOptions === 'function'
+                ? {}
+                : equalityFnOrOptions
+            const { identityFunctionCheck, stabilityCheck } = reduxContext
             const {
               identityFunctionCheck: finalIdentityFunctionCheck,
               stabilityCheck: finalStabilityCheck,
@@ -243,7 +234,7 @@ export function createSelectorHook(
           return selected
         },
       }[selector.name],
-      [selector, stabilityCheck, devModeChecks.stabilityCheck],
+      [selector],
     )
 
     const selectedState = useSyncExternalStoreWithSelector(

@@ -1,51 +1,38 @@
-/* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
+/* eslint-disable valid-jsdoc */
 import type { ComponentType } from 'react'
-import { React } from '../utils/react'
-import { isValidElementType, isContextConsumer } from '../utils/react-is'
-
 import type { Store } from 'redux'
-
-import type {
-  ConnectedComponent,
-  InferableComponentEnhancer,
-  InferableComponentEnhancerWithProps,
-  ResolveThunks,
-  DispatchProp,
-  ConnectPropsMaybeWithoutContext,
-} from '../types'
-
-import type {
-  MapStateToPropsParam,
-  MapDispatchToPropsParam,
-  MergeProps,
-  MapDispatchToPropsNonObject,
-  SelectorFactoryOptions,
-} from '../connect/selectorFactory'
-import defaultSelectorFactory from '../connect/selectorFactory'
 import { mapDispatchToPropsFactory } from '../connect/mapDispatchToProps'
 import { mapStateToPropsFactory } from '../connect/mapStateToProps'
 import { mergePropsFactory } from '../connect/mergeProps'
-
+import type {
+  MapDispatchToPropsNonObject,
+  MapDispatchToPropsParam,
+  MapStateToPropsParam,
+  MergeProps,
+  SelectorFactoryOptions,
+} from '../connect/selectorFactory'
+import defaultSelectorFactory from '../connect/selectorFactory'
+import type {
+  ConnectedComponent,
+  ConnectPropsMaybeWithoutContext,
+  DispatchProp,
+  InferableComponentEnhancer,
+  InferableComponentEnhancerWithProps,
+  ResolveThunks,
+} from '../types'
+import hoistStatics from '../utils/hoistStatics'
+import { React } from '../utils/react'
+import { isContextConsumer, isValidElementType } from '../utils/react-is'
+import shallowEqual from '../utils/shallowEqual'
 import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import shallowEqual from '../utils/shallowEqual'
-import hoistStatics from '../utils/hoistStatics'
 import warning from '../utils/warning'
-
 import type {
-  ReactReduxContextValue,
   ReactReduxContextInstance,
+  ReactReduxContextValue,
 } from './Context'
 import { ReactReduxContext } from './Context'
-
-import type { uSES } from '../utils/useSyncExternalStore'
-import { notInitialized } from '../utils/useSyncExternalStore'
-
-let useSyncExternalStore = notInitialized as uSES
-export const initializeConnect = (fn: uSES) => {
-  useSyncExternalStore = fn
-}
 
 // Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
@@ -226,7 +213,7 @@ export type ConnectedProps<TConnector> =
       : TInjectedProps
     : never
 
-export interface ConnectOptions<
+interface ConnectOptions<
   State = unknown,
   TStateProps = {},
   TOwnProps = {},
@@ -726,7 +713,7 @@ function connect<
       let actualChildProps: Record<string, unknown>
 
       try {
-        actualChildProps = useSyncExternalStore(
+        actualChildProps = React.useSyncExternalStore(
           // TODO We're passing through a big wrapper that does a bunch of extra side effects besides subscribing
           subscribeForReact,
           // TODO This is incredibly hacky. We've already processed the store update and calculated new child props,

@@ -1,4 +1,4 @@
-import type { ActionCreatorsMapObject, Dispatch, ActionCreator } from 'redux'
+import type { ActionCreator, ActionCreatorsMapObject, Dispatch } from 'redux'
 
 import type { FixTypeLater } from '../types'
 import verifyPlainObject from '../utils/verifyPlainObject'
@@ -8,7 +8,7 @@ type StateOrDispatch<S extends AnyState = AnyState> = S | Dispatch
 
 type AnyProps = { [key: string]: any }
 
-export type MapToProps<P extends AnyProps = AnyProps> = {
+type MapToProps<P extends AnyProps = AnyProps> = {
   // eslint-disable-next-line no-unused-vars
   (stateOrDispatch: StateOrDispatch, ownProps?: P): FixTypeLater
   dependsOnOwnProps?: boolean
@@ -47,7 +47,7 @@ export function wrapMapToPropsConstant(
 // A length of zero is assumed to mean mapToProps is getting args via arguments or ...args and
 // therefore not reporting its length accurately..
 // TODO Can this get pulled out so that we can subscribe directly to the store if we don't need ownProps?
-export function getDependsOnOwnProps(mapToProps: MapToProps) {
+function getDependsOnOwnProps(mapToProps: MapToProps) {
   return mapToProps.dependsOnOwnProps
     ? Boolean(mapToProps.dependsOnOwnProps)
     : mapToProps.length !== 1
