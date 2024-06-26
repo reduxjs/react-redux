@@ -48,5 +48,3 @@ function getContext(): Context<ReactReduxContextValue | null> {
 export const ReactReduxContext = /*#__PURE__*/ getContext()
 
 export type ReactReduxContextInstance = typeof ReactReduxContext
-
-export default ReactReduxContext
