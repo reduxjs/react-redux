@@ -8,7 +8,7 @@ type StateOrDispatch<S extends AnyState = AnyState> = S | Dispatch
 
 type AnyProps = { [key: string]: any }
 
-export type MapToProps<P extends AnyProps = AnyProps> = {
+type MapToProps<P extends AnyProps = AnyProps> = {
   // eslint-disable-next-line no-unused-vars
   (stateOrDispatch: StateOrDispatch, ownProps?: P): FixTypeLater
   dependsOnOwnProps?: boolean
