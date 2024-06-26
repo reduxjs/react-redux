@@ -2148,7 +2148,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/jest-dom@npm:^6.4.5":
+"@testing-library/jest-dom@npm:^6.6.3":
   version: 6.6.3
   resolution: "@testing-library/jest-dom@npm:6.6.3"
   dependencies:
@@ -6148,7 +6148,7 @@ __metadata:
     "@microsoft/api-extractor": "npm:^7.47.0"
     "@reduxjs/toolkit": "npm:^2.2.5"
     "@testing-library/dom": "npm:^10.4.0"
-    "@testing-library/jest-dom": "npm:^6.4.5"
+    "@testing-library/jest-dom": "npm:^6.6.3"
     "@testing-library/react": "npm:^16.0.0"
     "@types/node": "npm:^20.14.2"
     "@types/prop-types": "npm:^15.7.12"
