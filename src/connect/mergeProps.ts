@@ -1,10 +1,10 @@
 import type { Action, Dispatch } from 'redux'
+import type { EqualityFn } from '../types'
 import verifyPlainObject from '../utils/verifyPlainObject'
 import { createInvalidArgFactory } from './invalidArgFactory'
 import type { MergeProps } from './selectorFactory'
-import type { EqualityFn } from '../types'
 
-export function defaultMergeProps<
+function defaultMergeProps<
   TStateProps,
   TDispatchProps,
   TOwnProps,
