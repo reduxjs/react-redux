@@ -2453,9 +2453,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/dom@npm:^10.3.1":
-  version: 10.3.1
-  resolution: "@testing-library/dom@npm:10.3.1"
+"@testing-library/dom@npm:^10.3.2":
+  version: 10.3.2
+  resolution: "@testing-library/dom@npm:10.3.2"
   dependencies:
     "@babel/code-frame": "npm:^7.10.4"
     "@babel/runtime": "npm:^7.12.5"
@@ -2465,7 +2465,7 @@ __metadata:
     dom-accessibility-api: "npm:^0.5.9"
     lz-string: "npm:^1.5.0"
     pretty-format: "npm:^27.0.2"
-  checksum: 10/a78646e775d31b33669274e8baa9c27e6e9ea944131dcdf8d2ac2df7199516d5a9fe483e5ec49c85580399fc2f9efad395876e984b9a4ae520903dec47c773c0
+  checksum: 10/ca71b9eee3d8310f7463f9b5f14eb9ad63b2175404b57055e3e73a0401bfa6568c6226c38da30be5af3e251353635a42f3e5a94de0b23c2010a6e7724c231573
   languageName: node
   linkType: hard
 
@@ -6560,7 +6560,7 @@ __metadata:
     "@babel/preset-typescript": "npm:^7.24.7"
     "@microsoft/api-extractor": "npm:^7.47.0"
     "@reduxjs/toolkit": "npm:^2.2.6"
-    "@testing-library/dom": "npm:^10.3.1"
+    "@testing-library/dom": "npm:^10.3.2"
     "@testing-library/jest-dom": "npm:^6.4.6"
     "@testing-library/react": "npm:^16.0.0"
     "@types/node": "npm:^20.14.2"
