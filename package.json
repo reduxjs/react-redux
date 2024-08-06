@@ -43,7 +43,7 @@
     "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "lint": "eslint src test",
     "lint:fix": "eslint src test --fix",
-    "prepare": "yarn clean && yarn build",
+    "prepack": "yarn build",
     "pretest": "yarn lint",
     "test": "vitest --run --typecheck",
     "test:watch": "vitest --watch",
