@@ -29,6 +29,8 @@ import { mergePropsFactory } from '../connect/mergeProps'
 import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
+import shallowEqual from '../utils/shallowEqual'
+import hoistStatics from '../utils/hoistStatics'
 import warning from '../utils/warning'
 
 import type {
