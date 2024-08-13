@@ -1,6 +1,6 @@
 import type { Context } from 'react'
-import type { Action, Store, UnknownAction } from 'redux'
 import { React } from '../utils/react'
+import type { Action, Store, UnknownAction } from 'redux'
 import type { Subscription } from '../utils/Subscription'
 import type { ProviderProps } from './Provider'
 
