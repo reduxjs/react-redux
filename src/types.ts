@@ -70,11 +70,12 @@ export type Shared<InjectedProps, DecorationTargetProps> = {
 }
 
 // Infers prop type from component C
-export type GetProps<C> = C extends ComponentType<infer P>
-  ? C extends ComponentClass<P>
-    ? ClassAttributes<InstanceType<C>> & P
-    : P
-  : never
+export type GetProps<C> =
+  C extends ComponentType<infer P>
+    ? C extends ComponentClass<P>
+      ? ClassAttributes<InstanceType<C>> & P
+      : P
+    : never
 
 // Applies LibraryManagedAttributes (proper handling of defaultProps
 // and propTypes).

@@ -45,7 +45,7 @@ ReactDOM.render(
   <Provider store={store}>
     <App />
   </Provider>,
-  rootElement
+  rootElement,
 )
 ```
 

@@ -1,8 +1,8 @@
 ---
 id: connect-mapdispatch
-title: "Connect: Dispatching Actions with mapDispatchToProps"
+title: 'Connect: Dispatching Actions with mapDispatchToProps'
 hide_title: true
-sidebar_label: "Connect: Dispatching Actions with mapDispatchToProps"
+sidebar_label: 'Connect: Dispatching Actions with mapDispatchToProps'
 ---
 
 # Connect: Dispatching Actions with `mapDispatchToProps`
@@ -29,10 +29,7 @@ If you don't specify the second argument to `connect()`, your component will rec
 ```js
 connect()(MyComponent)
 // which is equivalent with
-connect(
-  null,
-  null
-)(MyComponent)
+connect(null, null)(MyComponent)
 
 // or
 connect(mapStateToProps /** no second argument */)(MyComponent)
@@ -85,7 +82,7 @@ This allows more components to dispatch actions, while keeping them "unaware" of
 // making Todo able to dispatch the toggleTodo action
 const TodoList = ({ todos, toggleTodo }) => (
   <div>
-    {todos.map(todo => (
+    {todos.map((todo) => (
       <Todo todo={todo} onClick={toggleTodo} />
     ))}
   </div>
@@ -120,12 +117,12 @@ The `mapDispatchToProps` function will be called with `dispatch` as the first ar
 You will normally make use of this by returning new functions that call `dispatch()` inside themselves, and either pass in a plain action object directly or pass in the result of an action creator.
 
 ```js
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     // dispatching plain actions
     increment: () => dispatch({ type: 'INCREMENT' }),
     decrement: () => dispatch({ type: 'DECREMENT' }),
-    reset: () => dispatch({ type: 'RESET' })
+    reset: () => dispatch({ type: 'RESET' }),
   }
 }
 ```
@@ -133,14 +130,14 @@ const mapDispatchToProps = dispatch => {
 You will also likely want to forward arguments to your action creators:
 
 ```js
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     // explicitly forwarding arguments
-    onClick: event => dispatch(trackClick(event)),
+    onClick: (event) => dispatch(trackClick(event)),
 
     // implicitly forwarding arguments
     onReceiveImpressions: (...impressions) =>
-      dispatch(trackImpressions(impressions))
+      dispatch(trackImpressions(impressions)),
   }
 }
 ```
@@ -191,12 +188,12 @@ const increment = () => ({ type: 'INCREMENT' })
 const decrement = () => ({ type: 'DECREMENT' })
 const reset = () => ({ type: 'RESET' })
 
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     // dispatching actions returned by action creators
     increment: () => dispatch(increment()),
     decrement: () => dispatch(decrement()),
-    reset: () => dispatch(reset())
+    reset: () => dispatch(reset()),
   }
 }
 ```
@@ -245,7 +242,7 @@ const boundIncrement = bindActionCreators(increment, dispatch)
 // binding an object full of action creators
 const boundActionCreators = bindActionCreators(
   { increment, decrement, reset },
-  dispatch
+  dispatch,
 )
 // returns
 // {
@@ -266,10 +263,7 @@ function mapDispatchToProps(dispatch) {
 }
 
 // component receives props.increment, props.decrement, props.reset
-connect(
-  null,
-  mapDispatchToProps
-)(Counter)
+connect(null, mapDispatchToProps)(Counter)
 ```
 
 ### Manually Injecting `dispatch`
@@ -283,7 +277,7 @@ import { bindActionCreators } from 'redux'
 function mapDispatchToProps(dispatch) {
   return {
     dispatch,
-    ...bindActionCreators({ increment, decrement, reset }, dispatch)
+    ...bindActionCreators({ increment, decrement, reset }, dispatch),
   }
 }
 ```
@@ -303,7 +297,7 @@ Note that:
 
 ```js
 // React Redux does this for you automatically:
-dispatch => bindActionCreators(mapDispatchToProps, dispatch)
+;(dispatch) => bindActionCreators(mapDispatchToProps, dispatch)
 ```
 
 Therefore, our `mapDispatchToProps` can simply be:
@@ -312,7 +306,7 @@ Therefore, our `mapDispatchToProps` can simply be:
 const mapDispatchToProps = {
   increment,
   decrement,
-  reset
+  reset,
 }
 ```
 
@@ -366,12 +360,12 @@ connect(mapStateToProps /** no second argument*/)(Component)
 You may bring back `dispatch` by providing your customized `mapDispatchToProps` function:
 
 ```js
-const mapDispatchToProps = dispatch => {
+const mapDispatchToProps = (dispatch) => {
   return {
     increment: () => dispatch(increment()),
     decrement: () => dispatch(decrement()),
     reset: () => dispatch(reset()),
-    dispatch
+    dispatch,
   }
 }
 ```
@@ -384,7 +378,7 @@ import { bindActionCreators } from 'redux'
 function mapDispatchToProps(dispatch) {
   return {
     dispatch,
-    ...bindActionCreators({ increment, decrement, reset }, dispatch)
+    ...bindActionCreators({ increment, decrement, reset }, dispatch),
   }
 }
 ```
@@ -398,10 +392,7 @@ There are discussions regarding whether to provide `dispatch` to your components
 Yes. You can skip the first parameter by passing `undefined` or `null`. Your component will not subscribe to the store, and will still receive the dispatch props defined by `mapDispatchToProps`.
 
 ```js
-connect(
-  null,
-  mapDispatchToProps
-)(MyComponent)
+connect(null, mapDispatchToProps)(MyComponent)
 ```
 
 ### Can I call `store.dispatch`?

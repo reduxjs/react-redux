@@ -42,18 +42,12 @@ After you’ve supplied the custom context to `<Provider />`, you will need to s
 
 ```js
 // You can pass the context as an option to connect
-export default connect(
-  mapState,
-  mapDispatch,
-  null,
-  { context: MyContext }
-)(MyComponent)
+export default connect(mapState, mapDispatch, null, { context: MyContext })(
+  MyComponent,
+)
 
 // or, call connect as normal to start
-const ConnectedComponent = connect(
-  mapState,
-  mapDispatch
-)(MyComponent)
+const ConnectedComponent = connect(mapState, mapDispatch)(MyComponent)
 
 // Later, pass the custom context as a prop to the connected component
 ;<ConnectedComponent context={MyContext} />

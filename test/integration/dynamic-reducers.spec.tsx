@@ -180,7 +180,9 @@ describe('React', () => {
       // This generates errors for using useLayoutEffect in v7
       // We hide that error by disabling console.error here
 
-      const consoleErrorSpy =  vi.spyOn(console, 'error').mockImplementation(() => {})
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {})
 
       const markup = ReactDOMServer.renderToString(
         <Provider store={store}>

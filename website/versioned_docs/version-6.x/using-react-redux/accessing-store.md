@@ -42,21 +42,15 @@ After you’ve supplied the custom context to `<Provider />`, you will need to s
 
 ```js
 // You can pass the context as an option to connect
-export default connect(
-  mapState,
-  mapDispatch,
-  null,
-  { context: MyContext }
-)(MyComponent);
+export default connect(mapState, mapDispatch, null, { context: MyContext })(
+  MyComponent,
+)
 
 // or, call connect as normal to start
-const ConnectedComponent = connect(
-  mapState,
-  mapDispatch
-)(MyComponent);
+const ConnectedComponent = connect(mapState, mapDispatch)(MyComponent)
 
 // Later, pass the custom context as a prop to the connected component
-<ConnectedComponent context={MyContext} />
+;<ConnectedComponent context={MyContext} />
 ```
 
 The following runtime error occurs when React Redux does not find a store in the context it is looking. For example:
@@ -132,7 +126,7 @@ function MyConnectedComponent() {
         // component where it can be used in lifecycle methods
       }}
     </ReactReduxContext.Consumer>
-  );
+  )
 }
 ```
 
