@@ -1,8 +1,10 @@
 /*eslint-disable react/prop-types*/
 
 import * as rtl from '@testing-library/react'
-import type { Dispatch, ElementType, MouseEvent, ReactNode } from 'react'
+import type { Dispatch, ElementType, JSX, MouseEvent, ReactNode } from 'react'
 import React, { Component } from 'react'
+import type { ReactReduxContextValue } from 'react-redux'
+import { Provider as ProviderMock, connect } from 'react-redux'
 import type {
   Action,
   AnyAction,
@@ -12,8 +14,6 @@ import type {
   UnknownAction,
 } from 'redux'
 import { applyMiddleware, createStore } from 'redux'
-import type { ReactReduxContextValue } from '../../src/index'
-import { Provider as ProviderMock, connect } from '../../src/index'
 
 const IS_REACT_18 = React.version.startsWith('18')
 

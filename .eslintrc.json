@@ -23,7 +23,9 @@
   },
   "settings": {
     "import/ignore": ["react-native"],
-    "import/resolver": { "node": { "extensions": [".js", ".ts", ".tsx"] } },
+    "import/resolver": {
+      "typescript": { "extensions": [".js", ".ts", ".tsx"] }
+    },
     "react": { "version": "detect" }
   },
   "overrides": [
@@ -33,6 +35,7 @@
         "eslint:recommended",
         "plugin:import/recommended",
         "plugin:react/recommended",
+        "plugin:react/jsx-runtime",
         "plugin:@typescript-eslint/recommended"
       ],
       "rules": {
@@ -56,7 +59,7 @@
     },
     {
       "files": ["**/test/**/*.{ts,tsx}"],
-      "parserOptions": { "project": "./test/tsconfig.test.json" }
+      "parserOptions": { "project": true }
     }
   ]
 }

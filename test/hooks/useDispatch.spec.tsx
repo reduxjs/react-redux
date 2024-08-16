@@ -1,12 +1,12 @@
+import { renderHook } from '@testing-library/react'
 import React from 'react'
-import { createStore } from 'redux'
-import { renderHook } from '@testing-library/react-hooks'
+import type { ProviderProps, ReactReduxContextValue } from 'react-redux'
 import {
+  createDispatchHook,
   Provider as ProviderMock,
   useDispatch,
-  createDispatchHook,
-} from '../../src/index'
-import type { ProviderProps, ReactReduxContextValue } from '../../src/'
+} from 'react-redux'
+import { createStore } from 'redux'
 
 const store = createStore((c: number = 1): number => c + 1)
 const store2 = createStore((c: number = 1): number => c + 2)
@@ -32,7 +32,7 @@ describe('React', () => {
         const useCustomDispatch = createDispatchHook(nestedContext)
         const { result } = renderHook(() => useDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }: ProviderProps) => (
+          wrapper: ({ children, ...props }) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}
@@ -45,7 +45,7 @@ describe('React', () => {
 
         const { result: result2 } = renderHook(() => useCustomDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }: ProviderProps) => (
+          wrapper: ({ children, ...props }) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}

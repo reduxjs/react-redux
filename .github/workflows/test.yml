@@ -1,15 +1,10 @@
 name: Tests
 
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
-  workflow_dispatch:
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    name: Test Suite
+    name: Build and run test Suite
     runs-on: ubuntu-latest
 
     steps:
@@ -24,6 +19,9 @@ jobs:
 
       - name: Install dependencies
         run: yarn install
+
+      - name: Lint
+        run: yarn lint
 
       - name: Run test suite
         run: yarn test
@@ -63,13 +61,27 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
 
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: .
+
       - name: Install deps
         run: yarn install
 
       - name: Install TypeScript ${{ matrix.ts }}
         run: yarn add typescript@${{ matrix.ts }}
 
+      - name: Install build artifact
+        run: yarn add ./package.tgz
+
+      - name: Erase path aliases
+        run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json
+
       - name: Test types
+        env:
+          TEST_DIST: true
         run: |
           yarn tsc --version
           yarn type-tests
@@ -93,10 +105,8 @@ jobs:
           path: .
 
       # Note: We currently expect "FalseCJS" failures for Node16 + `moduleResolution: "node16",
-      # and the `/alternateRenderers" entry point will not resolve under Node10.
-      # Skipping these is dangerous, but we'll leave it for now.
       - name: Run are-the-types-wrong
-        run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs no-resolution
+        run: npx @arethetypeswrong/cli ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
 
   test-published-artifact:
     name: Test Published Artifact ${{ matrix.example }}
@@ -221,3 +231,44 @@ jobs:
 
       - name: Build example
         run: yarn build
+
+  test-dist:
+    name: Run local tests against build artifact
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20.x']
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+
+      - name: Install deps
+        run: yarn install
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: .
+
+      - name: Check folder contents
+        run: ls -lah
+
+      - name: Install build artifact
+        run: yarn add ./package.tgz
+
+      - name: Erase path aliases
+        run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json
+
+      - name: Run local tests against the build artifact
+        env:
+          TEST_DIST: true
+        run: yarn test
