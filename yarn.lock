@@ -2149,7 +2149,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/react@npm:^16.0.0":
+"@testing-library/react@npm:^16.0.1":
   version: 16.0.1
   resolution: "@testing-library/react@npm:16.0.1"
   dependencies:
@@ -6128,7 +6128,7 @@ __metadata:
     "@reduxjs/toolkit": "npm:^2.2.5"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:^6.6.3"
-    "@testing-library/react": "npm:^16.0.0"
+    "@testing-library/react": "npm:^16.0.1"
     "@types/node": "npm:^20.14.2"
     "@types/prop-types": "npm:^15.7.12"
     "@types/react": "npm:types-react@^19.0.0-rc"
