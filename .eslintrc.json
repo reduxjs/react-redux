@@ -19,7 +19,8 @@
   },
   "plugins": ["@typescript-eslint", "import", "react"],
   "rules": {
-    "valid-jsdoc": [2]
+    "valid-jsdoc": [2],
+    "react/no-is-mounted": [0]
   },
   "settings": {
     "import/ignore": ["react-native"],
@@ -54,7 +55,8 @@
           { "fixStyle": "separate-type-imports" }
         ],
         "@typescript-eslint/consistent-type-exports": [2],
-        "valid-jsdoc": [2]
+        "valid-jsdoc": [2],
+        "react/no-is-mounted": [0]
       }
     },
     {
