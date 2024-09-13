@@ -27,9 +27,9 @@ hide_title: true
 
 Welcome to the React Redux TypeScript Quick Start tutorial! **This tutorial will briefly show how to use TypeScript with Redux Toolkit and React-Redux**.
 
-This page focuses on just how to set up the TypeScript aspects . For explanations of what Redux is, how it works, and full examples of how to use Redux, see [the Redux core docs tutorials](https://redux.js.org/tutorials/index).
+This page focuses on just how to set up the TypeScript aspects. For explanations of what Redux is, how it works, and full examples of how to use Redux, see [the Redux core docs tutorials](https://redux.js.org/tutorials/index).
 
-[React Redux](https://react-redux.js.org) is also written in TypeScript as of version 8, and also includes its own type definitions.
+[React Redux](/) is also written in TypeScript as of version 8, and also includes its own type definitions.
 
 The [Redux+TS template for Create-React-App](https://github.com/reduxjs/cra-template-redux-typescript) comes with a working example of these patterns already configured.
 
