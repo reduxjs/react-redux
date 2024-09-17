@@ -24,6 +24,8 @@ const isDOM = /* @__PURE__ */ canUseDOM()
 /**
  * Checks if the code is running in a React Native environment.
  *
+ * @returns Whether the code is running in a React Native environment.
+ *
  * @see {@link https://github.com/facebook/react-native/issues/1331 Reference}
  */
 const isRunningInReactNative = () =>
