@@ -26,9 +26,6 @@ jobs:
       - name: Run test suite
         run: yarn test
 
-      - name: Collect coverage
-        run: yarn coverage
-
       - name: Build
         run: yarn build
 
