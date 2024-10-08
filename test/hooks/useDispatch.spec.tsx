@@ -32,7 +32,7 @@ describe('React', () => {
         const useCustomDispatch = createDispatchHook(nestedContext)
         const { result } = renderHook(() => useDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }) => (
+          wrapper: ({ children, ...props }: Omit<ProviderProps, 'store'>) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}
@@ -45,7 +45,7 @@ describe('React', () => {
 
         const { result: result2 } = renderHook(() => useCustomDispatch(), {
           // eslint-disable-next-line react/prop-types
-          wrapper: ({ children, ...props }) => (
+          wrapper: ({ children, ...props }: Omit<ProviderProps, 'store'>) => (
             <ProviderMock {...props} store={store}>
               <ProviderMock context={nestedContext} store={store2}>
                 {children}

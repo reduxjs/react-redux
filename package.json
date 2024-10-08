@@ -50,8 +50,8 @@
     "coverage": "codecov"
   },
   "peerDependencies": {
-    "@types/react": "^18.2.25",
-    "react": "^18.0",
+    "@types/react": "^18.2.25 || ^19",
+    "react": "^18.0 || ^19",
     "redux": "^5.0.0"
   },
   "peerDependenciesMeta": {
@@ -63,8 +63,8 @@
     }
   },
   "dependencies": {
-    "@types/use-sync-external-store": "^0.0.6",
-    "use-sync-external-store": "^1.2.2"
+    "@types/use-sync-external-store": "npm:types-use-sync-external-store@rc",
+    "use-sync-external-store": "^1.0.0 || ^1.4.0-rc.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.7",
@@ -78,14 +78,14 @@
     "@babel/preset-env": "^7.24.7",
     "@babel/preset-typescript": "^7.24.7",
     "@microsoft/api-extractor": "^7.47.0",
-    "@reduxjs/toolkit": "^2.2.5",
-    "@testing-library/dom": "^10.1.0",
-    "@testing-library/jest-dom": "^6.4.5",
-    "@testing-library/react": "^16.0.0",
+    "@reduxjs/toolkit": "^2.2.7",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.1",
     "@types/node": "^20.14.2",
     "@types/prop-types": "^15.7.12",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "npm:types-react@rc",
+    "@types/react-dom": "npm:types-react-dom@rc",
     "babel-eslint": "^10.1.0",
     "codecov": "^3.8.3",
     "cross-env": "^7.0.3",
@@ -95,11 +95,10 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-react": "^7.34.2",
-    "jsdom": "^24.1.0",
+    "jsdom": "^25.0.0",
     "prettier": "^3.3.3",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-test-renderer": "18.3.1",
+    "react": "19.0.0-rc.0",
+    "react-dom": "19.0.0-rc.0",
     "redux": "^5.0.1",
     "rimraf": "^5.0.7",
     "tsup": "7.0.0",
