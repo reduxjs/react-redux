@@ -13,7 +13,7 @@ export interface ReactReduxContextValue<
   getServerState?: () => SS
 }
 
-const ContextKey = Symbol.for(`react-redux-context`)
+const ContextKey = /* @__PURE__ */ Symbol.for(`react-redux-context`)
 const gT: {
   [ContextKey]?: Map<
     typeof React.createContext,
@@ -48,5 +48,3 @@ function getContext(): Context<ReactReduxContextValue | null> {
 export const ReactReduxContext = /*#__PURE__*/ getContext()
 
 export type ReactReduxContextInstance = typeof ReactReduxContext
-
-export default ReactReduxContext

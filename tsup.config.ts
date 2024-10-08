@@ -23,7 +23,8 @@ export default defineConfig((options): Options[] => {
       'react-redux': 'src/index.ts',
     },
     sourcemap: true,
-    target: 'es2020',
+    clean: true,
+    target: ['esnext'],
     tsconfig,
     ...options,
   }
@@ -32,14 +33,13 @@ export default defineConfig((options): Options[] => {
     // Standard ESM, embedded `process.env.NODE_ENV` checks
     {
       ...commonOptions,
+      name: 'Modern ESM',
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
-      dts: true,
-      clean: true,
     },
-    // ESM for RSC
     {
       ...commonOptions,
+      name: 'ESM for RSC',
       entry: {
         rsc: 'src/index-rsc.ts',
       },
@@ -47,58 +47,70 @@ export default defineConfig((options): Options[] => {
       outExtension: () => ({ js: '.mjs' }),
       dts: false,
     },
+
     // Support Webpack 4 by pointing `"module"` to a file with a `.js` extension
+    // and optional chaining compiled away
     {
       ...commonOptions,
+      name: 'Legacy ESM, Webpack 4',
       entry: {
         'react-redux.legacy-esm': 'src/index.ts',
       },
-      target: 'es2017',
+      target: ['es2017'],
       format: ['esm'],
       outExtension: () => ({ js: '.js' }),
     },
-    // Browser-ready ESM, production + minified
+
+    // Meant to be served up via CDNs like `unpkg`.
     {
       ...commonOptions,
+      name: 'Browser-ready ESM',
       entry: {
         'react-redux.browser': 'src/index.ts',
       },
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
+      platform: 'browser',
+      env: {
+        NODE_ENV: 'production',
       },
       format: ['esm'],
       outExtension: () => ({ js: '.mjs' }),
       minify: true,
     },
-    // CJS development
     {
       ...commonOptions,
+      name: 'CJS Development',
       entry: {
         'react-redux.development': 'src/index.ts',
       },
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('development'),
+      env: {
+        NODE_ENV: 'development',
       },
-      format: 'cjs',
+      format: ['cjs'],
       outDir: './dist/cjs/',
       outExtension: () => ({ js: '.cjs' }),
     },
-    // CJS production
     {
       ...commonOptions,
+      name: 'CJS production',
       entry: {
         'react-redux.production.min': 'src/index.ts',
       },
-      define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
+      env: {
+        NODE_ENV: 'production',
       },
-      format: 'cjs',
+      format: ['cjs'],
       outDir: './dist/cjs/',
       outExtension: () => ({ js: '.cjs' }),
       minify: true,
       onSuccess: async () => {
         await writeCommonJSEntry()
       },
+    },
+    {
+      ...commonOptions,
+      name: 'CJS Type definitions',
+      format: ['cjs'],
+      dts: { only: true },
     },
   ]
 })
