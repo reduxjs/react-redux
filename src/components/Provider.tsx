@@ -54,24 +54,32 @@ export interface ProviderProps<
   children: ReactNode
 }
 
-function Provider<A extends Action<string> = UnknownAction, S = unknown>({
-  store,
-  context,
-  children,
-  serverState,
-  stabilityCheck = 'once',
-  identityFunctionCheck = 'once',
-}: ProviderProps<A, S>) {
+function Provider<A extends Action<string> = UnknownAction, S = unknown>(
+  providerProps: ProviderProps<A, S>,
+) {
+  const { children, context, serverState, store } = providerProps
+
   const contextValue = React.useMemo(() => {
     const subscription = createSubscription(store)
-    return {
+
+    const baseContextValue = {
       store,
       subscription,
       getServerState: serverState ? () => serverState : undefined,
-      stabilityCheck,
-      identityFunctionCheck,
     }
-  }, [store, serverState, stabilityCheck, identityFunctionCheck])
+
+    if (process.env.NODE_ENV === 'production') {
+      return baseContextValue
+    } else {
+      const { identityFunctionCheck = 'once', stabilityCheck = 'once' } =
+        providerProps
+
+      return /* @__PURE__ */ Object.assign(baseContextValue, {
+        stabilityCheck,
+        identityFunctionCheck,
+      })
+    }
+  }, [store, serverState])
 
   const previousState = React.useMemo(() => store.getState(), [store])
 
