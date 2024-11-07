@@ -5,21 +5,27 @@ import type { ElementType, MemoExoticComponent, ReactElement } from 'react'
 // It's very possible this could change in the future, but given that
 // we only use these in `connect`, this is a low priority.
 
-const REACT_ELEMENT_TYPE = Symbol.for('react.element')
-const REACT_PORTAL_TYPE = Symbol.for('react.portal')
-const REACT_FRAGMENT_TYPE = Symbol.for('react.fragment')
-const REACT_STRICT_MODE_TYPE = Symbol.for('react.strict_mode')
-const REACT_PROFILER_TYPE = Symbol.for('react.profiler')
-const REACT_PROVIDER_TYPE = Symbol.for('react.provider')
-const REACT_CONTEXT_TYPE = Symbol.for('react.context')
-const REACT_SERVER_CONTEXT_TYPE = Symbol.for('react.server_context')
-const REACT_FORWARD_REF_TYPE = Symbol.for('react.forward_ref')
-const REACT_SUSPENSE_TYPE = Symbol.for('react.suspense')
-const REACT_SUSPENSE_LIST_TYPE = Symbol.for('react.suspense_list')
-const REACT_MEMO_TYPE = Symbol.for('react.memo')
-const REACT_LAZY_TYPE = Symbol.for('react.lazy')
-const REACT_OFFSCREEN_TYPE = Symbol.for('react.offscreen')
-const REACT_CLIENT_REFERENCE = Symbol.for('react.client.reference')
+const REACT_ELEMENT_TYPE = /* @__PURE__ */ Symbol.for('react.element')
+const REACT_PORTAL_TYPE = /* @__PURE__ */ Symbol.for('react.portal')
+const REACT_FRAGMENT_TYPE = /* @__PURE__ */ Symbol.for('react.fragment')
+const REACT_STRICT_MODE_TYPE = /* @__PURE__ */ Symbol.for('react.strict_mode')
+const REACT_PROFILER_TYPE = /* @__PURE__ */ Symbol.for('react.profiler')
+const REACT_PROVIDER_TYPE = /* @__PURE__ */ Symbol.for('react.provider')
+const REACT_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for('react.context')
+const REACT_SERVER_CONTEXT_TYPE = /* @__PURE__ */ Symbol.for(
+  'react.server_context',
+)
+const REACT_FORWARD_REF_TYPE = /* @__PURE__ */ Symbol.for('react.forward_ref')
+const REACT_SUSPENSE_TYPE = /* @__PURE__ */ Symbol.for('react.suspense')
+const REACT_SUSPENSE_LIST_TYPE = /* @__PURE__ */ Symbol.for(
+  'react.suspense_list',
+)
+const REACT_MEMO_TYPE = /* @__PURE__ */ Symbol.for('react.memo')
+const REACT_LAZY_TYPE = /* @__PURE__ */ Symbol.for('react.lazy')
+const REACT_OFFSCREEN_TYPE = /* @__PURE__ */ Symbol.for('react.offscreen')
+const REACT_CLIENT_REFERENCE = /* @__PURE__ */ Symbol.for(
+  'react.client.reference',
+)
 
 export const ForwardRef = REACT_FORWARD_REF_TYPE
 export const Memo = REACT_MEMO_TYPE

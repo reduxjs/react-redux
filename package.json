@@ -33,7 +33,8 @@
   },
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "yarn clean && tsup",
@@ -42,7 +43,7 @@
     "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "lint": "eslint src test",
     "lint:fix": "eslint src test --fix",
-    "prepare": "yarn clean && yarn build",
+    "prepack": "yarn build",
     "pretest": "yarn lint",
     "test": "vitest --run --typecheck",
     "test:watch": "vitest --watch",
@@ -102,7 +103,7 @@
     "react-test-renderer": "18.3.1",
     "redux": "^5.0.1",
     "rimraf": "^5.0.7",
-    "tsup": "7.0.0",
+    "tsup": "^8.3.5",
     "typescript": "^5.5.4",
     "typescript-eslint": "^7.12.0",
     "vitest": "^1.6.0"

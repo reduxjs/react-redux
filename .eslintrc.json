@@ -19,7 +19,10 @@
   },
   "plugins": ["@typescript-eslint", "import", "react"],
   "rules": {
-    "valid-jsdoc": [2],
+    "valid-jsdoc": [
+      2,
+      { "requireReturnType": false, "requireParamType": false }
+    ],
     "react/no-is-mounted": [0]
   },
   "settings": {
@@ -55,7 +58,10 @@
           { "fixStyle": "separate-type-imports" }
         ],
         "@typescript-eslint/consistent-type-exports": [2],
-        "valid-jsdoc": [2],
+        "valid-jsdoc": [
+          2,
+          { "requireReturnType": false, "requireParamType": false }
+        ],
         "react/no-is-mounted": [0]
       }
     },
