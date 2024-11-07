@@ -233,3 +233,15 @@ a:visited {
   fill: black;
   stroke: black;
 }
+
+/* course callout on home page */
+.course-callout.home-mid {
+  max-width: 900px;
+  margin: 1rem auto 2rem;
+}
+
+div[class*='announcementBar_'] {
+  /* Intentionally override the theme behavior,
+  so that the course banner image is effectively cropped*/ 
+  z-index: calc(var(--ifm-z-index-fixed) -1) !important;
+}
