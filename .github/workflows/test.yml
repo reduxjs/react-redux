@@ -55,9 +55,9 @@ jobs:
               react-dom: { version: '^18', types: '^18' },
             },
             {
-              version: 'rc',
-              types: 'npm:types-react@rc',
-              react-dom: { version: 'rc', types: 'npm:types-react-dom@rc' },
+              version: '^19',
+              types: '^19',
+              react-dom: { version: '^19', types: '^19' },
             },
           ]
 
@@ -261,9 +261,9 @@ jobs:
               react-dom: { version: '^18', types: '^18' },
             },
             {
-              version: 'rc',
-              types: 'npm:types-react@rc',
-              react-dom: { version: 'rc', types: 'npm:types-react-dom@rc' },
+              version: '^19',
+              types: '^19',
+              react-dom: { version: '^19', types: '^19' },
             },
           ]
 
