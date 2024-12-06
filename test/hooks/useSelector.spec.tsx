@@ -509,7 +509,11 @@ describe('React', () => {
             </ProviderMock>,
           )
 
-          const doDispatch = () => normalStore.dispatch({ type: '' })
+          const doDispatch = () => {
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
+          }
           expect(doDispatch).not.toThrowError()
 
           spy.mockRestore()
