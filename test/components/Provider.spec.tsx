@@ -165,7 +165,7 @@ describe('React', () => {
         action.type === 'INC' ? state + 1 : state
 
       const innerStore = createStore(reducer)
-      const innerMapStateToProps = vi.fn<[number], TStateProps>((state) => ({
+      const innerMapStateToProps = vi.fn((state: number) => ({
         count: state,
       }))
       class Inner extends Component<TStateProps> {
