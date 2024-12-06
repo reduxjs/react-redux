@@ -1,16 +1,12 @@
 // Copied directly from:
 // https://github.com/mridgway/hoist-non-react-statics/blob/main/src/index.js
-// https://unpkg.com/browse/@types/hoist-non-react-statics@3.3.1/index.d.ts
+// https://unpkg.com/browse/@types/hoist-non-react-statics@3.3.6/index.d.ts
 
 /**
  * Copyright 2015, Yahoo! Inc.
  * Copyrights licensed under the New BSD License. See the accompanying LICENSE file for terms.
  */
-import type {
-  ComponentType,
-  ForwardRefExoticComponent,
-  MemoExoticComponent,
-} from 'react'
+import type { ForwardRefExoticComponent, MemoExoticComponent } from 'react'
 import { ForwardRef, Memo, isMemo } from '../utils/react-is'
 
 const REACT_STATICS = {
@@ -70,19 +66,19 @@ function getStatics(component: any) {
 }
 
 export type NonReactStatics<
-  S extends ComponentType<any>,
+  Source,
   C extends {
     [key: string]: true
   } = {},
 > = {
   [key in Exclude<
-    keyof S,
-    S extends MemoExoticComponent<any>
+    keyof Source,
+    Source extends MemoExoticComponent<any>
       ? keyof typeof MEMO_STATICS | keyof C
-      : S extends ForwardRefExoticComponent<any>
+      : Source extends ForwardRefExoticComponent<any>
         ? keyof typeof FORWARD_REF_STATICS | keyof C
         : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
-  >]: S[key]
+  >]: Source[key]
 }
 
 const defineProperty = Object.defineProperty
@@ -93,12 +89,15 @@ const getPrototypeOf = Object.getPrototypeOf
 const objectPrototype = Object.prototype
 
 export default function hoistNonReactStatics<
-  T extends ComponentType<any>,
-  S extends ComponentType<any>,
-  C extends {
+  Target,
+  Source,
+  CustomStatic extends {
     [key: string]: true
   } = {},
->(targetComponent: T, sourceComponent: S): T & NonReactStatics<S, C> {
+>(
+  targetComponent: Target,
+  sourceComponent: Source,
+): Target & NonReactStatics<Source, CustomStatic> {
   if (typeof sourceComponent !== 'string') {
     // don't hoist over string (html) components
 
