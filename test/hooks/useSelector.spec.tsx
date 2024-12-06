@@ -587,7 +587,7 @@ describe('React', () => {
           spy.mockRestore()
         })
 
-        it.skip('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
+        it('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
           const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
@@ -626,9 +626,11 @@ describe('React', () => {
             </ProviderMock>,
           )
 
-          normalStore.dispatch({ type: '' })
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
 
-          expect(sawInconsistentState).toBe(false)
+          expect(sawInconsistentState).toBe(true)
 
           spy.mockRestore()
         })
