@@ -64,8 +64,8 @@
     }
   },
   "dependencies": {
-    "@types/use-sync-external-store": "npm:types-use-sync-external-store@rc",
-    "use-sync-external-store": "^1.2.2 || ^1.4.0-rc"
+    "@types/use-sync-external-store": "^0.0.6",
+    "use-sync-external-store": "^1.4.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.7",
@@ -85,8 +85,8 @@
     "@testing-library/react": "^16.1.0",
     "@types/node": "^20.14.2",
     "@types/prop-types": "^15.7.12",
-    "@types/react": "npm:types-react@rc",
-    "@types/react-dom": "npm:types-react-dom@rc",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
     "babel-eslint": "^10.1.0",
     "codecov": "^3.8.3",
     "cross-env": "^7.0.3",
@@ -98,8 +98,8 @@
     "eslint-plugin-react": "^7.34.2",
     "jsdom": "^25.0.1",
     "prettier": "^3.3.3",
-    "react": "19.0.0-rc.1",
-    "react-dom": "19.0.0-rc.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "redux": "^5.0.1",
     "rimraf": "^5.0.7",
     "tsup": "^8.3.5",
