@@ -8,8 +8,6 @@ import { Provider, ReactReduxContext, connect } from 'react-redux'
 import type { Store } from 'redux'
 import { createStore } from 'redux'
 
-import * as ReactDOM from 'react-dom'
-
 const createExampleTextReducer =
   () =>
   (state = 'example text') =>
@@ -17,8 +15,6 @@ const createExampleTextReducer =
 
 describe('React', () => {
   describe('Provider', () => {
-    afterEach(() => rtl.cleanup())
-
     const createChild = (storeKey = 'store') => {
       class Child extends Component {
         render() {
@@ -84,7 +80,7 @@ describe('React', () => {
           <Child />
         </Provider>,
       )
-      expect(spy).toHaveBeenCalledTimes(0)
+      expect(spy).not.toHaveBeenCalled()
       spy.mockRestore()
 
       expect(tester.getByTestId('store')).toHaveTextContent(
@@ -169,7 +165,7 @@ describe('React', () => {
         action.type === 'INC' ? state + 1 : state
 
       const innerStore = createStore(reducer)
-      const innerMapStateToProps = vi.fn<[number], TStateProps>((state) => ({
+      const innerMapStateToProps = vi.fn((state: number) => ({
         count: state,
       }))
       class Inner extends Component<TStateProps> {
@@ -202,7 +198,7 @@ describe('React', () => {
           <WrapperOuter />
         </Provider>,
       )
-      expect(innerMapStateToProps).toHaveBeenCalledTimes(1)
+      expect(innerMapStateToProps).toHaveBeenCalledOnce()
 
       rtl.act(() => {
         innerStore.dispatch({ type: 'INC' })
@@ -342,19 +338,17 @@ describe('React', () => {
         }
       }
 
-      const container = document.createElement('div')
-
-      // eslint-disable-next-line react/no-deprecated
-      ReactDOM.render(
+      const { unmount } = rtl.render(
         <Provider store={store}>
           <div />
         </Provider>,
-        container,
       )
-      expect(spy).toHaveBeenCalledTimes(0)
-      // eslint-disable-next-line react/no-deprecated
-      ReactDOM.unmountComponentAtNode(container)
-      expect(spy).toHaveBeenCalledTimes(1)
+
+      expect(spy).not.toHaveBeenCalled()
+
+      unmount()
+
+      expect(spy).toHaveBeenCalledOnce()
     })
 
     it('should handle store and children change in a the same render', () => {

@@ -1,3 +1,4 @@
+import { IS_REACT_19 } from '@internal/utils/react-is.js'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice, createStore } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
@@ -111,15 +112,16 @@ describe('New v8 serverState behavior', () => {
 
   const Spinner = () => <div />
 
-  if (!IS_REACT_18) {
-    it('Dummy test for React 17, ignore', () => {})
-    return
-  }
-
-  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const consoleErrorSpy = vi
+    .spyOn(console, 'error')
+    .mockImplementation(() => {})
 
   afterEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterAll(() => {
+    vi.restoreAllMocks()
   })
 
   it('Handles hydration correctly', async () => {
@@ -154,19 +156,35 @@ describe('New v8 serverState behavior', () => {
         <Provider store={clientStore}>
           <App />
         </Provider>,
+        {
+          onRecoverableError: IS_REACT_19
+            ? (error, errorInfo) => {
+                console.error(error)
+              }
+            : undefined,
+        },
       )
     })
 
-    const [lastCall = []] = consoleError.mock.calls.slice(-1)
+    const { lastCall = [] } = consoleErrorSpy.mock
     const [errorArg] = lastCall
     expect(errorArg).toBeInstanceOf(Error)
-    expect(/There was an error while hydrating/.test(errorArg.message)).toBe(
-      true,
-    )
 
-    vi.resetAllMocks()
+    if (IS_REACT_19) {
+      expect(consoleErrorSpy).toHaveBeenCalledOnce()
 
-    expect(consoleError.mock.calls.length).toBe(0)
+      expect(errorArg.message).toMatch(
+        /Hydration failed because the server rendered HTML didn't match the client/,
+      )
+    } else if (IS_REACT_18) {
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(8)
+
+      expect(errorArg.message).toMatch(/There was an error while hydrating/)
+    }
+
+    vi.clearAllMocks()
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
 
     document.body.removeChild(rootDiv)
 
@@ -187,7 +205,7 @@ describe('New v8 serverState behavior', () => {
       )
     })
 
-    expect(consoleError.mock.calls.length).toBe(0)
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
 
     // Buttons should both exist, and have the updated count due to later render
     const button1 = rtl.screen.getByText('useSelector:Hydrated. Count: 1')

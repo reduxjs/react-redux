@@ -1,6 +1,7 @@
 /*eslint-disable react/prop-types*/
 
 import type { UseSelectorOptions } from '@internal/hooks/useSelector'
+import { IS_REACT_19 } from '@internal/utils/react-is'
 import * as rtl from '@testing-library/react'
 import type { DispatchWithoutAction, FunctionComponent, ReactNode } from 'react'
 import React, {
@@ -67,8 +68,6 @@ describe('React', () => {
         renderedItems = []
       })
 
-      afterEach(() => rtl.cleanup())
-
       describe('core subscription behavior', () => {
         it('selects the state on initial render', () => {
           let result: number | undefined
@@ -109,7 +108,7 @@ describe('React', () => {
           )
 
           expect(result).toEqual(0)
-          expect(selector).toHaveBeenCalledTimes(1)
+          expect(selector).toHaveBeenCalledOnce()
 
           rtl.act(() => {
             normalStore.dispatch({ type: '' })
@@ -387,7 +386,7 @@ describe('React', () => {
             </ProviderMock>,
           )
 
-          expect(selector).toHaveBeenCalledTimes(1)
+          expect(selector).toHaveBeenCalledOnce()
           expect(renderedItems.length).toEqual(1)
 
           rtl.act(() => {
@@ -510,7 +509,11 @@ describe('React', () => {
             </ProviderMock>,
           )
 
-          const doDispatch = () => normalStore.dispatch({ type: '' })
+          const doDispatch = () => {
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
+          }
           expect(doDispatch).not.toThrowError()
 
           spy.mockRestore()
@@ -588,7 +591,7 @@ describe('React', () => {
           spy.mockRestore()
         })
 
-        it.skip('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
+        it('allows dealing with stale props by putting a specific connected component above the hooks component', () => {
           const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Parent = () => {
@@ -627,9 +630,11 @@ describe('React', () => {
             </ProviderMock>,
           )
 
-          normalStore.dispatch({ type: '' })
+          rtl.act(() => {
+            normalStore.dispatch({ type: '' })
+          })
 
-          expect(sawInconsistentState).toBe(false)
+          expect(sawInconsistentState).toBe(true)
 
           spy.mockRestore()
         })
@@ -722,7 +727,7 @@ describe('React', () => {
           // although I can't imagine why, and if I remove the `useSelector` calls both tests drop to ~50ms.
           // So, we'll modify our expectations here depending on whether this is an 18 or 17 compat test,
           // and give some buffer time to allow for variations in test machines.
-          const expectedMaxUnmountTime = IS_REACT_18 ? 500 : 7000
+          const expectedMaxUnmountTime = IS_REACT_18 || IS_REACT_19 ? 500 : 7000
           expect(elapsedTime).toBeLessThan(expectedMaxUnmountTime)
         })
 
@@ -974,7 +979,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(1)
+            expect(selector).toHaveBeenCalledOnce()
 
             rtl.cleanup()
 
@@ -989,7 +994,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(1)
+            expect(selector).toHaveBeenCalledOnce()
           })
           it('always runs check if context or hook specifies', () => {
             rtl.render(

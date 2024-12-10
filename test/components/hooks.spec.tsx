@@ -10,8 +10,6 @@ const IS_REACT_18 = React.version.startsWith('18')
 
 describe('React', () => {
   describe('connect', () => {
-    afterEach(() => rtl.cleanup())
-
     it('should render on useEffect hook state update', () => {
       interface RootStateType {
         byId: {
@@ -119,17 +117,17 @@ describe('React', () => {
       )
 
       // 1. Initial render
-      expect(mapStateSpy1).toHaveBeenCalledTimes(1)
+      expect(mapStateSpy1).toHaveBeenCalledOnce()
 
       // 1.Initial render
       // 2. C1 useEffect
       expect(renderSpy1).toHaveBeenCalledTimes(2)
 
       // 1. Initial render
-      expect(mapStateSpy2).toHaveBeenCalledTimes(1)
+      expect(mapStateSpy2).toHaveBeenCalledOnce()
 
       // 1. Initial render
-      expect(renderSpy2).toHaveBeenCalledTimes(1)
+      expect(renderSpy2).toHaveBeenCalledOnce()
 
       rtl.act(() => {
         store.dispatch({ type: 'FOO' })
@@ -148,6 +146,7 @@ describe('React', () => {
 
       // 2. Batched update from nested subscriber / C1 re-render
       // Not sure why the differences across versions here
+      // TODO: Figure out why this is 3 in React 18 but 2 in React 19
       const numFinalRenders = IS_REACT_18 ? 3 : 2
       expect(renderSpy2).toHaveBeenCalledTimes(numFinalRenders)
     })
