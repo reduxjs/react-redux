@@ -1,5 +1,5 @@
 import type { ElementType, MemoExoticComponent, ReactElement } from 'react'
-import * as React from 'react'
+import { React } from './react'
 
 // Directly ported from:
 // https://unpkg.com/browse/react-is@19.0.0/cjs/react-is.production.js

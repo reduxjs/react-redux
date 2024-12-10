@@ -8,5 +8,6 @@
     "checkJs": true,
     "rootDir": "."
   },
-  "include": ["."]
+  "include": ["."],
+  "exclude": ["dist*", "examples", "website"]
 }
