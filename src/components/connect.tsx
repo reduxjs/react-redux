@@ -39,14 +39,6 @@ import type {
 } from './Context'
 import { ReactReduxContext } from './Context'
 
-import type { uSES } from '../utils/useSyncExternalStore'
-import { notInitialized } from '../utils/useSyncExternalStore'
-
-let useSyncExternalStore = notInitialized as uSES
-export const initializeConnect = (fn: uSES) => {
-  useSyncExternalStore = fn
-}
-
 // Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
 const NO_SUBSCRIPTION_ARRAY = [null, null]
@@ -726,7 +718,7 @@ function connect<
       let actualChildProps: Record<string, unknown>
 
       try {
-        actualChildProps = useSyncExternalStore(
+        actualChildProps = React.useSyncExternalStore(
           // TODO We're passing through a big wrapper that does a bunch of extra side effects besides subscribing
           subscribeForReact,
           // TODO This is incredibly hacky. We've already processed the store update and calculated new child props,

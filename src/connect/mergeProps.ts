@@ -4,7 +4,7 @@ import { createInvalidArgFactory } from './invalidArgFactory'
 import type { MergeProps } from './selectorFactory'
 import type { EqualityFn } from '../types'
 
-export function defaultMergeProps<
+function defaultMergeProps<
   TStateProps,
   TDispatchProps,
   TOwnProps,
@@ -18,7 +18,7 @@ export function defaultMergeProps<
   return { ...ownProps, ...stateProps, ...dispatchProps }
 }
 
-export function wrapMergePropsFunc<
+function wrapMergePropsFunc<
   TStateProps,
   TDispatchProps,
   TOwnProps,

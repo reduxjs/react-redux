@@ -64,7 +64,7 @@ interface PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
   readonly areOwnPropsEqual: EqualityFn<TOwnProps>
 }
 
-export function pureFinalPropsSelectorFactory<
+function pureFinalPropsSelectorFactory<
   TStateProps,
   TOwnProps,
   TDispatchProps,
