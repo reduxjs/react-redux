@@ -5,10 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import { resolve } from 'path'
+import type { Options, ThemeConfig } from '@docusaurus/preset-classic'
+import type { Config } from '@docusaurus/types'
+import type { Options as UmamiOptions } from '@dipakparmar/docusaurus-plugin-umami'
+
 // See https://docusaurus.io/docs/site-config for all the possible
 // site configuration options.
 
-const siteConfig = {
+const siteConfig: Config = {
   presets: [
     [
       '@docusaurus/preset-classic',
@@ -31,7 +36,7 @@ const siteConfig = {
             require.resolve('./static/css/codeblock.css'),
           ],
         },
-      },
+      } satisfies Options,
     ],
   ],
   title: 'React Redux', // Title for your website.
@@ -203,21 +208,20 @@ const siteConfig = {
       indexName: 'react-redux',
       algoliaOptions: {},
     },
-  },
+  } satisfies ThemeConfig,
   plugins: [
     [
       '@dipakparmar/docusaurus-plugin-umami',
-      /** @type {import('@dipakparmar/docusaurus-plugin-umami').Options} */
-      ({
+      {
         websiteID: 'e81a2686-96f3-4557-9c03-f584b7e8ab6b',
         analyticsDomain: 'redux-docs-umami.up.railway.app',
         scriptName: 'script.js',
         dataAutoTrack: true,
         dataDoNotTrack: true,
         dataCache: true,
-      }),
+      } satisfies UmamiOptions,
     ],
   ],
 }
 
-module.exports = siteConfig
+export default siteConfig
