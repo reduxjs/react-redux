@@ -66,6 +66,7 @@ const siteConfig: Config = {
   customFields: {
     repoUrl: 'https://github.com/reduxjs/react-redux',
   },
+  themes: [require.resolve('@getcanary/docusaurus-theme-search-pagefind')],
   themeConfig: {
     metadata: [{ name: 'twitter:card', content: 'summary' }],
     prism: {
@@ -202,12 +203,12 @@ const siteConfig: Config = {
         },
       ],
     },
-    algolia: {
-      appId: ' ',
-      apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
-      indexName: 'react-redux',
-      algoliaOptions: {},
-    },
+    // algolia: {
+    //   appId: ' ',
+    //   apiKey: '2d058d216b7fd5d68d481fd48ee72c06',
+    //   indexName: 'react-redux',
+    //   algoliaOptions: {},
+    // },
   } satisfies ThemeConfig,
   plugins: [
     [
