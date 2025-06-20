@@ -26,7 +26,7 @@ npx create-next-app --example with-redux my-app
 
 ### An Existing React App
 
-React Redux 8.0 requires **React 16.8.3 or later** (or React Native 0.59 or later).
+React Redux 9.0 requires **React 18 or later**
 
 To use React Redux with your React app, install it as a dependency:
 
