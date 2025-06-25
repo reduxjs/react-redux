@@ -30,6 +30,7 @@ import {
 } from 'react-redux'
 import type { Action, AnyAction, Store } from 'redux'
 import { createStore } from 'redux'
+import { configureStore, createSlice } from '@reduxjs/toolkit'
 
 // disable checks by default
 function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
@@ -440,6 +441,137 @@ describe('React', () => {
           // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
           expect(selector).toHaveBeenCalledTimes(2)
           expect(renderedItems.length).toEqual(2)
+        })
+
+        it.only('only calls selectors if the state they depend on has changed', () => {
+          const sliceA = createSlice({
+            name: 'a',
+            initialState: 0,
+            reducers: {
+              incrementA: (state) => state + 1,
+            },
+          })
+
+          const sliceB = createSlice({
+            name: 'b',
+            initialState: 0,
+            reducers: {
+              incrementB: (state) => state + 1,
+            },
+
+            extraReducers: (builder) => {
+              builder.addCase('incrementBC', (state) => state + 1)
+            },
+          })
+
+          const sliceC = createSlice({
+            name: 'c',
+            initialState: 0,
+            reducers: {
+              incrementC: (state) => state + 1,
+            },
+            extraReducers: (builder) => {
+              builder.addCase('incrementBC', (state) => state + 1)
+            },
+          })
+
+          const store = configureStore({
+            reducer: {
+              a: sliceA.reducer,
+              b: sliceB.reducer,
+              c: sliceC.reducer,
+            },
+          })
+
+          type RootState = ReturnType<typeof store.getState>
+
+          type StateKeys = 'a' | 'b' | 'c'
+
+          const { incrementA } = sliceA.actions
+          const { incrementB } = sliceB.actions
+          const { incrementC } = sliceC.actions
+
+          let selectorACalls = 0
+          let selectorBCalls = 0
+          let selectorCCalls = 0
+          let selectorABCalls = 0
+
+          const selectA = (state: RootState) => (selectorACalls++, state.a)
+          const selectB = (state: RootState) => (selectorBCalls++, state.b)
+          const selectC = (state: RootState) => (selectorCCalls++, state.c)
+          const selectAB = (state: RootState) => {
+            selectorABCalls++
+            return state.a + state.b
+          }
+
+          function SliceA() {
+            const a = useSelector(selectA)
+            return null
+          }
+
+          function SliceB() {
+            const b = useSelector(selectB)
+            return null
+          }
+
+          function SliceC() {
+            const c = useSelector(selectC)
+            return null
+          }
+
+          function AB() {
+            const ab = useSelector(selectAB)
+            return null
+          }
+
+          rtl.render(
+            <ProviderMock store={store}>
+              <SliceA />
+              <SliceB />
+              <SliceC />
+              <AB />
+            </ProviderMock>,
+          )
+          expect(selectorACalls).toBe(1)
+          expect(selectorBCalls).toBe(1)
+          expect(selectorCCalls).toBe(1)
+          expect(selectorABCalls).toBe(1)
+
+          rtl.act(() => {
+            store.dispatch(incrementA())
+          })
+
+          expect(selectorACalls).toBe(2)
+          expect(selectorBCalls).toBe(1)
+          expect(selectorCCalls).toBe(1)
+          expect(selectorABCalls).toBe(2)
+
+          rtl.act(() => {
+            store.dispatch(incrementB())
+          })
+
+          expect(selectorACalls).toBe(2)
+          expect(selectorBCalls).toBe(2)
+          expect(selectorCCalls).toBe(1)
+          expect(selectorABCalls).toBe(3)
+
+          rtl.act(() => {
+            store.dispatch(incrementC())
+          })
+
+          expect(selectorACalls).toBe(2)
+          expect(selectorBCalls).toBe(2)
+          expect(selectorCCalls).toBe(2)
+          expect(selectorABCalls).toBe(3)
+
+          rtl.act(() => {
+            store.dispatch({ type: 'incrementBC' })
+          })
+
+          expect(selectorACalls).toBe(2)
+          expect(selectorBCalls).toBe(3)
+          expect(selectorCCalls).toBe(3)
+          expect(selectorABCalls).toBe(4)
         })
       })
 
