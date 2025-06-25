@@ -443,7 +443,7 @@ describe('React', () => {
           expect(renderedItems.length).toEqual(2)
         })
 
-        it.only('only calls selectors if the state they depend on has changed', () => {
+        it('only calls selectors if the state they depend on has changed', () => {
           const sliceA = createSlice({
             name: 'a',
             initialState: 0,

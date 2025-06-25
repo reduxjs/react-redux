@@ -1,5 +1,5 @@
 import * as React from 'react'
-import is from '../utils/shallowEqual'
+import { is } from '../utils/shallowEqual'
 import { useSyncExternalStore } from 'react'
 
 // Intentionally not using named imports because Rollup uses dynamic dispatch
