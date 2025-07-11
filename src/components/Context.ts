@@ -28,10 +28,14 @@ const gT: {
 function getContext(): Context<ReactReduxContextValue | null> {
   if (!React.createContext) return {} as any
 
-  const contextMap = (gT[ContextKey] ??= new Map<
-    typeof React.createContext,
-    Context<ReactReduxContextValue | null>
-  >())
+  let contextMap = gT[ContextKey];
+  if (!contextMap) {
+    contextMap = new Map<
+      typeof React.createContext,
+      Context<ReactReduxContextValue | null>
+    >();
+    gT[ContextKey] = contextMap;
+  }
   let realContext = contextMap.get(React.createContext)
   if (!realContext) {
     realContext = React.createContext<ReactReduxContextValue | null>(

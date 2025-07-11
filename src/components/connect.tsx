@@ -535,7 +535,7 @@ function connect<
         // Users may optionally pass in a custom context instance to use instead of our ReactReduxContext.
         // Memoize the check that determines which context instance we should use.
         let ResultContext = Context
-        if (propsContext?.Consumer) {
+        if (propsContext && propsContext.Consumer) {
           if (process.env.NODE_ENV !== 'production') {
             const isValid = /*#__PURE__*/ isContextConsumer(
               // @ts-ignore
