@@ -2590,15 +2590,20 @@ describe('React', () => {
       })
 
       it('should not override ref property when not asked to.', async () => {
+        type RootStateType = {}
         const store = createStore(() => ({}))
-        interface RefReceiverProps {
-          ref: React.Ref<HTMLSpanElement | null>
-        }
-        function RefReceiver(props: RefReceiverProps) {
-          const {ref} = props
-          return <span ref={ref} />
-        }
-        const DecoratedRefReceiver = connect()(RefReceiver)
+        type RefReceiverPropsType = {}
+        const RefReceiver = React.forwardRef<HTMLSpanElement, RefReceiverPropsType>(
+          (props: RefReceiverPropsType, ref) => <span ref={ref} />
+        );
+        type RefReceiverNoDispatchType = null
+        const decorator = connect<
+          RefReceiverPropsType,
+          RefReceiverNoDispatchType,
+          RefReceiverPropsType,
+          RootStateType
+        >(null, null)
+        const DecoratedRefReceiver = decorator(RefReceiver)
         const testRef = React.createRef<HTMLSpanElement>()
         rtl.render(
           <ProviderMock store={store}>
