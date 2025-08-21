@@ -2588,6 +2588,25 @@ describe('React', () => {
 
         expect(tester.getByTestId('a')).toHaveTextContent('42')
       })
+
+      it('should not override ref property when not asked to.', async () => {
+        const store = createStore(() => ({}))
+        interface RefReceiverProps {
+          ref: React.Ref<HTMLSpanElement | null>
+        }
+        function RefReceiver(props: RefReceiverProps) {
+          const {ref} = props
+          return <span ref={ref} />
+        }
+        const DecoratedRefReceiver = connect()(RefReceiver)
+        const testRef = React.createRef<HTMLSpanElement>()
+        rtl.render(
+          <ProviderMock store={store}>
+            <DecoratedRefReceiver ref={testRef} />
+          </ProviderMock>
+        )
+        expect(testRef.current).toBeInstanceOf(HTMLSpanElement);
+      })
     })
 
     describe('Factory functions for mapState/mapDispatch', () => {
