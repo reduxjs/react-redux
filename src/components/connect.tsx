@@ -747,11 +747,14 @@ function connect<
       // Now that all that's done, we can finally try to actually render the child component.
       // We memoize the elements for the rendered child component as an optimization.
       const renderedWrappedComponent = React.useMemo(() => {
+        const effectiveProps = {...actualChildProps};
+        if (forwardRef) {
+          effectiveProps.ref = reactReduxForwardedRef
+        }
         return (
           // @ts-ignore
           <WrappedComponent
-            {...actualChildProps}
-            ref={reactReduxForwardedRef}
+            {...effectiveProps}
           />
         )
       }, [reactReduxForwardedRef, WrappedComponent, actualChildProps])
