@@ -2602,7 +2602,9 @@ describe('React', () => {
           RefReceiverNoDispatchType,
           RefReceiverPropsType,
           RootStateType
-        >(null, null)
+        >(null, null, null, {
+          forwardRef: IS_REACT_18
+        })
         const DecoratedRefReceiver = decorator(RefReceiver)
         const testRef = React.createRef<HTMLSpanElement>()
         rtl.render(
