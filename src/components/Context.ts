@@ -3,12 +3,14 @@ import { React } from '../utils/react'
 import type { Action, Store, UnknownAction } from 'redux'
 import type { Subscription } from '../utils/Subscription'
 import type { ProviderProps } from './Provider'
+import type { experimental } from 'react-concurrent-store'
 
 export interface ReactReduxContextValue<
   SS = any,
   A extends Action<string> = UnknownAction,
 > extends Pick<ProviderProps, 'stabilityCheck' | 'identityFunctionCheck'> {
   store: Store<SS, A>
+  reactStore: typeof experimental.Store<SS, A>
   subscription: Subscription
   getServerState?: () => SS
 }

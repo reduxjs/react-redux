@@ -6,6 +6,9 @@ import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { ReactReduxContextValue } from './Context'
 import { ReactReduxContext } from './Context'
+import { experimental } from 'react-concurrent-store'
+const { StoreProvider } = experimental
+import type { ReactStore } from '../utils/reactStoreEnhancer'
 
 export interface ProviderProps<
   A extends Action<string> = UnknownAction,
@@ -59,11 +62,20 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>(
 ) {
   const { children, context, serverState, store } = providerProps
 
+  // Validate store has reactStore
+  if (!('reactStore' in store)) {
+    throw new Error(
+      'Redux store must be enhanced with addReactStore enhancer. ' +
+        'Apply the enhancer when creating your store.',
+    )
+  }
+
   const contextValue = React.useMemo(() => {
     const subscription = createSubscription(store)
 
     const baseContextValue = {
       store,
+      reactStore: store.reactStore as ReactStore,
       subscription,
       getServerState: serverState ? () => serverState : undefined,
     }
@@ -99,7 +111,11 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>(
 
   const Context = context || ReactReduxContext
 
-  return <Context.Provider value={contextValue}>{children}</Context.Provider>
+  return (
+    <Context.Provider value={contextValue as any}>
+      <StoreProvider>{children}</StoreProvider>
+    </Context.Provider>
+  )
 }
 
 export default Provider
