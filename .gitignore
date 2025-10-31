@@ -1,8 +1,8 @@
 node_modules
-dist
-lib
-coverage
-es
+/dist*/
+/lib/
+/coverage/
+/es/
 temp/
 react-redux-*/
 redux-toolkit/
@@ -21,9 +21,9 @@ website/.yarn/
 .pnp.*
 *.tgz
 
-.yalc
-yalc.lock
-yalc.sig
+#.yalc
+#yalc.lock
+#yalc.sig
 
 lib/core/metadata.js
 lib/core/MetadataBlog.js
