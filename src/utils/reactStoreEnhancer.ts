@@ -4,26 +4,10 @@ import type { StoreEnhancer } from 'redux'
 
 const { createStoreFromSource } = experimental
 
-export type Reducer<S, A> = (state: S, action: A) => S
-
-export interface ISource<S, A> {
-  /**
-   * Returns an immutable snapshot of the current state
-   */
-  getState(): S
-  /**
-   * A pure function which takes and arbitrary state and an updater/action and
-   * returns a new state.
-   *
-   * React needs this in order to generate temporary states.
-   *
-   * See: https://jordaneldredge.com/notes/react-rebasing/
-   */
-  reducer: Reducer<S, A>
-}
+export type ReactStore = ReturnType<typeof createStoreFromSource<any, any>>
 
 export const addReactStore: StoreEnhancer<{
-  reactStore: ReturnType<typeof createStoreFromSource<any, any>>
+  reactStore: ReactStore
 }> = (createStore) => {
   return (reducer, preloadedState) => {
     const store = createStore(reducer, preloadedState)
