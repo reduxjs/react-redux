@@ -9,6 +9,9 @@ import {
   useReduxContext as useDefaultReduxContext,
 } from './useReduxContext'
 
+import { experimental } from 'react-concurrent-store'
+const { useStoreSelector } = experimental
+
 /**
  * The frequency of development mode checks.
  *
@@ -161,10 +164,109 @@ export function createSelectorHook(
 
     const reduxContext = useReduxContext()
 
-    const { store, subscription, getServerState } = reduxContext
+    const { store, reactStore, subscription, getServerState } = reduxContext
 
+    const selectorRef = React.useRef(selector)
+    const equalityFnRef = React.useRef(equalityFn)
+    const lastResultRef = React.useRef<Selected>(null)
     const firstRun = React.useRef(true)
 
+    // Update refs on each render
+    React.useLayoutEffect(() => {
+      selectorRef.current = selector
+      equalityFnRef.current = equalityFn
+    })
+
+    // Create stable selector wrapper
+    const stableSelector = React.useCallback((state: TState): Selected => {
+      const selected = selectorRef.current(state)
+
+      // Dev mode checks
+      if (process.env.NODE_ENV !== 'production') {
+        const { devModeChecks = {} } =
+          typeof equalityFnOrOptions === 'function' ? {} : equalityFnOrOptions
+        const { identityFunctionCheck, stabilityCheck } = reduxContext
+        const {
+          identityFunctionCheck: finalIdentityFunctionCheck,
+          stabilityCheck: finalStabilityCheck,
+        } = {
+          stabilityCheck,
+          identityFunctionCheck,
+          ...devModeChecks,
+        }
+
+        // Stability check
+        if (
+          finalStabilityCheck === 'always' ||
+          (finalStabilityCheck === 'once' && firstRun.current)
+        ) {
+          const toCompare = selectorRef.current(state)
+          if (!equalityFnRef.current(selected, toCompare)) {
+            let stack: string | undefined = undefined
+            try {
+              throw new Error()
+            } catch (e) {
+              ;({ stack } = e as Error)
+            }
+            console.warn(
+              'Selector ' +
+                (selector.name || 'unknown') +
+                ' returned a different result when called with the same parameters. ' +
+                'This can lead to unnecessary rerenders.' +
+                '\nSelectors that return a new reference (such as an object or an array) ' +
+                'should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
+              {
+                state,
+                selected,
+                selected2: toCompare,
+                stack,
+              },
+            )
+          }
+        }
+
+        // Identity function check
+        if (
+          finalIdentityFunctionCheck === 'always' ||
+          (finalIdentityFunctionCheck === 'once' && firstRun.current)
+        ) {
+          // @ts-ignore
+          if (selected === state) {
+            let stack: string | undefined = undefined
+            try {
+              throw new Error()
+            } catch (e) {
+              // eslint-disable-next-line no-extra-semi
+              ;({ stack } = e as Error)
+            }
+            console.warn(
+              'Selector ' +
+                (selector.name || 'unknown') +
+                ' returned the root state when called. This can lead to unnecessary rerenders.' +
+                '\nSelectors that return the entire state are almost certainly a mistake, as they will cause a rerender whenever *anything* in state changes.',
+              { stack },
+            )
+          }
+        }
+
+        if (firstRun.current) firstRun.current = false
+      }
+
+      // Apply equality function
+      if (
+        lastResultRef.current !== undefined &&
+        // @ts-ignore
+        equalityFnRef.current(lastResultRef.current, selected)
+      ) {
+        // @ts-ignore
+        return lastResultRef.current
+      }
+
+      lastResultRef.current = selected
+      return selected
+    }, []) // Empty deps - stable forever
+
+    /*
     const wrappedSelector = React.useCallback<typeof selector>(
       {
         [selector.name](state: TState) {
@@ -239,14 +341,17 @@ export function createSelectorHook(
       }[selector.name],
       [selector],
     )
+      */
 
-    const selectedState = useSyncExternalStoreWithSelector(
-      subscription.addNestedSub,
-      store.getState,
-      getServerState || store.getState,
-      wrappedSelector,
-      equalityFn,
-    )
+    // const selectedState = useSyncExternalStoreWithSelector(
+    //   subscription.addNestedSub,
+    //   store.getState,
+    //   getServerState || store.getState,
+    //   wrappedSelector,
+    //   equalityFn,
+    // )
+
+    const selectedState = useStoreSelector(reactStore as any, stableSelector)
 
     React.useDebugValue(selectedState)
 
