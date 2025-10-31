@@ -29,7 +29,8 @@ import {
   useSelector,
 } from 'react-redux'
 import type { Action, AnyAction, Store } from 'redux'
-import { createStore } from 'redux'
+// import { createStore } from 'redux'
+import { createTestStore } from '../testUtils'
 
 // disable checks by default
 function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
@@ -60,7 +61,7 @@ describe('React', () => {
       const useNormalSelector: TypedUseSelectorHook<RootState> = useSelector
 
       beforeEach(() => {
-        normalStore = createStore(
+        normalStore = createTestStore(
           ({ count }: NormalStateType = { count: -1 }): NormalStateType => ({
             count: count + 1,
           }),
@@ -121,7 +122,7 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          const store = createStore((c: number = 1): number => c + 1, -1)
+          const store = createTestStore((c: number = 1): number => c + 1, -1)
 
           const Comp = () => {
             const selector = useCallback((c: number): number => c + 1, [])
@@ -251,7 +252,7 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        const store = createStore((c: number = 1): number => c + 1, -1)
+        const store = createTestStore((c: number = 1): number => c + 1, -1)
 
         const Comp = () => {
           const selector = useCallback((c: number): number => c, [])
@@ -293,7 +294,7 @@ describe('React', () => {
       describe('performance optimizations and bail-outs', () => {
         it('defaults to ref-equality to prevent unnecessary updates', () => {
           const state = {}
-          const store = createStore(() => state)
+          const store = createTestStore(() => state)
 
           const Comp = () => {
             const value = useSelector((s) => s)
@@ -321,7 +322,7 @@ describe('React', () => {
             count: number
             stable: {}
           }
-          const store = createStore(
+          const store = createTestStore(
             ({ count, stable }: StateType = { count: -1, stable: {} }) => ({
               count: count + 1,
               stable,
@@ -365,9 +366,11 @@ describe('React', () => {
           interface StateType {
             count: number
           }
-          const store = createStore(({ count }: StateType = { count: 0 }) => ({
-            count: count + 1,
-          }))
+          const store = createTestStore(
+            ({ count }: StateType = { count: 0 }) => ({
+              count: count + 1,
+            }),
+          )
 
           const selector = vi.fn((s: StateType) => {
             return s.count
@@ -401,9 +404,11 @@ describe('React', () => {
           interface StateType {
             count: number
           }
-          const store = createStore(({ count }: StateType = { count: 0 }) => ({
-            count: count + 1,
-          }))
+          const store = createTestStore(
+            ({ count }: StateType = { count: 0 }) => ({
+              count: count + 1,
+            }),
+          )
 
           const selector = vi.fn((s: StateType) => {
             return s.count
@@ -535,7 +540,9 @@ describe('React', () => {
             return <div>{result}</div>
           }
 
-          const store = createStore((count: number = -1): number => count + 1)
+          const store = createTestStore(
+            (count: number = -1): number => count + 1,
+          )
 
           const App = () => (
             <ProviderMock store={store}>
@@ -671,7 +678,7 @@ describe('React', () => {
         it('should have linear or better unsubscribe time, not quadratic', () => {
           const reducer = (state: number = 0, action: any) =>
             action.type === 'INC' ? state + 1 : state
-          const store = createStore(reducer)
+          const store = createTestStore(reducer)
           const increment = () => ({ type: 'INC' })
 
           const numChildren = 100000
@@ -1070,12 +1077,16 @@ describe('React', () => {
       }
 
       beforeEach(() => {
-        defaultStore = createStore(({ count }: StateType = { count: -1 }) => ({
-          count: count + 1,
-        }))
-        customStore = createStore(({ count }: StateType = { count: 10 }) => ({
-          count: count + 2,
-        }))
+        defaultStore = createTestStore(
+          ({ count }: StateType = { count: -1 }) => ({
+            count: count + 1,
+          }),
+        )
+        customStore = createTestStore(
+          ({ count }: StateType = { count: 10 }) => ({
+            count: count + 2,
+          }),
+        )
       })
 
       it('subscribes to the correct store', () => {
