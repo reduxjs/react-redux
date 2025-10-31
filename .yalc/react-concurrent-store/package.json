@@ -1,0 +1,50 @@
+{
+  "name": "react-concurrent-store",
+  "version": "0.0.1",
+  "description": "Ponyfill of experimental React concurrent stores",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "prepublishOnly": "pnpm run build",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "react",
+    "hooks",
+    "store",
+    "concurrent",
+    "concurrent-store",
+    "ponyfill",
+    "useStore",
+    "react19",
+    "typescript"
+  ],
+  "author": "Justin Walsh",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "yalcSig": "765fe9205cc95250523ff17c388d9329"
+}

@@ -4826,12 +4826,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-concurrent-store@npm:^0.0.1":
+"react-concurrent-store@file:.yalc/react-concurrent-store::locator=react-redux%40workspace%3A.":
   version: 0.0.1
-  resolution: "react-concurrent-store@npm:0.0.1"
+  resolution: "react-concurrent-store@file:.yalc/react-concurrent-store#.yalc/react-concurrent-store::hash=b2329c&locator=react-redux%40workspace%3A."
   peerDependencies:
     react: ^19.0.0
-  checksum: 10/d74675435d379e3a49ea511af91ee3d5b815844dfdd9c6789f0fac9c9e7141951af0f57432db614849ca088b416014b14d6eeeebc64fcccecf5d1c8182ef55cd
+  checksum: 10/d634d6f078cd47463d6b4df81aa1d096e03470878ac2ea78fad531da4e7ed6de3b37099a6b84e3d9e8c1d3889d71b334d8f26205b8a74b3e4b556dc727111f45
   languageName: node
   linkType: hard
 
@@ -4892,7 +4892,7 @@ __metadata:
     jsdom: "npm:^25.0.1"
     prettier: "npm:^3.3.3"
     react: "npm:^19.0.0"
-    react-concurrent-store: "npm:^0.0.1"
+    react-concurrent-store: "file:.yalc/react-concurrent-store"
     react-dom: "npm:^19.0.0"
     redux: "npm:^5.0.1"
     rimraf: "npm:^5.0.7"
