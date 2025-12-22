@@ -109,14 +109,14 @@ describe('React', () => {
           )
 
           expect(result).toEqual(0)
-          expect(selector).toHaveBeenCalledTimes(3)
+          expect(selector).toHaveBeenCalledTimes(1)
 
           rtl.act(() => {
             normalStore.dispatch({ type: '' })
           })
 
           expect(result).toEqual(1)
-          expect(selector).toHaveBeenCalledTimes(4)
+          expect(selector).toHaveBeenCalledTimes(2)
         })
       })
 
@@ -394,14 +394,14 @@ describe('React', () => {
             </ProviderMock>,
           )
 
-          expect(selector).toHaveBeenCalledTimes(3)
+          expect(selector).toHaveBeenCalledTimes(1)
           expect(renderedItems.length).toEqual(1)
 
           rtl.act(() => {
             store.dispatch({ type: '' })
           })
 
-          expect(selector).toHaveBeenCalledTimes(4)
+          expect(selector).toHaveBeenCalledTimes(2)
           expect(renderedItems.length).toEqual(2)
         })
 
@@ -449,7 +449,7 @@ describe('React', () => {
           )
 
           // Selector first called on Comp mount, and then re-invoked after mount due to useLayoutEffect dispatching event
-          expect(selector).toHaveBeenCalledTimes(3)
+          expect(selector).toHaveBeenCalledTimes(2)
           expect(renderedItems.length).toEqual(2)
         })
       })
@@ -924,7 +924,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(4)
+            expect(selector).toHaveBeenCalledTimes(2)
 
             expect(consoleSpy).not.toHaveBeenCalled()
 
@@ -938,7 +938,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(4)
+            expect(selector).toHaveBeenCalledTimes(2)
 
             expect(consoleSpy).toHaveBeenCalledWith(
               expect.stringContaining(
@@ -968,7 +968,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(unstableSelector).toHaveBeenCalledTimes(4)
+            expect(unstableSelector).toHaveBeenCalledTimes(2)
             expect(consoleSpy).not.toHaveBeenCalled()
           })
           it('by default will only check on first selector call', () => {
@@ -978,13 +978,13 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(4)
+            expect(selector).toHaveBeenCalledTimes(2)
 
             rtl.act(() => {
               normalStore.dispatch({ type: '' })
             })
 
-            expect(selector).toHaveBeenCalledTimes(5)
+            expect(selector).toHaveBeenCalledTimes(3)
           })
           it('disables check if context or hook specifies', () => {
             rtl.render(
@@ -993,7 +993,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(3)
+            expect(selector).toHaveBeenCalledTimes(1)
 
             rtl.cleanup()
 
@@ -1008,7 +1008,7 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(3)
+            expect(selector).toHaveBeenCalledTimes(1)
           })
           it('always runs check if context or hook specifies', () => {
             rtl.render(
@@ -1017,13 +1017,13 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(6)
+            expect(selector).toHaveBeenCalledTimes(2)
 
             rtl.act(() => {
               normalStore.dispatch({ type: '' })
             })
 
-            expect(selector).toHaveBeenCalledTimes(8)
+            expect(selector).toHaveBeenCalledTimes(4)
 
             rtl.cleanup()
 
@@ -1038,13 +1038,13 @@ describe('React', () => {
               </ProviderMock>,
             )
 
-            expect(selector).toHaveBeenCalledTimes(6)
+            expect(selector).toHaveBeenCalledTimes(2)
 
             rtl.act(() => {
               normalStore.dispatch({ type: '' })
             })
 
-            expect(selector).toHaveBeenCalledTimes(8)
+            expect(selector).toHaveBeenCalledTimes(4)
           })
         })
         describe('identity function check', () => {
