@@ -1,7 +1,7 @@
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import * as React from 'react';
 
-type ReactStore<Value, Action = Value> = {
+type ReactStore$1<Value, Action = Value> = {
     update: (action: Action) => void;
 };
 /**
@@ -31,7 +31,14 @@ declare class Emitter<T extends Array<unknown>> {
     notify(...value: T): void;
 }
 
-declare class Store<S, A> extends Emitter<[]> {
+interface ReactStore<S, A = never> {
+    getState(): S;
+    getCommittedState(): S;
+    handleUpdate(action: A): void;
+    subscribe(listener: () => void): () => void;
+    commit(state: S): void;
+}
+declare class Store<S, A> extends Emitter<[]> implements ReactStore<S, A> {
     source: ISource<S, A>;
     state: S;
     committedState: S;
@@ -103,25 +110,28 @@ declare function StoreProvider({ children }: {
  * are not subscribed yet, and end up rendering the stale state with no update
  * scheduled to catch us up with the rest of the app.
  */
-declare function useStoreSelector<S, T>(store: Store<S, any>, selector: (state: S) => T): T;
-declare function useStore$1<S>(store: Store<S, any>): S;
+declare function useStoreSelector<S, T>(store: Store<S, never>, selector: (state: S, prevResult?: T) => T): T;
+declare function useStore$1<S>(store: Store<S, never>): S;
+declare function useStoreSelectorWithEquality<State, Selection>(store: Store<State, never>, selector: (state: State) => Selection, isEqual?: (a: Selection, b: Selection) => boolean): Selection;
 
 type Experimental_ISource<S, A> = ISource<S, A>;
+type Experimental_ReactStore<S, A = never> = ReactStore<S, A>;
 type Experimental_Reducer<S, A> = Reducer<S, A>;
 type Experimental_Store<S, A> = Store<S, A>;
 declare const Experimental_Store: typeof Store;
 declare const Experimental_StoreProvider: typeof StoreProvider;
 declare const Experimental_createStoreFromSource: typeof createStoreFromSource;
 declare const Experimental_useStoreSelector: typeof useStoreSelector;
+declare const Experimental_useStoreSelectorWithEquality: typeof useStoreSelectorWithEquality;
 declare namespace Experimental {
-  export { type Experimental_ISource as ISource, type Experimental_Reducer as Reducer, Experimental_Store as Store, Experimental_StoreProvider as StoreProvider, createStore$1 as createStore, Experimental_createStoreFromSource as createStoreFromSource, useStore$1 as useStore, Experimental_useStoreSelector as useStoreSelector };
+  export { type Experimental_ISource as ISource, type Experimental_ReactStore as ReactStore, type Experimental_Reducer as Reducer, Experimental_Store as Store, Experimental_StoreProvider as StoreProvider, createStore$1 as createStore, Experimental_createStoreFromSource as createStoreFromSource, useStore$1 as useStore, Experimental_useStoreSelector as useStoreSelector, Experimental_useStoreSelectorWithEquality as useStoreSelectorWithEquality };
 }
 
-declare function createStore<Value>(initialValue: Value): ReactStore<Value, Value>;
-declare function createStore<Value, Action>(initialValue: Value, reducer: (currentValue: Value) => Value): ReactStore<Value, void>;
-declare function createStore<Value, Action>(initialValue: Value, reducer: (currentValue: Value, action: Action) => Value): ReactStore<Value, Action>;
-declare function useStore<Value>(store: ReactStore<Value, any>): Value;
+declare function createStore<Value>(initialValue: Value): ReactStore$1<Value, Value>;
+declare function createStore<Value, Action>(initialValue: Value, reducer: (currentValue: Value) => Value): ReactStore$1<Value, void>;
+declare function createStore<Value, Action>(initialValue: Value, reducer: (currentValue: Value, action: Action) => Value): ReactStore$1<Value, Action>;
+declare function useStore<Value>(store: ReactStore$1<Value, any>): Value;
 
 declare const experimental: typeof Experimental;
 
-export { type ISource, type ReactStore, type Reducer, createStore, experimental, useStore };
+export { type ISource, type ReactStore$1 as ReactStore, type Reducer, createStore, experimental, useStore };

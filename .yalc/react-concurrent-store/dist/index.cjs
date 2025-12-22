@@ -12,10 +12,13 @@ __export(experimental_exports, {
   createStore: () => createStore,
   createStoreFromSource: () => createStoreFromSource,
   useStore: () => useStore,
-  useStoreSelector: () => useStoreSelector
+  useStoreSelector: () => useStoreSelector,
+  useStoreSelectorWithEquality: () => useStoreSelectorWithEquality
 });
 
 // src/experimental/useStore.tsx
+
+
 
 
 
@@ -139,7 +142,7 @@ var StoreManager = class extends Emitter {
     const prev = this._storeRefCounts.get(store);
     if (prev == null) {
       throw new Error(
-        "Imblance in concurrent-safe store reference counting. This is a bug in react-use-store, please report it."
+        "Imbalance in concurrent-safe store reference counting. This is a bug in react-use-store, please report it."
       );
     }
     this._storeRefCounts.set(store, {
@@ -216,34 +219,50 @@ function useStoreSelector(store, selector) {
       "useStoreSelector does not currently support dynamic stores"
     );
   }
-  const previousSelectorRef = _react.useRef.call(void 0, selector);
-  if (selector !== previousSelectorRef.current) {
-    throw new Error(
-      "useStoreSelector does not currently support dynamic selectors"
-    );
-  }
-  const [state, setState] = _react.useState.call(void 0, () => selector(store.getState()));
+  const [hookState, setState] = _react.useState.call(void 0, () => ({
+    value: selector(store.getState(), void 0),
+    selector
+  }));
+  const selectorChange = hookState.selector !== selector;
+  const state = selectorChange ? selector(store.getState(), hookState.value) : hookState.value;
   _react.useLayoutEffect.call(void 0, () => {
     storeManager.addStore(store);
-    const mountState = selector(store.getState());
-    const mountCommittedState = selector(store.getCommittedState());
+    const mountState = selector(store.getState(), hookState.value);
+    const mountCommittedState = selector(
+      store.getCommittedState(),
+      hookState.value
+    );
+    function setHookState(value) {
+      setState((prev) => {
+        if (is(prev.value, value) && prev.selector === selector) {
+          return prev;
+        }
+        return { value, selector };
+      });
+    }
     if (state !== mountCommittedState) {
-      setState(mountCommittedState);
+      setHookState(mountCommittedState);
     }
     if (mountState !== mountCommittedState) {
       _react.startTransition.call(void 0, () => {
-        setState(mountState);
+        setHookState(mountState);
       });
     }
     const unsubscribe = store.subscribe(() => {
-      const state2 = store.getState();
-      setState(selector(state2));
+      const currentStoreState = store.getState();
+      setState((prev) => {
+        const newValue = selector(currentStoreState, prev.value);
+        if (is(prev.value, newValue) && prev.selector === selector) {
+          return prev;
+        }
+        return { value: newValue, selector };
+      });
     });
     return () => {
       unsubscribe();
       storeManager.removeStore(store);
     };
-  }, []);
+  }, [selector]);
   return state;
 }
 function identity(x) {
@@ -251,6 +270,50 @@ function identity(x) {
 }
 function useStore(store) {
   return useStoreSelector(store, identity);
+}
+function is(x, y) {
+  if (x === y) {
+    return x !== 0 || y !== 0 || 1 / x === 1 / y;
+  } else {
+    return x !== x && y !== y;
+  }
+}
+function useStoreSelectorWithEquality(store, selector, isEqual = Object.is) {
+  const memoizedSelector = _react.useMemo.call(void 0, () => {
+    let hasMemo = false;
+    let memoizedSnapshot;
+    let memoizedSelection;
+    const memoizedSelector2 = (nextSnapshot, prevResult) => {
+      if (!hasMemo) {
+        hasMemo = true;
+        memoizedSnapshot = nextSnapshot;
+        const nextSelection2 = selector(nextSnapshot);
+        if (prevResult !== void 0 && isEqual(prevResult, nextSelection2)) {
+          memoizedSelection = prevResult;
+          return prevResult;
+        }
+        memoizedSelection = nextSelection2;
+        return nextSelection2;
+      }
+      const prevSnapshot = memoizedSnapshot;
+      const prevSelection = memoizedSelection;
+      if (is(prevSnapshot, nextSnapshot)) {
+        return prevSelection;
+      }
+      const nextSelection = selector(nextSnapshot);
+      if (isEqual !== void 0 && isEqual(prevSelection, nextSelection)) {
+        memoizedSnapshot = nextSnapshot;
+        return prevSelection;
+      }
+      memoizedSnapshot = nextSnapshot;
+      memoizedSelection = nextSelection;
+      return nextSelection;
+    };
+    return memoizedSelector2;
+  }, [selector, isEqual]);
+  const value = useStoreSelector(store, memoizedSelector);
+  _react.useDebugValue.call(void 0, value);
+  return value;
 }
 
 // src/useStore.ts

@@ -6,7 +6,7 @@
       "file": true
     },
     "react-concurrent-store": {
-      "signature": "765fe9205cc95250523ff17c388d9329",
+      "signature": "d0552f8ba5686c771cba83832b080aeb",
       "file": true,
       "replaced": "^0.0.1"
     }
