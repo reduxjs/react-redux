@@ -166,16 +166,7 @@ export function createSelectorHook(
 
     const { store, reactStore, subscription, getServerState } = reduxContext
 
-    const selectorRef = React.useRef(selector)
-    const equalityFnRef = React.useRef(equalityFn)
-    const lastResultRef = React.useRef<Selected>(null)
     const firstRun = React.useRef(true)
-
-    // Update refs on each render
-    React.useLayoutEffect(() => {
-      selectorRef.current = selector
-      equalityFnRef.current = equalityFn
-    })
 
     const wrappedSelector = React.useCallback<typeof selector>(
       {
