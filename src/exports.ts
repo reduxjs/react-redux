@@ -1,4 +1,4 @@
-import connect from './components/connect'
+import { connect, legacy_connect } from './components/connect'
 export type {
   Connect,
   ConnectProps,
@@ -48,4 +48,4 @@ export * from './types'
  */
 const batch = defaultNoopBatch
 
-export { Provider, batch, connect, shallowEqual }
+export { Provider, batch, connect, legacy_connect, shallowEqual }
