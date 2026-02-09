@@ -41,7 +41,7 @@ import { ReactReduxContext } from './Context'
 
 // Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
-const NO_SUBSCRIPTION_ARRAY = [null, null]
+const NO_SUBSCRIPTION_ARRAY = [null, null] as [Subscription, VoidFunction]
 
 // Attempts to stringify whatever not-really-a-component value we were given
 // for logging in an error message
