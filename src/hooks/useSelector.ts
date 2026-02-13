@@ -9,6 +9,9 @@ import {
   useReduxContext as useDefaultReduxContext,
 } from './useReduxContext'
 
+import { experimental } from 'react-concurrent-store'
+const { useStoreSelectorWithEquality } = experimental
+
 /**
  * The frequency of development mode checks.
  *
@@ -161,7 +164,7 @@ export function createSelectorHook(
 
     const reduxContext = useReduxContext()
 
-    const { store, subscription, getServerState } = reduxContext
+    const { store, reactStore, subscription, getServerState } = reduxContext
 
     const firstRun = React.useRef(true)
 
@@ -240,10 +243,8 @@ export function createSelectorHook(
       [selector],
     )
 
-    const selectedState = useSyncExternalStoreWithSelector(
-      subscription.addNestedSub,
-      store.getState,
-      getServerState || store.getState,
+    const selectedState = useStoreSelectorWithEquality(
+      reactStore as any,
       wrappedSelector,
       equalityFn,
     )

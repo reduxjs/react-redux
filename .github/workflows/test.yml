@@ -23,6 +23,8 @@ jobs:
 
       - name: Install dependencies
         run: yarn install
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Lint
         run: yarn lint
@@ -83,15 +85,23 @@ jobs:
 
       - name: Install deps
         run: yarn install
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Install React ${{ matrix.react.version }} and React-DOM ${{ matrix.react.react-dom.version }}
         run: yarn add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Install TypeScript ${{ matrix.ts }}
         run: yarn add typescript@${{ matrix.ts }}
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Install build artifact
         run: yarn add ./package.tgz
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Erase path aliases
         run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json
@@ -176,6 +186,8 @@ jobs:
       - name: Install example deps
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn install
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Install Playwright browser if necessary
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
@@ -194,6 +206,8 @@ jobs:
       - name: Install build artifact
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn add ./package.tgz
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Show installed package versions
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
@@ -234,6 +248,8 @@ jobs:
 
       - name: Install deps
         run: yarn install
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Remove existing React-Redux
         run: yarn remove react-redux
@@ -248,6 +264,8 @@ jobs:
 
       - name: Install build artifact
         run: yarn add ./package.tgz
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Show installed React-Redux versions
         run: yarn info react-redux && yarn why react-redux
@@ -289,6 +307,8 @@ jobs:
 
       - name: Install deps
         run: yarn install
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -301,9 +321,13 @@ jobs:
 
       - name: Install React ${{ matrix.react.version }} and React-DOM ${{ matrix.react.react-dom.version }}
         run: yarn add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Install build artifact
         run: yarn add ./package.tgz
+        env:
+          YARN_ENABLE_IMMUTABLE_INSTALLS: false
 
       - name: Erase path aliases
         run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json

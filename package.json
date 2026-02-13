@@ -65,6 +65,7 @@
   },
   "dependencies": {
     "@types/use-sync-external-store": "^0.0.6",
+    "react-concurrent-store": "file:.yalc/react-concurrent-store",
     "use-sync-external-store": "^1.4.0"
   },
   "devDependencies": {

@@ -1,0 +1,14 @@
+{
+  "version": "v1",
+  "packages": {
+    "react-redux": {
+      "signature": "421c187f19a21afdc078b61f9f047bca",
+      "file": true
+    },
+    "react-concurrent-store": {
+      "signature": "d0552f8ba5686c771cba83832b080aeb",
+      "file": true,
+      "replaced": "^0.0.1"
+    }
+  }
+}
