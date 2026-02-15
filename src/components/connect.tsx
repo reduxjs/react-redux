@@ -249,6 +249,8 @@ export interface ConnectOptions<
 }
 
 /**
+
+ *
  * Connects a React component to a Redux store.
  *
  * - Without arguments, just wraps the component, without changing the behavior / props
@@ -415,6 +417,16 @@ export interface Connect<DefaultState = unknown> {
 let hasWarnedAboutDeprecatedPureOption = false
 
 /**
+ * @deprecated
+ *
+ * **We recommend using the `useSelector` and `useDispatch` hooks instead.**
+ * See https://react-redux.js.org/api/hooks
+ *
+ * If you need to use `connect` without this visual deprecation warning,
+ * import `legacy_connect` instead:
+ *
+ * `import { legacy_connect as connect } from 'react-redux'`
+ *
  * Connects a React component to a Redux store.
  *
  * - Without arguments, just wraps the component, without changing the behavior / props
@@ -434,7 +446,7 @@ let hasWarnedAboutDeprecatedPureOption = false
  * @param options Options for configuring the connection
  *
  */
-function connect<
+function _connect<
   TStateProps = {},
   TDispatchProps = {},
   TOwnProps = {},
@@ -810,4 +822,24 @@ function connect<
   return wrapWithConnect
 }
 
-export default connect as Connect
+/**
+ *  * @deprecated
+ *
+ * **We recommend using the `useSelector` and `useDispatch` hooks instead.**
+ * See https://react-redux.js.org/api/hooks
+ *
+ * If you need to use `connect` without this visual deprecation warning,
+ * import `legacy_connect` instead:
+ *
+ * `import { legacy_connect as connect } from 'react-redux'`
+ */
+export const connect: Connect = _connect as Connect
+
+/**
+ * Connects a React component to a Redux store. Same as `connect` but without
+ * the deprecation warning.
+ *
+ * **We recommend using the `useSelector` and `useDispatch` hooks instead.**
+ * See https://react-redux.js.org/api/hooks
+ */
+export const legacy_connect: Connect = _connect as Connect
