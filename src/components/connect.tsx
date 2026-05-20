@@ -133,6 +133,13 @@ function subscribeUpdates(
     } catch (e) {
       error = e
       lastThrownError = e as Error | null
+      if (process.env.NODE_ENV !== 'production') {
+        console.error(
+          'An error occurred in `mapStateToProps` (or a selector) of a `connect()`-ed component. ' +
+            'See https://github.com/reduxjs/react-redux/issues/1942 for details.',
+          e,
+        )
+      }
     }
 
     if (!error) {
