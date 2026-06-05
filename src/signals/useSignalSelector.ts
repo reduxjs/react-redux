@@ -31,13 +31,15 @@ export function useSignalSelector<S extends object, R>(
     let currentResult: R
     let version = 0
     let notifyReact: (() => void) | null = null
-    let effectDispose: (() => void) | null = null
+    let effectDispose: (() => void) | null | void = null
 
     // Create a computed that runs the selector through a tracking proxy.
     // This establishes signal dependencies on the paths the selector reads.
     const selectorComputed = engine.computed(() => {
       const state = store.getState() as S & object
-      const proxy = createTrackingProxy(state, [], registry)
+      const proxy = registry.getOrCreateRootProxy(state, (s) =>
+        createTrackingProxy(s, '', registry),
+      )
       return selectorRef.current(proxy as S)
     })
 
