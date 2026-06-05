@@ -1550,6 +1550,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"alien-signals@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "alien-signals@npm:3.2.1"
+  checksum: 10/9c8b14c460e748f40d85bbe4e607f81a4177d8ca1c056eab86f9792297003ef10717690019e23cacf19bb68babba97d1cb0bb03c35ca495d736cb6809efb7291
+  languageName: node
+  linkType: hard
+
 "ansi-escapes@npm:^7.0.0":
   version: 7.3.0
   resolution: "ansi-escapes@npm:7.3.0"
@@ -5137,6 +5144,7 @@ __metadata:
     "@types/react": "npm:^19.0.1"
     "@types/react-dom": "npm:^19.0.1"
     "@types/use-sync-external-store": "npm:^0.0.6"
+    alien-signals: "npm:^3.2.1"
     codecov: "npm:^3.8.3"
     cross-env: "npm:^7.0.3"
     eslint: "npm:^8.57.0"
