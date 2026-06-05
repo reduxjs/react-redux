@@ -9,12 +9,13 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 /**
  * Walk prev and next state trees, updating path signals for changed values.
+ * Only visits subtrees that have tracked signals (registered paths).
  * Exploits Immer's structural sharing: `prev === next` skips entire subtrees.
  */
 export function diffAndUpdateSignals(
   prev: unknown,
   next: unknown,
-  pathSegments: string[],
+  parentPath: string,
   registry: PathSignalRegistry,
 ): void {
   // Structural sharing: identical references mean nothing changed
@@ -31,54 +32,58 @@ export function diffAndUpdateSignals(
       prevKeys.some((k) => !(k in next))
 
     if (keysChanged) {
-      const keysPath = [...pathSegments, '@@keys'].join('.')
+      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
       registry.update(keysPath, nextKeys)
     }
 
     // Update the object signal itself (version bump)
-    const selfPath = pathSegments.join('.')
-    if (selfPath) {
-      registry.update(selfPath, next)
+    if (parentPath) {
+      registry.update(parentPath, next)
     }
 
-    // Recurse into all keys present in either object
+    // Only recurse into keys that have tracked signals underneath
     const allKeys = new Set([...prevKeys, ...nextKeys])
     for (const key of allKeys) {
-      diffAndUpdateSignals(prev[key], next[key], [...pathSegments, key], registry)
+      const childPath = parentPath ? parentPath + '.' + key : key
+      if (registry.hasPrefix(childPath)) {
+        diffAndUpdateSignals(prev[key], next[key], childPath, registry)
+      }
     }
     return
   }
 
   // Both arrays: handle length + index-based diffing
   if (Array.isArray(prev) && Array.isArray(next)) {
-    const selfPath = pathSegments.join('.')
-    if (selfPath) {
-      registry.update(selfPath, next)
+    if (parentPath) {
+      registry.update(parentPath, next)
     }
 
     // Length change → @@keys signal
     if (prev.length !== next.length) {
-      const keysPath = [...pathSegments, '@@keys'].join('.')
+      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
       registry.update(keysPath, next.length)
     }
 
-    // Recurse into each index
+    // Only recurse into indices that have tracked signals underneath
     const maxLen = Math.max(prev.length, next.length)
     for (let i = 0; i < maxLen; i++) {
-      diffAndUpdateSignals(prev[i], next[i], [...pathSegments, String(i)], registry)
+      const childPath = parentPath ? parentPath + '.' + i : String(i)
+      if (registry.hasPrefix(childPath)) {
+        diffAndUpdateSignals(prev?.[i], next?.[i], childPath, registry)
+      }
     }
 
     // Prune signals for removed indices
     for (let i = next.length; i < prev.length; i++) {
-      registry.prune([...pathSegments, String(i)].join('.'))
+      const childPath = parentPath ? parentPath + '.' + i : String(i)
+      registry.prune(childPath)
     }
     return
   }
 
   // Leaf value change (primitive, or type mismatch like object→primitive)
-  const pathKey = pathSegments.join('.')
-  if (pathKey) {
-    registry.update(pathKey, next)
+  if (parentPath) {
+    registry.update(parentPath, next)
   }
 
   // If prev was an object/array and next is not, prune child signals
@@ -87,7 +92,7 @@ export function diffAndUpdateSignals(
     typeof prev === 'object' &&
     (next === null || typeof next !== 'object')
   ) {
-    registry.prune(pathKey)
+    registry.prune(parentPath)
   }
 }
 
@@ -101,6 +106,6 @@ export function reconcileState(
   engine: SignalEngine,
 ): void {
   engine.batch(() => {
-    diffAndUpdateSignals(prev, next, [], registry)
+    diffAndUpdateSignals(prev, next, '', registry)
   })
 }

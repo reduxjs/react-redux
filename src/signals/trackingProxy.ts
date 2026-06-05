@@ -20,7 +20,7 @@ function isObjectOrArray(v: unknown): v is object {
  */
 export function createTrackingProxy<T extends object>(
   target: T,
-  pathSegments: string[],
+  parentPath: string,
   registry: PathSignalRegistry,
 ): T {
   // Cache child proxies within this evaluation to avoid duplicate creation
@@ -40,13 +40,10 @@ export function createTrackingProxy<T extends object>(
 
       // Functions (like Array.prototype.map) — bind to proxy so `this` works
       if (typeof value === 'function') {
-        // For inherited methods (e.g. Array.prototype.map), return them
-        // bound to the proxy so iteration uses tracked access
         return value
       }
 
-      const childPath = [...pathSegments, prop]
-      const pathKey = childPath.join('.')
+      const pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
 
       if (isObjectOrArray(value)) {
         // Read signal to establish dependency (version counter for objects)
@@ -56,7 +53,7 @@ export function createTrackingProxy<T extends object>(
         if (!childCache.has(prop as string)) {
           childCache.set(
             prop as string,
-            createTrackingProxy(value as object, childPath, registry),
+            createTrackingProxy(value as object, pathKey, registry),
           )
         }
         return childCache.get(prop as string)
@@ -71,7 +68,7 @@ export function createTrackingProxy<T extends object>(
 
     // Track when selectors iterate keys (Object.keys, for...in, .map, .filter, etc.)
     ownKeys(_obj) {
-      const keysPath = [...pathSegments, '@@keys'].join('.')
+      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
       registry.getOrCreate(keysPath, Reflect.ownKeys(target)).get()
       return Reflect.ownKeys(target)
     },
@@ -79,7 +76,7 @@ export function createTrackingProxy<T extends object>(
     // Track has() checks for conditional property access (e.g., 'key' in obj)
     has(_obj, prop) {
       if (typeof prop === 'symbol') return Reflect.has(target, prop)
-      const pathKey = [...pathSegments, prop].join('.')
+      const pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
       registry.getOrCreate(pathKey, (target as Record<string, unknown>)[prop]).get()
       return Reflect.has(target, prop)
     },
