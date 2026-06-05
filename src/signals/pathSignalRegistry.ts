@@ -45,8 +45,10 @@ export function createPathSignalRegistry(
       if (!sig) return // no one is tracking this path — skip
 
       if (isObjectOrArray(newValue)) {
-        // Bump version counter — signals something in this subtree changed
-        sig.set((sig.get() as number) + 1)
+        // Bump version counter — signals something in this subtree changed.
+        // If the signal previously held a primitive (type transition), reset to 0.
+        const current = sig.get()
+        sig.set(typeof current === 'number' ? current + 1 : 0)
       } else {
         sig.set(newValue)
       }
