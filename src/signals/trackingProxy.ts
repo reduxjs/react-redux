@@ -5,6 +5,21 @@ function isObjectOrArray(v: unknown): v is object {
 }
 
 /**
+ * Maps proxy objects to their path keys.
+ * Used by useSignalSelector to detect when a selector returns a proxy (object)
+ * and explicitly establish a dependency on that object's signal.
+ */
+const proxyPathMap = new WeakMap<object, string>()
+
+/** Get the path key associated with a tracking proxy, or undefined if not a proxy. */
+export function getProxyPath(value: unknown): string | undefined {
+  if (value !== null && typeof value === 'object') {
+    return proxyPathMap.get(value)
+  }
+  return undefined
+}
+
+/**
  * Creates a read-only tracking proxy that wraps frozen Redux state.
  *
  * On property access, the proxy:
@@ -46,15 +61,21 @@ export function createTrackingProxy<T extends object>(
       const pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
 
       if (isObjectOrArray(value)) {
-        // Read signal to establish dependency (version counter for objects)
-        registry.getOrCreate(pathKey, value).get()
+        // Register the signal (for hasPrefix/diff tracking) but DON'T read it.
+        // This avoids "false sharing" — intermediate object traversals won't
+        // create dependencies. Only leaf reads and explicit terminal reads
+        // (detected by useSignalSelector) establish reactive dependencies.
+        registry.getOrCreate(pathKey, value)
 
         // Return cached child proxy
         if (!childCache.has(prop as string)) {
-          childCache.set(
-            prop as string,
-            createTrackingProxy(value as object, pathKey, registry),
+          const childProxy = createTrackingProxy(
+            value as object,
+            pathKey,
+            registry,
           )
+          proxyPathMap.set(childProxy as object, pathKey)
+          childCache.set(prop as string, childProxy)
         }
         return childCache.get(prop as string)
       }
