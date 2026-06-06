@@ -23,30 +23,50 @@ export function diffAndUpdateSignals(
 
   // Both plain objects: recurse into properties
   if (isPlainObject(prev) && isPlainObject(next)) {
-    const prevKeys = Object.keys(prev)
     const nextKeys = Object.keys(next)
 
-    // Check for key changes (additions/removals)
-    const keysChanged =
-      prevKeys.length !== nextKeys.length ||
-      prevKeys.some((k) => !(k in next))
-
-    if (keysChanged) {
-      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
-      registry.update(keysPath, nextKeys)
-    }
+    // Detect key additions/removals by comparing length + checking removals
+    // (cheaper than building a Set union of both key arrays)
+    const prevKeyCount = Object.keys(prev).length
+    let keysChanged = prevKeyCount !== nextKeys.length
 
     // Update the object signal itself (version bump)
     if (parentPath) {
       registry.update(parentPath, next)
     }
 
-    // Only recurse into keys that have tracked signals underneath
-    const allKeys = new Set([...prevKeys, ...nextKeys])
-    for (const key of allKeys) {
+    // Iterate next's keys — covers additions + same keys.
+    // Removed keys: prev[key] was defined, next[key] is undefined,
+    // so prev[key] !== next[key] and the recursive call handles pruning.
+    for (let i = 0; i < nextKeys.length; i++) {
+      const key = nextKeys[i]
       const childPath = parentPath ? parentPath + '.' + key : key
+
+      // Check if this key was added (not in prev) — also detects keysChanged
+      if (!keysChanged && !(key in prev)) {
+        keysChanged = true
+      }
+
       if (registry.hasPrefix(childPath)) {
         diffAndUpdateSignals(prev[key], next[key], childPath, registry)
+      }
+    }
+
+    // Handle removed keys: iterate prev keys that aren't in next
+    // Only needed if keys actually changed and there are tracked signals
+    if (keysChanged) {
+      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
+      registry.update(keysPath, nextKeys)
+
+      // Prune signals for removed keys (any key in prev but not in next)
+      const prevKeys = Object.keys(prev)
+      for (let i = 0; i < prevKeys.length; i++) {
+        if (!(prevKeys[i] in next)) {
+          const childPath = parentPath
+            ? parentPath + '.' + prevKeys[i]
+            : prevKeys[i]
+          registry.prune(childPath)
+        }
       }
     }
     return
@@ -67,16 +87,25 @@ export function diffAndUpdateSignals(
       registry.update(lengthPath, next.length)
     }
 
-    // Only recurse into indices that have tracked signals underneath
-    const maxLen = Math.max(prev.length, next.length)
-    for (let i = 0; i < maxLen; i++) {
-      const childPath = parentPath ? parentPath + '.' + i : String(i)
-      if (registry.hasPrefix(childPath)) {
-        diffAndUpdateSignals(prev?.[i], next?.[i], childPath, registry)
+    // Recurse into tracked indices, prune removed ones
+    const minLen = Math.min(prev.length, next.length)
+    // Shared indices: recurse if tracked
+    for (let i = 0; i < minLen; i++) {
+      if (prev[i] !== next[i]) {
+        const childPath = parentPath ? parentPath + '.' + i : String(i)
+        if (registry.hasPrefix(childPath)) {
+          diffAndUpdateSignals(prev[i], next[i], childPath, registry)
+        }
       }
     }
-
-    // Prune signals for removed indices
+    // Added indices: recurse if tracked
+    for (let i = minLen; i < next.length; i++) {
+      const childPath = parentPath ? parentPath + '.' + i : String(i)
+      if (registry.hasPrefix(childPath)) {
+        diffAndUpdateSignals(undefined, next[i], childPath, registry)
+      }
+    }
+    // Removed indices: prune
     for (let i = next.length; i < prev.length; i++) {
       const childPath = parentPath ? parentPath + '.' + i : String(i)
       registry.prune(childPath)

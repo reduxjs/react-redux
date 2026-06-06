@@ -11,7 +11,7 @@ import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 // Helper: create a registry with signals pre-populated by running a selector through a tracking proxy
 function setupRegistry(state: object, selectorFn: (s: any) => void) {
   const registry = createPathSignalRegistry(alienEngine)
-  const proxy = createTrackingProxy(state, '', registry)
+  const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
   selectorFn(proxy)
   return registry
 }
@@ -177,14 +177,17 @@ describe('diffAndUpdateSignals', () => {
 
       diffAndUpdateSignals(prev, next, '', registry)
 
+      // Leaf signal should be updated
       expect(registry.getOrCreate('a.b.c.d', 'changed').get()).toBe('changed')
-      // All parent objects should have version bumps
-      const aSig = registry.getOrCreate('a', next.a)
-      const bSig = registry.getOrCreate('a.b', next.a.b)
-      const cSig = registry.getOrCreate('a.b.c', next.a.b.c)
-      // They are version counters (numbers), not 0 (initial)
-      expect(typeof aSig.get()).toBe('number')
-      expect((aSig.get() as number)).toBeGreaterThan(0)
+      // Intermediate objects have no signals (only prefix registrations)
+      // They don't get version bumps — that's the optimization
+      expect(registry.has('a')).toBe(false)
+      expect(registry.has('a.b')).toBe(false)
+      expect(registry.has('a.b.c')).toBe(false)
+      // But prefix index knows about them
+      expect(registry.hasPrefix('a')).toBe(true)
+      expect(registry.hasPrefix('a.b')).toBe(true)
+      expect(registry.hasPrefix('a.b.c')).toBe(true)
     })
   })
 
@@ -332,14 +335,14 @@ describe('diffAndUpdateSignals', () => {
         s.todos[2].text
       })
 
-      expect(registry.has('todos.2.text')).toBe(true)
-      expect(registry.has('todos.2')).toBe(true)
+      expect(registry.has('todos.2.text')).toBe(true) // leaf signal
+      expect(registry.hasPrefix('todos.2')).toBe(true) // prefix registered
 
       diffAndUpdateSignals(prev, next, '', registry)
 
       // Signals for removed index should be pruned
       expect(registry.has('todos.2.text')).toBe(false)
-      expect(registry.has('todos.2')).toBe(false)
+      expect(registry.hasPrefix('todos.2')).toBe(false)
       // Remaining indices should still exist
       expect(registry.has('todos.0.text')).toBe(true)
       expect(registry.has('todos.1.text')).toBe(true)
@@ -351,7 +354,7 @@ describe('diffAndUpdateSignals', () => {
 
       const registry = createPathSignalRegistry(alienEngine)
       // Manually track some paths
-      const proxy = createTrackingProxy({ items: prev }, '', registry)
+      const proxy = createTrackingProxy({ items: prev }, '', registry, registry.proxyCache)
       proxy.items.length // triggers @@keys and items tracking
 
       const keysPath = 'items.@@keys'
