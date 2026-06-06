@@ -1,7 +1,7 @@
 import { React } from '../utils/react'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { useSignalContext } from './context'
-import { createTrackingProxy } from './trackingProxy'
+import { createTrackingProxy, getProxyPath } from './trackingProxy'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore } = React
 
@@ -35,12 +35,26 @@ export function useSignalSelector<S extends object, R>(
 
     // Create a computed that runs the selector through a tracking proxy.
     // This establishes signal dependencies on the paths the selector reads.
+    //
+    // Intermediate object traversals don't create signal dependencies (to avoid
+    // "false sharing" where siblings cause re-runs). Only leaf primitive reads
+    // create deps automatically. If the selector returns a proxy (object result),
+    // we explicitly read that object's signal to establish the terminal dependency.
     const selectorComputed = engine.computed(() => {
       const state = store.getState() as S & object
       const proxy = registry.getOrCreateRootProxy(state, (s) =>
         createTrackingProxy(s, '', registry),
       )
-      return selectorRef.current(proxy as S)
+      const result = selectorRef.current(proxy as S)
+
+      // If the selector returned a tracking proxy (object), explicitly
+      // read its signal to establish a reactive dependency on that path.
+      const proxyPath = getProxyPath(result)
+      if (proxyPath !== undefined) {
+        registry.getOrCreate(proxyPath, result).get()
+      }
+
+      return result
     })
 
     // Initialize with current value

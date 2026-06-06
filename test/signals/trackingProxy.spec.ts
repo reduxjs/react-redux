@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createTrackingProxy } from '../../src/signals/trackingProxy'
+import { createTrackingProxy, getProxyPath } from '../../src/signals/trackingProxy'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { alienEngine } from '../../src/signals/engine'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
@@ -470,7 +470,7 @@ describe('createTrackingProxy', () => {
     scope.stop()
   })
 
-  it('version counter bumps propagate to computeds reading nested objects', () => {
+  it('version counter bumps propagate to computeds returning objects (with explicit terminal dep)', () => {
     const state = Object.freeze({
       nested: Object.freeze({ deep: Object.freeze({ value: 42 }) }),
     })
@@ -482,8 +482,14 @@ describe('createTrackingProxy', () => {
       alienEngine.computed(() => {
         calls++
         const proxy = createTrackingProxy(state, '', registry)
-        // Access the intermediate object (version counter signal)
-        return proxy.nested.deep
+        const result = proxy.nested.deep
+        // Simulate what useSignalSelector does: detect proxy result
+        // and explicitly read the object's signal for terminal dependency
+        const proxyPath = getProxyPath(result)
+        if (proxyPath !== undefined) {
+          registry.getOrCreate(proxyPath, result).get()
+        }
+        return result
       }),
     )
 
@@ -496,6 +502,39 @@ describe('createTrackingProxy', () => {
     expect(calls).toBe(2)
 
     // Bumping a child signal should NOT trigger (we read 'nested.deep', not 'nested.deep.value')
+    registry.update('nested.deep.value', 99)
+    c.get()
+    expect(calls).toBe(2)
+
+    scope.stop()
+  })
+
+  it('intermediate object traversal does NOT create signal dependency', () => {
+    const state = Object.freeze({
+      nested: Object.freeze({ deep: Object.freeze({ value: 42 }) }),
+    })
+    const registry = makeRegistry()
+    const scope = alienEngine.createScope()
+
+    let calls = 0
+    const c = scope.run(() =>
+      alienEngine.computed(() => {
+        calls++
+        const proxy = createTrackingProxy(state, '', registry)
+        // Read through intermediate objects to a leaf
+        return proxy.nested.deep.value
+      }),
+    )
+
+    c.get()
+    expect(calls).toBe(1)
+
+    // Bumping intermediate 'nested' should NOT trigger (no .get() was called on it)
+    registry.update('nested', {})
+    c.get()
+    expect(calls).toBe(1)
+
+    // Bumping the leaf signal SHOULD trigger
     registry.update('nested.deep.value', 99)
     c.get()
     expect(calls).toBe(2)
@@ -616,7 +655,13 @@ describe('createTrackingProxy', () => {
       alienEngine.computed(() => {
         todoCalls++
         const proxy = createTrackingProxy(state, '', registry)
-        return proxy.todos
+        const result = proxy.todos
+        // Simulate terminal dependency for object result
+        const proxyPath = getProxyPath(result)
+        if (proxyPath !== undefined) {
+          registry.getOrCreate(proxyPath, result).get()
+        }
+        return result
       }),
     )
 
