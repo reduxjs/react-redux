@@ -58,10 +58,13 @@ export function diffAndUpdateSignals(
       registry.update(parentPath, next)
     }
 
-    // Length change → @@keys signal
+    // Length change → @@keys signal + length signal
     if (prev.length !== next.length) {
       const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
       registry.update(keysPath, next.length)
+      // Also update the explicit 'length' signal for selectors that read .length
+      const lengthPath = parentPath ? parentPath + '.length' : 'length'
+      registry.update(lengthPath, next.length)
     }
 
     // Only recurse into indices that have tracked signals underneath
