@@ -14,7 +14,7 @@ describe('createTrackingProxy', () => {
   it('returns primitive values from the underlying object', () => {
     const state = { name: 'Alice', age: 30 }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(proxy.name).toBe('Alice')
     expect(proxy.age).toBe(30)
@@ -23,7 +23,7 @@ describe('createTrackingProxy', () => {
   it('creates signals for accessed primitive paths', () => {
     const state = { name: 'Alice', age: 30 }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(registry.has('name')).toBe(false)
     proxy.name
@@ -37,7 +37,7 @@ describe('createTrackingProxy', () => {
   it('does NOT create signals for unaccessed paths', () => {
     const state = { name: 'Alice', age: 30, email: 'alice@example.com' }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     proxy.name // access only name
     expect(registry.has('name')).toBe(true)
@@ -50,7 +50,7 @@ describe('createTrackingProxy', () => {
   it('returns a tracking proxy for nested objects (not raw value)', () => {
     const state = { user: { name: 'Alice' } }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const userProxy = proxy.user
     // Should be a proxy, not the raw object
@@ -62,13 +62,14 @@ describe('createTrackingProxy', () => {
   it('creates signals for nested property paths', () => {
     const state = { user: { name: 'Alice', address: { city: 'NYC' } } }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     proxy.user.address.city
 
-    expect(registry.has('user')).toBe(true)
-    expect(registry.has('user.address')).toBe(true)
-    expect(registry.has('user.address.city')).toBe(true)
+    // Intermediate objects use ensurePrefix (no signal), leaves use getOrCreate
+    expect(registry.hasPrefix('user')).toBe(true)
+    expect(registry.hasPrefix('user.address')).toBe(true)
+    expect(registry.has('user.address.city')).toBe(true) // leaf — has signal
     // Did not access user.name
     expect(registry.has('user.name')).toBe(false)
   })
@@ -76,7 +77,7 @@ describe('createTrackingProxy', () => {
   it('caches child proxies within same evaluation', () => {
     const state = { user: { name: 'Alice' } }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const first = proxy.user
     const second = proxy.user
@@ -88,19 +89,19 @@ describe('createTrackingProxy', () => {
   it('returns tracking proxies for array elements', () => {
     const state = { todos: [{ id: 1, text: 'Test' }] }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const todo = proxy.todos[0]
     expect(todo.text).toBe('Test')
-    expect(registry.has('todos')).toBe(true)
-    expect(registry.has('todos.0')).toBe(true)
-    expect(registry.has('todos.0.text')).toBe(true)
+    expect(registry.hasPrefix('todos')).toBe(true) // intermediate
+    expect(registry.hasPrefix('todos.0')).toBe(true) // intermediate
+    expect(registry.has('todos.0.text')).toBe(true) // leaf
   })
 
   it('tracks array length access', () => {
     const state = { items: [1, 2, 3] }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(proxy.items.length).toBe(3)
     expect(registry.has('items.length')).toBe(true)
@@ -114,7 +115,7 @@ describe('createTrackingProxy', () => {
       filter: 'all' as const,
     })
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(proxy.filter).toBe('all')
     expect(proxy.user.name).toBe('Alice')
@@ -134,7 +135,7 @@ describe('createTrackingProxy', () => {
       }),
     })
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(proxy.todos[0].text).toBe('Test')
     expect(proxy.todos[1].completed).toBe(true)
@@ -146,7 +147,7 @@ describe('createTrackingProxy', () => {
   it('tracks ownKeys access via @@keys signal', () => {
     const state = { a: 1, b: 2, c: 3 }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     Object.keys(proxy)
     expect(registry.has('@@keys')).toBe(true)
@@ -155,7 +156,7 @@ describe('createTrackingProxy', () => {
   it('tracks nested ownKeys with correct path', () => {
     const state = { user: { name: 'Alice', age: 30 } }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     Object.keys(proxy.user)
     expect(registry.has('user.@@keys')).toBe(true)
@@ -164,7 +165,7 @@ describe('createTrackingProxy', () => {
   it('supports for...in enumeration', () => {
     const state = { a: 1, b: 2 }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const keys: string[] = []
     for (const key in proxy) {
@@ -177,7 +178,7 @@ describe('createTrackingProxy', () => {
   it('supports Object.entries on proxy', () => {
     const state = Object.freeze({ x: 10, y: 20 })
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const entries = Object.entries(proxy)
     expect(entries).toEqual([
@@ -194,7 +195,7 @@ describe('createTrackingProxy', () => {
       ]),
     })
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const names = proxy.items.map((item: { id: number; name: string }) => item.name)
     expect(names).toEqual(['A', 'B'])
@@ -209,7 +210,7 @@ describe('createTrackingProxy', () => {
       ]),
     })
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const active = proxy.items.filter(
       (item: { id: number; active: boolean }) => item.active,
@@ -223,7 +224,7 @@ describe('createTrackingProxy', () => {
     const sym = Symbol('test')
     const state = { [sym]: 'secret', name: 'Alice' }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(proxy[sym]).toBe('secret')
     // Symbol access should not create any signals
@@ -233,7 +234,7 @@ describe('createTrackingProxy', () => {
   it('supports Symbol.iterator for arrays', () => {
     const state = Object.freeze({ items: Object.freeze([1, 2, 3]) })
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     const spread = [...proxy.items]
     expect(spread).toEqual([1, 2, 3])
@@ -244,7 +245,7 @@ describe('createTrackingProxy', () => {
   it('tracks "in" operator checks', () => {
     const state = { name: 'Alice', age: 30 }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect('name' in proxy).toBe(true)
     expect('missing' in proxy).toBe(false)
@@ -259,7 +260,7 @@ describe('createTrackingProxy', () => {
   it('treats null values as primitives (not objects)', () => {
     const state = { value: null as null | string }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(proxy.value).toBe(null)
     expect(registry.has('value')).toBe(true)
@@ -272,13 +273,13 @@ describe('createTrackingProxy', () => {
       a: { b: { c: { d: 42 } } },
     }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     expect(proxy.a.b.c.d).toBe(42)
-    expect(registry.has('a')).toBe(true)
-    expect(registry.has('a.b')).toBe(true)
-    expect(registry.has('a.b.c')).toBe(true)
-    expect(registry.has('a.b.c.d')).toBe(true)
+    expect(registry.hasPrefix('a')).toBe(true) // intermediate
+    expect(registry.hasPrefix('a.b')).toBe(true) // intermediate
+    expect(registry.hasPrefix('a.b.c')).toBe(true) // intermediate
+    expect(registry.has('a.b.c.d')).toBe(true) // leaf
   })
 
   // ─── Nesting path behavior ───
@@ -292,38 +293,39 @@ describe('createTrackingProxy', () => {
       settings: { theme: 'dark' },
     }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     // Access only alice's name
     proxy.users.alice.name
 
-    expect(registry.has('users')).toBe(true)
-    expect(registry.has('users.alice')).toBe(true)
-    expect(registry.has('users.alice.name')).toBe(true)
+    expect(registry.hasPrefix('users')).toBe(true) // intermediate
+    expect(registry.hasPrefix('users.alice')).toBe(true) // intermediate
+    expect(registry.has('users.alice.name')).toBe(true) // leaf
     // Siblings NOT accessed
     expect(registry.has('users.alice.age')).toBe(false)
-    expect(registry.has('users.bob')).toBe(false)
+    expect(registry.hasPrefix('users.bob')).toBe(false)
     expect(registry.has('users.bob.name')).toBe(false)
-    expect(registry.has('settings')).toBe(false)
+    expect(registry.hasPrefix('settings')).toBe(false)
     expect(registry.has('settings.theme')).toBe(false)
   })
 
-  it('creates intermediate object signals as version counters', () => {
+  it('creates leaf signals with actual values, intermediate objects are prefix-only', () => {
     const state = { a: { b: { c: 42 } } }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     proxy.a.b.c
 
-    // a and a.b are objects → version counter (0)
-    // a.b.c is a primitive → actual value (42)
-    const sigA = registry.getOrCreate('a', state.a)
-    const sigAB = registry.getOrCreate('a.b', state.a.b)
-    const sigABC = registry.getOrCreate('a.b.c', 42)
+    // Intermediate objects (a, a.b) only have prefix registrations, no signals
+    expect(registry.has('a')).toBe(false)
+    expect(registry.has('a.b')).toBe(false)
+    expect(registry.hasPrefix('a')).toBe(true)
+    expect(registry.hasPrefix('a.b')).toBe(true)
 
-    expect(sigA.get()).toBe(0) // version counter
-    expect(sigAB.get()).toBe(0) // version counter
-    expect(sigABC.get()).toBe(42) // actual value
+    // Leaf has a signal with the actual value
+    expect(registry.has('a.b.c')).toBe(true)
+    const sigABC = registry.getOrCreate('a.b.c', 42)
+    expect(sigABC.get()).toBe(42)
   })
 
   it('handles mixed nested types: objects, arrays, and primitives', () => {
@@ -336,21 +338,21 @@ describe('createTrackingProxy', () => {
       count: 5,
     })
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     // Traverse: entities → users → [0] → tags → [0]
     const tag = proxy.entities.users[0].tags[0]
     expect(tag).toBe('admin')
 
-    expect(registry.has('entities')).toBe(true)
-    expect(registry.has('entities.users')).toBe(true)
-    expect(registry.has('entities.users.0')).toBe(true)
-    expect(registry.has('entities.users.0.tags')).toBe(true)
-    expect(registry.has('entities.users.0.tags.0')).toBe(true)
+    expect(registry.hasPrefix('entities')).toBe(true) // intermediate
+    expect(registry.hasPrefix('entities.users')).toBe(true) // intermediate
+    expect(registry.hasPrefix('entities.users.0')).toBe(true) // intermediate
+    expect(registry.hasPrefix('entities.users.0.tags')).toBe(true) // intermediate
+    expect(registry.has('entities.users.0.tags.0')).toBe(true) // leaf
     // Not accessed
     expect(registry.has('entities.users.0.id')).toBe(false)
     expect(registry.has('entities.users.0.tags.1')).toBe(false)
-    expect(registry.has('count')).toBe(false)
+    expect(registry.hasPrefix('count')).toBe(false)
   })
 
   it('handles multiple access paths creating independent signal trees', () => {
@@ -359,24 +361,24 @@ describe('createTrackingProxy', () => {
       b: { x: 10, y: 20 },
     }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     proxy.a.x
     proxy.b.y
 
     // Each branch creates its own path signals
-    expect(registry.has('a')).toBe(true)
-    expect(registry.has('a.x')).toBe(true)
+    expect(registry.hasPrefix('a')).toBe(true) // intermediate
+    expect(registry.has('a.x')).toBe(true) // leaf
     expect(registry.has('a.y')).toBe(false) // not accessed
-    expect(registry.has('b')).toBe(true)
-    expect(registry.has('b.y')).toBe(true)
+    expect(registry.hasPrefix('b')).toBe(true) // intermediate
+    expect(registry.has('b.y')).toBe(true) // leaf
     expect(registry.has('b.x')).toBe(false) // not accessed
   })
 
   it('array index paths use numeric string keys', () => {
     const state = { items: ['zero', 'one', 'two'] }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     proxy.items[0]
     proxy.items[2]
@@ -393,7 +395,7 @@ describe('createTrackingProxy', () => {
       },
     }
     const registry = makeRegistry()
-    const proxy = createTrackingProxy(state, '', registry)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     // Iterate top-level keys
     Object.keys(proxy)
@@ -411,14 +413,14 @@ describe('createTrackingProxy', () => {
     const registry = makeRegistry()
 
     // Two separate root proxies but same registry
-    const proxy1 = createTrackingProxy(state, '', registry)
-    const proxy2 = createTrackingProxy(state, '', registry)
+    const proxy1 = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy2 = createTrackingProxy(state, '', registry, registry.proxyCache)
 
     proxy1.user.profile.name
     proxy2.user.profile.name
 
-    // Should have created signals only once (same paths)
-    expect(registry.size()).toBe(3) // user, user.profile, user.profile.name
+    // Only the leaf creates a signal; user and user.profile are prefix-only
+    expect(registry.size()).toBe(1) // user.profile.name (leaf)
   })
 
   it('child proxies from different root proxies track same signal paths', () => {
@@ -436,14 +438,14 @@ describe('createTrackingProxy', () => {
     const c1 = scope.run(() =>
       alienEngine.computed(() => {
         comp1Calls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         return proxy.counter.value
       }),
     )
     const c2 = scope.run(() =>
       alienEngine.computed(() => {
         comp2Calls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         return proxy.counter.value
       }),
     )
@@ -481,7 +483,7 @@ describe('createTrackingProxy', () => {
     const c = scope.run(() =>
       alienEngine.computed(() => {
         calls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         const result = proxy.nested.deep
         // Simulate what useSignalSelector does: detect proxy result
         // and explicitly read the object's signal for terminal dependency
@@ -520,7 +522,7 @@ describe('createTrackingProxy', () => {
     const c = scope.run(() =>
       alienEngine.computed(() => {
         calls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         // Read through intermediate objects to a leaf
         return proxy.nested.deep.value
       }),
@@ -556,7 +558,7 @@ describe('createTrackingProxy', () => {
     const parentComp = scope.run(() =>
       alienEngine.computed(() => {
         parentCalls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         return proxy.parent
       }),
     )
@@ -565,7 +567,7 @@ describe('createTrackingProxy', () => {
     const leafComp = scope.run(() =>
       alienEngine.computed(() => {
         leafCalls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         return proxy.parent.child.leaf
       }),
     )
@@ -589,7 +591,7 @@ describe('createTrackingProxy', () => {
     const nested = { x: 1, y: 2 }
     const registry = makeRegistry()
     // Create proxy with a base path — simulates a proxy for a nested subtree
-    const proxy = createTrackingProxy(nested, 'root.sub', registry)
+    const proxy = createTrackingProxy(nested, 'root.sub', registry, registry.proxyCache)
 
     proxy.x
 
@@ -615,7 +617,7 @@ describe('createTrackingProxy', () => {
     const c = scope.run(() => {
       return alienEngine.computed(() => {
         callCount++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         return proxy.filter
       })
     })
@@ -654,7 +656,7 @@ describe('createTrackingProxy', () => {
     const todoComputed = scope.run(() =>
       alienEngine.computed(() => {
         todoCalls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         const result = proxy.todos
         // Simulate terminal dependency for object result
         const proxyPath = getProxyPath(result)
@@ -668,7 +670,7 @@ describe('createTrackingProxy', () => {
     const counterComputed = scope.run(() =>
       alienEngine.computed(() => {
         counterCalls++
-        const proxy = createTrackingProxy(state, '', registry)
+        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
         return proxy.counter
       }),
     )

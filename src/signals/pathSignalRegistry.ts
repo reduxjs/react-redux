@@ -1,8 +1,14 @@
+import type { ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
 export interface PathSignalRegistry {
   /** Get or create a signal for a path. Object/array values use version counters. */
   getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown>
+
+  /** Register a path in the prefix index without creating a signal.
+   *  Used for intermediate object traversals where we need hasPrefix()
+   *  to work for diff, but don't need a signal (no reactive dependency). */
+  ensurePrefix(pathKey: PathKey): void
 
   /** Update a signal's value (called during diff). */
   update(pathKey: PathKey, newValue: unknown): void
@@ -19,11 +25,8 @@ export interface PathSignalRegistry {
   /** Check if any tracked signal exists at or below this path prefix. */
   hasPrefix(prefix: string): boolean
 
-  /** Get or create a cached root proxy for a state snapshot. */
-  getOrCreateRootProxy<T extends object>(
-    state: T,
-    factory: (state: T) => T,
-  ): T
+  /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
+  proxyCache: ProxyCache
 }
 
 function isObjectOrArray(v: unknown): v is object {
@@ -73,10 +76,13 @@ export function createPathSignalRegistry(
   // Prefix counter map: for each path prefix, how many tracked signals
   // exist at or below that prefix. Enables O(1) hasPrefix lookups.
   const prefixCounts = new Map<string, number>()
-  // Cached root proxy: avoids creating a new proxy per selector per dispatch.
-  // Keyed by state reference identity (immutable snapshots).
-  let cachedProxyState: object | null = null
-  let cachedProxy: object | null = null
+  // Paths that are prefix-only registered (no signal created yet).
+  // Tracked so ensurePrefix is idempotent and getOrCreate can skip
+  // re-incrementing prefixes if ensurePrefix was called first.
+  const prefixOnlyPaths = new Set<string>()
+  // Proxy cache: keyed by target object identity.
+  // Reuses proxies for unchanged Immer subtrees across state snapshots.
+  const proxyWeakMap: ProxyCache = new WeakMap()
 
   return {
     getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown> {
@@ -85,9 +91,21 @@ export function createPathSignalRegistry(
         const initialValue = isObjectOrArray(currentValue) ? 0 : currentValue
         sig = engine.signal(initialValue)
         signals.set(pathKey, sig)
-        incrementPrefixes(prefixCounts, pathKey)
+        // If ensurePrefix was called first, prefixes are already counted
+        if (prefixOnlyPaths.has(pathKey)) {
+          prefixOnlyPaths.delete(pathKey)
+        } else {
+          incrementPrefixes(prefixCounts, pathKey)
+        }
       }
       return sig
+    },
+
+    ensurePrefix(pathKey: PathKey): void {
+      // Already has a signal or already prefix-registered — nothing to do
+      if (signals.has(pathKey) || prefixOnlyPaths.has(pathKey)) return
+      prefixOnlyPaths.add(pathKey)
+      incrementPrefixes(prefixCounts, pathKey)
     },
 
     update(pathKey: PathKey, newValue: unknown): void {
@@ -110,6 +128,13 @@ export function createPathSignalRegistry(
           decrementPrefixes(prefixCounts, key)
         }
       }
+      // Also clean up prefix-only registrations
+      for (const key of prefixOnlyPaths) {
+        if (key === pathKey || key.startsWith(prefix)) {
+          prefixOnlyPaths.delete(key)
+          decrementPrefixes(prefixCounts, key)
+        }
+      }
     },
 
     size(): number {
@@ -124,17 +149,6 @@ export function createPathSignalRegistry(
       return (prefixCounts.get(prefix) || 0) > 0
     },
 
-    getOrCreateRootProxy<T extends object>(
-      state: T,
-      factory: (state: T) => T,
-    ): T {
-      if (cachedProxyState === state) {
-        return cachedProxy as T
-      }
-      const proxy = factory(state)
-      cachedProxyState = state
-      cachedProxy = proxy
-      return proxy
-    },
+    proxyCache: proxyWeakMap,
   }
 }
