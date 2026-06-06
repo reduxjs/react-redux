@@ -42,9 +42,7 @@ export function useSignalSelector<S extends object, R>(
     // we explicitly read that object's signal to establish the terminal dependency.
     const selectorComputed = engine.computed(() => {
       const state = store.getState() as S & object
-      const proxy = registry.getOrCreateRootProxy(state, (s) =>
-        createTrackingProxy(s, '', registry),
-      )
+      const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
       const result = selectorRef.current(proxy as S)
 
       // If the selector returned a tracking proxy (object), explicitly

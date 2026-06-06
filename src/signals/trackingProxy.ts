@@ -11,6 +11,14 @@ function isObjectOrArray(v: unknown): v is object {
  */
 const proxyPathMap = new WeakMap<object, string>()
 
+/**
+ * Type for the proxy cache. Exported so the registry can own one.
+ * Caches proxies by their target object identity.
+ * Since Immer uses structural sharing, unchanged subtrees keep the same
+ * object reference across state snapshots — so we can reuse their proxies.
+ */
+export type ProxyCache = WeakMap<object, object>
+
 /** Get the path key associated with a tracking proxy, or undefined if not a proxy. */
 export function getProxyPath(value: unknown): string | undefined {
   if (value !== null && typeof value === 'object') {
@@ -37,16 +45,18 @@ export function createTrackingProxy<T extends object>(
   target: T,
   parentPath: string,
   registry: PathSignalRegistry,
+  cache: ProxyCache,
 ): T {
-  // Cache child proxies within this evaluation to avoid duplicate creation
-  const childCache = new Map<string, unknown>()
+  // Check proxy cache — reuse proxy if we've already wrapped this exact object
+  const cached = cache.get(target)
+  if (cached) return cached as T
 
   // Use an unfrozen shell as the proxy target to avoid ES Proxy invariant
   // violations with frozen objects. The shell copies the target's prototype
   // so that Array.isArray, instanceof, etc. work correctly.
   const shell = Array.isArray(target) ? [] : Object.create(Object.getPrototypeOf(target))
 
-  return new Proxy(shell, {
+  const proxy = new Proxy(shell, {
     get(_obj, prop, _receiver) {
       // Symbols: read from actual target (iterator protocol, toStringTag, etc.)
       if (typeof prop === 'symbol') return Reflect.get(target, prop)
@@ -61,23 +71,19 @@ export function createTrackingProxy<T extends object>(
       const pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
 
       if (isObjectOrArray(value)) {
-        // Register the signal (for hasPrefix/diff tracking) but DON'T read it.
-        // This avoids "false sharing" — intermediate object traversals won't
-        // create dependencies. Only leaf reads and explicit terminal reads
-        // (detected by useSignalSelector) establish reactive dependencies.
-        registry.getOrCreate(pathKey, value)
+        // Register in prefix index (for hasPrefix/diff tracking) but DON'T
+        // create a signal. This avoids allocating signals for intermediate
+        // objects that are only traversed, not read as terminal values.
+        registry.ensurePrefix(pathKey)
 
-        // Return cached child proxy
-        if (!childCache.has(prop as string)) {
-          const childProxy = createTrackingProxy(
-            value as object,
-            pathKey,
-            registry,
-          )
-          proxyPathMap.set(childProxy as object, pathKey)
-          childCache.set(prop as string, childProxy)
-        }
-        return childCache.get(prop as string)
+        // Return cached child proxy (createTrackingProxy checks cache internally)
+        const childProxy = createTrackingProxy(
+          value as object,
+          pathKey,
+          registry,
+          cache,
+        )
+        return childProxy
       }
 
       // Primitive leaf: read signal to establish dependency
@@ -131,4 +137,10 @@ export function createTrackingProxy<T extends object>(
       return false
     },
   }) as T
+
+  // Cache by target identity — unchanged Immer subtrees reuse same proxy
+  cache.set(target, proxy)
+  proxyPathMap.set(proxy as object, parentPath)
+
+  return proxy
 }
