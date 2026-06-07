@@ -94,8 +94,9 @@ describe('createTrackingProxy', () => {
     const todo = proxy.todos[0]
     expect(todo.text).toBe('Test')
     expect(registry.hasPrefix('todos')).toBe(true) // intermediate
-    expect(registry.hasPrefix('todos.0')).toBe(true) // intermediate
-    expect(registry.has('todos.0.text')).toBe(true) // leaf
+    // Identity-based path: element has 'id' field, so uses {id:1} instead of 0
+    expect(registry.hasPrefix('todos.{id:1}')).toBe(true) // intermediate (identity path)
+    expect(registry.has('todos.{id:1}.text')).toBe(true) // leaf (identity path)
   })
 
   it('tracks array length access', () => {
@@ -346,12 +347,14 @@ describe('createTrackingProxy', () => {
 
     expect(registry.hasPrefix('entities')).toBe(true) // intermediate
     expect(registry.hasPrefix('entities.users')).toBe(true) // intermediate
-    expect(registry.hasPrefix('entities.users.0')).toBe(true) // intermediate
-    expect(registry.hasPrefix('entities.users.0.tags')).toBe(true) // intermediate
-    expect(registry.has('entities.users.0.tags.0')).toBe(true) // leaf
+    // Identity-based: users array has objects with 'id', uses {id:1}
+    expect(registry.hasPrefix('entities.users.{id:1}')).toBe(true) // intermediate (identity path)
+    expect(registry.hasPrefix('entities.users.{id:1}.tags')).toBe(true) // intermediate
+    // tags is string array (no id), so uses index-based 0
+    expect(registry.has('entities.users.{id:1}.tags.0')).toBe(true) // leaf
     // Not accessed
-    expect(registry.has('entities.users.0.id')).toBe(false)
-    expect(registry.has('entities.users.0.tags.1')).toBe(false)
+    expect(registry.has('entities.users.{id:1}.id')).toBe(false)
+    expect(registry.has('entities.users.{id:1}.tags.1')).toBe(false)
     expect(registry.hasPrefix('count')).toBe(false)
   })
 

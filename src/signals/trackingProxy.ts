@@ -1,3 +1,4 @@
+import { buildIdentityPath, findKeyField, getKeyValue } from './arrayKeys'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 
 function isObjectOrArray(v: unknown): v is object {
@@ -68,9 +69,29 @@ export function createTrackingProxy<T extends object>(
         return value
       }
 
-      const pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
+      let pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
 
       if (isObjectOrArray(value)) {
+        // For array element access: check if parent array has identity-based tracking.
+        // If so, use the identity path (items.{id:42}) instead of index path (items.0).
+        if (Array.isArray(target) && !Array.isArray(value) && !isNaN(Number(prop))) {
+          let meta = registry.getArrayMeta(parentPath)
+          if (!meta) {
+            // First time accessing this array's elements — try to detect key field
+            const keyField = findKeyField(value)
+            if (keyField) {
+              meta = { keyField, entityMap: new Map() }
+              registry.setArrayMeta(parentPath, meta)
+            }
+          }
+          if (meta) {
+            const kv = getKeyValue(value, meta.keyField)
+            if (kv !== undefined) {
+              pathKey = buildIdentityPath(parentPath, meta.keyField, kv)
+            }
+          }
+        }
+
         // Register in prefix index (for hasPrefix/diff tracking) but DON'T
         // create a signal. This avoids allocating signals for intermediate
         // objects that are only traversed, not read as terminal values.
