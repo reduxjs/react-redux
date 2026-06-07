@@ -1,4 +1,8 @@
 import { buildIdentityPath, findKeyField, getKeyValue } from './arrayKeys'
+import {
+  isOverriddenArrayMethod,
+  createArrayMethodInterceptor,
+} from './arrayMethodOverrides'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 
 function isObjectOrArray(v: unknown): v is object {
@@ -64,8 +68,11 @@ export function createTrackingProxy<T extends object>(
 
       const value = (target as Record<string, unknown>)[prop]
 
-      // Functions (like Array.prototype.map) — bind to proxy so `this` works
+      // Functions: intercept array methods to avoid per-element proxy creation
       if (typeof value === 'function') {
+        if (Array.isArray(target) && isOverriddenArrayMethod(prop as string)) {
+          return createArrayMethodInterceptor(target, proxy, prop as string)
+        }
         return value
       }
 
