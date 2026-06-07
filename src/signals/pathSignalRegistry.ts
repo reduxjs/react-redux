@@ -13,7 +13,8 @@ export interface PathSignalRegistry {
   /** Update a signal's value (called during diff). */
   update(pathKey: PathKey, newValue: unknown): void
 
-  /** Remove signal for a path and all child paths. */
+  /** Remove signal for a path and all child paths.
+   *  Uses a parent→children index for O(subtree) instead of O(total signals). */
   prune(pathKey: PathKey): void
 
   /** Number of active signals. */
@@ -80,9 +81,28 @@ export function createPathSignalRegistry(
   // Tracked so ensurePrefix is idempotent and getOrCreate can skip
   // re-incrementing prefixes if ensurePrefix was called first.
   const prefixOnlyPaths = new Set<string>()
+  // Parent→children index: maps each path to its direct children.
+  // Enables O(subtree) prune instead of O(total signals) linear scan.
+  const childIndex = new Map<string, Set<string>>()
   // Proxy cache: keyed by target object identity.
   // Reuses proxies for unchanged Immer subtrees across state snapshots.
   const proxyWeakMap: ProxyCache = new WeakMap()
+
+  // Register a path in the parent→children index.
+  // Only links to immediate parent: "a.b.c" → childIndex["a.b"].add("a.b.c")
+  // Ancestors are already linked by their own registrations:
+  // when "a.b" was registered, childIndex["a"].add("a.b") was called.
+  function addToChildIndex(pathKey: string): void {
+    const idx = pathKey.lastIndexOf('.')
+    if (idx === -1) return // root-level path, no parent
+    const parent = pathKey.substring(0, idx)
+    let children = childIndex.get(parent)
+    if (!children) {
+      children = new Set()
+      childIndex.set(parent, children)
+    }
+    children.add(pathKey)
+  }
 
   return {
     getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown> {
@@ -91,6 +111,7 @@ export function createPathSignalRegistry(
         const initialValue = isObjectOrArray(currentValue) ? 0 : currentValue
         sig = engine.signal(initialValue)
         signals.set(pathKey, sig)
+        addToChildIndex(pathKey)
         // If ensurePrefix was called first, prefixes are already counted
         if (prefixOnlyPaths.has(pathKey)) {
           prefixOnlyPaths.delete(pathKey)
@@ -105,6 +126,7 @@ export function createPathSignalRegistry(
       // Already has a signal or already prefix-registered — nothing to do
       if (signals.has(pathKey) || prefixOnlyPaths.has(pathKey)) return
       prefixOnlyPaths.add(pathKey)
+      addToChildIndex(pathKey)
       incrementPrefixes(prefixCounts, pathKey)
     },
 
@@ -121,18 +143,38 @@ export function createPathSignalRegistry(
     },
 
     prune(pathKey: PathKey): void {
-      const prefix = pathKey + '.'
-      for (const key of signals.keys()) {
-        if (key === pathKey || key.startsWith(prefix)) {
+      // Recursively remove this path and all descendants using the child index.
+      // O(subtree size) instead of O(total signals).
+      const stack: string[] = [pathKey]
+      while (stack.length > 0) {
+        const key = stack.pop()!
+        // Push children onto stack before deleting
+        const children = childIndex.get(key)
+        if (children) {
+          for (const child of children) {
+            stack.push(child)
+          }
+          childIndex.delete(key)
+        }
+        // Remove from signals or prefix-only, and decrement prefix counts
+        if (signals.has(key)) {
           signals.delete(key)
+          decrementPrefixes(prefixCounts, key)
+        } else if (prefixOnlyPaths.has(key)) {
+          prefixOnlyPaths.delete(key)
           decrementPrefixes(prefixCounts, key)
         }
       }
-      // Also clean up prefix-only registrations
-      for (const key of prefixOnlyPaths) {
-        if (key === pathKey || key.startsWith(prefix)) {
-          prefixOnlyPaths.delete(key)
-          decrementPrefixes(prefixCounts, key)
+      // Remove this path from its parent's child set
+      const dotIdx = pathKey.lastIndexOf('.')
+      if (dotIdx !== -1) {
+        const parent = pathKey.substring(0, dotIdx)
+        const parentChildren = childIndex.get(parent)
+        if (parentChildren) {
+          parentChildren.delete(pathKey)
+          if (parentChildren.size === 0) {
+            childIndex.delete(parent)
+          }
         }
       }
     },
