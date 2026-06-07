@@ -13,9 +13,110 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 /**
+ * Diff a plain object: recurse into changed properties.
+ * Separated from the main dispatcher for V8 monomorphic optimization.
+ */
+function diffObject(
+  prev: Record<string, unknown>,
+  next: Record<string, unknown>,
+  parentPath: string,
+  registry: PathSignalRegistry,
+): void {
+  const nextKeys = Object.keys(next)
+  const prevKeys = Object.keys(prev)
+  let keysChanged = prevKeys.length !== nextKeys.length
+
+  if (parentPath) {
+    registry.update(parentPath, next)
+  }
+
+  for (let i = 0; i < nextKeys.length; i++) {
+    const key = nextKeys[i]
+
+    if (!keysChanged && !(key in prev)) {
+      keysChanged = true
+    }
+
+    // Hoist reference equality check before path construction.
+    // Structural sharing means most keys are unchanged — skip early.
+    if (prev[key] === next[key]) continue
+
+    const childPath = parentPath ? parentPath + '.' + key : key
+    if (registry.hasPrefix(childPath)) {
+      diffAndUpdateSignals(prev[key], next[key], childPath, registry)
+    }
+  }
+
+  if (keysChanged) {
+    const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
+    registry.update(keysPath, nextKeys)
+
+    for (let i = 0; i < prevKeys.length; i++) {
+      if (!(prevKeys[i] in next)) {
+        const childPath = parentPath
+          ? parentPath + '.' + prevKeys[i]
+          : prevKeys[i]
+        registry.prune(childPath)
+      }
+    }
+  }
+}
+
+/**
+ * Diff an array: detect key field and dispatch to identity or index based.
+ * Separated from the main dispatcher for V8 monomorphic optimization.
+ */
+function diffArray(
+  prev: unknown[],
+  next: unknown[],
+  parentPath: string,
+  registry: PathSignalRegistry,
+): void {
+  if (parentPath) {
+    registry.update(parentPath, next)
+  }
+
+  if (prev.length !== next.length) {
+    const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
+    registry.update(keysPath, next.length)
+    const lengthPath = parentPath ? parentPath + '.length' : 'length'
+    registry.update(lengthPath, next.length)
+  }
+
+  let meta = registry.getArrayMeta(parentPath)
+  if (meta) {
+    if (meta.entityMap.size === 0 && prev.length > 0) {
+      for (let i = 0; i < prev.length; i++) {
+        const kv = getKeyValue(prev[i], meta.keyField)
+        if (kv !== undefined) meta.entityMap.set(kv, prev[i])
+      }
+    }
+  } else if (next.length > 0) {
+    const keyField = findKeyField(next[0])
+    if (keyField) {
+      const entityMap = new Map<string | number, unknown>()
+      for (let i = 0; i < prev.length; i++) {
+        const kv = getKeyValue(prev[i], keyField)
+        if (kv !== undefined) entityMap.set(kv, prev[i])
+      }
+      meta = { keyField, entityMap }
+      registry.setArrayMeta(parentPath, meta)
+    }
+  }
+
+  if (meta) {
+    diffArrayByKey(prev, next, parentPath, registry, meta)
+  } else {
+    diffArrayByIndex(prev, next, parentPath, registry)
+  }
+}
+
+/**
  * Walk prev and next state trees, updating path signals for changed values.
  * Only visits subtrees that have tracked signals (registered paths).
  * Exploits Immer's structural sharing: `prev === next` skips entire subtrees.
+ *
+ * Dispatches to monomorphic helpers (diffObject/diffArray) for V8 optimization.
  */
 export function diffAndUpdateSignals(
   prev: unknown,
@@ -28,100 +129,13 @@ export function diffAndUpdateSignals(
 
   // Both plain objects: recurse into properties
   if (isPlainObject(prev) && isPlainObject(next)) {
-    const nextKeys = Object.keys(next)
-
-    // Detect key additions/removals by comparing length + checking removals
-    // (cheaper than building a Set union of both key arrays)
-    const prevKeyCount = Object.keys(prev).length
-    let keysChanged = prevKeyCount !== nextKeys.length
-
-    // Update the object signal itself (version bump)
-    if (parentPath) {
-      registry.update(parentPath, next)
-    }
-
-    // Iterate next's keys — covers additions + same keys.
-    // Removed keys: prev[key] was defined, next[key] is undefined,
-    // so prev[key] !== next[key] and the recursive call handles pruning.
-    for (let i = 0; i < nextKeys.length; i++) {
-      const key = nextKeys[i]
-      const childPath = parentPath ? parentPath + '.' + key : key
-
-      // Check if this key was added (not in prev) — also detects keysChanged
-      if (!keysChanged && !(key in prev)) {
-        keysChanged = true
-      }
-
-      if (registry.hasPrefix(childPath)) {
-        diffAndUpdateSignals(prev[key], next[key], childPath, registry)
-      }
-    }
-
-    // Handle removed keys: iterate prev keys that aren't in next
-    // Only needed if keys actually changed and there are tracked signals
-    if (keysChanged) {
-      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
-      registry.update(keysPath, nextKeys)
-
-      // Prune removed keys and their descendants
-      const prevKeys = Object.keys(prev)
-      for (let i = 0; i < prevKeys.length; i++) {
-        if (!(prevKeys[i] in next)) {
-          const childPath = parentPath
-            ? parentPath + '.' + prevKeys[i]
-            : prevKeys[i]
-          registry.prune(childPath)
-        }
-      }
-    }
+    diffObject(prev, next, parentPath, registry)
     return
   }
 
-  // Both arrays: handle length + identity-based or index-based diffing
+  // Both arrays
   if (Array.isArray(prev) && Array.isArray(next)) {
-    if (parentPath) {
-      registry.update(parentPath, next)
-    }
-
-    // Length change → @@keys signal + length signal
-    if (prev.length !== next.length) {
-      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
-      registry.update(keysPath, next.length)
-      const lengthPath = parentPath ? parentPath + '.length' : 'length'
-      registry.update(lengthPath, next.length)
-    }
-
-    // Try identity-based diffing: detect key field on first element
-    let meta = registry.getArrayMeta(parentPath)
-    if (meta) {
-      // Meta may exist (created by proxy) but entityMap is empty on first diff.
-      // Populate it from prev array so we can match entities.
-      if (meta.entityMap.size === 0 && prev.length > 0) {
-        for (let i = 0; i < prev.length; i++) {
-          const kv = getKeyValue(prev[i], meta.keyField)
-          if (kv !== undefined) meta.entityMap.set(kv, prev[i])
-        }
-      }
-    } else if (next.length > 0) {
-      const keyField = findKeyField(next[0])
-      if (keyField) {
-        const entityMap = new Map<string | number, unknown>()
-        for (let i = 0; i < prev.length; i++) {
-          const kv = getKeyValue(prev[i], keyField)
-          if (kv !== undefined) entityMap.set(kv, prev[i])
-        }
-        meta = { keyField, entityMap }
-        registry.setArrayMeta(parentPath, meta)
-      }
-    }
-
-    if (meta) {
-      // Identity-based diffing: match elements by key, not by index
-      diffArrayByKey(prev, next, parentPath, registry, meta)
-    } else {
-      // Fallback: index-based diffing for primitive arrays or no key field
-      diffArrayByIndex(prev, next, parentPath, registry)
-    }
+    diffArray(prev, next, parentPath, registry)
     return
   }
 
