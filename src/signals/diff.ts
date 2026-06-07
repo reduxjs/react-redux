@@ -188,13 +188,67 @@ function diffArrayByKey(
     }
   }
 
-  // Full identity-based diff: lengths differ or keys shifted positions
+  // Full identity-based diff: lengths differ or keys shifted positions.
+  // Forward scan: skip shared prefix where prev[i] === next[i].
+  // This makes pure append/prepend-from-end nearly free.
+  const minLen = Math.min(prev.length, next.length)
+  let startIdx = 0
+  while (startIdx < minLen && prev[startIdx] === next[startIdx]) {
+    startIdx++
+  }
+
+  // If we skipped the entire overlap and next is longer, it's a pure append.
+  // No Map needed — just update entityMap for new tail entries.
+  if (startIdx === minLen && next.length >= prev.length) {
+    for (let i = startIdx; i < next.length; i++) {
+      const nextItem = next[i]
+      const kv = getKeyValue(nextItem, keyField)
+      if (kv !== undefined) {
+        prevEntityMap.set(kv, nextItem)
+        const identityPath = buildIdentityPath(parentPath, keyField, kv)
+        if (registry.hasPrefix(identityPath)) {
+          diffAndUpdateSignals(undefined, nextItem, identityPath, registry)
+        }
+      }
+    }
+    return
+  }
+
+  // If we skipped the entire overlap and prev is longer, it's a pure truncation.
+  // Prune the removed tail entries from entityMap.
+  if (startIdx === minLen && prev.length > next.length) {
+    for (let i = startIdx; i < prev.length; i++) {
+      const prevItem = prev[i]
+      const kv = getKeyValue(prevItem, keyField)
+      if (kv !== undefined) {
+        prevEntityMap.delete(kv)
+        const identityPath = buildIdentityPath(parentPath, keyField, kv)
+        registry.prune(identityPath)
+      }
+    }
+    return
+  }
+
+  // General case: build Map only from startIdx onward
   const mayHaveRemovals = next.length < prev.length
 
   const nextEntityMap = new Map<string | number, unknown>()
-  const seenPrevKeys = mayHaveRemovals ? new Set<string | number>() : null
+  // Carry over skipped prefix entries from prevEntityMap
+  for (let i = 0; i < startIdx; i++) {
+    const kv = getKeyValue(next[i], keyField)
+    if (kv !== undefined) nextEntityMap.set(kv, next[i])
+  }
 
-  for (let i = 0; i < next.length; i++) {
+  const seenPrevKeys = mayHaveRemovals ? new Set<string | number>() : null
+  // Mark skipped prefix keys as seen (they can't be removed)
+  if (seenPrevKeys) {
+    for (let i = 0; i < startIdx; i++) {
+      const kv = getKeyValue(prev[i], keyField)
+      if (kv !== undefined) seenPrevKeys.add(kv)
+    }
+  }
+
+  for (let i = startIdx; i < next.length; i++) {
     const nextItem = next[i]
     const kv = getKeyValue(nextItem, keyField)
 
