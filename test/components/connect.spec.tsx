@@ -220,6 +220,67 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('ab')
       })
 
+      it('warns when mapStateToProps is unstable in development mode', () => {
+        const store = createStore(() => ({ count: 0 }))
+
+        const consoleSpy = vi
+          .spyOn(console, 'error')
+          .mockImplementation(() => {})
+
+        interface ContainerProps {
+          nested: {
+            count: number
+          }
+        }
+        function Container(props: ContainerProps) {
+          return <Passthrough {...props} />
+        }
+
+        const mapStateToProps = vi.fn((state: { count: number }) => ({
+          nested: { count: state.count },
+        }))
+
+        const ConnectedContainer = connect(
+          mapStateToProps,
+          undefined,
+          undefined,
+          {
+            stabilityCheck: 'once',
+          },
+        )(Container)
+
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainer />
+          </ProviderMock>,
+        )
+
+        expect(mapStateToProps).toHaveBeenCalled()
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'returned a different result when called with the same inputs',
+          ),
+          expect.objectContaining({
+            state: expect.objectContaining({
+              count: 0,
+            }),
+            selected: expect.objectContaining({
+              nested: expect.objectContaining({
+                count: 0,
+              }),
+            }),
+            selected2: expect.objectContaining({
+              nested: expect.objectContaining({
+                count: 0,
+              }),
+            }),
+            stack: expect.any(String),
+          }),
+        )
+
+        consoleSpy.mockRestore()
+      })
+
       it("should retain the store's context", () => {
         const store = new ContextBoundStore(stringBuilder)
 
