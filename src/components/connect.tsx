@@ -100,6 +100,7 @@ function subscribeUpdates(
   renderIsScheduled: React.MutableRefObject<boolean>,
   isMounted: React.MutableRefObject<boolean>,
   childPropsFromStoreUpdate: React.MutableRefObject<unknown>,
+  latestSubscriptionCallbackError: React.MutableRefObject<Error | undefined>,
   notifyNestedSubs: () => void,
   // forceComponentUpdateDispatch: React.Dispatch<any>,
   additionalSubscribeListener: () => void,
@@ -133,6 +134,7 @@ function subscribeUpdates(
     } catch (e) {
       error = e
       lastThrownError = e as Error | null
+      latestSubscriptionCallbackError.current = e as Error
     }
 
     if (!error) {
@@ -667,6 +669,10 @@ function _connect<
 
       const actualChildPropsSelector = React.useMemo(() => {
         const selector = () => {
+          if (latestSubscriptionCallbackError.current) {
+            throw latestSubscriptionCallbackError.current
+          }
+
           // Tricky logic here:
           // - This render may have been triggered by a Redux store update that produced new child props
           // - However, we may have gotten new wrapper props after that
@@ -710,6 +716,7 @@ function _connect<
             renderIsScheduled,
             isMounted,
             childPropsFromStoreUpdate,
+            latestSubscriptionCallbackError,
             notifyNestedSubs,
             reactListener,
           )
