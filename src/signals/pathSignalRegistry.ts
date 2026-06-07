@@ -1,3 +1,4 @@
+import type { ArrayMeta } from './arrayKeys'
 import type { ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
@@ -28,6 +29,12 @@ export interface PathSignalRegistry {
 
   /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
   proxyCache: ProxyCache
+
+  /** Get array metadata for identity-based tracking at a given path. */
+  getArrayMeta(arrayPath: string): ArrayMeta | undefined
+
+  /** Set/update array metadata for identity-based tracking. */
+  setArrayMeta(arrayPath: string, meta: ArrayMeta): void
 }
 
 function isObjectOrArray(v: unknown): v is object {
@@ -87,6 +94,9 @@ export function createPathSignalRegistry(
   // Proxy cache: keyed by target object identity.
   // Reuses proxies for unchanged Immer subtrees across state snapshots.
   const proxyWeakMap: ProxyCache = new WeakMap()
+  // Per-array metadata for identity-based tracking.
+  // Maps array path → ArrayMeta (keyField + entityMap).
+  const arrayMetas = new Map<string, ArrayMeta>()
 
   // Register a path in the parent→children index.
   // Only links to immediate parent: "a.b.c" → childIndex["a.b"].add("a.b.c")
@@ -192,5 +202,13 @@ export function createPathSignalRegistry(
     },
 
     proxyCache: proxyWeakMap,
+
+    getArrayMeta(arrayPath: string): ArrayMeta | undefined {
+      return arrayMetas.get(arrayPath)
+    },
+
+    setArrayMeta(arrayPath: string, meta: ArrayMeta): void {
+      arrayMetas.set(arrayPath, meta)
+    },
   }
 }
