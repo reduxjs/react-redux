@@ -5,6 +5,7 @@
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { SignalEngine } from '../../../src/signals/types'
+import { findKeyField, buildIdentityPath, getKeyValue } from '../../../src/signals/arrayKeys'
 
 /**
  * Walk an object and register all leaf paths as tracked signals.
@@ -74,11 +75,28 @@ export function registerEntityArrayPaths(
   registry.getOrCreate(`${arrayPath}.@@keys`, arr.length)
   registry.getOrCreate(`${arrayPath}.length`, arr.length)
 
+  // Detect key field on first element (same as proxy does)
+  const keyField = arr.length > 0 ? findKeyField(arr[0]) : undefined
+
+  if (keyField) {
+    // Set up ArrayMeta so diff uses identity-based matching
+    registry.setArrayMeta(arrayPath, { keyField, entityMap: new Map() })
+  }
+
   for (let i = 0; i < arr.length; i++) {
-    const itemPath = `${arrayPath}.${i}`
-    registry.ensurePrefix(itemPath)
     const item = arr[i]
     if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+      // Use identity path if key field detected, else index path
+      let itemPath: string
+      if (keyField) {
+        const kv = getKeyValue(item, keyField)
+        itemPath = kv !== undefined
+          ? buildIdentityPath(arrayPath, keyField, kv)
+          : `${arrayPath}.${i}`
+      } else {
+        itemPath = `${arrayPath}.${i}`
+      }
+      registry.ensurePrefix(itemPath)
       const keys = Object.keys(item as Record<string, unknown>)
       for (const key of keys) {
         registry.getOrCreate(

@@ -1,3 +1,8 @@
+import {
+  buildIdentityPath,
+  findKeyField,
+  getKeyValue,
+} from './arrayKeys'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 import type { SignalEngine } from './types'
 
@@ -72,7 +77,7 @@ export function diffAndUpdateSignals(
     return
   }
 
-  // Both arrays: handle length + index-based diffing
+  // Both arrays: handle length + identity-based or index-based diffing
   if (Array.isArray(prev) && Array.isArray(next)) {
     if (parentPath) {
       registry.update(parentPath, next)
@@ -82,33 +87,40 @@ export function diffAndUpdateSignals(
     if (prev.length !== next.length) {
       const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
       registry.update(keysPath, next.length)
-      // Also update the explicit 'length' signal for selectors that read .length
       const lengthPath = parentPath ? parentPath + '.length' : 'length'
       registry.update(lengthPath, next.length)
     }
 
-    // Recurse into tracked indices, prune removed ones
-    const minLen = Math.min(prev.length, next.length)
-    // Shared indices: recurse if tracked
-    for (let i = 0; i < minLen; i++) {
-      if (prev[i] !== next[i]) {
-        const childPath = parentPath ? parentPath + '.' + i : String(i)
-        if (registry.hasPrefix(childPath)) {
-          diffAndUpdateSignals(prev[i], next[i], childPath, registry)
+    // Try identity-based diffing: detect key field on first element
+    let meta = registry.getArrayMeta(parentPath)
+    if (meta) {
+      // Meta may exist (created by proxy) but entityMap is empty on first diff.
+      // Populate it from prev array so we can match entities.
+      if (meta.entityMap.size === 0 && prev.length > 0) {
+        for (let i = 0; i < prev.length; i++) {
+          const kv = getKeyValue(prev[i], meta.keyField)
+          if (kv !== undefined) meta.entityMap.set(kv, prev[i])
         }
       }
-    }
-    // Added indices: recurse if tracked
-    for (let i = minLen; i < next.length; i++) {
-      const childPath = parentPath ? parentPath + '.' + i : String(i)
-      if (registry.hasPrefix(childPath)) {
-        diffAndUpdateSignals(undefined, next[i], childPath, registry)
+    } else if (next.length > 0) {
+      const keyField = findKeyField(next[0])
+      if (keyField) {
+        const entityMap = new Map<string | number, unknown>()
+        for (let i = 0; i < prev.length; i++) {
+          const kv = getKeyValue(prev[i], keyField)
+          if (kv !== undefined) entityMap.set(kv, prev[i])
+        }
+        meta = { keyField, entityMap }
+        registry.setArrayMeta(parentPath, meta)
       }
     }
-    // Removed indices: prune descendants
-    for (let i = next.length; i < prev.length; i++) {
-      const childPath = parentPath ? parentPath + '.' + i : String(i)
-      registry.prune(childPath)
+
+    if (meta) {
+      // Identity-based diffing: match elements by key, not by index
+      diffArrayByKey(prev, next, parentPath, registry, meta)
+    } else {
+      // Fallback: index-based diffing for primitive arrays or no key field
+      diffArrayByIndex(prev, next, parentPath, registry)
     }
     return
   }
@@ -125,6 +137,141 @@ export function diffAndUpdateSignals(
     (next === null || typeof next !== 'object')
   ) {
     registry.prune(parentPath)
+  }
+}
+
+/**
+ * Identity-based array diffing. Matches elements by their key field value.
+ * When an entity moves indices but content is unchanged (prev === next via
+ * structural sharing), the identity-based signal path stays the same and
+ * no signal updates are needed.
+ */
+function diffArrayByKey(
+  prev: unknown[],
+  next: unknown[],
+  parentPath: string,
+  registry: PathSignalRegistry,
+  meta: import('./arrayKeys').ArrayMeta,
+): void {
+  const { keyField, entityMap: prevEntityMap } = meta
+
+  // Fast path: same-length arrays with no key shifts.
+  // Only touch changed elements. Update entityMap incrementally instead of rebuilding.
+  if (prev.length === next.length) {
+    let usedFastPath = true
+    for (let i = 0; i < next.length; i++) {
+      if (prev[i] === next[i]) continue // structural sharing: skip (most elements)
+
+      // Different ref — verify same key at same index
+      const prevKv = getKeyValue(prev[i], keyField)
+      const nextKv = getKeyValue(next[i], keyField)
+      if (prevKv === undefined || nextKv === undefined || prevKv !== nextKv) {
+        usedFastPath = false
+        break
+      }
+
+      // Same key, different content — diff and update entityMap entry
+      const identityPath = buildIdentityPath(parentPath, keyField, nextKv)
+      if (registry.hasPrefix(identityPath)) {
+        diffAndUpdateSignals(prev[i], next[i], identityPath, registry)
+      }
+      prevEntityMap.set(nextKv, next[i])
+    }
+    if (usedFastPath) {
+      return
+    }
+    // Fast path failed partway — fall through to full identity diff below.
+    // Restore any partially-updated entityMap entries from prev array.
+    for (let i = 0; i < prev.length; i++) {
+      const kv = getKeyValue(prev[i], keyField)
+      if (kv !== undefined) prevEntityMap.set(kv, prev[i])
+    }
+  }
+
+  // Full identity-based diff: lengths differ or keys shifted positions
+  const mayHaveRemovals = next.length < prev.length
+
+  const nextEntityMap = new Map<string | number, unknown>()
+  const seenPrevKeys = mayHaveRemovals ? new Set<string | number>() : null
+
+  for (let i = 0; i < next.length; i++) {
+    const nextItem = next[i]
+    const kv = getKeyValue(nextItem, keyField)
+
+    if (kv === undefined) {
+      const childPath = parentPath ? parentPath + '.' + i : String(i)
+      if (registry.hasPrefix(childPath)) {
+        const prevItem = i < prev.length ? prev[i] : undefined
+        if (prevItem !== nextItem) {
+          diffAndUpdateSignals(prevItem, nextItem, childPath, registry)
+        }
+      }
+      continue
+    }
+
+    nextEntityMap.set(kv, nextItem)
+    const prevItem = prevEntityMap.get(kv)
+
+    if (prevItem === nextItem) {
+      if (seenPrevKeys) seenPrevKeys.add(kv)
+      continue
+    }
+
+    if (seenPrevKeys) seenPrevKeys.add(kv)
+
+    const identityPath = buildIdentityPath(parentPath, keyField, kv)
+
+    if (prevItem !== undefined) {
+      if (registry.hasPrefix(identityPath)) {
+        diffAndUpdateSignals(prevItem, nextItem, identityPath, registry)
+      }
+    } else {
+      if (registry.hasPrefix(identityPath)) {
+        diffAndUpdateSignals(undefined, nextItem, identityPath, registry)
+      }
+    }
+  }
+
+  if (seenPrevKeys) {
+    for (const [kv] of prevEntityMap) {
+      if (!seenPrevKeys.has(kv)) {
+        const identityPath = buildIdentityPath(parentPath, keyField, kv)
+        registry.prune(identityPath)
+      }
+    }
+  }
+
+  meta.entityMap = nextEntityMap
+}
+
+/**
+ * Index-based array diffing (original algorithm).
+ * Used for primitive arrays or arrays without a detectable key field.
+ */
+function diffArrayByIndex(
+  prev: unknown[],
+  next: unknown[],
+  parentPath: string,
+  registry: PathSignalRegistry,
+): void {
+  const minLen = Math.min(prev.length, next.length)
+  for (let i = 0; i < minLen; i++) {
+    if (prev[i] !== next[i]) {
+      const childPath = parentPath ? parentPath + '.' + i : String(i)
+      if (registry.hasPrefix(childPath)) {
+        diffAndUpdateSignals(prev[i], next[i], childPath, registry)
+      }
+    }
+  }
+  for (let i = minLen; i < next.length; i++) {
+    const childPath = parentPath ? parentPath + '.' + i : String(i)
+    if (registry.hasPrefix(childPath)) {
+      diffAndUpdateSignals(undefined, next[i], childPath, registry)
+    }
+  }
+  for (let i = next.length; i < prev.length; i++) {
+    const childPath = parentPath ? parentPath + '.' + i : String(i)
+    registry.prune(childPath)
   }
 }
 

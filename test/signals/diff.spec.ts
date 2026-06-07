@@ -37,8 +37,8 @@ describe('diffAndUpdateSignals', () => {
         s.filter
       })
 
-      // Get initial signal values
-      const textSig = registry.getOrCreate('todos.0.text', 'hi')
+      // Get initial signal values (identity-based path for keyed array element)
+      const textSig = registry.getOrCreate('todos.{id:1}.text', 'hi')
       const filterSig = registry.getOrCreate('filter', 'all')
       const initialText = textSig.get()
       const initialFilter = filterSig.get()
@@ -62,7 +62,8 @@ describe('diffAndUpdateSignals', () => {
         s.count
       })
 
-      const todoTextSig = registry.getOrCreate('todos.0.text', 'hi')
+      // Identity-based path for keyed array element
+      const todoTextSig = registry.getOrCreate('todos.{id:1}.text', 'hi')
       const todosSig = registry.getOrCreate('todos', todos)
       const initialTodosVersion = todosSig.get()
       const initialText = todoTextSig.get()
@@ -292,10 +293,8 @@ describe('diffAndUpdateSignals', () => {
 
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(registry.getOrCreate('todos.0.completed', true).get()).toBe(true)
-      // todos[1] unchanged (structural sharing would make this ===)
-      // But since we deepFreeze manually, they're different refs. In real Immer, they'd be ===.
-      // The test verifies the signal update mechanism works.
+      // Identity-based paths: elements have 'id' field
+      expect(registry.getOrCreate('todos.{id:1}.completed', true).get()).toBe(true)
     })
 
     it('handles array item addition (push)', () => {
@@ -309,12 +308,10 @@ describe('diffAndUpdateSignals', () => {
 
       const registry = setupRegistry(prev, (s) => {
         s.todos.length
-        s.todos[0].text
+        s.todos[0].text // registers at todos.{id:1}.text
       })
 
       // Track @@keys
-      registry.getOrCreate('todos.@@keys', 1).get()
-
       const keysSignal = registry.getOrCreate('todos.@@keys', 1)
       const initialKeysVersion = keysSignal.get()
 
@@ -345,17 +342,18 @@ describe('diffAndUpdateSignals', () => {
         s.todos[2].text
       })
 
-      expect(registry.has('todos.2.text')).toBe(true) // leaf signal
-      expect(registry.hasPrefix('todos.2')).toBe(true) // prefix registered
+      // Identity-based paths: elements have 'id' field
+      expect(registry.has('todos.{id:3}.text')).toBe(true) // leaf signal
+      expect(registry.hasPrefix('todos.{id:3}')).toBe(true) // prefix registered
 
       diffAndUpdateSignals(prev, next, '', registry)
 
-      // Signals for removed index should be pruned
-      expect(registry.has('todos.2.text')).toBe(false)
-      expect(registry.hasPrefix('todos.2')).toBe(false)
-      // Remaining indices should still exist
-      expect(registry.has('todos.0.text')).toBe(true)
-      expect(registry.has('todos.1.text')).toBe(true)
+      // Signals for removed entity should be pruned (by identity, not index)
+      expect(registry.has('todos.{id:3}.text')).toBe(false)
+      expect(registry.hasPrefix('todos.{id:3}')).toBe(false)
+      // Remaining entities should still exist
+      expect(registry.has('todos.{id:1}.text')).toBe(true)
+      expect(registry.has('todos.{id:2}.text')).toBe(true)
     })
 
     it('handles array length decrease with @@keys update', () => {
@@ -489,7 +487,8 @@ describe('diffAndUpdateSignals', () => {
       })
 
       let todoComputedRuns = 0
-      const todoTextSig = registry.getOrCreate('todos.0.text', 'hi')
+      // Identity-based path for keyed array element
+      const todoTextSig = registry.getOrCreate('todos.{id:1}.text', 'hi')
       const todoComputed = alienEngine.computed(() => {
         todoComputedRuns++
         return todoTextSig.get()
@@ -639,7 +638,8 @@ describe('diffAndUpdateSignals', () => {
         s.filter
       })
 
-      const todoTextSig = registry.getOrCreate('todos.0.text', 'first')
+      // Identity-based path for keyed array element
+      const todoTextSig = registry.getOrCreate('todos.{id:1}.text', 'first')
       const c1ValueSig = registry.getOrCreate('counters.counter1.value', 0)
       const c2ValueSig = registry.getOrCreate('counters.counter2.value', 0)
       const filterSig = registry.getOrCreate('filter', 'all')
@@ -675,7 +675,7 @@ describe('diffAndUpdateSignals', () => {
       const registry = createPathSignalRegistry(alienEngine)
 
       // Should not throw — just returns because prev !== next but neither is object
-      diffAndUpdateSignals('old', 'new', 'root', registry, [])
+      diffAndUpdateSignals('old', 'new', 'root', registry)
     })
 
     it('handles nested path offset correctly', () => {
@@ -686,7 +686,7 @@ describe('diffAndUpdateSignals', () => {
       registry.getOrCreate('nested.obj.value', 10)
 
       // Diff starting from a path offset
-      diffAndUpdateSignals(prev, next, 'nested.obj', registry, [])
+      diffAndUpdateSignals(prev, next, 'nested.obj', registry)
 
       expect(registry.getOrCreate('nested.obj.value', 20).get()).toBe(20)
     })
