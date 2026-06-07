@@ -58,7 +58,7 @@ export function diffAndUpdateSignals(
       const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
       registry.update(keysPath, nextKeys)
 
-      // Prune signals for removed keys (any key in prev but not in next)
+      // Prune removed keys and their descendants
       const prevKeys = Object.keys(prev)
       for (let i = 0; i < prevKeys.length; i++) {
         if (!(prevKeys[i] in next)) {
@@ -105,7 +105,7 @@ export function diffAndUpdateSignals(
         diffAndUpdateSignals(undefined, next[i], childPath, registry)
       }
     }
-    // Removed indices: prune
+    // Removed indices: prune descendants
     for (let i = next.length; i < prev.length; i++) {
       const childPath = parentPath ? parentPath + '.' + i : String(i)
       registry.prune(childPath)

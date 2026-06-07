@@ -2,10 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { createTrackingProxy } from '../../src/signals/trackingProxy'
-import {
-  diffAndUpdateSignals,
-  reconcileState,
-} from '../../src/signals/diff'
+import { diffAndUpdateSignals, reconcileState } from '../../src/signals/diff'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 
 // Helper: create a registry with signals pre-populated by running a selector through a tracking proxy
@@ -31,7 +28,10 @@ function deepFreeze<T>(obj: T): T {
 describe('diffAndUpdateSignals', () => {
   describe('structural sharing short-circuits', () => {
     it('skips entirely when prev === next', () => {
-      const state = deepFreeze({ todos: [{ id: 1, text: 'hi' }], filter: 'all' })
+      const state = deepFreeze({
+        todos: [{ id: 1, text: 'hi' }],
+        filter: 'all',
+      })
       const registry = setupRegistry(state, (s) => {
         s.todos[0].text
         s.filter
@@ -249,14 +249,19 @@ describe('diffAndUpdateSignals', () => {
 
     it('handles nested key changes', () => {
       const prev = { entities: { user1: { name: 'Alice' } } }
-      const next = { entities: { user1: { name: 'Alice' }, user2: { name: 'Bob' } } }
+      const next = {
+        entities: { user1: { name: 'Alice' }, user2: { name: 'Bob' } },
+      }
 
       const registry = setupRegistry(prev, (s) => {
         Object.keys(s.entities)
         s.entities.user1.name
       })
 
-      const entitiesKeysSig = registry.getOrCreate('entities.@@keys', Object.keys(prev.entities))
+      const entitiesKeysSig = registry.getOrCreate(
+        'entities.@@keys',
+        Object.keys(prev.entities),
+      )
       const initialVersion = entitiesKeysSig.get()
 
       diffAndUpdateSignals(prev, next, '', registry)
@@ -295,7 +300,12 @@ describe('diffAndUpdateSignals', () => {
 
     it('handles array item addition (push)', () => {
       const prev = deepFreeze({ todos: [{ id: 1, text: 'first' }] })
-      const next = deepFreeze({ todos: [{ id: 1, text: 'first' }, { id: 2, text: 'second' }] })
+      const next = deepFreeze({
+        todos: [
+          { id: 1, text: 'first' },
+          { id: 2, text: 'second' },
+        ],
+      })
 
       const registry = setupRegistry(prev, (s) => {
         s.todos.length
@@ -354,18 +364,18 @@ describe('diffAndUpdateSignals', () => {
 
       const registry = createPathSignalRegistry(alienEngine)
       // Manually track some paths
-      const proxy = createTrackingProxy({ items: prev }, '', registry, registry.proxyCache)
+      const proxy = createTrackingProxy(
+        { items: prev },
+        '',
+        registry,
+        registry.proxyCache,
+      )
       proxy.items.length // triggers @@keys and items tracking
 
       const keysPath = 'items.@@keys'
       registry.getOrCreate(keysPath, prev.length)
 
-      diffAndUpdateSignals(
-        { items: prev },
-        { items: next },
-        '',
-        registry,
-      )
+      diffAndUpdateSignals({ items: prev }, { items: next }, '', registry)
 
       // @@keys updated for length change
       // The items signal itself should be version-bumped
@@ -535,7 +545,11 @@ describe('diffAndUpdateSignals', () => {
       const cSig = registry.getOrCreate('c', 3)
 
       const derived = alienEngine.computed(() => {
-        return (aSig.get() as number) + (bSig.get() as number) + (cSig.get() as number)
+        return (
+          (aSig.get() as number) +
+          (bSig.get() as number) +
+          (cSig.get() as number)
+        )
       })
 
       const scope = alienEngine.createScope()
@@ -661,7 +675,7 @@ describe('diffAndUpdateSignals', () => {
       const registry = createPathSignalRegistry(alienEngine)
 
       // Should not throw — just returns because prev !== next but neither is object
-      diffAndUpdateSignals('old', 'new', 'root', registry)
+      diffAndUpdateSignals('old', 'new', 'root', registry, [])
     })
 
     it('handles nested path offset correctly', () => {
@@ -672,7 +686,7 @@ describe('diffAndUpdateSignals', () => {
       registry.getOrCreate('nested.obj.value', 10)
 
       // Diff starting from a path offset
-      diffAndUpdateSignals(prev, next, 'nested.obj', registry)
+      diffAndUpdateSignals(prev, next, 'nested.obj', registry, [])
 
       expect(registry.getOrCreate('nested.obj.value', 20).get()).toBe(20)
     })
