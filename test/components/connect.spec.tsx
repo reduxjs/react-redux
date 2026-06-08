@@ -19,7 +19,7 @@ import { applyMiddleware, createStore } from 'redux'
 const IS_REACT_18 = React.version.startsWith('18')
 
 describe('React', () => {
-  describe('connect', () => {
+  describe(connect, () => {
     const propMapper = (prop: any): ReactNode => {
       switch (typeof prop) {
         case 'object':
@@ -87,7 +87,7 @@ describe('React', () => {
         const store = createStore(() => ({ hi: 'there' }))
 
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -114,7 +114,7 @@ describe('React', () => {
           baz: number
         }
         class Container extends Component<ContainerPropsType> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -151,7 +151,7 @@ describe('React', () => {
         const store: Store = createStore(stringBuilder)
 
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -238,7 +238,7 @@ describe('React', () => {
         }
 
         class Container extends Component<{ value: string }> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -333,7 +333,7 @@ describe('React', () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough />
           }
         }
@@ -362,7 +362,7 @@ describe('React', () => {
         }
 
         class Inner extends Component<InnerProps> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} pass={this.props.bar.baz} />
           }
         }
@@ -378,13 +378,13 @@ describe('React', () => {
             }
           }
 
-          componentDidMount() {
+          override componentDidMount() {
             this.setState({
               bar: Object.assign({}, this.state.bar, { baz: 'through' }),
             })
           }
 
-          render() {
+          override render() {
             return (
               <ProviderMock store={store}>
                 <ConnectedInner bar={this.state.bar} />
@@ -407,7 +407,7 @@ describe('React', () => {
         }
 
         class Inner extends Component<InnerPropsType> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} pass={this.props.bar} />
           }
         }
@@ -420,12 +420,12 @@ describe('React', () => {
             this.bar = 'baz'
           }
 
-          componentDidMount() {
+          override componentDidMount() {
             this.bar = 'foo'
             this.forceUpdate()
           }
 
-          render() {
+          override render() {
             return (
               <ProviderMock store={store}>
                 <ConnectedInner bar={this.bar} />
@@ -447,7 +447,7 @@ describe('React', () => {
         let props: OwnerPropsType = { x: true }
 
         class ConnectContainer extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -457,7 +457,7 @@ describe('React', () => {
         )(ConnectContainer)
 
         class HolderContainer extends Component<OwnerPropsType> {
-          render() {
+          override render() {
             return <ConnectedInnerContainer {...props} />
           }
         }
@@ -487,14 +487,14 @@ describe('React', () => {
         let props: OwnerPropsType = { x: true }
 
         class Inner extends Component<OwnerPropsType> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
         const ConnectedInner = connect(() => ({}))(Inner)
 
         class HolderContainer extends Component {
-          render() {
+          override render() {
             return <ConnectedInner {...props} />
           }
         }
@@ -534,7 +534,7 @@ describe('React', () => {
         }
 
         class Inner extends Component<InnerPropsType> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} pass={this.props.bar.baz} />
           }
         }
@@ -550,7 +550,7 @@ describe('React', () => {
             }
           }
 
-          componentDidMount() {
+          override componentDidMount() {
             // Simulate deep object mutation
             const bar = this.state.bar
             bar.baz = 'through'
@@ -559,7 +559,7 @@ describe('React', () => {
             })
           }
 
-          render() {
+          override render() {
             return (
               <ProviderMock store={store}>
                 <ConnectedInner bar={this.state.bar} />
@@ -594,7 +594,7 @@ describe('React', () => {
           extra: string
         }
         class Inner extends Component<InnerPropsType> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -622,7 +622,7 @@ describe('React', () => {
             externalSetState = this.setState.bind(this)
           }
 
-          render() {
+          override render() {
             return (
               <ProviderMock store={store}>
                 <ConnectedInner extra={this.state.extra} />
@@ -669,7 +669,7 @@ describe('React', () => {
         }
 
         class Container extends Component<ContainerPropsType> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -699,7 +699,7 @@ describe('React', () => {
           mergeProps: any,
         ) {
           class Container extends Component {
-            render() {
+            override render() {
               return <Passthrough />
             }
           }
@@ -722,9 +722,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -739,9 +740,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -756,9 +758,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -773,9 +776,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -790,9 +794,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -807,9 +812,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -824,9 +830,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -841,9 +848,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -858,9 +866,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
       })
@@ -876,7 +885,7 @@ describe('React', () => {
           foo: string
         }
         class Inner extends Component<InnerPropsType, {}> {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -899,7 +908,7 @@ describe('React', () => {
             this.setState({ foo })
           }
 
-          render() {
+          override render() {
             return (
               <div>
                 <ConnectedInner {...this.state} />
@@ -928,7 +937,7 @@ describe('React', () => {
         let invocationCount = 0
 
         class Inner extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -947,7 +956,7 @@ describe('React', () => {
             this.setState({ foo })
           }
 
-          render() {
+          override render() {
             return (
               <div>
                 <ConnectedInner {...this.state} />
@@ -981,7 +990,7 @@ describe('React', () => {
         let invocationCount = 0
 
         class Inner extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -1001,7 +1010,7 @@ describe('React', () => {
             this.setState({ foo })
           }
 
-          render() {
+          override render() {
             return (
               <div>
                 <ConnectedInner {...this.state} />
@@ -1040,7 +1049,7 @@ describe('React', () => {
         let invocationCount = 0
 
         class Inner extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -1060,7 +1069,7 @@ describe('React', () => {
             this.setState({ foo })
           }
 
-          render() {
+          override render() {
             return (
               <div>
                 <ConnectedInner {...this.state} />
@@ -1092,7 +1101,7 @@ describe('React', () => {
         let invocationCount = 0
 
         class Inner extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -1111,7 +1120,7 @@ describe('React', () => {
             this.setState({ foo })
           }
 
-          render() {
+          override render() {
             return (
               <div>
                 <ConnectedInner {...this.state} />
@@ -1148,7 +1157,7 @@ describe('React', () => {
         let invocationCount = 0
 
         class Inner extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -1168,7 +1177,7 @@ describe('React', () => {
             this.setState({ foo })
           }
 
-          render() {
+          override render() {
             return (
               <div>
                 <ConnectedInner {...this.state} />
@@ -1209,11 +1218,11 @@ describe('React', () => {
         const store: Store = createStore(stringBuilder)
 
         class Container extends Component {
-          componentDidMount() {
+          override componentDidMount() {
             store.dispatch({ type: 'APPEND', body: 'a' })
           }
 
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -1235,7 +1244,7 @@ describe('React', () => {
           hide: boolean
         }
         class App extends Component<AppProps> {
-          render() {
+          override render() {
             return this.props.hide ? null : <ConnectedContainer />
           }
         }
@@ -1244,7 +1253,7 @@ describe('React', () => {
         )(App)
 
         class Container extends Component {
-          render() {
+          override render() {
             return <ConnectedChildren />
           }
         }
@@ -1254,12 +1263,12 @@ describe('React', () => {
           state: string
         }
         class Child extends Component<ChildrenPropsType> {
-          componentDidMount() {
+          override componentDidMount() {
             if (this.props.state === 'A') {
               store.dispatch({ type: 'APPEND', body: 'B' })
             }
           }
-          render() {
+          override render() {
             return null
           }
         }
@@ -1351,7 +1360,7 @@ describe('React', () => {
             }
           }
 
-          render() {
+          override render() {
             return (
               <ConnectedApp setLocation={this.setLocation}>
                 {this.getChildComponent(this.state.location.pathname)}
@@ -1394,10 +1403,10 @@ describe('React', () => {
         }
 
         class Container extends Component<ContainerProps> {
-          componentWillUnmount() {
+          override componentWillUnmount() {
             this.props.dispatch({ type: 'APPEND', body: 'a' })
           }
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -1426,7 +1435,7 @@ describe('React', () => {
         let mapStateToPropsCalls = 0
 
         class Inner extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -1487,7 +1496,7 @@ describe('React', () => {
           }
         }
         class Child extends React.Component {
-          render() {
+          override render() {
             return null
           }
         }
@@ -1497,11 +1506,11 @@ describe('React', () => {
           dispatch: ReduxDispatch
         }
         class Parent extends React.Component<ParentPropsType> {
-          componentWillUnmount() {
+          override componentWillUnmount() {
             this.props.dispatch({ type: 'clean' })
           }
 
-          render() {
+          override render() {
             return <ConnectedChildren />
           }
         }
@@ -1538,7 +1547,7 @@ describe('React', () => {
           dispatch: ReduxDispatch
         }
         class Container extends Component<ContainerProps> {
-          render() {
+          override render() {
             return render(this.props)
           }
         }
@@ -1612,7 +1621,7 @@ describe('React', () => {
         type RootState = string
 
         class Container extends Component<TMergedProps> {
-          render() {
+          override render() {
             return render(this.props)
           }
         }
@@ -1644,7 +1653,7 @@ describe('React', () => {
             tree.setState = this.setState.bind(this)
           }
 
-          render() {
+          override render() {
             return (
               <ProviderMock store={store}>
                 <Connected pass={this.state.pass} />
@@ -1736,7 +1745,7 @@ describe('React', () => {
         let mapStateCalls = 0
 
         class Container extends Component {
-          render() {
+          override render() {
             renderCalls++
             return <Passthrough {...this.props} />
           }
@@ -1771,7 +1780,7 @@ describe('React', () => {
         let mapStateCalls = 0
 
         class Container extends Component {
-          render() {
+          override render() {
             renderCalls++
             return <Passthrough {...this.props} />
           }
@@ -1818,7 +1827,7 @@ describe('React', () => {
         const store: Store = createStore(stringBuilder)
 
         class Container extends Component {
-          render() {
+          override render() {
             renderCalls++
             return <Passthrough {...this.props} />
           }
@@ -1908,7 +1917,7 @@ describe('React', () => {
         expect(
           connect((state) => state)(
             class Foo extends Component {
-              render() {
+              override render() {
                 return <div />
               }
             },
@@ -1918,7 +1927,7 @@ describe('React', () => {
 
       it('should expose the wrapped component as WrappedComponent', () => {
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough />
           }
         }
@@ -1933,7 +1942,7 @@ describe('React', () => {
         class Container extends Component {
           static howIsRedux: () => string
           static foo: string
-          render() {
+          override render() {
             return <Passthrough />
           }
         }
@@ -1962,7 +1971,7 @@ describe('React', () => {
         ]
         function runCheck(...connectArgs: ConnectArgsType) {
           class Container extends Component {
-            render() {
+            override render() {
               return <Passthrough {...this.props} />
             }
           }
@@ -2010,7 +2019,7 @@ describe('React', () => {
         type AOwnProps = {}
 
         class A extends React.Component<ATStateProps> {
-          render() {
+          override render() {
             return <ConnectedB {...this.props} />
           }
         }
@@ -2025,7 +2034,7 @@ describe('React', () => {
           count: number
         }
         class B extends React.Component<BProps> {
-          render() {
+          override render() {
             return <ConnectedC {...this.props} />
           }
         }
@@ -2038,7 +2047,7 @@ describe('React', () => {
         type CNoDispatch = {}
         type COwnProps = ATStateProps
         class C extends React.Component<CTStateProps> {
-          render() {
+          override render() {
             return <div>{this.props.count}</div>
           }
         }
@@ -2072,7 +2081,7 @@ describe('React', () => {
           type: string
         }
         class Parent extends Component {
-          render() {
+          override render() {
             return (
               <BlockUpdates>
                 <ConnectedChildren />
@@ -2083,10 +2092,10 @@ describe('React', () => {
         const ConnectedParent = connect((state) => ({ count: state }))(Parent)
 
         class BlockUpdates extends Component {
-          shouldComponentUpdate() {
+          override shouldComponentUpdate() {
             return false
           }
-          render() {
+          override render() {
             // @ts-ignore don't care about "children" errors
             return this.props.children
           }
@@ -2101,7 +2110,7 @@ describe('React', () => {
         type ChildrenOwnProps = {}
 
         class Child extends Component<ChildrenTStateProps> {
-          render() {
+          override render() {
             return <div>{this.props.count}</div>
           }
         }
@@ -2142,7 +2151,7 @@ describe('React', () => {
         type ParentNoDisPatch = {}
         type ParentOwnProps = {}
         class Parent extends Component<ParentTStateProps> {
-          render() {
+          override render() {
             return this.props.count === 1 ? <ConnectedChildren /> : null
           }
         }
@@ -2160,7 +2169,7 @@ describe('React', () => {
         type ChildOwnProps = {}
         const mapStateToProps = vi.fn((state) => ({ count: state }))
         class Child extends Component<ChildTStateProps> {
-          render() {
+          override render() {
             return <div>{this.props.count}</div>
           }
         }
@@ -2196,7 +2205,7 @@ describe('React', () => {
     describe('Custom context and store-as-prop', () => {
       it('should use a custom context provider and consumer if given as an option to connect', () => {
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough />
           }
         }
@@ -2238,7 +2247,7 @@ describe('React', () => {
 
       it('should use a custom context provider and consumer if passed as a prop to the component', () => {
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough />
           }
         }
@@ -2274,7 +2283,7 @@ describe('React', () => {
 
       it('should ignore non-react-context values that are passed as a prop to the component', () => {
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough />
           }
         }
@@ -2304,7 +2313,7 @@ describe('React', () => {
 
       it('should use the store from the props instead of from the context if present', () => {
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough />
           }
         }
@@ -2498,7 +2507,7 @@ describe('React', () => {
           React.createContext<ReactReduxContextValue | null>(null)
 
         class A extends Component {
-          render() {
+          override render() {
             return <ConnectedB />
           }
         }
@@ -2513,7 +2522,7 @@ describe('React', () => {
 
         const mapStateToPropsB = vi.fn((state) => ({ count: state }))
         class B extends Component {
-          render() {
+          override render() {
             return <ConnectedC {...this.props} />
           }
         }
@@ -2523,7 +2532,7 @@ describe('React', () => {
 
         const mapStateToPropsC = vi.fn((state) => ({ count: state }))
         class C extends Component {
-          render() {
+          override render() {
             return <ConnectedD />
           }
         }
@@ -2538,7 +2547,7 @@ describe('React', () => {
         type DOwnPropsType = {}
         const mapStateToPropsD = vi.fn((state) => ({ count: state }))
         class D extends Component<DTStatePropsType> {
-          render() {
+          override render() {
             return <div>{this.props.count}</div>
           }
         }
@@ -2590,7 +2599,7 @@ describe('React', () => {
             return someData
           }
 
-          render() {
+          override render() {
             return <Passthrough loaded="yes" />
           }
         }
@@ -2603,7 +2612,7 @@ describe('React', () => {
         const ref = React.createRef<Container>()
 
         class Wrapper extends Component {
-          render() {
+          override render() {
             return <Decorated ref={ref} />
           }
         }
@@ -2624,7 +2633,7 @@ describe('React', () => {
         const store = createStore(() => ({}))
 
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -2644,7 +2653,7 @@ describe('React', () => {
         const ref = React.createRef<Container>()
 
         class Wrapper extends Component {
-          render() {
+          override render() {
             // The 'a' prop should eventually be passed to the wrapped component individually,
             // not sent through as `wrapperProps={ {a : 42} }`
             return <Decorated ref={ref} a={42} />
@@ -2694,10 +2703,10 @@ describe('React', () => {
         }
 
         class Container extends Component {
-          componentDidUpdate() {
+          override componentDidUpdate() {
             updatedCount++
           }
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -2750,7 +2759,7 @@ describe('React', () => {
         }
 
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -2819,10 +2828,10 @@ describe('React', () => {
         }
 
         class Passthrough extends Component {
-          componentDidUpdate() {
+          override componentDidUpdate() {
             updatedCount++
           }
-          render() {
+          override render() {
             return <div />
           }
         }
@@ -2849,10 +2858,10 @@ describe('React', () => {
             super(props)
             this.state = { count: 0 }
           }
-          componentDidMount() {
+          override componentDidMount() {
             this.setState({ count: 1 })
           }
-          render() {
+          override render() {
             const { count } = this.state
             return (
               <div>
@@ -2900,7 +2909,7 @@ describe('React', () => {
 
       it('should throw a helpful error for invalid mapStateToProps arguments', () => {
         class InvalidMapState extends React.Component {
-          render() {
+          override render() {
             return <div />
           }
         }
@@ -2917,7 +2926,7 @@ describe('React', () => {
 
       it('should throw a helpful error for invalid mapDispatchToProps arguments', () => {
         class InvalidMapDispatch extends React.Component {
-          render() {
+          override render() {
             return <div />
           }
         }
@@ -2933,7 +2942,7 @@ describe('React', () => {
 
       it('should throw a helpful error for invalid mergeProps arguments', () => {
         class InvalidMerge extends React.Component {
-          render() {
+          override render() {
             return <div />
           }
         }
@@ -2958,7 +2967,7 @@ describe('React', () => {
         const store: Store = createStore(stringBuilder)
 
         class Container extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -2990,7 +2999,7 @@ describe('React', () => {
         const store: Store = createStore(stringBuilder)
 
         class ContainerA extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -3005,7 +3014,7 @@ describe('React', () => {
         )(ContainerA)
 
         class ContainerB extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -3054,7 +3063,7 @@ describe('React', () => {
             store.dispatch({ type: 'APPEND', body: 'b' })
           }
 
-          render() {
+          override render() {
             return (
               <div>
                 <button onClick={this.emitChange.bind(this)}>change</button>
@@ -3078,7 +3087,7 @@ describe('React', () => {
           parentState: string
         }
         class ChildContainer extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -3147,7 +3156,7 @@ describe('React', () => {
         class InnerComponent extends Component<
           OwnPropsType & InnerTStatePropsType
         > {
-          render() {
+          override render() {
             propsPassedIn = this.props
             return <Passthrough {...this.props} />
           }
@@ -3170,7 +3179,7 @@ describe('React', () => {
             this.state = { count: 0 }
           }
 
-          render() {
+          override render() {
             return <ConnectedInner {...this.state} />
           }
         }
@@ -3288,7 +3297,7 @@ describe('React', () => {
             })
           }
 
-          render() {
+          override render() {
             return (
               <ProviderMock store={store}>
                 <Child prop={this.state.prop} />
@@ -3320,7 +3329,7 @@ describe('React', () => {
         let reduxCountPassedToMapState
 
         class InnerComponent extends Component {
-          render() {
+          override render() {
             return <Passthrough {...this.props} />
           }
         }
@@ -3348,7 +3357,7 @@ describe('React', () => {
             this.state = { count: 0 }
           }
 
-          render() {
+          override render() {
             return <ConnectedInner {...this.state} />
           }
         }
@@ -3484,6 +3493,8 @@ describe('React', () => {
         } catch (e) {
           thrownError = e
         }
+
+        return undefined
       }
 
       const ConnectedListItem = connect<

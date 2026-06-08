@@ -57,10 +57,9 @@ export type Matching<InjectedProps, DecorationTargetProps> = {
  * But any property required by the decorated component must be satisfied by the injected property.
  */
 export type Shared<InjectedProps, DecorationTargetProps> = {
-  [P in Extract<
-    keyof InjectedProps,
-    keyof DecorationTargetProps
-  >]?: InjectedProps[P] extends DecorationTargetProps[P]
+  [
+    P in Extract<keyof InjectedProps, keyof DecorationTargetProps>
+  ]?: InjectedProps[P] extends DecorationTargetProps[P]
     ? DecorationTargetProps[P]
     : never
 }

@@ -1,13 +1,12 @@
 import type { Action, Dispatch } from 'redux'
-import bindActionCreators from '../utils/bindActionCreators'
-import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
+import { bindActionCreators } from '../utils/bindActionCreators'
 import { createInvalidArgFactory } from './invalidArgFactory'
 import type { MapDispatchToPropsParam } from './selectorFactory'
+import { wrapMapToPropsConstant, wrapMapToPropsFunc } from './wrapMapToProps'
 
 export function mapDispatchToPropsFactory<TDispatchProps, TOwnProps>(
   mapDispatchToProps:
-    | MapDispatchToPropsParam<TDispatchProps, TOwnProps>
-    | undefined,
+    MapDispatchToPropsParam<TDispatchProps, TOwnProps> | undefined,
 ) {
   return mapDispatchToProps && typeof mapDispatchToProps === 'object'
     ? wrapMapToPropsConstant((dispatch: Dispatch<Action<string>>) =>

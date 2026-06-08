@@ -1,4 +1,4 @@
-import warning from '../utils/warning'
+import { warning } from '../utils/warning'
 
 function verify(selector: unknown, methodName: string): void {
   if (!selector) {
@@ -15,7 +15,7 @@ function verify(selector: unknown, methodName: string): void {
   }
 }
 
-export default function verifySubselectors(
+export function verifySubselectors(
   mapStateToProps: unknown,
   mapDispatchToProps: unknown,
   mergeProps: unknown,

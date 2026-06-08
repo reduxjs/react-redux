@@ -11,7 +11,7 @@ import { increment } from './counterApp'
 const objectAssign = Object.assign
 
 class Counter extends Component<any, any> {
-  render() {
+  override render() {
     return <button onClick={this.props.onIncrement}>{this.props.value}</button>
   }
 }
@@ -64,7 +64,7 @@ connect<ICounterStateProps, ICounterDispatchProps, {}, {}, CounterState>(
 )(Counter)
 
 class App extends Component<any, any> {
-  render(): React.ReactNode {
+  override render(): React.ReactNode {
     // ...
     return null
   }
@@ -210,7 +210,7 @@ connect(mapStateToProps2, mapDispatchToProps6)(TodoApp)
 // Inject todos of a specific user depending on props
 
 function mapStateToProps3(state: TodoState, ownProps: TodoProps): TodoState {
-  return { todos: state.todos[ownProps.userId] }
+  return { todos: state.todos[ownProps.userId] ?? [] }
 }
 
 connect(mapStateToProps3)(TodoApp)
@@ -223,7 +223,7 @@ function mergeProps(
   ownProps: TodoProps,
 ): { addTodo: (userId: string) => void } & TodoState {
   return objectAssign({}, ownProps, {
-    todos: stateProps.todos[ownProps.userId],
+    todos: stateProps.todos[ownProps.userId] ?? [],
     addTodo: (text: string) => dispatchProps.addTodo(ownProps.userId, text),
   })
 }
@@ -256,7 +256,7 @@ let anElement: ReactElement<TestProp>
 class NonComponent {}
 
 // this doesn't compile
-expectTypeOf(connect()).parameter(0).not.toMatchTypeOf(NonComponent)
+expectTypeOf(connect()).parameter(0).not.toExtend<typeof NonComponent>()
 
 // stateless functions
 interface HelloMessageProps {
@@ -325,7 +325,7 @@ describe('type tests', () => {
     }
 
     class OwnPropsComponent extends React.Component<OwnProps & StateProps, {}> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -351,10 +351,9 @@ describe('type tests', () => {
       mapStateToPropsWithoutOwnProps,
     )(OwnPropsComponent)
 
-    expectTypeOf(React.createElement).parameters.not.toMatchTypeOf([
-      ConnectedWithoutOwnProps,
-      { anything: 'goes!' },
-    ] as const)
+    expectTypeOf(React.createElement).parameters.not.toExtend<
+      readonly [typeof ConnectedWithoutOwnProps, { anything: 'goes!' }]
+    >()
 
     // This compiles, as expected.
     /**
@@ -385,7 +384,7 @@ describe('type tests', () => {
     }
 
     class AllPropsComponent extends React.Component<AllProps & DispatchProp> {
-      render() {
+      override render() {
         return <div />
       }
     }

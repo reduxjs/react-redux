@@ -1,7 +1,7 @@
 import type { Context, ReactNode } from 'react'
-import { React } from '../utils/react'
 import type { Action, Store, UnknownAction } from 'redux'
 import type { DevModeCheckFrequency } from '../hooks/useSelector'
+import { React } from '../utils/react'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { ReactReduxContextValue } from './Context'
@@ -54,7 +54,7 @@ export interface ProviderProps<
   children: ReactNode
 }
 
-function Provider<A extends Action<string> = UnknownAction, S = unknown>(
+export function Provider<A extends Action<string> = UnknownAction, S = unknown>(
   providerProps: ProviderProps<A, S>,
 ) {
   const { children, context, serverState, store } = providerProps
@@ -101,5 +101,3 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>(
 
   return <Context.Provider value={contextValue}>{children}</Context.Provider>
 }
-
-export default Provider

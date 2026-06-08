@@ -20,16 +20,16 @@ const throwNotSupportedError = ((
 }) as any
 
 export {
-  throwNotSupportedError as Provider,
   throwNotSupportedError as batch,
   throwNotSupportedError as connect,
-  throwNotSupportedError as legacy_connect,
   throwNotSupportedError as createDispatchHook,
   throwNotSupportedError as createSelectorHook,
   throwNotSupportedError as createStoreHook,
+  throwNotSupportedError as legacy_connect,
+  throwNotSupportedError as Provider,
   throwNotSupportedError as useDispatch,
   throwNotSupportedError as useSelector,
   throwNotSupportedError as useStore,
 }
 export const ReactReduxContext = {} as any
-export { default as shallowEqual } from './utils/shallowEqual'
+export { shallowEqual } from './utils/shallowEqual'

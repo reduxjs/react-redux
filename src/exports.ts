@@ -1,20 +1,13 @@
-import { connect, legacy_connect } from './components/connect'
+export { connect, legacy_connect } from './components/connect'
 export type {
   Connect,
-  ConnectProps,
   ConnectedProps,
+  ConnectProps,
 } from './components/connect'
-
-import shallowEqual from './utils/shallowEqual'
-
-import Provider from './components/Provider'
-import { defaultNoopBatch } from './utils/batch'
-
 export { ReactReduxContext } from './components/Context'
 export type { ReactReduxContextValue } from './components/Context'
-
+export { Provider } from './components/Provider'
 export type { ProviderProps } from './components/Provider'
-
 export type {
   MapDispatchToProps,
   MapDispatchToPropsFactory,
@@ -28,24 +21,33 @@ export type {
   Selector,
   SelectorFactory,
 } from './connect/selectorFactory'
-
 export { createDispatchHook, useDispatch } from './hooks/useDispatch'
 export type { UseDispatch } from './hooks/useDispatch'
-
 export { createSelectorHook, useSelector } from './hooks/useSelector'
 export type { UseSelector } from './hooks/useSelector'
-
 export { createStoreHook, useStore } from './hooks/useStore'
 export type { UseStore } from './hooks/useStore'
-
+export type {
+  AnyIfEmpty,
+  ConnectedComponent,
+  ConnectPropsMaybeWithoutContext,
+  DispatchProp,
+  DistributiveOmit,
+  EqualityFn,
+  ExtendedEqualityFn,
+  FixTypeLater,
+  GetLibraryManagedProps,
+  GetProps,
+  HandleThunkActionCreator,
+  InferableComponentEnhancer,
+  InferableComponentEnhancerWithProps,
+  InferThunkActionCreatorType,
+  Mapped,
+  Matching,
+  ResolveThunks,
+  Shared,
+  TypedUseSelectorHook,
+} from './types'
+export { batch } from './utils/batch'
+export { shallowEqual } from './utils/shallowEqual'
 export type { Subscription } from './utils/Subscription'
-
-export * from './types'
-
-/**
- * @deprecated As of React 18, batching is enabled by default for ReactDOM and React Native.
- * This is now a no-op that immediately runs the callback.
- */
-const batch = defaultNoopBatch
-
-export { Provider, batch, connect, legacy_connect, shallowEqual }
