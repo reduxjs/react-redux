@@ -236,7 +236,7 @@ export function createSelectorHook(
           }
           return selected
         },
-      }[selector.name],
+      }[selector.name]!,
       [selector],
     )
 

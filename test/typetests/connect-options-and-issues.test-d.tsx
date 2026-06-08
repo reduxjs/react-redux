@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types'
 import React from 'react'
 import type {
   Connect,
@@ -37,7 +36,7 @@ describe('type tests', () => {
     }
 
     class MergedPropsComponent extends React.Component<MergedProps> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -126,7 +125,7 @@ describe('type tests', () => {
     }
 
     class SpinnerClass extends React.Component<SpinnerProps & DispatchProp> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -144,7 +143,7 @@ describe('type tests', () => {
       foo: string
     }
     class SpinnerClass extends React.Component<TProps & DispatchProp> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -177,7 +176,7 @@ describe('type tests', () => {
     }
 
     class MyComponent extends React.Component<MyProps> {
-      render() {
+      override render() {
         return <span>{this.props.label}</span>
       }
     }
@@ -300,7 +299,7 @@ describe('type tests', () => {
     class WithoutOwnPropsComponentClass extends React.Component<
       ForwardedProps & StateProps & DispatchProp<any>
     > {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -367,7 +366,7 @@ describe('type tests', () => {
     class AllPropsComponent extends React.Component<
       AllProps & DispatchProp<any>
     > {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -414,7 +413,7 @@ describe('type tests', () => {
     }
 
     class Component extends React.Component<OptionalDecorationProps> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -458,7 +457,7 @@ describe('type tests', () => {
     }
 
     class Component extends React.Component<MoreGeneralDecorationProps> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -498,7 +497,7 @@ describe('type tests', () => {
     }
 
     class Component extends React.Component<MoreSpecificDecorationProps> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -557,7 +556,7 @@ describe('type tests', () => {
         bar: 0,
       }
 
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -588,13 +587,7 @@ describe('type tests', () => {
     }
 
     class Component extends React.Component<OwnProps & MapStateProps> {
-      static propTypes = {
-        foo: PropTypes.string.isRequired,
-        bar: PropTypes.number.isRequired,
-        fn: PropTypes.func.isRequired,
-      }
-
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -630,7 +623,7 @@ describe('type tests', () => {
 
       static meaningOfLife = 42
 
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -670,7 +663,7 @@ describe('type tests', () => {
 
     // react-redux exports a default context used internally if none is supplied, used as shown below.
     class ComponentWithDefaultContext extends React.Component {
-      static contextType = ReactReduxContext
+      static override contextType = ReactReduxContext
     }
 
     // eslint-disable-next-line no-extra-semi

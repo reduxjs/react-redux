@@ -68,12 +68,12 @@ describe('React', () => {
           props.dispatch(props.constructAction)
         }
       }
-      UNSAFE_componentWillMount() {
+      override UNSAFE_componentWillMount() {
         if (this.props.willMountAction) {
           this.props.dispatch(this.props.willMountAction)
         }
       }
-      render() {
+      override render() {
         if (this.props.renderAction) {
           this.props.dispatch(this.props.renderAction)
         }
