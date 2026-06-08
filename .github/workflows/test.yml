@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node: ['22.x']
+        node: ['24.x']
 
     steps:
       - name: Checkout code
@@ -54,8 +54,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22.x']
-        ts: ['5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8']
+        node: ['24.x']
+        ts: ['5.5', '5.6', '5.7', '5.8', '5.9', '6.0']
         react:
           [
             {
@@ -118,7 +118,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22.x']
+        node: ['24.x']
     steps:
       - name: Checkout repo
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22.x']
+        node: ['24.x']
         example:
           [
             'cra4',
@@ -178,7 +178,7 @@ jobs:
       - name: Clone RTK repo (pinned to known-good commit)
         run: |
           git init ./redux-toolkit
-          git -C ./redux-toolkit fetch --depth 1 https://github.com/reduxjs/redux-toolkit.git 576a02f8056fbee2dcaddb4d2e4d2da3b7937c58
+          git -C ./redux-toolkit fetch --depth 1 https://github.com/reduxjs/redux-toolkit.git 62d21b0e5d9dd6abec10d4971be25d9c4f0424ff
           git -C ./redux-toolkit checkout FETCH_HEAD
 
       - name: Cache example deps
@@ -236,7 +236,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22.x']
+        node: ['24.x']
         example: ['rr-rsc-context']
     defaults:
       run:
@@ -283,7 +283,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22.x']
+        node: ['24.x']
         react:
           [
             {

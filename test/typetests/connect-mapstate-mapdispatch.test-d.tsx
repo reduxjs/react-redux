@@ -1,7 +1,7 @@
 import React from 'react'
-import type { ActionCreator, Dispatch } from 'redux'
 import type { MapDispatchToProps, ReactReduxContextValue } from 'react-redux'
 import { connect } from 'react-redux'
+import type { ActionCreator, Dispatch } from 'redux'
 
 // Test cases written in a way to isolate types and variables and verify the
 // output of `connect` to make sure the signature is what is expected
@@ -175,7 +175,7 @@ describe('type tests', () => {
       remove: (item: string) => () => object
     }
     class TestComponent extends React.Component<TestComponentProps> {
-      render() {
+      override render() {
         return <div onClick={this.props.remove('someid')} />
       }
     }

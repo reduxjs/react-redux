@@ -11,7 +11,7 @@ import { increment } from './counterApp'
 const objectAssign = Object.assign
 
 class Counter extends Component<any, any> {
-  render() {
+  override render() {
     return <button onClick={this.props.onIncrement}>{this.props.value}</button>
   }
 }
@@ -64,7 +64,7 @@ connect<ICounterStateProps, ICounterDispatchProps, {}, {}, CounterState>(
 )(Counter)
 
 class App extends Component<any, any> {
-  render(): React.ReactNode {
+  override render(): React.ReactNode {
     // ...
     return null
   }
@@ -325,7 +325,7 @@ describe('type tests', () => {
     }
 
     class OwnPropsComponent extends React.Component<OwnProps & StateProps, {}> {
-      render() {
+      override render() {
         return <div />
       }
     }
@@ -385,7 +385,7 @@ describe('type tests', () => {
     }
 
     class AllPropsComponent extends React.Component<AllProps & DispatchProp> {
-      render() {
+      override render() {
         return <div />
       }
     }
