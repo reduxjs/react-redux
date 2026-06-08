@@ -50,7 +50,7 @@ const IS_REACT_18 = React.version.startsWith('18')
 
 describe('React', () => {
   describe('hooks', () => {
-    describe('useSelector', () => {
+    describe(useSelector, () => {
       type NormalStateType = {
         count: number
       }
@@ -1062,7 +1062,7 @@ describe('React', () => {
       })
     })
 
-    describe('createSelectorHook', () => {
+    describe(createSelectorHook, () => {
       let defaultStore: Store
       let customStore: Store
       type StateType = {

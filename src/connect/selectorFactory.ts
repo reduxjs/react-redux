@@ -1,7 +1,7 @@
-import type { Dispatch, Action } from 'redux'
 import type { ComponentType } from 'react'
-import verifySubselectors from './verifySubselectors'
+import type { Action, Dispatch } from 'redux'
 import type { EqualityFn, ExtendedEqualityFn } from '../types'
+import { verifySubselectors } from './verifySubselectors'
 
 export type SelectorFactory<S, TProps, TOwnProps, TFactoryOptions> = (
   dispatch: Dispatch<Action<string>>,
@@ -9,8 +9,7 @@ export type SelectorFactory<S, TProps, TOwnProps, TFactoryOptions> = (
 ) => Selector<S, TProps, TOwnProps>
 
 export type Selector<S, TProps, TOwnProps = null> = TOwnProps extends
-  | null
-  | undefined
+  null | undefined
   ? (state: S) => TProps
   : (state: S, ownProps: TOwnProps) => TProps
 
@@ -36,8 +35,7 @@ export type MapDispatchToPropsFunction<TDispatchProps, TOwnProps> = (
 ) => TDispatchProps
 
 export type MapDispatchToProps<TDispatchProps, TOwnProps> =
-  | MapDispatchToPropsFunction<TDispatchProps, TOwnProps>
-  | TDispatchProps
+  MapDispatchToPropsFunction<TDispatchProps, TOwnProps> | TDispatchProps
 
 export type MapDispatchToPropsFactory<TDispatchProps, TOwnProps> = (
   dispatch: Dispatch<Action<string>>,
@@ -167,8 +165,12 @@ interface WrappedMapDispatchToProps<TDispatchProps, TOwnProps> {
   readonly dependsOnOwnProps: boolean
 }
 
-export interface InitOptions<TStateProps, TOwnProps, TMergedProps, State>
-  extends PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
+export interface InitOptions<
+  TStateProps,
+  TOwnProps,
+  TMergedProps,
+  State,
+> extends PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
   readonly shouldHandleStateChanges: boolean
   readonly displayName: string
   readonly wrappedComponentName: string
@@ -203,7 +205,7 @@ export interface SelectorFactoryOptions<
 // allowing connect's shouldComponentUpdate to return false if final
 // props have not changed.
 
-export default function finalPropsSelectorFactory<
+export function finalPropsSelectorFactory<
   TStateProps,
   TOwnProps,
   TDispatchProps,

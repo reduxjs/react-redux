@@ -71,14 +71,16 @@ export type NonReactStatics<
     [key: string]: true
   } = {},
 > = {
-  [key in Exclude<
-    keyof Source,
-    Source extends MemoExoticComponent<any>
-      ? keyof typeof MEMO_STATICS | keyof C
-      : Source extends ForwardRefExoticComponent<any>
-        ? keyof typeof FORWARD_REF_STATICS | keyof C
-        : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
-  >]: Source[key]
+  [
+    key in Exclude<
+      keyof Source,
+      Source extends MemoExoticComponent<any>
+        ? keyof typeof MEMO_STATICS | keyof C
+        : Source extends ForwardRefExoticComponent<any>
+          ? keyof typeof FORWARD_REF_STATICS | keyof C
+          : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
+    >
+  ]: Source[key]
 }
 
 const defineProperty = Object.defineProperty
@@ -88,7 +90,7 @@ const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor
 const getPrototypeOf = Object.getPrototypeOf
 const objectPrototype = Object.prototype
 
-export default function hoistNonReactStatics<
+export function hoistNonReactStatics<
   Target,
   Source,
   CustomStatic extends {
@@ -117,8 +119,7 @@ export default function hoistNonReactStatics<
     const targetStatics = getStatics(targetComponent)
     const sourceStatics = getStatics(sourceComponent)
 
-    for (let i = 0; i < keys.length; ++i) {
-      const key = keys[i]
+    for (const key of keys) {
       if (
         !KNOWN_STATICS[key as keyof typeof KNOWN_STATICS] &&
         !(sourceStatics && sourceStatics[key as keyof typeof sourceStatics]) &&

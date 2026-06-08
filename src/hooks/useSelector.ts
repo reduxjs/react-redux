@@ -1,5 +1,5 @@
 //import * as React from 'react'
-import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector.js'
+import { useSyncExternalStoreWithSelector } from 'use-sync-external-store/with-selector'
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import type { EqualityFn } from '../types'
@@ -236,7 +236,7 @@ export function createSelectorHook(
           }
           return selected
         },
-      }[selector.name],
+      }[selector.name]!,
       [selector],
     )
 

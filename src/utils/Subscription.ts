@@ -83,7 +83,7 @@ export interface Subscription {
   notifyNestedSubs: VoidFunc
   handleChangeWrapper: VoidFunc
   isSubscribed: () => boolean
-  onStateChange?: VoidFunc | null
+  onStateChange?: VoidFunc | null | undefined
   trySubscribe: VoidFunc
   tryUnsubscribe: VoidFunc
   getListeners: () => ListenerCollection

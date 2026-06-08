@@ -1,7 +1,7 @@
 import { shallowEqual } from 'react-redux'
 
 describe('Utils', () => {
-  describe('shallowEqual', () => {
+  describe(shallowEqual, () => {
     it('should return true if arguments fields are equal', () => {
       expect(
         shallowEqual(

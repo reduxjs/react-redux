@@ -1,45 +1,40 @@
 /* eslint-disable valid-jsdoc, @typescript-eslint/no-unused-vars */
 import type { ComponentType } from 'react'
-import { React } from '../utils/react'
-import { isValidElementType, isContextConsumer } from '../utils/react-is'
-
 import type { Store } from 'redux'
-
+import { mapDispatchToPropsFactory } from '../connect/mapDispatchToProps'
+import { mapStateToPropsFactory } from '../connect/mapStateToProps'
+import { mergePropsFactory } from '../connect/mergeProps'
 import type {
-  ConnectedComponent,
-  InferableComponentEnhancer,
-  InferableComponentEnhancerWithProps,
-  ResolveThunks,
-  DispatchProp,
-  ConnectPropsMaybeWithoutContext,
-} from '../types'
-
-import type {
-  MapStateToProps,
-  MapStateToPropsFactory,
-  MapStateToPropsParam,
   MapDispatchToProps,
   MapDispatchToPropsFactory,
   MapDispatchToPropsFunction,
   MapDispatchToPropsParam,
+  MapStateToProps,
+  MapStateToPropsFactory,
+  MapStateToPropsParam,
   MergeProps,
   SelectorFactoryOptions,
 } from '../connect/selectorFactory'
-import defaultSelectorFactory from '../connect/selectorFactory'
-import { mapDispatchToPropsFactory } from '../connect/mapDispatchToProps'
-import { mapStateToPropsFactory } from '../connect/mapStateToProps'
-import { mergePropsFactory } from '../connect/mergeProps'
-
+import { finalPropsSelectorFactory as defaultSelectorFactory } from '../connect/selectorFactory'
+import type {
+  ConnectedComponent,
+  ConnectPropsMaybeWithoutContext,
+  DispatchProp,
+  InferableComponentEnhancer,
+  InferableComponentEnhancerWithProps,
+  ResolveThunks,
+} from '../types'
+import { hoistNonReactStatics as hoistStatics } from '../utils/hoistStatics'
+import { React } from '../utils/react'
+import { isContextConsumer, isValidElementType } from '../utils/react-is'
+import { shallowEqual } from '../utils/shallowEqual'
 import type { Subscription } from '../utils/Subscription'
 import { createSubscription } from '../utils/Subscription'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
-import shallowEqual from '../utils/shallowEqual'
-import hoistStatics from '../utils/hoistStatics'
-import warning from '../utils/warning'
-
+import { warning } from '../utils/warning'
 import type {
-  ReactReduxContextValue,
   ReactReduxContextInstance,
+  ReactReduxContextValue,
 } from './Context'
 import { ReactReduxContext } from './Context'
 
@@ -306,9 +301,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState only */
   <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
   ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>
 
   /** mapDispatch only (as a factory) */
@@ -353,9 +346,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState and mapDispatch (as a factory) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     TStateProps & TDispatchProps,
@@ -365,9 +356,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState and mapDispatch (as a function)*/
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     TStateProps & TDispatchProps,
@@ -383,9 +372,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState and mapDispatch (nullish) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: null | undefined,
   ): InferableComponentEnhancerWithProps<TStateProps, TOwnProps>
 
@@ -401,9 +388,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState and mapDispatch (as an object) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     TStateProps & ResolveThunks<TDispatchProps>,
@@ -452,9 +437,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState and options */
   <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: null | undefined,
     mergeProps: null | undefined,
     options: ConnectOptions<State, TStateProps, TOwnProps>,
@@ -512,9 +495,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState, mapDispatch (as a factory), and options */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
     mergeProps: null | undefined,
     options: ConnectOptions<State, TStateProps, TOwnProps>,
@@ -526,9 +507,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState,  mapDispatch (as a function), and options */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
     mergeProps: null | undefined,
     options: ConnectOptions<State, TStateProps, TOwnProps>,
@@ -551,9 +530,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapState,  mapDispatch (as an object), and options */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps:
-      | MapStateToProps<TStateProps, TOwnProps, State>
-      | null
-      | undefined,
+      MapStateToProps<TStateProps, TOwnProps, State> | null | undefined,
     mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
     mergeProps: null | undefined,
     options: ConnectOptions<State, TStateProps, TOwnProps>,
