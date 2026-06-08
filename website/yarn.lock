@@ -13336,23 +13336,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"root-workspace-0b6124@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "root-workspace-0b6124@workspace:."
-  dependencies:
-    "@dipakparmar/docusaurus-plugin-umami": "npm:^2.0.6"
-    "@docusaurus/core": "npm:3.6.3"
-    "@docusaurus/preset-classic": "npm:3.6.3"
-    "@getcanary/docusaurus-theme-search-pagefind": "npm:^1.0.2"
-    "@getcanary/web": "npm:^1.0.12"
-    classnames: "npm:^2.2.6"
-    netlify-plugin-cache: "npm:^1.0.3"
-    react: "npm:^19.0.0"
-    react-dom: "npm:^19.0.0"
-    react-lite-youtube-embed: "npm:^2.0.3"
-  languageName: unknown
-  linkType: soft
-
 "rtl-detect@npm:^1.0.4":
   version: 1.1.2
   resolution: "rtl-detect@npm:1.1.2"
@@ -14360,6 +14343,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"typescript@npm:^6.0.3":
+  version: 6.0.3
+  resolution: "typescript@npm:6.0.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10/0ef2357a4cffd916b52b683a021cdab0f81eea4e9aa35f2d254581c9a5106da02224e3392e1b0ed42b7a48f80c966e5f52b8e1a27941fa0523c1705a9c2e0330
+  languageName: node
+  linkType: hard
+
+"typescript@patch:typescript@npm%3A^6.0.3#optional!builtin<compat/typescript>":
+  version: 6.0.3
+  resolution: "typescript@patch:typescript@npm%3A6.0.3#optional!builtin<compat/typescript>::version=6.0.3&hash=5786d5"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10/22b67a18dafedf9b1468b64ca20d9aa02ea61d449b65413d8aa6552aeb63f52ef369e86beb25b6b4c91a803d9726ee5c196f391a9b64201263263410a4223ee6
+  languageName: node
+  linkType: hard
+
 "undici-types@npm:~6.19.2":
   version: 6.19.8
   resolution: "undici-types@npm:6.19.8"
@@ -14917,6 +14920,24 @@ __metadata:
   checksum: 10/9da47f8dcbc9173b19e41e3e1049fa451b0c02095ffa003e8c09c56aa2cc544334d1c6fff0797162a807b29090db9cf9a269cd5ec453196142543f9275cbbf70
   languageName: node
   linkType: hard
+
+"website@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "website@workspace:."
+  dependencies:
+    "@dipakparmar/docusaurus-plugin-umami": "npm:^2.0.6"
+    "@docusaurus/core": "npm:3.6.3"
+    "@docusaurus/preset-classic": "npm:3.6.3"
+    "@getcanary/docusaurus-theme-search-pagefind": "npm:^1.0.2"
+    "@getcanary/web": "npm:^1.0.12"
+    classnames: "npm:^2.2.6"
+    netlify-plugin-cache: "npm:^1.0.3"
+    react: "npm:^19.0.0"
+    react-dom: "npm:^19.0.0"
+    react-lite-youtube-embed: "npm:^2.0.3"
+    typescript: "npm:^6.0.3"
+  languageName: unknown
+  linkType: soft
 
 "websocket-driver@npm:>=0.5.1, websocket-driver@npm:^0.7.4":
   version: 0.7.4
