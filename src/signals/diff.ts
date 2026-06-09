@@ -3,6 +3,7 @@ import {
   findKeyField,
   getKeyValue,
 } from './arrayKeys'
+import type { ArrayMeta } from './arrayKeys'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 import type { SignalEngine } from './types'
 
@@ -15,6 +16,11 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 /**
  * Diff a plain object: recurse into changed properties.
  * Separated from the main dispatcher for V8 monomorphic optimization.
+ * @param prev - Previous object state
+ * @param next - Next object state
+ * @param parentPath - Dot-separated path to this object in the state tree
+ * @param registry - Signal registry to update
+ * @returns void
  */
 function diffObject(
   prev: Record<string, unknown>,
@@ -65,6 +71,11 @@ function diffObject(
 /**
  * Diff an array: detect key field and dispatch to identity or index based.
  * Separated from the main dispatcher for V8 monomorphic optimization.
+ * @param prev - Previous array state
+ * @param next - Next array state
+ * @param parentPath - Dot-separated path to this array in the state tree
+ * @param registry - Signal registry to update
+ * @returns void
  */
 function diffArray(
   prev: unknown[],
@@ -117,6 +128,11 @@ function diffArray(
  * Exploits Immer's structural sharing: `prev === next` skips entire subtrees.
  *
  * Dispatches to monomorphic helpers (diffObject/diffArray) for V8 optimization.
+ * @param prev - Previous state value
+ * @param next - Next state value
+ * @param parentPath - Dot-separated path to this node in the state tree
+ * @param registry - Signal registry to update
+ * @returns void
  */
 export function diffAndUpdateSignals(
   prev: unknown,
@@ -159,13 +175,19 @@ export function diffAndUpdateSignals(
  * When an entity moves indices but content is unchanged (prev === next via
  * structural sharing), the identity-based signal path stays the same and
  * no signal updates are needed.
+ * @param prev - Previous array state
+ * @param next - Next array state
+ * @param parentPath - Dot-separated path to this array in the state tree
+ * @param registry - Signal registry to update
+ * @param meta - Array identity metadata (key field and entity map)
+ * @returns void
  */
 function diffArrayByKey(
   prev: unknown[],
   next: unknown[],
   parentPath: string,
   registry: PathSignalRegistry,
-  meta: import('./arrayKeys').ArrayMeta,
+  meta: ArrayMeta,
 ): void {
   const { keyField, entityMap: prevEntityMap } = meta
 
@@ -315,6 +337,11 @@ function diffArrayByKey(
 /**
  * Index-based array diffing (original algorithm).
  * Used for primitive arrays or arrays without a detectable key field.
+ * @param prev - Previous array state
+ * @param next - Next array state
+ * @param parentPath - Dot-separated path to this array in the state tree
+ * @param registry - Signal registry to update
+ * @returns void
  */
 function diffArrayByIndex(
   prev: unknown[],
@@ -345,6 +372,11 @@ function diffArrayByIndex(
 
 /**
  * Wrapper that batches all signal updates into a single propagation pass.
+ * @param prev - Previous state
+ * @param next - Next state
+ * @param registry - Signal registry to update
+ * @param engine - Signal engine for batching
+ * @returns void
  */
 export function reconcileState(
   prev: unknown,

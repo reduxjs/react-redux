@@ -14,6 +14,8 @@ const KEY_CANDIDATES = ['id', 'key', '_id', '__id'] as const
  * Detect an identity key field on an object.
  * Returns the property name if found, undefined otherwise.
  * Checks 'id' > 'key' > '_id' > '__id' — same priority order as Legend State.
+ * @param obj - The object to inspect for a key field
+ * @returns The key field name, or undefined if none found
  */
 export function findKeyField(obj: unknown): string | undefined {
   if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return undefined
@@ -47,6 +49,10 @@ export interface ArrayMeta {
 /**
  * Build the identity path segment for an array element.
  * e.g., arrayPath="items", keyField="id", element={id: 42} → "items.{id:42}"
+ * @param arrayPath - Parent array's path
+ * @param keyField - The identity key field name
+ * @param keyValue - The identity key value
+ * @returns The identity-based path string
  */
 export function buildIdentityPath(
   arrayPath: string,
@@ -59,6 +65,9 @@ export function buildIdentityPath(
 /**
  * Extract a key value from an array element.
  * Returns undefined if element is not an object or key field is missing.
+ * @param element - The array element to extract the key from
+ * @param keyField - The identity key field name
+ * @returns The key value, or undefined if not extractable
  */
 export function getKeyValue(
   element: unknown,

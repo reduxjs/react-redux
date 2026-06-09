@@ -10,6 +10,10 @@ import { findKeyField, buildIdentityPath, getKeyValue } from '../../../src/signa
 /**
  * Walk an object and register all leaf paths as tracked signals.
  * Intermediate objects get ensurePrefix (like the tracking proxy does).
+ * @param state - The state value to walk
+ * @param parentPath - Dot-separated path prefix
+ * @param registry - Signal registry to populate
+ * @returns void
  */
 export function registerAllPaths(
   state: unknown,
@@ -40,6 +44,10 @@ export function registerAllPaths(
 /**
  * Register specific paths as tracked.
  * Each path gets a signal created with the value from the state.
+ * @param state - The state to extract values from
+ * @param paths - Array of dot-separated paths to register
+ * @param registry - Signal registry to populate
+ * @returns void
  */
 export function registerPaths(
   state: unknown,
@@ -61,6 +69,10 @@ export function registerPaths(
  * Register paths for a typical "entity list" selector pattern:
  * - all leaf fields of every entity in an array
  * - the array's @@keys signal
+ * @param state - The root state object
+ * @param arrayPath - Dot-separated path to the entity array
+ * @param registry - Signal registry to populate
+ * @returns void
  */
 export function registerEntityArrayPaths(
   state: Record<string, unknown>,
@@ -110,6 +122,9 @@ export function registerEntityArrayPaths(
 
 /**
  * Register paths for a wide-flat object: all leaf values of each top-level key's child object.
+ * @param state - The root state object
+ * @param registry - Signal registry to populate
+ * @returns void
  */
 export function registerWideFlatPaths(
   state: Record<string, unknown>,
@@ -136,6 +151,10 @@ export function registerWideFlatPaths(
 
 /**
  * Register all paths in a deep-nested state tree.
+ * @param state - The root state object
+ * @param parentPath - Dot-separated path prefix
+ * @param registry - Signal registry to populate
+ * @returns void
  */
 export function registerDeepNestedPaths(
   state: Record<string, unknown>,

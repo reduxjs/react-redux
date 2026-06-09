@@ -405,7 +405,7 @@ describe('diffAndUpdateSignals', () => {
       const next = { data: 'flat' as unknown }
 
       const registry = setupRegistry(prev, (s) => {
-        ;(s.data as any).nested
+        void (s.data as any).nested
       })
 
       expect(registry.has('data.nested')).toBe(true)
@@ -436,8 +436,8 @@ describe('diffAndUpdateSignals', () => {
       const next = { data: { a: 1 } as unknown }
 
       const registry = setupRegistry(prev, (s) => {
-        ;(s.data as any)[0]
-        ;(s.data as any)[1]
+        void (s.data as any)[0]
+        void (s.data as any)[1]
       })
 
       expect(registry.has('data.0')).toBe(true)
