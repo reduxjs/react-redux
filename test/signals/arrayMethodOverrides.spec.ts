@@ -13,7 +13,7 @@ function deepFreeze<T>(obj: T): T {
   return obj
 }
 
-function setup(state: object) {
+function setup<T extends object>(state: T) {
   const registry = createPathSignalRegistry(alienEngine)
   const cache: ProxyCache = new WeakMap()
   const proxy = createTrackingProxy(state, '', registry, cache)
@@ -695,7 +695,7 @@ describe('Array method overrides on tracking proxy', () => {
       expect(proxy.items.filter(() => true)).toEqual([])
       expect(proxy.items.some(() => true)).toBe(false)
       expect(proxy.items.every(() => true)).toBe(true)
-      expect(proxy.items.indexOf(1)).toBe(-1)
+      expect(proxy.items.indexOf({ id: 1 })).toBe(-1)
       expect(proxy.items.join(',')).toBe('')
     })
 
