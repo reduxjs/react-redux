@@ -11,6 +11,9 @@ const { useRef, useMemo, useEffect, useSyncExternalStore } = React
  * changes, with O(k) selectivity where k = number of affected selectors.
  *
  * Must be used within a <SignalProvider>.
+ * @param selector - Function that extracts a value from the store state
+ * @param equalityFn - Custom equality function for change detection
+ * @returns The selected value
  */
 export function useSignalSelector<S extends object, R>(
   selector: (state: S) => R,
@@ -42,7 +45,12 @@ export function useSignalSelector<S extends object, R>(
     // we explicitly read that object's signal to establish the terminal dependency.
     const selectorComputed = engine.computed(() => {
       const state = store.getState() as S & object
-      const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+      const proxy = createTrackingProxy(
+        state,
+        '',
+        registry,
+        registry.proxyCache,
+      )
       const result = selectorRef.current(proxy as S)
 
       // If the selector returned a tracking proxy (object), explicitly
@@ -97,7 +105,6 @@ export function useSignalSelector<S extends object, R>(
         return currentResult
       },
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, registry, engine])
 
   // Cleanup scope on unmount
