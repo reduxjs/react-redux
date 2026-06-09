@@ -60,6 +60,8 @@ const OVERRIDDEN_METHODS = new Set<string>([
 
 /**
  * Check if a property name is an overridden array method.
+ * @param prop - The property name to check
+ * @returns Whether the property is an overridden array method
  */
 export function isOverriddenArrayMethod(prop: string): boolean {
   return OVERRIDDEN_METHODS.has(prop)
@@ -80,6 +82,7 @@ function normalizeSliceIndex(index: number, length: number): number {
  * @param target - The raw frozen array
  * @param proxy - The tracking proxy wrapping this array (used to return proxied elements)
  * @param method - The method name being intercepted
+ * @returns An interceptor function that delegates to the raw array
  */
 export function createArrayMethodInterceptor(
   target: readonly unknown[],

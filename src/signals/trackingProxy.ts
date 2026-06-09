@@ -24,7 +24,11 @@ const proxyPathMap = new WeakMap<object, string>()
  */
 export type ProxyCache = WeakMap<object, object>
 
-/** Get the path key associated with a tracking proxy, or undefined if not a proxy. */
+/**
+ * Get the path key associated with a tracking proxy, or undefined if not a proxy.
+ * @param value - The value to check
+ * @returns The path string, or undefined if not a tracking proxy
+ */
 export function getProxyPath(value: unknown): string | undefined {
   if (value !== null && typeof value === 'object') {
     return proxyPathMap.get(value)
@@ -45,6 +49,11 @@ export function getProxyPath(value: unknown): string | undefined {
  * The proxy reads actual values from the real frozen state object.
  *
  * Child proxies are cached within a single evaluation to avoid duplicates.
+ * @param target - The frozen state object to wrap
+ * @param parentPath - Dot-separated path to this object in the state tree
+ * @param registry - Signal registry for dependency tracking
+ * @param cache - Proxy cache for deduplication
+ * @returns A tracking proxy wrapping the target
  */
 export function createTrackingProxy<T extends object>(
   target: T,
