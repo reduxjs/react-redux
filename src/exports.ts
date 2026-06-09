@@ -9,6 +9,7 @@ import shallowEqual from './utils/shallowEqual'
 
 import Provider from './components/Provider'
 import { defaultNoopBatch } from './utils/batch'
+import { SignalProvider, useSignalSelector } from './signals'
 
 export { ReactReduxContext } from './components/Context'
 export type { ReactReduxContextValue } from './components/Context'
@@ -48,4 +49,12 @@ export * from './types'
  */
 const batch = defaultNoopBatch
 
-export { Provider, batch, connect, legacy_connect, shallowEqual }
+export {
+  Provider,
+  batch,
+  connect,
+  legacy_connect,
+  shallowEqual,
+  SignalProvider,
+  useSignalSelector,
+}
