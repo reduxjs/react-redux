@@ -272,9 +272,7 @@ describe('object identity comparison in selectors', () => {
       expect(getByTestId('result').textContent).toBe('false')
     })
 
-    // KNOWN FAILURE: items array replaced but selectedItem still points to old
-    // item. No signal deps on either path since both are objects.
-    it.fails('updates when items array is replaced (selected item becomes stale)', () => {
+    it('updates when items array is replaced (selected item becomes stale)', () => {
       const Comp = () => {
         const isSelected = useSignalSelector(
           (state: RootState) =>
