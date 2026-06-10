@@ -1,5 +1,4 @@
-import type { PathSignalRegistry } from './pathSignalRegistry'
-import type { ProxyCache } from './trackingProxy'
+import { getProxyTarget } from './trackingProxy'
 
 /**
  * Non-mutating array methods that we override on the tracking proxy.
@@ -141,14 +140,19 @@ export function createArrayMethodInterceptor(
       return result
     }
 
-    // --- Primitive and transform operations: call on raw array ---
+    // --- Identity-comparing methods: unwrap proxy arguments ---
 
-    // indexOf/lastIndexOf/includes may receive a proxy as the search value.
-    // We need to compare against raw values, so extract the raw target if needed.
-    // For these methods, the comparison is by reference (===), and since our
-    // proxy !== raw value, we delegate to the raw array directly.
-    // This works correctly for primitive arrays. For object arrays, users
-    // should use findIndex instead.
+    // indexOf/lastIndexOf/includes compare by === (SameValueZero for includes).
+    // If the search argument is a tracking proxy, unwrap it to the raw target
+    // so the comparison works against raw array elements.
+    if (m === 'includes' || m === 'indexOf' || m === 'lastIndexOf') {
+      const unwrappedArgs = args.map((arg, i) =>
+        i === 0 ? getProxyTarget(arg) : arg,
+      )
+      return (target as any)[m](...unwrappedArgs)
+    }
+
+    // --- Other primitive and transform operations: call on raw array ---
 
     return (target as any)[m](...args)
   }
