@@ -16,6 +16,22 @@ function isObjectOrArray(v: unknown): v is object {
  */
 const proxyPathMap = new WeakMap<object, string>()
 
+
+/**
+ * Tracks which object-typed proxy accesses are "leaf" accesses —
+ * objects that were read by the selector but never had their properties
+ * accessed (i.e., used only for identity comparison like `===`).
+ *
+ * After the selector runs, leaf objects need their version signals
+ * explicitly read so that identity changes (ref swaps) are tracked.
+ */
+export interface LeafObjectTracker {
+  /** All paths where an object/array value was read, mapped to their raw values */
+  accessedObjects: Map<string, object>
+  /** Paths that had children accessed (i.e., were traversed, not leaves) */
+  traversedPaths: Set<string>
+}
+
 /**
  * Type for the proxy cache. Exported so the registry can own one.
  * Caches proxies by their target object identity.
@@ -60,6 +76,7 @@ export function createTrackingProxy<T extends object>(
   parentPath: string,
   registry: PathSignalRegistry,
   cache: ProxyCache,
+  leafTracker?: LeafObjectTracker,
 ): T {
   // Check proxy cache — reuse proxy if we've already wrapped this exact object
   const cached = cache.get(target)
@@ -113,17 +130,41 @@ export function createTrackingProxy<T extends object>(
         // objects that are only traversed, not read as terminal values.
         registry.ensurePrefix(pathKey)
 
+        // Mark parent as traversed (it has children being accessed)
+        if (leafTracker) {
+          leafTracker.traversedPaths.add(parentPath)
+        }
+
         // Return cached child proxy (createTrackingProxy checks cache internally)
         const childProxy = createTrackingProxy(
           value as object,
           pathKey,
           registry,
           cache,
+          leafTracker,
         )
+
+        // Track this object access — may be a leaf (identity-only usage)
+        if (leafTracker) {
+          leafTracker.accessedObjects.set(pathKey, value as object)
+        }
+
         return childProxy
       }
 
-      // Primitive leaf: read signal to establish dependency
+      // Mark parent as traversed (it has children being accessed)
+      if (leafTracker) {
+        leafTracker.traversedPaths.add(parentPath)
+      }
+
+      // Primitive leaf: read signal to establish dependency.
+      // Also read the immediate parent's version signal so that identity
+      // changes to the parent object (ref swaps) are tracked. Skip for
+      // root-level primitives (parentPath === '') since the root object
+      // changes on every dispatch and would defeat the optimization.
+      if (parentPath !== '') {
+        registry.getOrCreate(parentPath, target).get()
+      }
       registry.getOrCreate(pathKey, value).get()
 
       // Return the actual value
