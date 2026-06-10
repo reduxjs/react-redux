@@ -1,9 +1,14 @@
 import { React } from '../utils/react'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { useSignalContext } from './context'
-import { createTrackingProxy, getProxyPath } from './trackingProxy'
+import {
+  createTrackingProxy,
+  getProxyPath,
+  type LeafObjectTracker,
+} from './trackingProxy'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore } = React
+
 
 /**
  * A React hook that selects state from a Redux store using signal-based
@@ -45,11 +50,21 @@ export function useSignalSelector<S extends object, R>(
     // we explicitly read that object's signal to establish the terminal dependency.
     const selectorComputed = engine.computed(() => {
       const state = store.getState() as S & object
+
+      // Track leaf object accesses for identity comparison support.
+      // Objects read by the selector but never traversed deeper are
+      // "leaf objects" — their identity matters (e.g., `a === b`).
+      const leafTracker: LeafObjectTracker = {
+        accessedObjects: new Map(),
+        traversedPaths: new Set(),
+      }
+
       const proxy = createTrackingProxy(
         state,
         '',
         registry,
         registry.proxyCache,
+        leafTracker,
       )
       const result = selectorRef.current(proxy as S)
 
@@ -58,6 +73,20 @@ export function useSignalSelector<S extends object, R>(
       const proxyPath = getProxyPath(result)
       if (proxyPath !== undefined) {
         registry.getOrCreate(proxyPath, result).get()
+      }
+
+      // Read version signals for leaf objects — objects that were accessed
+      // but never had their properties read. These are used for identity
+      // comparison (===) and need their ref-change signals tracked.
+      for (const [objPath, rawValue] of leafTracker.accessedObjects) {
+        if (!leafTracker.traversedPaths.has(objPath)) {
+          // This object was read but never traversed — it's a leaf.
+          // Read its version signal to track identity changes.
+          // Skip root path since root changes every dispatch.
+          if (objPath !== '') {
+            registry.getOrCreate(objPath, rawValue).get()
+          }
+        }
       }
 
       return result

@@ -317,11 +317,13 @@ describe('createTrackingProxy', () => {
 
     proxy.a.b.c
 
-    // Intermediate objects (a, a.b) only have prefix registrations, no signals
+    // Non-immediate ancestors only have prefix registrations, no signals
     expect(registry.has('a')).toBe(false)
-    expect(registry.has('a.b')).toBe(false)
     expect(registry.hasPrefix('a')).toBe(true)
     expect(registry.hasPrefix('a.b')).toBe(true)
+
+    // Immediate parent of leaf gets a version signal (for identity tracking)
+    expect(registry.has('a.b')).toBe(true)
 
     // Leaf has a signal with the actual value
     expect(registry.has('a.b.c')).toBe(true)
@@ -422,8 +424,8 @@ describe('createTrackingProxy', () => {
     proxy1.user.profile.name
     proxy2.user.profile.name
 
-    // Only the leaf creates a signal; user and user.profile are prefix-only
-    expect(registry.size()).toBe(1) // user.profile.name (leaf)
+    // Leaf + its immediate parent get signals
+    expect(registry.size()).toBe(2) // user.profile (parent version) + user.profile.name (leaf)
   })
 
   it('child proxies from different root proxies track same signal paths', () => {
