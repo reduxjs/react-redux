@@ -168,6 +168,13 @@ export function createPathSignalRegistry(
         }
         // Remove from signals or prefix-only, and decrement prefix counts
         if (signals.has(key)) {
+          const sig = signals.get(key)!
+          // Fire the signal before removing it. This ensures any computed
+          // that depended on this path re-evaluates with the new state.
+          // Prune runs inside engine.batch() via reconcileState, so the
+          // computed won't re-run until the batch completes.
+          const current = sig.get()
+          sig.set(typeof current === 'number' ? current + 1 : current)
           signals.delete(key)
           decrementPrefixes(prefixCounts, key)
         } else if (prefixOnlyPaths.has(key)) {
