@@ -16,6 +16,12 @@ function isObjectOrArray(v: unknown): v is object {
  */
 const proxyPathMap = new WeakMap<object, string>()
 
+/**
+ * Maps tracking proxies back to their raw target objects.
+ * Used to unwrap proxy arguments in array methods like includes/indexOf
+ * where identity comparison needs to work against raw array elements.
+ */
+const proxyTargetMap = new WeakMap<object, object>()
 
 /**
  * Tracks which object-typed proxy accesses are "leaf" accesses —
@@ -50,6 +56,19 @@ export function getProxyPath(value: unknown): string | undefined {
     return proxyPathMap.get(value)
   }
   return undefined
+}
+
+/**
+ * Get the raw target object from a tracking proxy, or the value itself if not a proxy.
+ * Used to unwrap proxy arguments in array methods like includes/indexOf.
+ * @param value - The value to unwrap
+ * @returns The raw target object, or the original value if not a proxy
+ */
+export function getProxyTarget(value: unknown): unknown {
+  if (value !== null && typeof value === 'object') {
+    return proxyTargetMap.get(value) ?? value
+  }
+  return value
 }
 
 /**
@@ -219,6 +238,7 @@ export function createTrackingProxy<T extends object>(
   // Cache by target identity — unchanged Immer subtrees reuse same proxy
   cache.set(target, proxy)
   proxyPathMap.set(proxy as object, parentPath)
+  proxyTargetMap.set(proxy as object, target)
 
   return proxy
 }
