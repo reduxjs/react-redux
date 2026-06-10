@@ -49,6 +49,10 @@ interface Item {
   name: string
 }
 
+interface NestedObj {
+  label: string
+}
+
 interface IdentityTestState {
   items: Item[]
   selectedItem: Item | null
@@ -58,6 +62,12 @@ interface IdentityTestState {
   saved: Record<string, unknown>
   listA: Item[]
   setB: number[] // IDs in set B
+  // Additional fields for edge case tests
+  objA: NestedObj
+  objB: NestedObj
+  deep: { nested: { target: NestedObj } }
+  maybeNull: NestedObj | null
+  siblingPrimitive: number
 }
 
 const initialItems: Item[] = [
@@ -67,6 +77,7 @@ const initialItems: Item[] = [
 ]
 
 const sharedObj = { title: 'shared', version: 1 }
+const sharedNested: NestedObj = { label: 'shared-nested' }
 
 const identitySlice = createSlice({
   name: 'identity',
@@ -79,6 +90,11 @@ const identitySlice = createSlice({
     saved: { x: 1 } as Record<string, unknown>, // different ref, same value
     listA: initialItems,
     setB: [1, 3], // IDs of items in set B
+    objA: sharedNested,
+    objB: sharedNested, // same ref as objA
+    deep: { nested: { target: sharedNested } },
+    maybeNull: sharedNested as NestedObj | null,
+    siblingPrimitive: 0,
   } as IdentityTestState,
   reducers: {
     selectItem(state, action: PayloadAction<number>) {
@@ -121,6 +137,22 @@ const identitySlice = createSlice({
     replaceItems(state, action: PayloadAction<Item[]>) {
       state.items = action.payload
       // selectedItem is now stale (points to old array's item)
+    },
+    // Edge case reducers
+    setObjA(state, action: PayloadAction<NestedObj>) {
+      state.objA = action.payload
+    },
+    setObjB(state, action: PayloadAction<NestedObj>) {
+      state.objB = action.payload
+    },
+    setDeepTarget(state, action: PayloadAction<NestedObj>) {
+      state.deep.nested.target = action.payload
+    },
+    setMaybeNull(state, action: PayloadAction<NestedObj | null>) {
+      state.maybeNull = action.payload
+    },
+    bumpSiblingPrimitive(state) {
+      state.siblingPrimitive += 1
     },
   },
 })
@@ -933,6 +965,446 @@ describe('object identity comparison in selectors', () => {
 
       // selectedItem is items[0], so indexOf should return 0
       expect(getByTestId('result').textContent).toBe('0')
+    })
+  })
+
+  // ==========================================================================
+  // Pattern 11: Null/undefined identity transitions
+  //
+  // Object goes from non-null to null and back. Tests that the transition
+  // between object and null is tracked (type changes at a path).
+  // ==========================================================================
+
+  describe('Pattern 11: null identity transitions', () => {
+    it('tracks object → null transition', () => {
+      const Comp = () => {
+        const isNull = useSignalSelector(
+          (state: RootState) => state.identity.maybeNull === null,
+        )
+        return <div data-testid="result">{String(isNull)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially maybeNull is sharedNested (not null)
+      expect(getByTestId('result').textContent).toBe('false')
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setMaybeNull(null))
+      })
+
+      expect(getByTestId('result').textContent).toBe('true')
+    })
+
+    it('tracks null → object transition', () => {
+      // Start by setting to null
+      store.dispatch(identitySlice.actions.setMaybeNull(null))
+
+      const Comp = () => {
+        const isNull = useSignalSelector(
+          (state: RootState) => state.identity.maybeNull === null,
+        )
+        return <div data-testid="result">{String(isNull)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setMaybeNull({ label: 'restored' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('tracks object → null → different object', () => {
+      let selectorCalls = 0
+
+      const Comp = () => {
+        const label = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          const obj = state.identity.maybeNull
+          return obj === null ? 'none' : 'exists'
+        })
+        return <div data-testid="result">{label}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('exists')
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setMaybeNull(null))
+      })
+      expect(getByTestId('result').textContent).toBe('none')
+
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setMaybeNull({ label: 'new-obj' }),
+        )
+      })
+      expect(getByTestId('result').textContent).toBe('exists')
+    })
+  })
+
+  // ==========================================================================
+  // Pattern 12: Nested leaf object (deep traversal, identity at leaf)
+  //
+  // state.deep.nested.target used for identity. Three levels of intermediate
+  // traversal, leaf object at the end.
+  // ==========================================================================
+
+  describe('Pattern 12: nested leaf object identity', () => {
+    it('tracks identity change on deeply nested object', () => {
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) =>
+            state.identity.deep.nested.target === state.identity.objA,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially deep.nested.target and objA are both sharedNested
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Change deep.nested.target to a different object
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setDeepTarget({ label: 'different' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('tracks when deeply nested object becomes same ref as sibling', () => {
+      // First diverge them
+      store.dispatch(
+        identitySlice.actions.setObjA({ label: 'diverged' }),
+      )
+
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) =>
+            state.identity.deep.nested.target === state.identity.objA,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('false')
+
+      // Set deep.nested.target to a new object with same content as objA
+      // (Immer will make them different refs)
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setDeepTarget({ label: 'diverged' }),
+        )
+      })
+
+      // After Immer, these are different refs even with same content
+      const state = store.getState()
+      const expected =
+        state.identity.deep.nested.target === state.identity.objA
+      expect(getByTestId('result').textContent).toBe(String(expected))
+    })
+  })
+
+  // ==========================================================================
+  // Pattern 13: Multiple leaf objects from same parent
+  //
+  // state.objA === state.objB where both are siblings under identity.
+  // Tests that leaf detection works when both leaves share a parent.
+  // ==========================================================================
+
+  describe('Pattern 13: sibling leaf objects', () => {
+    it('tracks identity between sibling objects', () => {
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) =>
+            state.identity.objA === state.identity.objB,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially both are sharedNested
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Diverge objA
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setObjA({ label: 'changed' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('tracks when siblings converge to same ref', () => {
+      // Diverge first
+      store.dispatch(
+        identitySlice.actions.setObjA({ label: 'different' }),
+      )
+
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) =>
+            state.identity.objA === state.identity.objB,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('false')
+
+      // Change objB to match objA's content (Immer creates new refs)
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setObjB({ label: 'different' }),
+        )
+      })
+
+      const state = store.getState()
+      const expected = state.identity.objA === state.identity.objB
+      expect(getByTestId('result').textContent).toBe(String(expected))
+    })
+  })
+
+  // ==========================================================================
+  // Pattern 14: Parent version signal false-positive suppression
+  //
+  // Sibling primitive changes → parent version signal fires → selector
+  // re-runs → returns same result → equality check suppresses re-render.
+  // Verifies the "benign false positive" trade-off of parent version signals.
+  // ==========================================================================
+
+  describe('Pattern 14: false-positive suppression via equality check', () => {
+    it('does not re-render when sibling changes but selector result is stable', () => {
+      let renderCount = 0
+
+      const Comp = () => {
+        renderCount++
+        const isSame = useSignalSelector(
+          (state: RootState) =>
+            state.identity.objA === state.identity.objB,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+      const rendersAfterMount = renderCount
+
+      // Change siblingPrimitive — shares the identity parent with objA/objB.
+      // This fires the identity parent version signal. The selector re-runs
+      // but objA === objB is still true. Equality check suppresses re-render.
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.bumpSiblingPrimitive())
+      })
+
+      // Result should still be true, and render count should not increase
+      expect(getByTestId('result').textContent).toBe('true')
+      expect(renderCount).toBe(rendersAfterMount)
+    })
+  })
+
+  // ==========================================================================
+  // Pattern 15: Conditional property access based on identity
+  //
+  // Selector first checks identity, then conditionally reads properties.
+  // On first run it may only read objects (leaf detection needed).
+  // On re-run after state change, it reads different paths.
+  // ==========================================================================
+
+  describe('Pattern 15: conditional property access after identity check', () => {
+    it('handles selector that conditionally reads properties', () => {
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          if (state.identity.objA === state.identity.objB) {
+            // Same ref — just return the label
+            return state.identity.objA.label
+          }
+          // Different refs — return comparison string
+          return `${state.identity.objA.label} vs ${state.identity.objB.label}`
+        })
+        return <div data-testid="result">{result}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially same ref → returns label
+      expect(getByTestId('result').textContent).toBe('shared-nested')
+
+      // Diverge objA — different refs now
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setObjA({ label: 'alpha' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('alpha vs shared-nested')
+    })
+
+    it('handles short-circuit: reads only one side when first is null', () => {
+      // Set maybeNull to null first
+      store.dispatch(identitySlice.actions.setMaybeNull(null))
+
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          // Short circuit: if maybeNull is null, don't read objA
+          if (state.identity.maybeNull === null) {
+            return 'no-object'
+          }
+          return state.identity.maybeNull === state.identity.objA
+            ? 'same'
+            : 'different'
+        })
+        return <div data-testid="result">{result}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('no-object')
+
+      // Restore maybeNull — now it's a different ref from objA
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setMaybeNull({ label: 'restored' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('different')
+    })
+  })
+
+  // ==========================================================================
+  // Pattern 16: Returning a leaf object (terminal proxy check)
+  //
+  // Selector returns an object directly (not a boolean from comparison).
+  // The terminal proxy check in useSignalSelector should handle this.
+  // ==========================================================================
+
+  describe('Pattern 16: selector returning leaf object', () => {
+    it('re-runs when returned object ref changes', () => {
+      let selectorCalls = 0
+
+      const Comp = () => {
+        const obj = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          return state.identity.objA
+        })
+        return <div data-testid="result">{(obj as NestedObj).label}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('shared-nested')
+      const callsAfterMount = selectorCalls
+
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setObjA({ label: 'updated' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('updated')
+      expect(selectorCalls).toBeGreaterThan(callsAfterMount)
+    })
+  })
+
+  // ==========================================================================
+  // Pattern 17: Mixed identity + primitive in same selector
+  //
+  // Selector reads both object identity and primitive properties.
+  // Tests that leaf object detection and parent version signals
+  // work together without interference.
+  // ==========================================================================
+
+  describe('Pattern 17: mixed identity and primitive reads', () => {
+    it('tracks both identity and primitive changes', () => {
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          const isSame =
+            state.identity.draft === state.identity.published
+          const count = state.identity.siblingPrimitive
+          return `${isSame}-${count}`
+        })
+        return <div data-testid="result">{result}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true-0')
+
+      // Change primitive
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.bumpSiblingPrimitive())
+      })
+      expect(getByTestId('result').textContent).toBe('true-1')
+
+      // Change identity
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.divergeDraftFromPublished())
+      })
+      expect(getByTestId('result').textContent).toBe('false-1')
     })
   })
 })
