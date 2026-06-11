@@ -9,7 +9,7 @@ import shallowEqual from './utils/shallowEqual'
 
 import Provider from './components/Provider'
 import { defaultNoopBatch } from './utils/batch'
-import { SignalProvider, useSignalSelector } from './signals'
+import { SignalProvider, useSignalSelector, unwrap } from './signals'
 
 export { ReactReduxContext } from './components/Context'
 export type { ReactReduxContextValue } from './components/Context'
@@ -56,5 +56,6 @@ export {
   legacy_connect,
   shallowEqual,
   SignalProvider,
+  unwrap,
   useSignalSelector,
 }
