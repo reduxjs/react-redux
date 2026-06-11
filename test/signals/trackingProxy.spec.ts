@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createTrackingProxy, getProxyPath } from '../../src/signals/trackingProxy'
+import { createTrackingProxy, getProxyPath, unwrap } from '../../src/signals/trackingProxy'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { alienEngine } from '../../src/signals/engine'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
@@ -705,5 +705,110 @@ describe('createTrackingProxy', () => {
     expect(counterCalls).toBe(2) // NOT called again
 
     scope.stop()
+  })
+})
+
+describe('unwrap', () => {
+  function makeRegistry(): PathSignalRegistry {
+    return createPathSignalRegistry(alienEngine)
+  }
+
+  it('returns the raw target from a tracking proxy', () => {
+    const state = { name: 'Alice', nested: { x: 1 } }
+    const registry = makeRegistry()
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    expect(unwrap(proxy)).toBe(state)
+  })
+
+  it('returns nested raw target from a child proxy', () => {
+    const state = { nested: { x: 1 } }
+    const registry = makeRegistry()
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    const childProxy = proxy.nested
+    expect(childProxy).not.toBe(state.nested) // is a proxy
+    expect(unwrap(childProxy)).toBe(state.nested) // unwraps to raw
+  })
+
+  it('returns the value unchanged for non-proxy objects', () => {
+    const obj = { a: 1 }
+    expect(unwrap(obj)).toBe(obj)
+  })
+
+  it('returns primitives unchanged', () => {
+    expect(unwrap(42)).toBe(42)
+    expect(unwrap('hello')).toBe('hello')
+    expect(unwrap(true)).toBe(true)
+    expect(unwrap(null)).toBe(null)
+    expect(unwrap(undefined)).toBe(undefined)
+  })
+
+  it('enables identity comparison between unwrapped proxy and raw value', () => {
+    const item = { id: 1, name: 'first' }
+    const state = { items: [item], current: item }
+    const registry = makeRegistry()
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    // Without unwrap: proxy !== raw
+    const proxiedCurrent = proxy.current
+    expect(proxiedCurrent === item).toBe(false)
+
+    // With unwrap: raw === raw
+    expect(unwrap(proxiedCurrent) === item).toBe(true)
+  })
+
+  it('indexOf/includes auto-unwrap proxy arguments', () => {
+    const state = {
+      items: [
+        { id: 1, name: 'a' },
+        { id: 2, name: 'b' },
+        { id: 3, name: 'c' },
+      ],
+    }
+    const registry = makeRegistry()
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    // Access an item through the proxy — get back a proxy wrapper
+    const proxiedItem = proxy.items[1]
+    expect(proxiedItem).not.toBe(state.items[1]) // it's a proxy
+
+    // indexOf/includes auto-unwrap proxy args internally, so these just work
+    expect(proxy.items.indexOf(proxiedItem)).toBe(1)
+    expect(proxy.items.includes(proxiedItem)).toBe(true)
+
+    // Also works with manually unwrapped value
+    expect(proxy.items.indexOf(unwrap(proxiedItem))).toBe(1)
+  })
+
+  it('find() callback needs unwrap for identity comparison', () => {
+    const state = {
+      items: [
+        { id: 1, name: 'a' },
+        { id: 2, name: 'b' },
+        { id: 3, name: 'c' },
+      ],
+    }
+    const registry = makeRegistry()
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    // Get a proxy-wrapped item
+    const proxiedItem = proxy.items[1]
+    const rawItem = unwrap(proxiedItem)
+
+    // find callback receives raw elements; unwrapped proxy === raw element
+    const found = proxy.items.find(
+      (item: { id: number; name: string }) => item === rawItem,
+    )
+
+    expect(found).toBeDefined()
+    // find() returns a proxied result (lazy signal registration)
+    expect(found).not.toBe(state.items[1])
+    expect(unwrap(found)).toBe(state.items[1])
+
+    // Accessing properties on the found proxy registers signals
+    const name = (found as { name: string }).name
+    expect(name).toBe('b')
+    expect(registry.has('items.{id:2}.name')).toBe(true)
   })
 })

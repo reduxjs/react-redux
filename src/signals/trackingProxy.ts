@@ -60,13 +60,28 @@ export function getProxyPath(value: unknown): string | undefined {
 
 /**
  * Get the raw target object from a tracking proxy, or the value itself if not a proxy.
- * Used to unwrap proxy arguments in array methods like includes/indexOf.
- * @param value - The value to unwrap
- * @returns The raw target object, or the original value if not a proxy
+ *
+ * Use this when you need identity comparison between values that may be
+ * tracking proxies. Since `proxy === rawObject` is always `false` in JS,
+ * unwrapping both sides allows correct identity checks:
+ *
+ * ```ts
+ * import { unwrap } from 'react-redux/signals'
+ *
+ * const selector = (state) => {
+ *   const current = unwrap(state.current)
+ *   return state.items.find(item => item === current)
+ * }
+ * ```
+ *
+ * Safe to call on non-proxy values — returns them unchanged.
+ *
+ * @param value - The value to unwrap (proxy or raw)
+ * @returns The raw target object, or the original value if not a tracking proxy
  */
-export function getProxyTarget(value: unknown): unknown {
+export function unwrap<T>(value: T): T {
   if (value !== null && typeof value === 'object') {
-    return proxyTargetMap.get(value) ?? value
+    return (proxyTargetMap.get(value as object) as T) ?? value
   }
   return value
 }
@@ -88,6 +103,7 @@ export function getProxyTarget(value: unknown): unknown {
  * @param parentPath - Dot-separated path to this object in the state tree
  * @param registry - Signal registry for dependency tracking
  * @param cache - Proxy cache for deduplication
+ * @param leafTracker - Optional tracker for detecting leaf object accesses
  * @returns A tracking proxy wrapping the target
  */
 export function createTrackingProxy<T extends object>(
