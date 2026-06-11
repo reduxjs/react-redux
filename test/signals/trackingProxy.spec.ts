@@ -824,14 +824,24 @@ describe('array method dependency tracking', () => {
   type TodoItem = { id: number; text: string; done: boolean }
   type TodoState = { items: TodoItem[] }
 
-  /** Create a frozen state. For structural sharing, pass existing items unchanged. */
+  /**
+   * Create a frozen state. For structural sharing, pass existing items unchanged.
+   * @param items - Array of todo items
+   * @returns Deeply frozen TodoState
+   */
   function makeFrozenState(items: TodoItem[]): TodoState {
     return Object.freeze({
       items: Object.freeze(items.map(i => Object.freeze(i))),
     }) as TodoState
   }
 
-  /** Simulate Immer-style structural sharing: only replace the item that changed. */
+  /**
+   * Simulate Immer-style structural sharing: only replace the item that changed.
+   * @param state - Current state
+   * @param id - ID of item to update
+   * @param patch - Partial fields to merge
+   * @returns New frozen state with structural sharing
+   */
   function updateItem(
     state: TodoState,
     id: number,
@@ -846,7 +856,13 @@ describe('array method dependency tracking', () => {
     }) as TodoState
   }
 
-  /** Simulate what useSignalSelector does: run selector in a computed with leaf tracking. */
+  /**
+   * Simulate what useSignalSelector does: run selector in a computed with leaf tracking.
+   * @param getState - Returns current state
+   * @param selector - Selector function to run through tracking proxy
+   * @param registry - Signal registry for dependency tracking
+   * @returns Object with computed, call count getter, and stop function
+   */
   function createSelectorComputed<S extends object, R>(
     getState: () => S,
     selector: (state: S) => R,
