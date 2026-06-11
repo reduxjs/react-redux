@@ -1,3 +1,4 @@
+import type { PathSignalRegistry } from './pathSignalRegistry'
 import { unwrap } from './trackingProxy'
 
 /**
@@ -9,6 +10,12 @@ import { unwrap } from './trackingProxy'
  *
  * Example: `state.items.find(i => i.id === 42)` scans 1000 raw items (fast),
  * then returns a proxy for the one match (registers signals for that element only).
+ *
+ * **Whole-array dependency:** Every overridden method registers a signal on the
+ * array itself. Because callbacks scan raw (unproxied) elements, individual
+ * element changes wouldn't be detected otherwise. The coarse array signal
+ * ensures the selector re-runs when ANY element changes. This may over-fire,
+ * but the selector's `===` equality check on its result bails out cheaply.
  *
  * Categories:
  * - Subset operations (find, findLast, filter, slice): return proxied elements
@@ -78,18 +85,32 @@ function normalizeSliceIndex(index: number, length: number): number {
  * array, bypassing per-element proxy creation. Only results that the caller
  * will actually use get wrapped in tracking proxies.
  *
+ * Registers a coarse dependency on the array itself so that changes to ANY
+ * element (even ones the callback scanned but didn't match) trigger re-evaluation.
+ *
  * @param target - The raw frozen array
  * @param proxy - The tracking proxy wrapping this array (used to return proxied elements)
  * @param method - The method name being intercepted
+ * @param registry - Signal registry for dependency tracking
+ * @param parentPath - Path to this array in the state tree
  * @returns An interceptor function that delegates to the raw array
  */
 export function createArrayMethodInterceptor(
   target: readonly unknown[],
   proxy: object,
   method: string,
+  registry: PathSignalRegistry,
+  parentPath: string,
 ): (...args: unknown[]) => unknown {
   return function intercepted(...args: unknown[]): unknown {
     const m = method as OverriddenMethod
+
+    // Register a dependency on the array itself. Since callbacks receive
+    // raw (unproxied) elements, per-element signals aren't created during
+    // the scan. This coarse signal ensures re-evaluation when any element
+    // changes. diffArray fires registry.update(parentPath, ...) for every
+    // visited array, so this signal will fire on any descendant change.
+    registry.getOrCreate(parentPath, target).get()
 
     // --- Subset operations: scan raw, return proxied results ---
 
