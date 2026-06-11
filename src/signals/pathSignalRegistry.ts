@@ -27,6 +27,9 @@ export interface PathSignalRegistry {
   /** Check if any tracked signal exists at or below this path prefix. */
   hasPrefix(prefix: string): boolean
 
+  /** Return all registered signal paths (for testing/debugging). */
+  debugPaths(): string[]
+
   /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
   proxyCache: ProxyCache
 
@@ -206,6 +209,10 @@ export function createPathSignalRegistry(
 
     hasPrefix(prefix: string): boolean {
       return (prefixCounts.get(prefix) || 0) > 0
+    },
+
+    debugPaths(): string[] {
+      return Array.from(signals.keys()).sort()
     },
 
     proxyCache: proxyWeakMap,
