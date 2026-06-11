@@ -1,4 +1,4 @@
-import { getProxyTarget } from './trackingProxy'
+import { unwrap } from './trackingProxy'
 
 /**
  * Non-mutating array methods that we override on the tracking proxy.
@@ -147,7 +147,7 @@ export function createArrayMethodInterceptor(
     // so the comparison works against raw array elements.
     if (m === 'includes' || m === 'indexOf' || m === 'lastIndexOf') {
       const unwrappedArgs = args.map((arg, i) =>
-        i === 0 ? getProxyTarget(arg) : arg,
+        i === 0 ? unwrap(arg) : arg,
       )
       return (target as any)[m](...unwrappedArgs)
     }
