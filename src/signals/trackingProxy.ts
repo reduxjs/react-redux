@@ -132,7 +132,7 @@ export function createTrackingProxy<T extends object>(
       // Functions: intercept array methods to avoid per-element proxy creation
       if (typeof value === 'function') {
         if (Array.isArray(target) && isOverriddenArrayMethod(prop as string)) {
-          return createArrayMethodInterceptor(target, proxy, prop as string)
+          return createArrayMethodInterceptor(target, proxy, prop as string, registry, parentPath)
         }
         return value
       }
