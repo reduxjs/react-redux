@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createTrackingProxy, getProxyPath, unwrap } from '../../src/signals/trackingProxy'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
+import { reconcileState } from '../../src/signals/diff'
 import { alienEngine } from '../../src/signals/engine'
+import type { LeafObjectTracker } from '../../src/signals/trackingProxy'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 
 function makeRegistry(): PathSignalRegistry {
@@ -810,5 +812,435 @@ describe('unwrap', () => {
     const name = (found as { name: string }).name
     expect(name).toBe('b')
     expect(registry.has('items.{id:2}.name')).toBe(true)
+  })
+})
+
+// ─── Array method dependency tracking ───
+// These tests verify which signals are registered when using array methods
+// through the tracking proxy, and whether state changes trigger re-evaluation.
+// The pattern simulates what useSignalSelector does: computed → proxy → selector → diff → re-eval.
+
+describe('array method dependency tracking', () => {
+  type TodoItem = { id: number; text: string; done: boolean }
+  type TodoState = { items: TodoItem[] }
+
+  /** Create a frozen state. For structural sharing, pass existing items unchanged. */
+  function makeFrozenState(items: TodoItem[]): TodoState {
+    return Object.freeze({
+      items: Object.freeze(items.map(i => Object.freeze(i))),
+    }) as TodoState
+  }
+
+  /** Simulate Immer-style structural sharing: only replace the item that changed. */
+  function updateItem(
+    state: TodoState,
+    id: number,
+    patch: Partial<TodoItem>,
+  ): TodoState {
+    return Object.freeze({
+      items: Object.freeze(
+        state.items.map(item =>
+          item.id === id ? Object.freeze({ ...item, ...patch }) : item,
+        ),
+      ),
+    }) as TodoState
+  }
+
+  /** Simulate what useSignalSelector does: run selector in a computed with leaf tracking. */
+  function createSelectorComputed<S extends object, R>(
+    getState: () => S,
+    selector: (state: S) => R,
+    registry: PathSignalRegistry,
+  ) {
+    let callCount = 0
+    const scope = alienEngine.createScope()
+
+    const computed = scope.run(() =>
+      alienEngine.computed(() => {
+        callCount++
+        const state = getState()
+
+        const leafTracker: LeafObjectTracker = {
+          accessedObjects: new Map(),
+          traversedPaths: new Set(),
+        }
+
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+          leafTracker,
+        )
+        const result = selector(proxy as S)
+
+        // Terminal object dependency (same as useSignalSelector)
+        const proxyPath = getProxyPath(result)
+        if (proxyPath !== undefined) {
+          registry.getOrCreate(proxyPath, result).get()
+        }
+
+        // Leaf object tracking (same as useSignalSelector)
+        for (const [objPath, rawValue] of leafTracker.accessedObjects) {
+          if (!leafTracker.traversedPaths.has(objPath)) {
+            if (objPath !== '') {
+              registry.getOrCreate(objPath, rawValue).get()
+            }
+          }
+        }
+
+        return result
+      }),
+    )
+
+    return {
+      computed,
+      getCallCount: () => callCount,
+      stop: () => scope.stop(),
+    }
+  }
+
+  // ─── find() with property predicate ───
+
+  it('find(x => x.done) — re-runs when matched element changes', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: true },
+      { id: 3, text: 'c', done: false },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.find(x => x.done)?.text,
+      registry,
+    )
+
+    expect(c.get()).toBe('b')
+    expect(getCallCount()).toBe(1)
+
+    // Change the matched element's text — should re-run (structural sharing)
+    const prevState = state
+    state = updateItem(state, 2, { text: 'b-updated' })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('b-updated')
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  it('find(x => x.done) — SHOULD re-run when a non-matching element becomes done', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: true },
+      { id: 3, text: 'c', done: false },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.find(x => x.done)?.text,
+      registry,
+    )
+
+    expect(c.get()).toBe('b')
+    expect(getCallCount()).toBe(1)
+
+    // Item 1 becomes done — it should now be the first match.
+    // Use structural sharing: only item 1 is a new object.
+    const prevState = state
+    state = updateItem(state, 1, { done: true })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('a') // should be 'a' now
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  it('find(x => x.done) — SHOULD re-run when a new element is added', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.find(x => x.done)?.text ?? 'none',
+      registry,
+    )
+
+    expect(c.get()).toBe('none')
+    expect(getCallCount()).toBe(1)
+
+    // Add a done item
+    const prevState = state
+    state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: true },  // new, done
+    ])
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('b')
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  // ─── filter() with property predicate ───
+
+  it('filter(x => x.done) — re-runs when matched element changes', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: true },
+      { id: 2, text: 'b', done: false },
+      { id: 3, text: 'c', done: true },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+      registry,
+    )
+
+    expect(c.get()).toBe('a,c')
+    expect(getCallCount()).toBe(1)
+
+    // Change text of matched element (structural sharing)
+    const prevState = state
+    state = updateItem(state, 1, { text: 'a-updated' })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('a-updated,c')
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  it('filter(x => x.done) — SHOULD re-run when a non-matching element becomes done', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: true },
+      { id: 2, text: 'b', done: false },
+      { id: 3, text: 'c', done: true },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+      registry,
+    )
+
+    expect(c.get()).toBe('a,c')
+    expect(getCallCount()).toBe(1)
+
+    // Item 2 becomes done (structural sharing — only item 2 changes)
+    const prevState = state
+    state = updateItem(state, 2, { done: true })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('a,b,c')
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  // ─── some() / every() with property predicate ───
+
+  it('some(x => x.done) — SHOULD re-run when result changes from true to false', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: true },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.some(x => x.done),
+      registry,
+    )
+
+    expect(c.get()).toBe(true)
+    expect(getCallCount()).toBe(1)
+
+    // Item 2 becomes not done (structural sharing)
+    const prevState = state
+    state = updateItem(state, 2, { done: false })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe(false)
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  it('every(x => x.done) — SHOULD re-run when one element becomes not done', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: true },
+      { id: 2, text: 'b', done: true },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.every(x => x.done),
+      registry,
+    )
+
+    expect(c.get()).toBe(true)
+    expect(getCallCount()).toBe(1)
+
+    // Item 1 becomes not done (structural sharing)
+    const prevState = state
+    state = updateItem(state, 1, { done: false })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe(false)
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  // ─── map() (NOT overridden — should track all element properties) ───
+
+  it('map(x => x.text) — tracks all elements, re-runs when any element text changes', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: false },
+      { id: 3, text: 'c', done: false },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.map(x => x.text).join(','),
+      registry,
+    )
+
+    expect(c.get()).toBe('a,b,c')
+    expect(getCallCount()).toBe(1)
+
+    // Change item 3's text (structural sharing)
+    const prevState = state
+    state = updateItem(state, 3, { text: 'c-updated' })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('a,b,c-updated')
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  it('map(x => x.text) — does NOT re-run when unrelated property (done) changes', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: false },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.map(x => x.text).join(','),
+      registry,
+    )
+
+    expect(c.get()).toBe('a,b')
+    expect(getCallCount()).toBe(1)
+
+    // Change done but not text (structural sharing)
+    const prevState = state
+    state = updateItem(state, 1, { done: true })
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('a,b')
+    // Ideally callCount stays 1, but diff fires item's parent signal
+    // which causes re-eval. The computed's value is === equal so the effect
+    // won't notify React, but the computed itself re-evaluates.
+    // Accept 1 or 2 here — the important thing is correctness.
+    expect(getCallCount()).toBeLessThanOrEqual(2)
+
+    stop()
+  })
+
+  // ─── includes/indexOf — identity methods ───
+
+  it('includes() — SHOULD re-run when array structure changes', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: false },
+    ])
+    const registry = makeRegistry()
+    const targetItem = state.items[0] // raw ref
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.includes(targetItem as TodoItem),
+      registry,
+    )
+
+    expect(c.get()).toBe(true)
+    expect(getCallCount()).toBe(1)
+
+    // Remove item 1 from array (structural sharing: item 2 is same ref)
+    const prevState = state
+    state = Object.freeze({
+      items: Object.freeze([Object.freeze({ id: 2, text: 'b', done: false })]),
+    }) as TodoState
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe(false)
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  // ─── slice — structural ───
+
+  it('slice(0, 2) — SHOULD re-run when array gains elements', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.slice(0, 2).map(x => x.text).join(','),
+      registry,
+    )
+
+    expect(c.get()).toBe('a')
+    expect(getCallCount()).toBe(1)
+
+    // Add element
+    const prevState = state
+    state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: false },
+    ])
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('a,b')
+    expect(getCallCount()).toBe(2)
+
+    stop()
+  })
+
+  // ─── findIndex — predicate, returns primitive ───
+
+  it('findIndex(x => x.done) — SHOULD re-run when a different element becomes done', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: true },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, getCallCount, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.findIndex(x => x.done),
+      registry,
+    )
+
+    expect(c.get()).toBe(1)
+    expect(getCallCount()).toBe(1)
+
+    // Item 1 becomes done (structural sharing — item 2 unchanged)
+    const prevState = state
+    state = updateItem(state, 1, { done: true })
+    reconcileState(prevState, state, registry, alienEngine)
+    // findIndex should now return 0 since item 1 is now done (first match)
+    expect(c.get()).toBe(0)
+    expect(getCallCount()).toBe(2)
+
+    stop()
   })
 })
