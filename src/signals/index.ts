@@ -18,6 +18,6 @@ export type {
 export { createPathSignalRegistry } from './pathSignalRegistry'
 export type { PathSignalRegistry } from './pathSignalRegistry'
 
-export { createTrackingProxy } from './trackingProxy'
+export { createTrackingProxy, unwrap } from './trackingProxy'
 
 export { diffAndUpdateSignals, reconcileState } from './diff'
