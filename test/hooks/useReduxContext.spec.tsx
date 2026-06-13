@@ -8,7 +8,7 @@ import type { ReactReduxContextValue } from 'react-redux'
 
 describe('React', () => {
   describe('hooks', () => {
-    describe('useReduxContext', () => {
+    describe(useReduxContext, () => {
       it('throws if component is not wrapped in provider', () => {
         const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -18,7 +18,7 @@ describe('React', () => {
         spy.mockRestore()
       })
     })
-    describe('createReduxContextHook', () => {
+    describe(createReduxContextHook, () => {
       it('throws if component is not wrapped in provider', () => {
         const customContext = createContext<ReactReduxContextValue | null>(null)
         const useCustomReduxContext = createReduxContextHook(customContext)

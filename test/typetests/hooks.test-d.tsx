@@ -62,15 +62,17 @@ describe('type tests', () => {
 
     expectTypeOf(notSimpleSelect).toBeCallableWith(state, ownProps)
 
-    expectTypeOf(simpleSelect).parameter(1).not.toMatchTypeOf(ownProps)
+    expectTypeOf(simpleSelect).parameter(1).not.toExtend<typeof ownProps>()
 
-    expectTypeOf(notSimpleSelect).parameters.not.toMatchTypeOf([state])
+    expectTypeOf(notSimpleSelect).parameters.not.toExtend<
+      [state: typeof state]
+    >()
   })
 
   test('shallowEqual', () => {
     expectTypeOf(shallowEqual).parameter(0).not.toBeNever()
 
-    expectTypeOf(shallowEqual).parameters.not.toMatchTypeOf<['a']>()
+    expectTypeOf(shallowEqual).parameters.not.toExtend<[objA: string]>()
 
     expectTypeOf(shallowEqual).toBeCallableWith('a', 'a')
 
@@ -120,9 +122,9 @@ describe('type tests', () => {
 
     expectTypeOf(dispatch)
       .parameter(0)
-      .not.toMatchTypeOf(thunkActionCreator(true))
+      .not.toExtend<ReturnType<typeof thunkActionCreator>>()
 
-    expectTypeOf(dispatch).parameter(0).not.toMatchTypeOf(true)
+    expectTypeOf(dispatch).parameter(0).not.toBeBoolean()
 
     const store = configureStore({
       reducer: (state = 0) => state,
@@ -163,8 +165,8 @@ describe('type tests', () => {
 
     expectTypeOf(useSelector(selector)).not.toHaveProperty('extraneous')
 
-    expectTypeOf(useSelector).parameters.not.toMatchTypeOf<
-      [typeof selector, 'a']
+    expectTypeOf(useSelector).parameters.not.toExtend<
+      [selector: typeof selector, equalityFnOrOptions: 'a']
     >()
 
     useSelector(selector, (l, r) => l === r)
@@ -230,7 +232,7 @@ describe('type tests', () => {
 
     const typedState = typedStore.getState()
 
-    expectTypeOf(typedState).toHaveProperty('counter')
+    expectTypeOf(typedState).toHaveProperty('counter').toBeNumber()
 
     expectTypeOf(typedState).not.toHaveProperty('things')
   })
@@ -251,25 +253,21 @@ describe('type tests', () => {
     > | null>(null)
 
     test('no context', () => {
-      expectTypeOf(createDispatchHook()).toMatchTypeOf<
-        () => Dispatch<AnyAction>
-      >()
+      expectTypeOf(createDispatchHook()).toExtend<() => Dispatch<AnyAction>>()
 
       expectTypeOf(createSelectorHook()).toEqualTypeOf<UseSelector>()
 
-      expectTypeOf(createStoreHook()).toMatchTypeOf<
-        () => Store<any, AnyAction>
-      >()
+      expectTypeOf(createStoreHook()).toExtend<() => Store<any, AnyAction>>()
     })
 
     test('with context', () => {
-      expectTypeOf(createDispatchHook(Context)).toMatchTypeOf<
+      expectTypeOf(createDispatchHook(Context)).toExtend<
         () => Dispatch<RootAction>
       >()
 
       expectTypeOf(createSelectorHook(Context)).toEqualTypeOf<UseSelector>()
 
-      expectTypeOf(createStoreHook(Context)).toMatchTypeOf<
+      expectTypeOf(createStoreHook(Context)).toExtend<
         () => Store<RootState, RootAction>
       >()
     })

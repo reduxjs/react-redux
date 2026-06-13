@@ -9,7 +9,7 @@ import { createStore } from 'redux'
 const IS_REACT_18 = React.version.startsWith('18')
 
 describe('React', () => {
-  describe('connect', () => {
+  describe(connect, () => {
     it('should render on useEffect hook state update', () => {
       interface RootStateType {
         byId: {
