@@ -1,7 +1,9 @@
 import isPlainObject from '@internal/utils/isPlainObject'
 import vm from 'node:vm'
+
 class Test {}
-describe('isPlainObject', () => {
+
+describe(isPlainObject, () => {
   it('returns true only if plain object', () => {
     const sandbox = { fromAnotherRealm: false }
     vm.runInNewContext('fromAnotherRealm = {}', sandbox)
