@@ -38,6 +38,7 @@ import type {
   ReactReduxContextInstance,
 } from './Context'
 import { ReactReduxContext } from './Context'
+import type { DevModeCheckFrequency } from '../hooks/useSelector'
 
 // Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
@@ -246,6 +247,8 @@ export interface ConnectOptions<
     nextMergedProps: TMergedProps,
     prevMergedProps: TMergedProps,
   ) => boolean
+
+  stabilityCheck?: DevModeCheckFrequency
 }
 
 /**
@@ -464,6 +467,7 @@ function _connect<
     areOwnPropsEqual = shallowEqual,
     areStatePropsEqual = shallowEqual,
     areMergedPropsEqual = shallowEqual,
+    stabilityCheck = 'never',
 
     // use React's forwardRef to expose a ref of the wrapped component
     forwardRef = false,
@@ -510,7 +514,7 @@ function _connect<
 
     const displayName = `Connect(${wrappedComponentName})`
 
-    const selectorFactoryOptions: SelectorFactoryOptions<
+    const baseSelectorFactoryOptions: SelectorFactoryOptions<
       any,
       any,
       any,
@@ -529,6 +533,7 @@ function _connect<
       areStatePropsEqual,
       areOwnPropsEqual,
       areMergedPropsEqual,
+      stabilityCheck,
     }
 
     function ConnectFunction<TOwnProps>(
@@ -602,7 +607,7 @@ function _connect<
       const childPropsSelector = React.useMemo(() => {
         // The child props selector needs the store reference as an input.
         // Re-create this selector whenever the store changes.
-        return defaultSelectorFactory(store.dispatch, selectorFactoryOptions)
+        return defaultSelectorFactory(store.dispatch, baseSelectorFactoryOptions)
       }, [store])
 
       const [subscription, notifyNestedSubs] = React.useMemo(() => {

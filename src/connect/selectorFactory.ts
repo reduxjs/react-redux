@@ -1,5 +1,6 @@
 import type { Dispatch, Action } from 'redux'
 import type { ComponentType } from 'react'
+import type { DevModeCheckFrequency } from '../hooks/useSelector'
 import verifySubselectors from './verifySubselectors'
 import type { EqualityFn, ExtendedEqualityFn } from '../types'
 
@@ -62,6 +63,7 @@ interface PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
   readonly areStatesEqual: ExtendedEqualityFn<State, TOwnProps>
   readonly areStatePropsEqual: EqualityFn<TStateProps>
   readonly areOwnPropsEqual: EqualityFn<TOwnProps>
+  readonly stabilityCheck: DevModeCheckFrequency
 }
 
 function pureFinalPropsSelectorFactory<
@@ -79,19 +81,60 @@ function pureFinalPropsSelectorFactory<
     areStatesEqual,
     areOwnPropsEqual,
     areStatePropsEqual,
+    stabilityCheck,
   }: PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State>,
 ) {
   let hasRunAtLeastOnce = false
+  let didStabilityCheckRun = false
   let state: State
   let ownProps: TOwnProps
   let stateProps: TStateProps
   let dispatchProps: TDispatchProps
   let mergedProps: TMergedProps
 
+  function checkStatePropsStability(nextState: State, nextOwnProps: TOwnProps) {
+    if (process.env.NODE_ENV === 'production') {
+      return
+    }
+
+    if (
+      stabilityCheck === 'never' ||
+      (stabilityCheck === 'once' && didStabilityCheckRun)
+    ) {
+      return
+    }
+
+    const secondStateProps = mapStateToProps(nextState, nextOwnProps)
+
+    if (!areStatePropsEqual(secondStateProps, stateProps)) {
+      let stack: string | undefined = undefined
+      try {
+        throw new Error()
+      } catch (e) {
+        // eslint-disable-next-line no-extra-semi
+        ;({ stack } = e as Error)
+      }
+
+      console.error(
+        'mapStateToProps returned a different result when called with the same inputs. This can lead to unnecessary rerenders.' +
+          '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
+        {
+          state: nextState,
+          selected: stateProps,
+          selected2: secondStateProps,
+          stack,
+        },
+      )
+    }
+
+    didStabilityCheckRun = true
+  }
+
   function handleFirstCall(firstState: State, firstOwnProps: TOwnProps) {
     state = firstState
     ownProps = firstOwnProps
     stateProps = mapStateToProps(state, ownProps)
+    checkStatePropsStability(state, ownProps)
     dispatchProps = mapDispatchToProps(dispatch, ownProps)
     mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
     hasRunAtLeastOnce = true
@@ -100,6 +143,7 @@ function pureFinalPropsSelectorFactory<
 
   function handleNewPropsAndNewState() {
     stateProps = mapStateToProps(state, ownProps)
+    checkStatePropsStability(state, ownProps)
 
     if (mapDispatchToProps.dependsOnOwnProps)
       dispatchProps = mapDispatchToProps(dispatch, ownProps)
@@ -112,6 +156,8 @@ function pureFinalPropsSelectorFactory<
     if (mapStateToProps.dependsOnOwnProps)
       stateProps = mapStateToProps(state, ownProps)
 
+    if (mapStateToProps.dependsOnOwnProps) checkStatePropsStability(state, ownProps)
+
     if (mapDispatchToProps.dependsOnOwnProps)
       dispatchProps = mapDispatchToProps(dispatch, ownProps)
 
@@ -123,6 +169,7 @@ function pureFinalPropsSelectorFactory<
     const nextStateProps = mapStateToProps(state, ownProps)
     const statePropsChanged = !areStatePropsEqual(nextStateProps, stateProps)
     stateProps = nextStateProps
+    checkStatePropsStability(state, ownProps)
 
     if (statePropsChanged)
       mergedProps = mergeProps(stateProps, dispatchProps, ownProps)
