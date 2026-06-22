@@ -16,4 +16,10 @@ describe('isPlainObject', () => {
     expect(isPlainObject({ x: 1, y: 2 })).toBe(true)
     expect(isPlainObject(Object.create(null))).toBe(true)
   })
+  it('returns false for an object whose prototype is a non-Object.prototype null-proto object', () => {
+    // Object.create(null) creates a null-proto object that is NOT Object.prototype.
+    // Object.create(Object.create(null)) therefore has a prototype that is a root
+    // but not Object.prototype — it should NOT be considered plain.
+    expect(isPlainObject(Object.create(Object.create(null)))).toBe(false)
+  })
 })

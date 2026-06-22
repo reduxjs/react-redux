@@ -13,5 +13,8 @@ export default function isPlainObject(obj: unknown) {
     baseProto = Object.getPrototypeOf(baseProto)
   }
 
-  return proto === baseProto
+  return (
+    proto === baseProto &&
+    typeof (baseProto as any).hasOwnProperty === 'function'
+  )
 }
