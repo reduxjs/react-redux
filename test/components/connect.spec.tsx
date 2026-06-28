@@ -1995,6 +1995,81 @@ describe('React', () => {
         })
       })
 
+      it('should surface mapStateToProps errors to an error boundary', async () => {
+        type RootStateType = {
+          foo?: string[]
+        }
+        interface ActionType {
+          type: 'CLEAR' | 'INIT'
+        }
+
+        class ErrorBoundary extends React.Component<
+          { children: ReactNode },
+          { error: Error | null }
+        > {
+          state = { error: null }
+
+          static getDerivedStateFromError(error: Error) {
+            return { error }
+          }
+
+          render() {
+            if (this.state.error) {
+              return <div>error boundary</div>
+            }
+
+            return this.props.children
+          }
+        }
+
+        const store = createStore(
+          (state: RootStateType = { foo: ['ok'] }, action: ActionType) => {
+            if (action.type === 'CLEAR') {
+              return { foo: undefined }
+            }
+
+            return state
+          },
+        )
+
+        const mapStateToProps = vi.fn((state: RootStateType) => ({
+          count: state.foo!.length,
+        }))
+
+        class Child extends React.Component<{ count: number }> {
+          render() {
+            return <div>{this.props.count}</div>
+          }
+        }
+
+        const ConnectedChild = connect<{ count: number }, {}, {}, RootStateType>(
+          mapStateToProps,
+        )(Child)
+
+        const consoleErrorSpy = vi
+          .spyOn(console, 'error')
+          .mockImplementation(() => {})
+
+        rtl.render(
+          <ProviderMock store={store}>
+            <ErrorBoundary>
+              <ConnectedChild />
+            </ErrorBoundary>
+          </ProviderMock>,
+        )
+
+        expect(await rtl.screen.findByText('1')).toBeVisible()
+
+        rtl.act(() => {
+          store.dispatch({ type: 'CLEAR' })
+        })
+
+        expect(await rtl.screen.findByText('error boundary')).toBeVisible()
+        expect(mapStateToProps).toHaveBeenCalled()
+
+        consoleErrorSpy.mockRestore()
+      })
+
       it('should notify nested components through a blocking component', () => {
         type RootStateType = number
         interface ActionType {
