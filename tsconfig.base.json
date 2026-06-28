@@ -4,6 +4,7 @@
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
+    "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "react",
