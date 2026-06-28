@@ -18,6 +18,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
     "outDir": "./dist",
     "paths": {
       "@internal/*": ["./src/*"],

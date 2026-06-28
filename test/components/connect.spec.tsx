@@ -651,9 +651,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -668,9 +669,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -685,9 +687,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapStateToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -702,9 +705,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -719,9 +723,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -736,9 +741,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mapDispatchToProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -753,9 +759,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -770,9 +777,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
         rtl.cleanup()
@@ -787,9 +795,10 @@ describe('React', () => {
             )}
           </ProviderMock>,
         )
-        expect(spy).toHaveBeenCalledOnce()
-        expect(spy.mock.calls[0][0]).toMatch(
-          /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+        expect(spy).toHaveBeenCalledExactlyOnceWith(
+          expect.stringMatching(
+            /mergeProps\(\) in Connect\(Container\) must return a plain object/,
+          ),
         )
         spy.mockRestore()
       })
