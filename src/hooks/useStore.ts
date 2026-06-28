@@ -83,7 +83,7 @@ export function createStoreHook<
   ActionType extends Action = Action,
 >(
   // @ts-ignore
-  context?: Context<ReactReduxContextValue<
+  context: Context<ReactReduxContextValue<
     StateType,
     ActionType
   > | null> = ReactReduxContext,
