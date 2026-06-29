@@ -221,11 +221,7 @@ describe('React', () => {
       })
 
       it('should log errors thrown in mapStateToProps to console.error in development (#1942)', () => {
-        // The dev log is gated behind `process.env.NODE_ENV !== 'production'`.
-        // Pin it to 'development' so the test exercises the dev branch explicitly
-        // rather than relying on the test runner's ambient env.
-        const originalNodeEnv = process.env.NODE_ENV
-        process.env.NODE_ENV = 'development'
+        vi.stubEnv('NODE_ENV', 'development')
 
         const store: Store = createStore(stringBuilder)
 
