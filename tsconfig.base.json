@@ -23,7 +23,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "ESnext",
-    "types": ["vitest/globals", "vitest/importMeta"]
+    "types": ["node", "vitest/globals", "vitest/importMeta"]
   },
   "exclude": ["dist", "website", "docs", "examples"]
 }

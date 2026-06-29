@@ -1,6 +1,0 @@
-{
-  "sandboxes": ["vanilla", "vanilla-ts"],
-  "node": "20",
-  "buildCommand": "build",
-  "packages": ["."]
-}
