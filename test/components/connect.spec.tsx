@@ -287,7 +287,8 @@ describe('React', () => {
         })
 
         consoleSpy.mockRestore()
-        process.env.NODE_ENV = originalNodeEnv
+
+        vi.unstubAllEnvs()
       })
 
       it("should retain the store's context", () => {
