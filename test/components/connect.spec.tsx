@@ -221,6 +221,12 @@ describe('React', () => {
       })
 
       it('should log errors thrown in mapStateToProps to console.error in development (#1942)', () => {
+        // The dev log is gated behind `process.env.NODE_ENV !== 'production'`.
+        // Pin it to 'development' so the test exercises the dev branch explicitly
+        // rather than relying on the test runner's ambient env.
+        const originalNodeEnv = process.env.NODE_ENV
+        process.env.NODE_ENV = 'development'
+
         const store: Store = createStore(stringBuilder)
 
         // Throw on the first call only. The subscription-update path catches
@@ -268,6 +274,16 @@ describe('React', () => {
         )
         expect(loggedAnError).toBe(true)
 
+        // The logged message should name the offending component so the
+        // developer can tell which `connect()`-ed component threw.
+        const namedTheComponent = newCalls.some((args) =>
+          args.some(
+            (arg) =>
+              typeof arg === 'string' && arg.includes('Connect(Container)'),
+          ),
+        )
+        expect(namedTheComponent).toBe(true)
+
         // Dispatch again so the subscription path runs a successful update,
         // which clears `lastThrownError` and prevents the unmount-time rethrow.
         rtl.act(() => {
@@ -275,6 +291,7 @@ describe('React', () => {
         })
 
         consoleSpy.mockRestore()
+        process.env.NODE_ENV = originalNodeEnv
       })
 
       it("should retain the store's context", () => {

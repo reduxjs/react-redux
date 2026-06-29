@@ -103,6 +103,7 @@ function subscribeUpdates(
   notifyNestedSubs: () => void,
   // forceComponentUpdateDispatch: React.Dispatch<any>,
   additionalSubscribeListener: () => void,
+  displayName: string,
 ) {
   // If we're not subscribed to the store, nothing to do here
   if (!shouldHandleStateChanges) return () => {}
@@ -135,7 +136,7 @@ function subscribeUpdates(
       lastThrownError = e as Error | null
       if (process.env.NODE_ENV !== 'production') {
         console.error(
-          'An error occurred in `mapStateToProps` (or a selector) of a `connect()`-ed component. ' +
+          `An error occurred in \`mapStateToProps\` (or a selector) of the \`connect()\`-ed component "${displayName}". ` +
             'See https://github.com/reduxjs/react-redux/issues/1942 for details.',
           e,
         )
@@ -719,6 +720,7 @@ function _connect<
             childPropsFromStoreUpdate,
             notifyNestedSubs,
             reactListener,
+            displayName,
           )
         }
 
