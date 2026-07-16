@@ -47,7 +47,7 @@
     "pretest": "yarn lint",
     "test": "vitest --run --typecheck",
     "test:watch": "vitest --watch",
-    "type-tests": "tsc --noEmit -p tsconfig.test.json",
+    "type-tests": "tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.test.nonStrictFunctionTypes.json",
     "coverage": "codecov"
   },
   "peerDependencies": {

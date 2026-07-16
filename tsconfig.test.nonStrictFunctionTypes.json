@@ -1,0 +1,10 @@
+{
+  // Compiles the marked type tests with `strictFunctionTypes` disabled, the
+  // configuration that reproduced the `useSelector` + `shallowEqual` inference
+  // regression: https://github.com/reduxjs/react-redux/issues/2186
+  "extends": "./tsconfig.test.json",
+  "compilerOptions": {
+    "strictFunctionTypes": false
+  },
+  "include": ["test/typetests/hooks.nonStrictFunctionTypes.test-d.tsx"]
+}
