@@ -15,10 +15,14 @@ import type {
 } from '../types'
 
 import type {
+  MapStateToProps,
+  MapStateToPropsFactory,
   MapStateToPropsParam,
+  MapDispatchToProps,
+  MapDispatchToPropsFactory,
+  MapDispatchToPropsFunction,
   MapDispatchToPropsParam,
   MergeProps,
-  MapDispatchToPropsNonObject,
   SelectorFactoryOptions,
 } from '../connect/selectorFactory'
 import defaultSelectorFactory from '../connect/selectorFactory'
@@ -279,47 +283,128 @@ export interface ConnectOptions<
  */
 export interface Connect<DefaultState = unknown> {
   // tslint:disable:no-unnecessary-generics
+  //
+  // NOTE: the `mapStateToProps` and `mapDispatchToProps` parameters are
+  // intentionally split into separate "factory" and "plain" overloads instead of
+  // accepting the `MapStateToPropsParam` / `MapDispatchToProps{Param,NonObject}`
+  // unions directly. A factory (e.g. `() => (state) => props`) is structurally
+  // assignable to its plain counterpart, so when both forms live in a single
+  // union the compiler has to pick a "first" inference candidate - and the old
+  // and new (native, TS 7 / `tsgo`) compilers order union members differently,
+  // inferring `TStateProps` / `TDispatchProps` incorrectly on one of them.
+  // Listing the factory overload first makes the resolution order explicit and
+  // compiler-independent. The `mergeProps` overloads keep the unions on purpose
+  // (see the note on those overloads below).
+  // See https://github.com/reduxjs/react-redux/issues/2244
   (): InferableComponentEnhancer<DispatchProp>
+
+  /** mapState only (as a factory) */
+  <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+  ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>
 
   /** mapState only */
   <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
   ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>
+
+  /** mapDispatch only (as a factory) */
+  <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
+    mapStateToProps: null | undefined,
+    mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
 
   /** mapDispatch only (as a function) */
   <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
     mapStateToProps: null | undefined,
-    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+    mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
 
   /** mapDispatch only (as an object) */
   <no_state = {}, TDispatchProps = {}, TOwnProps = {}>(
     mapStateToProps: null | undefined,
-    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+    mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     ResolveThunks<TDispatchProps>,
     TOwnProps
   >
 
-  /** mapState and mapDispatch (as a function)*/
+  /** mapState (as a factory) and mapDispatch (as a factory) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     TStateProps & TDispatchProps,
     TOwnProps
   >
 
-  /** mapState and mapDispatch (nullish) */
+  /** mapState (as a factory) and mapDispatch (as a function) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
+  /** mapState and mapDispatch (as a factory) */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
+  /** mapState and mapDispatch (as a function)*/
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
+  /** mapState (as a factory) and mapDispatch (nullish) */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
     mapDispatchToProps: null | undefined,
   ): InferableComponentEnhancerWithProps<TStateProps, TOwnProps>
 
+  /** mapState and mapDispatch (nullish) */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: null | undefined,
+  ): InferableComponentEnhancerWithProps<TStateProps, TOwnProps>
+
+  /** mapState (as a factory) and mapDispatch (as an object) */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & ResolveThunks<TDispatchProps>,
+    TOwnProps
+  >
+
   /** mapState and mapDispatch (as an object) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     TStateProps & ResolveThunks<TDispatchProps>,
     TOwnProps
@@ -331,6 +416,10 @@ export interface Connect<DefaultState = unknown> {
     mapDispatchToProps: null | undefined,
     mergeProps: MergeProps<undefined, DispatchProp, TOwnProps, TMergedProps>,
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+
+  // `mergeProps` overloads keep the union parameters (see the note on the final
+  // `mergeProps` overload below) - splitting off a factory overload would
+  // collapse the inferred props to `{}`.
 
   /** mapState and mergeProps */
   <
@@ -352,18 +441,37 @@ export interface Connect<DefaultState = unknown> {
     mergeProps: MergeProps<undefined, TDispatchProps, TOwnProps, TMergedProps>,
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
 
-  /** mapState and options */
+  /** mapState (as a factory) and options */
   <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
     mapDispatchToProps: null | undefined,
     mergeProps: null | undefined,
     options: ConnectOptions<State, TStateProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<DispatchProp & TStateProps, TOwnProps>
 
+  /** mapState and options */
+  <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: null | undefined,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<DispatchProp & TStateProps, TOwnProps>
+
+  /** mapDispatch (as a factory) and options */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
+    mapStateToProps: null | undefined,
+    mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
+    mergeProps: null | undefined,
+    options: ConnectOptions<{}, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
+
   /** mapDispatch (as a function) and options */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
     mapStateToProps: null | undefined,
-    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+    mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
     mergeProps: null | undefined,
     options: ConnectOptions<{}, TStateProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<TDispatchProps, TOwnProps>
@@ -371,7 +479,7 @@ export interface Connect<DefaultState = unknown> {
   /** mapDispatch (as an object) and options*/
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}>(
     mapStateToProps: null | undefined,
-    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+    mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
     mergeProps: null | undefined,
     options: ConnectOptions<{}, TStateProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
@@ -379,10 +487,10 @@ export interface Connect<DefaultState = unknown> {
     TOwnProps
   >
 
-  /** mapState,  mapDispatch (as a function), and options */
+  /** mapState (as a factory), mapDispatch (as a factory), and options */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
     mergeProps: null | undefined,
     options: ConnectOptions<State, TStateProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
@@ -390,16 +498,78 @@ export interface Connect<DefaultState = unknown> {
     TOwnProps
   >
 
-  /** mapState,  mapDispatch (as an object), and options */
+  /** mapState (as a factory), mapDispatch (as a function), and options */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
-    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
+  /** mapState, mapDispatch (as a factory), and options */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: MapDispatchToPropsFactory<TDispatchProps, TOwnProps>,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
+  /** mapState,  mapDispatch (as a function), and options */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: MapDispatchToPropsFunction<TDispatchProps, TOwnProps>,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
+  /** mapState (as a factory), mapDispatch (as an object), and options */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
     mergeProps: null | undefined,
     options: ConnectOptions<State, TStateProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     TStateProps & ResolveThunks<TDispatchProps>,
     TOwnProps
   >
+
+  /** mapState,  mapDispatch (as an object), and options */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps:
+      | MapStateToProps<TStateProps, TOwnProps, State>
+      | null
+      | undefined,
+    mapDispatchToProps: MapDispatchToProps<TDispatchProps, TOwnProps>,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & ResolveThunks<TDispatchProps>,
+    TOwnProps
+  >
+
+  // NOTE: the `mergeProps` overloads keep the union parameters rather than the
+  // factory/plain split used above. `mergeProps` receives `stateProps` and
+  // `dispatchProps` as contextually-typed (non-inferring) parameters, so
+  // `TStateProps` / `TDispatchProps` can only be inferred from `mapStateToProps`
+  // / `mapDispatchToProps`. With a dedicated factory overload listed first a
+  // plain map function gets captured by it and the inferred props collapse to
+  // `{}`. The union keeps both forms as inference candidates in a single
+  // overload, which is the original (and correct) behavior for these signatures.
 
   /** mapState, mapDispatch, mergeProps, and options */
   <
