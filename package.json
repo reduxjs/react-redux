@@ -24,11 +24,6 @@
       "react-native": "./dist/react-redux.legacy-esm.js",
       "import": "./dist/react-redux.mjs",
       "default": "./dist/cjs/index.js"
-    },
-    "./alternate-renderers": {
-      "types": "./dist/react-redux.d.ts",
-      "import": "./dist/react-redux.mjs",
-      "default": "./dist/cjs/index.js"
     }
   },
   "sideEffects": false,
