@@ -2,6 +2,15 @@ import type { ArrayMeta } from './arrayKeys'
 import type { ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
+/**
+ * Kinds of structural array changes that scans can depend on selectively.
+ * - `append`: elements added after all surviving elements
+ * - `insertOrReorder`: elements inserted before surviving elements, or
+ *   surviving elements changed relative order
+ * - `remove`: elements removed (relative order of survivors preserved)
+ */
+export type StructureKind = 'append' | 'insertOrReorder' | 'remove'
+
 export interface PathSignalRegistry {
   /** Get or create a signal for a path. Object/array values use version counters. */
   getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown>
@@ -38,6 +47,51 @@ export interface PathSignalRegistry {
 
   /** Set/update array metadata for identity-based tracking. */
   setArrayMeta(arrayPath: string, meta: ArrayMeta): void
+
+  /** Register a column signal for an array: a dependency on property `prop`
+   *  of ANY element of the array at `arrayPath`. Fired by diff when any
+   *  element's value for that property changes (or membership changes). */
+  trackColumn(arrayPath: string, prop: string): ReactiveSignal<unknown>
+
+  /** Get the set of tracked column properties for an array path. */
+  getTrackedColumns(arrayPath: string): Set<string> | undefined
+
+  /** Fire the column signal for (arrayPath, prop), if one exists. */
+  bumpColumn(arrayPath: string, prop: string): void
+
+  /** Register a structural signal for an array: a dependency on a specific
+   *  kind of membership/order change (append, insertOrReorder, remove).
+   *  Fired selectively by diff based on how the array actually changed. */
+  trackStructure(arrayPath: string, kind: StructureKind): ReactiveSignal<unknown>
+
+  /** Get the set of tracked structure kinds for an array path. */
+  getTrackedStructures(arrayPath: string): Set<StructureKind> | undefined
+
+  /** Fire the structural signal for (arrayPath, kind), if one exists. */
+  bumpStructure(arrayPath: string, kind: StructureKind): void
+}
+
+/**
+ * Build the path key for a column signal.
+ * Uses `{*}` as the element segment — it can never collide with real
+ * object keys or identity paths (`{keyField:value}`).
+ * @param arrayPath - Path to the array in the state tree
+ * @param prop - Element property name being tracked
+ * @returns The column signal path key
+ */
+function buildColumnPath(arrayPath: string, prop: string): string {
+  return arrayPath + '.{*}.' + prop
+}
+
+/**
+ * Build the path key for a structural signal.
+ * Uses `@@` segments (like `@@keys`) that can't collide with real keys.
+ * @param arrayPath - Path to the array in the state tree
+ * @param kind - The structural change kind
+ * @returns The structural signal path key
+ */
+function buildStructurePath(arrayPath: string, kind: StructureKind): string {
+  return arrayPath + '.@@' + kind
 }
 
 function isObjectOrArray(v: unknown): v is object {
@@ -100,6 +154,12 @@ export function createPathSignalRegistry(
   // Per-array metadata for identity-based tracking.
   // Maps array path → ArrayMeta (keyField + entityMap).
   const arrayMetas = new Map<string, ArrayMeta>()
+  // Tracked column properties per array path.
+  // Lets diffArray know which element properties to shallow-compare.
+  const columnsByArray = new Map<string, Set<string>>()
+  // Tracked structural change kinds per array path.
+  // Lets diffArray know whether structural classification is needed.
+  const structuresByArray = new Map<string, Set<StructureKind>>()
 
   // Register a path in the parent→children index.
   // Only links to immediate parent: "a.b.c" → childIndex["a.b"].add("a.b.c")
@@ -117,7 +177,7 @@ export function createPathSignalRegistry(
     children.add(pathKey)
   }
 
-  return {
+  const registry: PathSignalRegistry = {
     getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown> {
       let sig = signals.get(pathKey)
       if (!sig) {
@@ -161,6 +221,9 @@ export function createPathSignalRegistry(
       const stack: string[] = [pathKey]
       while (stack.length > 0) {
         const key = stack.pop()!
+        // Drop column/structure tracking for any array at or below the pruned path
+        columnsByArray.delete(key)
+        structuresByArray.delete(key)
         // Push children onto stack before deleting
         const children = childIndex.get(key)
         if (children) {
@@ -224,5 +287,55 @@ export function createPathSignalRegistry(
     setArrayMeta(arrayPath: string, meta: ArrayMeta): void {
       arrayMetas.set(arrayPath, meta)
     },
+
+    trackColumn(arrayPath: string, prop: string): ReactiveSignal<unknown> {
+      let cols = columnsByArray.get(arrayPath)
+      if (!cols) {
+        cols = new Set()
+        columnsByArray.set(arrayPath, cols)
+      }
+      cols.add(prop)
+      // Register the intermediate `{*}` segment so prune(arrayPath)
+      // reaches column signals through the child index.
+      registry.ensurePrefix(arrayPath + '.{*}')
+      return registry.getOrCreate(buildColumnPath(arrayPath, prop), 0)
+    },
+
+    getTrackedColumns(arrayPath: string): Set<string> | undefined {
+      return columnsByArray.get(arrayPath)
+    },
+
+    bumpColumn(arrayPath: string, prop: string): void {
+      const sig = signals.get(buildColumnPath(arrayPath, prop))
+      if (!sig) return
+      const current = sig.get()
+      sig.set(typeof current === 'number' ? current + 1 : 0)
+    },
+
+    trackStructure(
+      arrayPath: string,
+      kind: StructureKind,
+    ): ReactiveSignal<unknown> {
+      let kinds = structuresByArray.get(arrayPath)
+      if (!kinds) {
+        kinds = new Set()
+        structuresByArray.set(arrayPath, kinds)
+      }
+      kinds.add(kind)
+      return registry.getOrCreate(buildStructurePath(arrayPath, kind), 0)
+    },
+
+    getTrackedStructures(arrayPath: string): Set<StructureKind> | undefined {
+      return structuresByArray.get(arrayPath)
+    },
+
+    bumpStructure(arrayPath: string, kind: StructureKind): void {
+      const sig = signals.get(buildStructurePath(arrayPath, kind))
+      if (!sig) return
+      const current = sig.get()
+      sig.set(typeof current === 'number' ? current + 1 : 0)
+    },
   }
+
+  return registry
 }
