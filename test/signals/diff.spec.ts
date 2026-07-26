@@ -180,12 +180,12 @@ describe('diffAndUpdateSignals', () => {
 
       // Leaf signal should be updated
       expect(registry.getOrCreate('a.b.c.d', 'changed').get()).toBe('changed')
-      // Non-immediate ancestors have no signals (only prefix registrations)
+      // Intermediate objects have no signals (only prefix registrations)
+      // They don't get version bumps — that's the optimization
       expect(registry.has('a')).toBe(false)
       expect(registry.has('a.b')).toBe(false)
-      // Immediate parent of leaf gets a version signal (identity tracking)
-      expect(registry.has('a.b.c')).toBe(true)
-      // Prefix index knows about all ancestors
+      expect(registry.has('a.b.c')).toBe(false)
+      // But prefix index knows about them
       expect(registry.hasPrefix('a')).toBe(true)
       expect(registry.hasPrefix('a.b')).toBe(true)
       expect(registry.hasPrefix('a.b.c')).toBe(true)
