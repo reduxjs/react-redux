@@ -2,7 +2,7 @@ import { describe, test, expect, vi } from 'vitest'
 import { alienEngine } from '@internal/signals/engine'
 import { createPathSignalRegistry } from '@internal/signals/pathSignalRegistry'
 import { createTrackingProxy, type ProxyCache } from '@internal/signals/trackingProxy'
-import { getProxyPath } from '@internal/signals/trackingProxy'
+import { getProxyPath, unwrap } from '@internal/signals/trackingProxy'
 
 function deepFreeze<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj
@@ -52,20 +52,24 @@ describe('Array method overrides on tracking proxy', () => {
       expect(found).toBeUndefined()
     })
 
-    test('callback receives raw values, not proxies', () => {
+    test('callback receives scan recorder, unwrap resolves raw element', () => {
       const state = createTestData()
       const { proxy } = setup(state)
-      const receivedValues: unknown[] = []
+      const unwrapped: unknown[] = []
+      let callCount = 0
       proxy.items.find((item) => {
-        receivedValues.push(item)
+        callCount++
+        // Not a tracking proxy (no path registered)
+        expect(getProxyPath(item)).toBeUndefined()
+        // unwrap resolves to the raw frozen element
+        unwrapped.push(unwrap(item))
         return false // never match, scan all
       })
-      // Callbacks should receive raw frozen objects, not proxies
-      for (const val of receivedValues) {
-        expect(getProxyPath(val)).toBeUndefined()
-        expect(Object.isFrozen(val)).toBe(true)
+      expect(callCount).toBe(5)
+      for (let i = 0; i < 5; i++) {
+        expect(unwrapped[i]).toBe(state.items[i])
+        expect(Object.isFrozen(unwrapped[i])).toBe(true)
       }
-      expect(receivedValues).toHaveLength(5)
     })
 
     test('only registers signals for the found element, not all scanned elements', () => {
@@ -184,14 +188,17 @@ describe('Array method overrides on tracking proxy', () => {
       expect(registry.has('items.{id:3}.value')).toBe(false)
     })
 
-    test('callback receives raw values', () => {
+    test('callback receives scan recorder, unwrap resolves raw element', () => {
       const state = createTestData()
       const { proxy } = setup(state)
+      let i = 0
       proxy.items.findIndex((item) => {
         expect(getProxyPath(item)).toBeUndefined()
-        expect(Object.isFrozen(item)).toBe(true)
+        expect(unwrap(item)).toBe(state.items[i])
+        i++
         return false
       })
+      expect(i).toBe(5)
     })
   })
 
@@ -232,18 +239,16 @@ describe('Array method overrides on tracking proxy', () => {
       }
     })
 
-    test('callback receives raw values, not proxies', () => {
+    test('callback receives scan recorder, not tracking proxies', () => {
       const state = createTestData()
       const { proxy } = setup(state)
-      const receivedValues: unknown[] = []
+      const unwrapped: unknown[] = []
       proxy.items.filter((item) => {
-        receivedValues.push(item)
+        expect(getProxyPath(item)).toBeUndefined()
+        unwrapped.push(unwrap(item))
         return false
       })
-      for (const val of receivedValues) {
-        expect(getProxyPath(val)).toBeUndefined()
-        expect(Object.isFrozen(val)).toBe(true)
-      }
+      expect(unwrapped).toEqual([...state.items])
     })
 
     test('only registers signals for matching elements', () => {

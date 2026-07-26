@@ -319,13 +319,11 @@ describe('createTrackingProxy', () => {
 
     proxy.a.b.c
 
-    // Non-immediate ancestors only have prefix registrations, no signals
+    // Intermediate objects (a, a.b) only have prefix registrations, no signals
     expect(registry.has('a')).toBe(false)
+    expect(registry.has('a.b')).toBe(false)
     expect(registry.hasPrefix('a')).toBe(true)
     expect(registry.hasPrefix('a.b')).toBe(true)
-
-    // Immediate parent of leaf gets a version signal (for identity tracking)
-    expect(registry.has('a.b')).toBe(true)
 
     // Leaf has a signal with the actual value
     expect(registry.has('a.b.c')).toBe(true)
@@ -426,8 +424,8 @@ describe('createTrackingProxy', () => {
     proxy1.user.profile.name
     proxy2.user.profile.name
 
-    // Leaf + its immediate parent get signals
-    expect(registry.size()).toBe(2) // user.profile (parent version) + user.profile.name (leaf)
+    // Only the leaf creates a signal; user and user.profile are prefix-only
+    expect(registry.size()).toBe(1) // user.profile.name (leaf)
   })
 
   it('child proxies from different root proxies track same signal paths', () => {
@@ -798,9 +796,10 @@ describe('unwrap', () => {
     const proxiedItem = proxy.items[1]
     const rawItem = unwrap(proxiedItem)
 
-    // find callback receives raw elements; unwrapped proxy === raw element
+    // find callback receives a scan recorder proxy; unwrap it for
+    // identity comparison against raw state values
     const found = proxy.items.find(
-      (item: { id: number; name: string }) => item === rawItem,
+      (item: { id: number; name: string }) => unwrap(item) === rawItem,
     )
 
     expect(found).toBeDefined()
@@ -1258,5 +1257,410 @@ describe('array method dependency tracking', () => {
     expect(getCallCount()).toBe(2)
 
     stop()
+  })
+
+  // ─── Structural signal matrix (append / insertOrReorder / remove) ───
+  // Each scan method subscribes to a specific subset of structural signals
+  // depending on whether it matched. These tests verify both the "should
+  // re-run" and "should NOT re-run" cells of the matrix.
+
+  describe('structural signal matrix', () => {
+    /**
+     * Append an item with structural sharing (existing item refs reused).
+     * @param state - Current state
+     * @param item - New item to append
+     * @returns New frozen state
+     */
+    function appendItem(state: TodoState, item: TodoItem): TodoState {
+      return Object.freeze({
+        items: Object.freeze([...state.items, Object.freeze(item)]),
+      }) as TodoState
+    }
+
+    /**
+     * Remove an item by id with structural sharing.
+     * @param state - Current state
+     * @param id - ID of item to remove
+     * @returns New frozen state
+     */
+    function removeItem(state: TodoState, id: number): TodoState {
+      return Object.freeze({
+        items: Object.freeze(state.items.filter(i => i.id !== id)),
+      }) as TodoState
+    }
+
+    /**
+     * Insert an item at an index with structural sharing.
+     * @param state - Current state
+     * @param index - Position to insert at
+     * @param item - New item
+     * @returns New frozen state
+     */
+    function insertItem(state: TodoState, index: number, item: TodoItem): TodoState {
+      const items = [...state.items]
+      items.splice(index, 0, Object.freeze(item) as TodoItem)
+      return Object.freeze({ items: Object.freeze(items) }) as TodoState
+    }
+
+    it('find (matched) — does NOT re-run on append', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: false },
+        { id: 2, text: 'b', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.find(x => x.done)?.text,
+        registry,
+      )
+
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(1)
+
+      // Append can never change the FIRST match — no re-run
+      const prevState = state
+      state = appendItem(state, { id: 3, text: 'c', done: true })
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(1)
+
+      stop()
+    })
+
+    it('find (matched) — does NOT re-run when a later element is removed', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: false },
+        { id: 2, text: 'b', done: true },
+        { id: 3, text: 'c', done: false },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.find(x => x.done)?.text,
+        registry,
+      )
+
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(1)
+
+      // Removing a later (never-matching, never-returned) element can't
+      // change the first match — no re-run
+      const prevState = state
+      state = removeItem(state, 3)
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(1)
+
+      stop()
+    })
+
+    it('find (matched) — SHOULD re-run when a matching element is inserted before the match', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: false },
+        { id: 3, text: 'c', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.find(x => x.done)?.text,
+        registry,
+      )
+
+      expect(c.get()).toBe('c')
+      expect(getCallCount()).toBe(1)
+
+      // Insert a done item BEFORE the current match — new first match
+      const prevState = state
+      state = insertItem(state, 1, { id: 2, text: 'b', done: true })
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('find (matched) — does NOT re-run when an untracked prop of a non-matched element changes', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: false },
+        { id: 2, text: 'b', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.find(x => x.done)?.text,
+        registry,
+      )
+
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(1)
+
+      // Only `done` is a tracked column; `text` of a non-matched element
+      // isn't read anywhere — no re-run
+      const prevState = state
+      state = updateItem(state, 1, { text: 'a-changed' })
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(1)
+
+      stop()
+    })
+
+    it('findIndex (matched) — SHOULD re-run when an earlier element is removed (index shifts)', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: false },
+        { id: 2, text: 'b', done: true },
+        { id: 3, text: 'c', done: false },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.findIndex(x => x.done),
+        registry,
+      )
+
+      expect(c.get()).toBe(1)
+      expect(getCallCount()).toBe(1)
+
+      // Removing an earlier element shifts the matched index from 1 → 0
+      const prevState = state
+      state = removeItem(state, 1)
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe(0)
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('some (true) — SHOULD re-run when the witness element is removed', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: false },
+        { id: 2, text: 'b', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.some(x => x.done),
+        registry,
+      )
+
+      expect(c.get()).toBe(true)
+      expect(getCallCount()).toBe(1)
+
+      // Removing the only done element flips some() to false
+      const prevState = state
+      state = removeItem(state, 2)
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe(false)
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('some (true) — does NOT re-run on append', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.some(x => x.done),
+        registry,
+      )
+
+      expect(c.get()).toBe(true)
+      expect(getCallCount()).toBe(1)
+
+      // Appends can never flip some() from true to false — no re-run
+      const prevState = state
+      state = appendItem(state, { id: 2, text: 'b', done: false })
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe(true)
+      expect(getCallCount()).toBe(1)
+
+      stop()
+    })
+
+    it('every (true) — SHOULD re-run on append (new element might fail predicate)', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.every(x => x.done),
+        registry,
+      )
+
+      expect(c.get()).toBe(true)
+      expect(getCallCount()).toBe(1)
+
+      const prevState = state
+      state = appendItem(state, { id: 2, text: 'b', done: false })
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe(false)
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('every (true) — does NOT re-run when an element is removed', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: true },
+        { id: 2, text: 'b', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.every(x => x.done),
+        registry,
+      )
+
+      expect(c.get()).toBe(true)
+      expect(getCallCount()).toBe(1)
+
+      // Removing an element can't flip every() from true to false — no re-run
+      const prevState = state
+      state = removeItem(state, 2)
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe(true)
+      expect(getCallCount()).toBe(1)
+
+      stop()
+    })
+
+    it('every (false) — SHOULD re-run when the counterexample is removed', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: true },
+        { id: 2, text: 'b', done: false },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.every(x => x.done),
+        registry,
+      )
+
+      expect(c.get()).toBe(false)
+      expect(getCallCount()).toBe(1)
+
+      // Removing the only not-done element flips every() to true
+      const prevState = state
+      state = removeItem(state, 2)
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe(true)
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('filter — SHOULD re-run when a matching element is removed', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: true },
+        { id: 2, text: 'b', done: false },
+        { id: 3, text: 'c', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+        registry,
+      )
+
+      expect(c.get()).toBe('a,c')
+      expect(getCallCount()).toBe(1)
+
+      const prevState = state
+      state = removeItem(state, 3)
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe('a')
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('filter — SHOULD re-run on append', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: true },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+        registry,
+      )
+
+      expect(c.get()).toBe('a')
+      expect(getCallCount()).toBe(1)
+
+      const prevState = state
+      state = appendItem(state, { id: 2, text: 'b', done: true })
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe('a,b')
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('find (missed) — SHOULD re-run on append', () => {
+      let state = makeFrozenState([
+        { id: 1, text: 'a', done: false },
+      ])
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: TodoState) => s.items.find(x => x.done)?.text ?? 'none',
+        registry,
+      )
+
+      expect(c.get()).toBe('none')
+      expect(getCallCount()).toBe(1)
+
+      const prevState = state
+      state = appendItem(state, { id: 2, text: 'b', done: true })
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe('b')
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
+
+    it('primitive elements fall back to coarse array signal (any change re-runs)', () => {
+      type NumState = { nums: number[] }
+      let state = Object.freeze({
+        nums: Object.freeze([1, 2, 3]),
+      }) as NumState
+      const registry = makeRegistry()
+
+      const { computed: c, getCallCount, stop } = createSelectorComputed(
+        () => state,
+        (s: NumState) => s.nums.find(x => x > 2),
+        registry,
+      )
+
+      expect(c.get()).toBe(3)
+      expect(getCallCount()).toBe(1)
+
+      // Primitive scans use the coarse array signal — any array change re-runs
+      const prevState = state
+      state = Object.freeze({ nums: Object.freeze([1, 2, 3, 4]) }) as NumState
+      reconcileState(prevState, state, registry, alienEngine)
+      expect(c.get()).toBe(3)
+      expect(getCallCount()).toBe(2)
+
+      stop()
+    })
   })
 })

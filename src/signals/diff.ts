@@ -123,6 +123,72 @@ function diffArray(
 }
 
 /**
+ * Compare one surviving element's tracked column properties and fire
+ * column signals for any that changed. Non-object elements fire all
+ * remaining columns (can't shallow-compare — err toward firing).
+ * @param prevItem - Previous element value
+ * @param nextItem - Next element value
+ * @param parentPath - Path to the containing array
+ * @param registry - Signal registry to update
+ * @param cols - Tracked column property names for this array
+ * @param fired - Set of already-fired columns (dedup across elements)
+ * @returns void
+ */
+function bumpColumnsForElement(
+  prevItem: unknown,
+  nextItem: unknown,
+  parentPath: string,
+  registry: PathSignalRegistry,
+  cols: Set<string>,
+  fired: Set<string>,
+): void {
+  if (
+    prevItem !== null &&
+    nextItem !== null &&
+    typeof prevItem === 'object' &&
+    typeof nextItem === 'object'
+  ) {
+    for (const prop of cols) {
+      if (fired.has(prop)) continue
+      if (
+        (prevItem as Record<string, unknown>)[prop] !==
+        (nextItem as Record<string, unknown>)[prop]
+      ) {
+        registry.bumpColumn(parentPath, prop)
+        fired.add(prop)
+      }
+    }
+  } else {
+    // Non-object element changed — can't shallow-compare, fire everything
+    for (const prop of cols) {
+      if (!fired.has(prop)) {
+        registry.bumpColumn(parentPath, prop)
+        fired.add(prop)
+      }
+    }
+  }
+}
+
+/**
+ * Fire every tracked column signal for an array. Used when elements
+ * can't be aligned between prev and next (unkeyed length changes).
+ * @param parentPath - Path to the array
+ * @param registry - Signal registry to update
+ * @param cols - Tracked column property names, if any
+ * @returns void
+ */
+function bumpAllColumns(
+  parentPath: string,
+  registry: PathSignalRegistry,
+  cols: Set<string> | undefined,
+): void {
+  if (!cols) return
+  for (const prop of cols) {
+    registry.bumpColumn(parentPath, prop)
+  }
+}
+
+/**
  * Walk prev and next state trees, updating path signals for changed values.
  * Only visits subtrees that have tracked signals (registered paths).
  * Exploits Immer's structural sharing: `prev === next` skips entire subtrees.
@@ -191,8 +257,13 @@ function diffArrayByKey(
 ): void {
   const { keyField, entityMap: prevEntityMap } = meta
 
+  const cols = registry.getTrackedColumns(parentPath)
+  const fired = cols && cols.size > 0 ? new Set<string>() : null
+  const structs = registry.getTrackedStructures(parentPath)
+
   // Fast path: same-length arrays with no key shifts.
   // Only touch changed elements. Update entityMap incrementally instead of rebuilding.
+  // Pure value changes — no structural bumps needed.
   if (prev.length === next.length) {
     let usedFastPath = true
     for (let i = 0; i < next.length; i++) {
@@ -210,6 +281,9 @@ function diffArrayByKey(
       const identityPath = buildIdentityPath(parentPath, keyField, nextKv)
       if (registry.hasPrefix(identityPath)) {
         diffAndUpdateSignals(prev[i], next[i], identityPath, registry)
+      }
+      if (fired && cols) {
+        bumpColumnsForElement(prev[i], next[i], parentPath, registry, cols, fired)
       }
       prevEntityMap.set(nextKv, next[i])
     }
@@ -235,7 +309,12 @@ function diffArrayByKey(
 
   // If we skipped the entire overlap and next is longer, it's a pure append.
   // No Map needed — just update entityMap for new tail entries.
+  // Overlap is identical, so no value changes are possible — membership
+  // change is covered by the `append` structural signal alone.
   if (startIdx === minLen && next.length >= prev.length) {
+    if (structs && next.length > prev.length) {
+      registry.bumpStructure(parentPath, 'append')
+    }
     for (let i = startIdx; i < next.length; i++) {
       const nextItem = next[i]
       const kv = getKeyValue(nextItem, keyField)
@@ -253,6 +332,9 @@ function diffArrayByKey(
   // If we skipped the entire overlap and prev is longer, it's a pure truncation.
   // Prune the removed tail entries from entityMap.
   if (startIdx === minLen && prev.length > next.length) {
+    if (structs) {
+      registry.bumpStructure(parentPath, 'remove')
+    }
     for (let i = startIdx; i < prev.length; i++) {
       const prevItem = prev[i]
       const kv = getKeyValue(prevItem, keyField)
@@ -284,16 +366,41 @@ function diffArrayByKey(
     }
   }
 
+  // Structural classification state (only maintained when tracked):
+  // - addedAny: any element whose key wasn't in prev
+  // - middleInsert: an added element appeared before a surviving element
+  // - reorder: survivors are not a subsequence of prev's order
+  //   (checked with a forward-only pointer into prev)
+  // - survivorCount: next elements (from startIdx) whose key existed in prev
+  // - sawUnkeyed: element without a key — can't classify, fire everything
+  let addedAny = false
+  let middleInsert = false
+  let reorder = false
+  let survivorCount = 0
+  let sawUnkeyed = false
+  let pi = startIdx
+
   for (let i = startIdx; i < next.length; i++) {
     const nextItem = next[i]
     const kv = getKeyValue(nextItem, keyField)
 
     if (kv === undefined) {
+      sawUnkeyed = true
       const childPath = parentPath ? parentPath + '.' + i : String(i)
-      if (registry.hasPrefix(childPath)) {
-        const prevItem = i < prev.length ? prev[i] : undefined
-        if (prevItem !== nextItem) {
+      const prevItem = i < prev.length ? prev[i] : undefined
+      if (prevItem !== nextItem) {
+        if (registry.hasPrefix(childPath)) {
           diffAndUpdateSignals(prevItem, nextItem, childPath, registry)
+        }
+        if (fired && cols) {
+          bumpColumnsForElement(
+            prevItem,
+            nextItem,
+            parentPath,
+            registry,
+            cols,
+            fired,
+          )
         }
       }
       continue
@@ -301,6 +408,30 @@ function diffArrayByKey(
 
     nextEntityMap.set(kv, nextItem)
     const prevItem = prevEntityMap.get(kv)
+    const isSurvivor = prevItem !== undefined
+
+    if (isSurvivor) {
+      survivorCount++
+      if (addedAny) middleInsert = true
+      if (structs && !reorder) {
+        // Subsequence check: survivors must appear in prev in the same
+        // relative order. Advance pointer to this key; if we run off the
+        // end, order changed.
+        while (
+          pi < prev.length &&
+          getKeyValue(prev[pi], keyField) !== kv
+        ) {
+          pi++
+        }
+        if (pi >= prev.length) {
+          reorder = true
+        } else {
+          pi++
+        }
+      }
+    } else {
+      addedAny = true
+    }
 
     if (prevItem === nextItem) {
       if (seenPrevKeys) seenPrevKeys.add(kv)
@@ -311,9 +442,19 @@ function diffArrayByKey(
 
     const identityPath = buildIdentityPath(parentPath, keyField, kv)
 
-    if (prevItem !== undefined) {
+    if (isSurvivor) {
       if (registry.hasPrefix(identityPath)) {
         diffAndUpdateSignals(prevItem, nextItem, identityPath, registry)
+      }
+      if (fired && cols) {
+        bumpColumnsForElement(
+          prevItem,
+          nextItem,
+          parentPath,
+          registry,
+          cols,
+          fired,
+        )
       }
     } else {
       if (registry.hasPrefix(identityPath)) {
@@ -332,6 +473,23 @@ function diffArrayByKey(
   }
 
   meta.entityMap = nextEntityMap
+
+  if (structs) {
+    // Removals: prev suffix elements not matched by a surviving key.
+    // Over-counts in rare duplicate-key cases — errs toward firing.
+    const removedAny = prev.length - startIdx > survivorCount
+    if (sawUnkeyed) {
+      registry.bumpStructure(parentPath, 'append')
+      registry.bumpStructure(parentPath, 'insertOrReorder')
+      registry.bumpStructure(parentPath, 'remove')
+    } else {
+      if (addedAny) registry.bumpStructure(parentPath, 'append')
+      if (middleInsert || reorder) {
+        registry.bumpStructure(parentPath, 'insertOrReorder')
+      }
+      if (removedAny) registry.bumpStructure(parentPath, 'remove')
+    }
+  }
 }
 
 /**
@@ -349,12 +507,40 @@ function diffArrayByIndex(
   parentPath: string,
   registry: PathSignalRegistry,
 ): void {
+  const cols = registry.getTrackedColumns(parentPath)
+  const fired = cols && cols.size > 0 ? new Set<string>() : null
+
+  if (prev.length !== next.length) {
+    // Unkeyed length change: elements can't be aligned between prev and
+    // next, so we can't classify the change — fire all structural kinds
+    // and all columns (err toward firing).
+    const structs = registry.getTrackedStructures(parentPath)
+    if (structs) {
+      registry.bumpStructure(parentPath, 'append')
+      registry.bumpStructure(parentPath, 'insertOrReorder')
+      registry.bumpStructure(parentPath, 'remove')
+    }
+    bumpAllColumns(parentPath, registry, cols)
+  }
+
   const minLen = Math.min(prev.length, next.length)
   for (let i = 0; i < minLen; i++) {
     if (prev[i] !== next[i]) {
       const childPath = parentPath ? parentPath + '.' + i : String(i)
       if (registry.hasPrefix(childPath)) {
         diffAndUpdateSignals(prev[i], next[i], childPath, registry)
+      }
+      // Same-length: aligned compare per changed index covers value
+      // changes AND swaps (both indexes show ref mismatches).
+      if (fired && cols && prev.length === next.length) {
+        bumpColumnsForElement(
+          prev[i],
+          next[i],
+          parentPath,
+          registry,
+          cols,
+          fired,
+        )
       }
     }
   }
