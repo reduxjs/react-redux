@@ -39,7 +39,6 @@ export function useSignalSelector<S extends object, R>(
     let currentResult: R
     let version = 0
     let notifyReact: (() => void) | null = null
-    let effectDispose: (() => void) | null | void = null
 
     // Create a computed that runs the selector through a tracking proxy.
     // This establishes signal dependencies on the paths the selector reads.
@@ -102,8 +101,11 @@ export function useSignalSelector<S extends object, R>(
         // Create an effect that fires when the computed value changes.
         // We apply the user's equalityFn here since alien-signals
         // doesn't support custom equality per-computed.
+        // The effect lives inside a scope so unsubscribe can dispose it —
+        // engine.effect() itself returns void, so the scope is the only
+        // way to tear down the subscription.
         const scope = engine.createScope()
-        effectDispose = scope.run(() => {
+        scope.run(() => {
           let isFirst = true
           return engine.effect(() => {
             const newValue = selectorComputed.get()
@@ -125,8 +127,7 @@ export function useSignalSelector<S extends object, R>(
 
         return () => {
           notifyReact = null
-          effectDispose?.()
-          effectDispose = null
+          scope.stop()
         }
       },
 
