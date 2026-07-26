@@ -24,6 +24,28 @@ const proxyPathMap = new WeakMap<object, string>()
 const proxyTargetMap = new WeakMap<object, object>()
 
 /**
+ * Maps scan-recorder proxies (used by array method callbacks) to their
+ * mutable holders. A recorder proxy is reused across all elements of a
+ * scan, reading from `holder.current`. unwrap() consults this map so
+ * identity comparisons inside callbacks can be unwrapped correctly.
+ */
+const recordingHolders = new WeakMap<object, { current: unknown }>()
+
+/**
+ * Register a scan-recorder proxy so unwrap() can resolve it to the
+ * element currently being scanned.
+ * @param proxy - The recorder proxy passed to array method callbacks
+ * @param holder - Mutable holder whose `current` is the raw element
+ * @returns void
+ */
+export function registerRecordingHolder(
+  proxy: object,
+  holder: { current: unknown },
+): void {
+  recordingHolders.set(proxy, holder)
+}
+
+/**
  * Tracks which object-typed proxy accesses are "leaf" accesses —
  * objects that were read by the selector but never had their properties
  * accessed (i.e., used only for identity comparison like `===`).
@@ -81,7 +103,10 @@ export function getProxyPath(value: unknown): string | undefined {
  */
 export function unwrap<T>(value: T): T {
   if (value !== null && typeof value === 'object') {
-    return (proxyTargetMap.get(value as object) as T) ?? value
+    const target = proxyTargetMap.get(value as object)
+    if (target !== undefined) return target as T
+    const holder = recordingHolders.get(value as object)
+    if (holder !== undefined) return holder.current as T
   }
   return value
 }
@@ -132,6 +157,13 @@ export function createTrackingProxy<T extends object>(
       // Functions: intercept array methods to avoid per-element proxy creation
       if (typeof value === 'function') {
         if (Array.isArray(target) && isOverriddenArrayMethod(prop as string)) {
+          // Mark the array as traversed: the interceptor registers its own
+          // precise dependencies (column/structural signals or coarse
+          // fallback), so the leaf tracker must NOT also subscribe to the
+          // array's version signal (which fires on every array change).
+          if (leafTracker) {
+            leafTracker.traversedPaths.add(parentPath)
+          }
           return createArrayMethodInterceptor(target, proxy, prop as string, registry, parentPath)
         }
         return value
@@ -193,13 +225,12 @@ export function createTrackingProxy<T extends object>(
       }
 
       // Primitive leaf: read signal to establish dependency.
-      // Also read the immediate parent's version signal so that identity
-      // changes to the parent object (ref swaps) are tracked. Skip for
-      // root-level primitives (parentPath === '') since the root object
-      // changes on every dispatch and would defeat the optimization.
-      if (parentPath !== '') {
-        registry.getOrCreate(parentPath, target).get()
-      }
+      // Note: we intentionally do NOT subscribe to the parent object's
+      // version signal here. Doing so causes sibling fan-out (any sibling
+      // change fires the parent version under Immer structural sharing)
+      // and zombie-subscription cascades after prune. Parent deletion is
+      // covered by prune firing this leaf signal, and key reappearance is
+      // covered by diff's added-key handling firing the leaf path.
       registry.getOrCreate(pathKey, value).get()
 
       // Return the actual value
