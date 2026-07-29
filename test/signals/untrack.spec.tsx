@@ -20,6 +20,7 @@ import {
   untrackResult,
   setUntrackStrategy,
   getUntrackStrategy,
+  beginUntrackEvaluation,
 } from '../../src/signals/untrack'
 
 const isTrackingProxy = (v: unknown) =>
@@ -240,6 +241,134 @@ describe('untrackResult unit behavior', () => {
 
   it("strategy 'none' passes proxies through untouched", () => {
     const { proxy } = setup()
+    setUntrackStrategy('none')
+    expect(getUntrackStrategy()).toBe('none')
+    const container = { child: proxy.a }
+    expect(untrackResult(container).child).toBe(proxy.a)
+  })
+})
+
+describe("registry strategy (Immer-style finalization queue)", () => {
+  interface Row {
+    id: number
+    status: string
+    score: number
+  }
+
+  function setupArrayState() {
+    const registry = createPathSignalRegistry(alienEngine)
+    const rows: Row[] = []
+    for (let i = 0; i < 10; i++) {
+      rows.push({ id: i, status: i % 2 === 0 ? 'even' : 'odd', score: i * 10 })
+    }
+    const state = { rows, extra: { x: 1 } }
+    for (const r of rows) Object.freeze(r)
+    Object.freeze(rows)
+    Object.freeze(state.extra)
+    Object.freeze(state)
+    const proxy = createTrackingProxy(
+      state,
+      '',
+      registry,
+      registry.proxyCache,
+    ) as typeof state
+    return { state, proxy }
+  }
+
+  /** Mimic one hook evaluation under the registry strategy. */
+  function evaluate<R>(
+    proxy: ReturnType<typeof setupArrayState>['proxy'],
+    selector: (s: ReturnType<typeof setupArrayState>['proxy']) => R,
+  ): R {
+    setUntrackStrategy('registry')
+    beginUntrackEvaluation()
+    const result = selector(proxy)
+    return untrackResult(result)
+  }
+
+  it('finalizes filter() results to raw elements', () => {
+    const { state, proxy } = setupArrayState()
+    const result = evaluate(proxy, (s) => s.rows.filter((r) => r.status === 'even'))
+    expect(result).toHaveLength(5)
+    for (let i = 0; i < result.length; i++) {
+      expect(isTrackingProxy(result[i])).toBe(false)
+    }
+    expect(result[0]).toBe(state.rows[0])
+    expect(result[4]).toBe(state.rows[8])
+  })
+
+  it('handles filter().sort() — user mutation of a library-built array', () => {
+    const { state, proxy } = setupArrayState()
+    const result = evaluate(proxy, (s) =>
+      s.rows.filter((r) => r.status === 'even').sort((a, b) => b.score - a.score),
+    )
+    expect(result.map((r) => r.id)).toEqual([8, 6, 4, 2, 0])
+    for (const r of result) {
+      expect(isTrackingProxy(r)).toBe(false)
+    }
+    expect(result[0]).toBe(state.rows[8])
+  })
+
+  it('handles an element replaced with a user-built container', () => {
+    const { state, proxy } = setupArrayState()
+    const result = evaluate(proxy, (s) => {
+      const matches: unknown[] = s.rows.filter((r) => r.status === 'even')
+      matches[0] = { wrapped: s.extra }
+      return matches
+    })
+    expect(isTrackingProxy((result[0] as { wrapped: object }).wrapped)).toBe(false)
+    expect((result[0] as { wrapped: object }).wrapped).toBe(state.extra)
+    expect(isTrackingProxy(result[1])).toBe(false)
+  })
+
+  it('finalizes slice() results', () => {
+    const { state, proxy } = setupArrayState()
+    const result = evaluate(proxy, (s) => s.rows.slice(2, 5))
+    expect(result).toHaveLength(3)
+    for (const r of result) {
+      expect(isTrackingProxy(r)).toBe(false)
+    }
+    expect(result[0]).toBe(state.rows[2])
+  })
+
+  it('finalizes library containers embedded in user containers', () => {
+    const { state, proxy } = setupArrayState()
+    const result = evaluate(proxy, (s) => ({
+      matches: s.rows.filter((r) => r.score > 50),
+      first: s.rows[0],
+    }))
+    for (const r of result.matches) {
+      expect(isTrackingProxy(r)).toBe(false)
+    }
+    expect(isTrackingProxy(result.first)).toBe(false)
+    expect(result.first).toBe(state.rows[0])
+  })
+
+  it('works end-to-end through the hook', () => {
+    setUntrackStrategy('registry')
+    const { store } = makeStore()
+    const captured = renderWithCapture(store, (s) =>
+      s.todos.items.filter((t) => t.done),
+    )
+    const result = captured[captured.length - 1]
+    expect(result).toHaveLength(1)
+    expect(isTrackingProxy(result[0])).toBe(false)
+    expect(result[0]).toBe(store.getState().todos.items[1])
+  })
+})
+
+describe('untrack strategy switching', () => {
+  it("strategy 'none' passes proxies through untouched (control)", () => {
+    const registry = createPathSignalRegistry(alienEngine)
+    const state = { a: { x: 1 } }
+    Object.freeze(state.a)
+    Object.freeze(state)
+    const proxy = createTrackingProxy(
+      state,
+      '',
+      registry,
+      registry.proxyCache,
+    ) as typeof state
     setUntrackStrategy('none')
     expect(getUntrackStrategy()).toBe('none')
     const container = { child: proxy.a }

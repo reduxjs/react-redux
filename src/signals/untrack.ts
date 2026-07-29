@@ -1,4 +1,9 @@
 import { getProxyTarget } from './trackingProxy'
+import {
+  beginEvaluationQueue,
+  clearEvaluationQueue,
+  drainEvaluationQueue,
+} from './untrackQueue'
 
 /**
  * Strategy for stripping tracking proxies from selector results before
@@ -26,6 +31,17 @@ export function getUntrackStrategy(): UntrackStrategy {
 }
 
 /**
+ * Called at the start of each selector evaluation. For the 'registry'
+ * strategy this activates the finalization queue so array-method
+ * interceptors can register the containers they create; for the other
+ * strategies it deactivates the queue so registration is a no-op.
+ */
+export function beginUntrackEvaluation(): void {
+  if (strategy === 'registry') beginEvaluationQueue()
+  else clearEvaluationQueue()
+}
+
+/**
  * Strip tracking proxies from a selector result so components, effects,
  * DevTools, and dispatch payloads only ever see raw (frozen) state.
  *
@@ -38,6 +54,22 @@ export function getUntrackStrategy(): UntrackStrategy {
  */
 export function untrackResult<R>(result: R): R {
   if (strategy === 'none') return result
+
+  if (strategy === 'registry') {
+    // Immer/Mutative-style finalization: first finalize the containers
+    // the library itself created during this evaluation (registered by
+    // the array-method interceptors), then sweep the result for
+    // user-built containers. The shared seen-set means the sweep skips
+    // anything the queue already finalized.
+    const containers = drainEvaluationQueue()
+    if (containers.length === 0) return untrackRecursive(result, null)
+    const seen = new WeakSet<object>()
+    for (const container of containers) {
+      untrackRecursive(container, seen)
+    }
+    return untrackRecursive(result, seen)
+  }
+
   return untrackRecursive(result, null)
 }
 
