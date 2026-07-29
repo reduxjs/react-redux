@@ -130,6 +130,18 @@ export function getProxyPath(value: unknown): string | undefined {
  * @param value - The value to unwrap (proxy or raw)
  * @returns The raw target object, or the original value if not a tracking proxy
  */
+/**
+ * Get the raw target of a tracking proxy, or undefined if the value is
+ * not a tracking proxy. Unlike unwrap(), this distinguishes "was a
+ * proxy" from "was already raw", which the result-untracking walk needs
+ * (proxies mark subtree boundaries: everything below a target is raw).
+ * @param value - The value to check
+ * @returns The raw target, or undefined if not a tracking proxy
+ */
+export function getProxyTarget(value: object): object | undefined {
+  return proxyTargetMap.get(value)
+}
+
 export function unwrap<T>(value: T): T {
   if (value !== null && typeof value === 'object') {
     const target = proxyTargetMap.get(value as object)
