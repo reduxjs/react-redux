@@ -215,15 +215,18 @@ describe('identity-based array tracking: proxy', () => {
     expect(registry.has('items.1.name')).toBe(true)
   })
 
-  it('falls back to index path for primitive arrays', () => {
+  it('uses a coarse array signal for primitive arrays', () => {
     const state = deepFreeze({ tags: ['a', 'b', 'c'] })
     const registry = setupRegistry(state, (s) => {
       s.tags[0]
       s.tags[1]
     })
 
-    expect(registry.has('tags.0')).toBe(true)
-    expect(registry.has('tags.1')).toBe(true)
+    // Primitive elements don't get per-index signals — one coarse
+    // signal on the array covers all element reads.
+    expect(registry.has('tags')).toBe(true)
+    expect(registry.has('tags.0')).toBe(false)
+    expect(registry.has('tags.1')).toBe(false)
   })
 
   it('creates ArrayMeta on first element access', () => {
@@ -295,9 +298,12 @@ describe('identity-based array tracking: proxy', () => {
       s.matrix[1][1]
     })
 
-    // Inner arrays are arrays, not objects — should use index paths
-    expect(registry.has('matrix.0.0')).toBe(true)
-    expect(registry.has('matrix.1.1')).toBe(true)
+    // Inner arrays use index paths (matrix.0, matrix.1); their primitive
+    // elements share a coarse signal on each inner array.
+    expect(registry.has('matrix.0')).toBe(true)
+    expect(registry.has('matrix.1')).toBe(true)
+    expect(registry.has('matrix.0.0')).toBe(false)
+    expect(registry.has('matrix.1.1')).toBe(false)
   })
 })
 
