@@ -352,8 +352,9 @@ describe('createTrackingProxy', () => {
     // Identity-based: users array has objects with 'id', uses {id:1}
     expect(registry.hasPrefix('entities.users.{id:1}')).toBe(true) // intermediate (identity path)
     expect(registry.hasPrefix('entities.users.{id:1}.tags')).toBe(true) // intermediate
-    // tags is string array (no id), so uses index-based 0
-    expect(registry.has('entities.users.{id:1}.tags.0')).toBe(true) // leaf
+    // tags is a primitive array — coarse signal on the array itself
+    expect(registry.has('entities.users.{id:1}.tags')).toBe(true)
+    expect(registry.has('entities.users.{id:1}.tags.0')).toBe(false)
     // Not accessed
     expect(registry.has('entities.users.{id:1}.id')).toBe(false)
     expect(registry.has('entities.users.{id:1}.tags.1')).toBe(false)
@@ -388,9 +389,11 @@ describe('createTrackingProxy', () => {
     proxy.items[0]
     proxy.items[2]
 
-    expect(registry.has('items.0')).toBe(true)
-    expect(registry.has('items.2')).toBe(true)
-    expect(registry.has('items.1')).toBe(false) // skipped
+    // Primitive array elements use a single coarse signal on the array
+    // itself instead of per-index signals (mount cost optimization).
+    expect(registry.has('items')).toBe(true)
+    expect(registry.has('items.0')).toBe(false)
+    expect(registry.has('items.2')).toBe(false)
   })
 
   it('nested iteration creates @@keys at each level', () => {

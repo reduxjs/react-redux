@@ -9,6 +9,15 @@ function isObjectOrArray(v: unknown): v is object {
   return v !== null && typeof v === 'object'
 }
 
+// Fast check for array-index-like property names ('0', '42', ...).
+// Canonical array index strings always start with a digit; named array
+// props ('length', 'includes', ...) never do. Cheaper than Number()+isNaN
+// on the hottest trap path (element scans).
+function isIndexProp(prop: string): boolean {
+  const c = prop.charCodeAt(0)
+  return c >= 48 && c <= 57
+}
+
 /**
  * Maps proxy objects to their path keys.
  * Used by useSignalSelector to detect when a selector returns a proxy (object)
@@ -166,6 +175,31 @@ export function createTrackingProxy<T extends object>(
           }
           return createArrayMethodInterceptor(target, proxy, prop as string, registry, parentPath)
         }
+        return value
+      }
+
+      // Primitive array elements: subscribe to the array's version signal
+      // instead of creating one signal per index. Primitive arrays (number
+      // history buffers, id lists, etc.) can be huge — per-index signals
+      // cost O(N) creation at mount for little precision benefit. The
+      // array version fires on any array change (diffArray always bumps
+      // it), so this over-fires only when a selector reads a subset of a
+      // primitive array — consistent with erring toward firing.
+      // Checked BEFORE building pathKey: element scans are the hottest
+      // path through this trap, and the coarse signal only needs the
+      // (stable, hash-memoized) parentPath string — no per-read allocs.
+      // Root arrays (parentPath === '') keep per-index signals since the
+      // root version signal is never fired by diff.
+      if (
+        Array.isArray(target) &&
+        parentPath !== '' &&
+        isIndexProp(prop as string) &&
+        !isObjectOrArray(value)
+      ) {
+        if (leafTracker) {
+          leafTracker.traversedPaths.add(parentPath)
+        }
+        registry.getOrCreate(parentPath, target).get()
         return value
       }
 

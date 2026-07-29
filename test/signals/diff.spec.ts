@@ -440,15 +440,17 @@ describe('diffAndUpdateSignals', () => {
         void (s.data as any)[1]
       })
 
-      expect(registry.has('data.0')).toBe(true)
-      expect(registry.has('data.1')).toBe(true)
+      // Primitive array elements use a coarse signal on the array itself
+      expect(registry.has('data')).toBe(true)
+      expect(registry.has('data.0')).toBe(false)
+
+      const dataSig = registry.getOrCreate('data', prev.data)
+      const before = dataSig.get()
 
       diffAndUpdateSignals(prev, next, '', registry)
 
-      // Array index signals should be pruned (type mismatch)
-      // The path 'data' gets updated, and since prev was array and next is object,
-      // only the leaf update path runs — no pruning of children in this case
-      // because both are objects. But array→object means different key structures.
+      // The coarse array signal fires on the array → object transition
+      expect(dataSig.get()).not.toBe(before)
     })
   })
 
