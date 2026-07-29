@@ -25,12 +25,11 @@ function createTracker(): LeafObjectTracker {
 }
 
 describe('edge cases: non-plain objects in state', () => {
-  // The proxy shell is Object.create(proto) with no internal slots.
-  // Prototype methods that need internal slots ([[DateValue]], [[MapData]],
-  // [[SetData]]) are returned raw and invoked with `this` = proxy → TypeError.
-  // Desired fix: treat non-plain objects as opaque leaves (return unproxied).
+  // Non-plain objects (Date, Map, Set, class instances) are opaque leaves:
+  // the proxy returns them raw (no shell, so internal-slot methods work)
+  // and tracks them by reference via a version signal at their path.
 
-  it.fails('supports calling Date methods on a state Date', () => {
+  it('supports calling Date methods on a state Date', () => {
     const createdAt = new Date(2020, 0, 1)
     const state = { createdAt }
     const registry = createPathSignalRegistry(alienEngine)
@@ -39,7 +38,7 @@ describe('edge cases: non-plain objects in state', () => {
     expect(proxy.createdAt.getTime()).toBe(createdAt.getTime())
   })
 
-  it.fails('supports calling Map methods on a state Map', () => {
+  it('supports calling Map methods on a state Map', () => {
     const state = { lookup: new Map([['a', 1]]) }
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
@@ -47,7 +46,7 @@ describe('edge cases: non-plain objects in state', () => {
     expect(proxy.lookup.get('a')).toBe(1)
   })
 
-  it.fails('supports calling Set methods on a state Set', () => {
+  it('supports calling Set methods on a state Set', () => {
     const state = { tags: new Set(['x']) }
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
@@ -71,41 +70,63 @@ describe('edge cases: non-plain objects in state', () => {
     expect(proxy.lookup.size).toBe(1)
   })
 
-  it('documented limitation: class instance children are not diffed (reference-only tracking)', () => {
+  it('documented limitation: class instances are opaque leaves tracked by reference', () => {
     class User {
       constructor(public name: string) {}
     }
-    const prev = { user: new User('Alice') }
+    const alice = new User('Alice')
+    const prev = { user: alice }
     const next = { user: new User('Bob') }
 
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
-    // Establishes a signal at 'user.name' with value 'Alice'
+
+    // The instance comes back raw — no proxy shell, no child signals.
+    expect(proxy.user).toBe(alice)
     expect(proxy.user.name).toBe('Alice')
+    expect(registry.has('user.name')).toBe(false)
+    expect(registry.has('user')).toBe(true)
+
+    // Replacing the instance bumps the reference signal at 'user'.
+    // Mutating the instance in place would NOT be detected — documented
+    // guidance: keep state to plain objects and arrays.
+    let runs = 0
+    const computed = alienEngine.computed(() => {
+      runs++
+      const p = createTrackingProxy(next, '', registry, registry.proxyCache)
+      return p.user.name
+    })
+    expect(computed.get()).toBe('Bob')
+    expect(runs).toBe(1)
 
     reconcileState(prev, next, registry, alienEngine)
-
-    // diff treats non-plain objects as leaves: it bumps the 'user' path but
-    // never recurses, so 'user.name' silently keeps the stale value.
-    // Documented guidance: keep state to plain objects and arrays.
-    const nameSig = registry.getOrCreate('user.name', 'unused')
-    expect(nameSig.get()).toBe('Alice')
+    expect(computed.get()).toBe('Bob')
+    expect(runs).toBe(2)
   })
 })
 
 describe('edge cases: identity key values', () => {
-  it.fails('numeric and string key values produce distinct identity paths', () => {
-    // {id: 1} and {id: "1"} currently both build "items.{id:1}" —
-    // entities collide in signal path space.
+  it('numeric and string key values produce distinct identity paths', () => {
+    // {id: 1} builds "items.{id:1}" while {id: "1"} builds 'items.{id:"1"}' —
+    // numeric-looking string keys are quoted to avoid colliding.
     expect(buildIdentityPath('items', 'id', 1)).not.toBe(
       buildIdentityPath('items', 'id', '1'),
     )
   })
 
-  it.fails('key values containing dots do not corrupt the prefix index', () => {
-    // Emails and composite keys as ids are common. All prefix bookkeeping
-    // splits on '.', so "users.{id:a@b.com}.name" produces garbage
-    // ancestor entries like "users.{id:a@b".
+  it('literal quotes in key values stay distinct from the quoted numeric form', () => {
+    // string '"1"' must not render identically to string '1' (which gets
+    // quote-wrapped as {id:"1"}). Literal quotes are escaped as %22.
+    expect(buildIdentityPath('items', 'id', '"1"')).not.toBe(
+      buildIdentityPath('items', 'id', '1'),
+    )
+    expect(buildIdentityPath('items', 'id', '"1"')).toBe('items.{id:%221%22}')
+  })
+
+  it('key values containing dots do not corrupt the prefix index', () => {
+    // Emails and composite keys as ids are common. Prefix bookkeeping
+    // splits on '.', so dots (and %, {, }) in key values are
+    // percent-escaped: "users.{id:a@b%2Ecom}.name".
     const state = { users: [{ id: 'a@b.com', name: 'Alice' }] }
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
@@ -115,33 +136,28 @@ describe('edge cases: identity key values', () => {
   })
 
   it('removing an entity whose id contains dots still prunes its child signals', () => {
-    // Verified: prune survives dotted ids. Child paths link to their parent
-    // via lastIndexOf('.'), which lands on the separator AFTER the identity
-    // segment ("users.{id:a@b.com}" + ".name"), so the child index is
-    // correct for children. Only the identity segment's own ancestor walk
-    // is corrupted (garbage prefix entries — see previous test). The dotted
-    // id bug is memory/bookkeeping pollution, not broken pruning.
     const prev = { users: [{ id: 'a@b.com', name: 'Alice' }] }
     const next = { users: [] as { id: string; name: string }[] }
+    const identityPath = buildIdentityPath('users', 'id', 'a@b.com')
+    expect(identityPath).toBe('users.{id:a@b%2Ecom}')
 
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
     expect(proxy.users[0].name).toBe('Alice')
-    expect(registry.has('users.{id:a@b.com}.name')).toBe(true)
+    expect(registry.has(`${identityPath}.name`)).toBe(true)
 
     reconcileState(prev, next, registry, alienEngine)
 
-    expect(registry.has('users.{id:a@b.com}.name')).toBe(false)
+    expect(registry.has(`${identityPath}.name`)).toBe(false)
   })
 })
 
 describe('edge cases: same-length keyed array replacement (remove + add)', () => {
-  // diffArrayByKey's general path only builds `seenPrevKeys` when
-  // next.length < prev.length. A same-length replacement (remove one entity,
-  // add another) never prunes the removed entity's signals — components
-  // subscribed to it go permanently stale.
+  // diffArrayByKey's general path tracks seen keys unconditionally, so a
+  // same-length replacement (remove one entity, add another) prunes the
+  // removed entity's signals even though the array length is unchanged.
 
-  it.fails('prunes signals for an entity removed in a same-length replacement', () => {
+  it('prunes signals for an entity removed in a same-length replacement', () => {
     const shared = { id: 1, text: 'first' }
     const prev = { items: [shared, { id: 2, text: 'second' }] }
     const next = { items: [shared, { id: 9, text: 'ninth' }] }
@@ -157,7 +173,7 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
     expect(registry.has('items.{id:2}.text')).toBe(false)
   })
 
-  it.fails('temp-id → server-id swap prunes the temp entity signals', () => {
+  it('temp-id → server-id swap prunes the temp entity signals', () => {
     // Optimistic update pattern: entity created with a temp id, server
     // responds with the real id. Same array length, key value changes.
     const prev = { items: [{ id: 'temp-1', text: 'draft' }] }
@@ -194,10 +210,15 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
 })
 
 describe('edge cases: aliased references (same object at two paths)', () => {
-  // The proxyCache is keyed by target object identity only. When the same
-  // raw object is reachable at two paths (state.selected = state.items[0]),
-  // whichever path is proxied first wins — reads through the second path
-  // register signals under the FIRST path.
+  // DOCUMENTED LIMITATION (deliberate tradeoff): the proxyCache is keyed by
+  // target object identity only. When the same raw object is reachable at
+  // two paths (state.selected = state.items[0]), whichever path is proxied
+  // first wins — reads through the second path register signals under the
+  // FIRST path. Per-path proxies would fix the attribution but break
+  // `state.selected === state.items[0]` identity checks, which the system
+  // guarantees. The leaf-object tracker keeps correctness: the alias path
+  // gets a version-signal dependency, so replacement still re-runs the
+  // selector (see next test).
 
   it.fails('reads through a second path register signals under that path', () => {
     const item = { id: 1, name: 'a' }
@@ -244,12 +265,11 @@ describe('edge cases: aliased references (same object at two paths)', () => {
 })
 
 describe('edge cases: leafTracker capture through the shared proxy cache', () => {
-  // Cached proxies close over the leafTracker of the evaluation that
-  // CREATED them. The proxyCache is registry-wide, so a second component's
-  // reads through a cached proxy record into the first component's tracker.
-  // The second component then misses identity-change (ref swap) deps.
+  // The active leafTracker lives in registry.leafTrackerHolder and is
+  // swapped in at the start of each evaluation, so cached proxies created
+  // by an earlier evaluation record into the CURRENT evaluation's tracker.
 
-  it.fails('a second evaluation records leaf accesses into its own tracker', () => {
+  it('a second evaluation records leaf accesses into its own tracker', () => {
     const state = { settings: { theme: 'dark' } }
     const registry = createPathSignalRegistry(alienEngine)
 
@@ -281,7 +301,7 @@ describe('edge cases: leafTracker capture through the shared proxy cache', () =>
 })
 
 describe('edge cases: registry lifecycle', () => {
-  it.fails('prune clears array identity metadata (entityMap retention)', () => {
+  it('prune clears array identity metadata (entityMap retention)', () => {
     const state = { items: [{ id: 1, v: 1 }] }
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
@@ -299,13 +319,11 @@ describe('edge cases: registry lifecycle', () => {
 })
 
 describe('edge cases: NaN leaf values', () => {
-  it.fails('does not re-run a computed when an untouched NaN leaf is re-diffed', () => {
-    // CONFIRMED BUG: prev[key] === next[key] is false for NaN, so the diff
-    // descends and calls update(path, NaN) on every dispatch that touches
-    // the parent. alien-signals uses !== equality, so setting NaN over NaN
-    // re-fires the signal — the selector re-runs on every such dispatch.
-    // Fix: use Object.is semantics in the diff's skip check (and/or the
-    // signal update).
+  it('does not re-run a computed when an untouched NaN leaf is re-diffed', () => {
+    // The diff's skip checks use Object.is semantics for NaN (self-inequal
+    // values on both sides are treated as equal), so an untouched NaN leaf
+    // no longer re-fires its signal on every dispatch that touches the
+    // parent object.
     const prev = { metrics: { ratio: NaN, count: 1 } }
     const next = { metrics: { ratio: NaN, count: 2 } }
 
