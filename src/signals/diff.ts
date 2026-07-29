@@ -1,5 +1,6 @@
 import {
   buildIdentityPath,
+  encodePathSegment,
   findKeyField,
   getKeyValue,
 } from './arrayKeys'
@@ -52,7 +53,11 @@ function diffObject(
     if (prevVal === nextVal || (prevVal !== prevVal && nextVal !== nextVal))
       continue
 
-    const childPath = parentPath ? parentPath + '.' + key : key
+    // Keys are encoded to match the proxy's pathKey construction —
+    // reserved path characters in state keys (dots, braces, '@') are
+    // %-escaped on both sides.
+    const segment = encodePathSegment(key)
+    const childPath = parentPath ? parentPath + '.' + segment : segment
     if (registry.hasPrefix(childPath)) {
       diffAndUpdateSignals(prevVal, nextVal, childPath, registry)
     }
@@ -64,9 +69,8 @@ function diffObject(
 
     for (let i = 0; i < prevKeys.length; i++) {
       if (!(prevKeys[i] in next)) {
-        const childPath = parentPath
-          ? parentPath + '.' + prevKeys[i]
-          : prevKeys[i]
+        const segment = encodePathSegment(prevKeys[i])
+        const childPath = parentPath ? parentPath + '.' + segment : segment
         registry.prune(childPath)
       }
     }

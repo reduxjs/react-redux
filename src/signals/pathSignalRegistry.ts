@@ -1,3 +1,4 @@
+import { encodePathSegment } from './arrayKeys'
 import type { ArrayMeta } from './arrayKeys'
 import type { LeafObjectTracker, ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
@@ -91,7 +92,11 @@ export interface PathSignalRegistry {
  * @returns The column signal path key
  */
 function buildColumnPath(arrayPath: string, prop: string): string {
-  return arrayPath + '.{*}.' + prop
+  // prop comes from user state (a scanned element property name), so it
+  // is encoded like any other path segment. Both trackColumn (proxy
+  // side) and bumpColumn (diff side) route through here, so the two
+  // sides always agree.
+  return arrayPath + '.{*}.' + encodePathSegment(prop)
 }
 
 /**
