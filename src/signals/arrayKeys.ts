@@ -46,20 +46,33 @@ export interface ArrayMeta {
   entityMap: Map<string | number, unknown>
 }
 
-// Characters that corrupt path bookkeeping if they appear in a key value:
+// Characters that corrupt path bookkeeping if they appear in a path
+// segment (an object key or an identity key value):
 // '.' breaks the ancestor walks (lastIndexOf('.')), '{'/'}' can collide
-// with meta segments, '%' is the escape character itself, and '"' is
-// reserved for quoting numeric-looking strings (a literal quote in a key
-// would otherwise collide with the quoted form of another key).
-const NEEDS_ESCAPE = /[%.{}"]/
+// with identity/column segments, '%' is the escape character itself,
+// '"' is reserved for quoting numeric-looking strings (a literal quote
+// in a key would otherwise collide with the quoted form of another key),
+// and '@' guards meta segments — a state key literally named '@@keys'
+// must not collide with the `parent.@@keys` meta signal.
+const NEEDS_ESCAPE = /[%.{}"@]/
 
-function escapeSegment(s: string): string {
+/**
+ * Encode a single path segment so it can be safely joined with '.' into
+ * a path string. Reserved characters are %-escaped. The common case
+ * (no reserved characters) returns the input string unchanged.
+ * Used for object property keys, identity key values, and column props.
+ * @param s - The raw segment (object key or stringified key value)
+ * @returns The encoded segment
+ */
+export function encodePathSegment(s: string): string {
+  if (!NEEDS_ESCAPE.test(s)) return s
   return s
     .replace(/%/g, '%25')
     .replace(/\./g, '%2E')
     .replace(/\{/g, '%7B')
     .replace(/\}/g, '%7D')
     .replace(/"/g, '%22')
+    .replace(/@/g, '%40')
 }
 
 /**
@@ -78,11 +91,9 @@ function encodeKeyValue(keyValue: string | number): string {
   if (typeof keyValue === 'number') {
     // Integers (the common case) can't contain escapable characters
     if (Number.isInteger(keyValue)) return String(keyValue)
-    return escapeSegment(String(keyValue))
+    return encodePathSegment(String(keyValue))
   }
-  const escaped = NEEDS_ESCAPE.test(keyValue)
-    ? escapeSegment(keyValue)
-    : keyValue
+  const escaped = encodePathSegment(keyValue)
   // Quote strings that would collide with a number's rendering
   return String(Number(keyValue)) === keyValue ? '"' + escaped + '"' : escaped
 }
