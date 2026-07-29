@@ -15,6 +15,7 @@ import { alienEngine } from '../../../src/signals/engine'
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import {
+  beginUntrackEvaluation,
   setUntrackStrategy,
   untrackResult,
   type UntrackStrategy,
@@ -22,7 +23,8 @@ import {
 import { deepFreeze } from '../reconcile/stateBuilders'
 
 const WARMUP = 500
-const DEFAULT_ITERATIONS = 5000
+const DEFAULT_ITERATIONS = 2000
+const SAMPLES = 5
 
 interface Entity {
   id: number
@@ -105,6 +107,21 @@ const scenarios: UntrackScenario[] = [
     selector: (s) => s.entities.map((e) => ({ id: e.id, entity: e })),
   },
   {
+    name: 'slice-100-of-1k',
+    description: 'slice(0, 100) of 1k entities: library-built array, 100 proxies',
+    entityCount: 1000,
+    selector: (s) => s.entities.slice(0, 100),
+  },
+  {
+    name: 'filter-embedded',
+    description: 'filter() result embedded in a user-built container object',
+    entityCount: 1000,
+    selector: (s) => ({
+      matches: s.entities.filter((e) => e.status === 'inactive'),
+      total: s.meta.count,
+    }),
+  },
+  {
     name: 'deep-container',
     description: 'Nested derived object embedding proxies at several depths',
     entityCount: 1000,
@@ -123,8 +140,7 @@ interface BenchRow {
   name: string
   noneMs: number
   recursiveMs: number
-  overheadMs: number
-  overheadPct: number
+  registryMs: number
 }
 
 function timeStrategy(
@@ -137,6 +153,8 @@ function timeStrategy(
   setUntrackStrategy(strategy)
 
   const run = () => {
+    // Mirrors the hook's evaluation: queue activation, proxy, selector, untrack
+    beginUntrackEvaluation()
     const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
     const result = scenario.selector(proxy as State)
     return untrackResult(result)
@@ -175,40 +193,53 @@ function main() {
   console.log(`\nUntrack Boundary Benchmark`)
   console.log(`Warmup: ${WARMUP} | Iterations: ${iterations} (full eval: proxy + selector + untrack)\n`)
 
+  const strategies: UntrackStrategy[] = ['none', 'recursive', 'registry']
   const rows: BenchRow[] = []
   for (const scenario of selected) {
     process.stdout.write(`  Running ${scenario.name}...`)
     const state = buildState(scenario.entityCount)
-    const noneMs = timeStrategy(scenario, 'none', state, iterations)
-    const recursiveMs = timeStrategy(scenario, 'recursive', state, iterations)
-    const overheadMs = recursiveMs - noneMs
-    rows.push({
-      name: scenario.name,
-      noneMs,
-      recursiveMs,
-      overheadMs,
-      overheadPct: (overheadMs / noneMs) * 100,
-    })
+    // Interleave strategies across samples so JIT/GC drift spreads evenly,
+    // then take the median per strategy.
+    const samples = new Map<UntrackStrategy, number[]>(
+      strategies.map((s) => [s, []]),
+    )
+    for (let i = 0; i < SAMPLES; i++) {
+      for (const s of strategies) {
+        samples.get(s)!.push(timeStrategy(scenario, s, state, iterations))
+      }
+    }
+    const median = (xs: number[]) =>
+      [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]
+    const noneMs = median(samples.get('none')!)
+    const recursiveMs = median(samples.get('recursive')!)
+    const registryMs = median(samples.get('registry')!)
+    rows.push({ name: scenario.name, noneMs, recursiveMs, registryMs })
     console.log(
-      ` none=${(noneMs / iterations).toFixed(4)} recursive=${(recursiveMs / iterations).toFixed(4)} ms/iter`,
+      ` none=${(noneMs / iterations).toFixed(4)} rec=${(recursiveMs / iterations).toFixed(4)} reg=${(registryMs / iterations).toFixed(4)} ms/iter (median of ${SAMPLES})`,
     )
   }
   setUntrackStrategy('recursive')
 
+  const nameW = 20
   console.log(
-    `\n${'Scenario'.padEnd(20)} | ${'none µs/it'.padStart(11)} | ${'rec µs/it'.padStart(11)} | ${'ovh µs/it'.padStart(11)} | ${'overhead %'.padStart(10)}`,
+    `\n${'Scenario'.padEnd(nameW)} | ${'none µs/it'.padStart(11)} | ${'rec µs/it'.padStart(11)} | ${'reg µs/it'.padStart(11)} | ${'rec ovh %'.padStart(9)} | ${'reg ovh %'.padStart(9)}`,
   )
-  console.log(`${'-'.repeat(20)}-+-${'-'.repeat(11)}-+-${'-'.repeat(11)}-+-${'-'.repeat(11)}-+-${'-'.repeat(10)}`)
+  console.log(
+    `${'-'.repeat(nameW)}-+-${'-'.repeat(11)}-+-${'-'.repeat(11)}-+-${'-'.repeat(11)}-+-${'-'.repeat(9)}-+-${'-'.repeat(9)}`,
+  )
   for (const r of rows) {
     const us = (ms: number) => ((ms / iterations) * 1000).toFixed(2).padStart(11)
+    const pct = (ms: number) =>
+      (((ms - r.noneMs) / r.noneMs) * 100).toFixed(1).padStart(8) + '%'
     console.log(
-      `${r.name.padEnd(20)} | ${us(r.noneMs)} | ${us(r.recursiveMs)} | ${us(r.overheadMs)} | ${r.overheadPct.toFixed(1).padStart(9)}%`,
+      `${r.name.padEnd(nameW)} | ${us(r.noneMs)} | ${us(r.recursiveMs)} | ${us(r.registryMs)} | ${pct(r.recursiveMs)} | ${pct(r.registryMs)}`,
     )
   }
 
   console.log('\nScenario descriptions:')
   for (const s of selected) console.log(`  ${s.name}: ${s.description}`)
   console.log()
+  process.exit(0)
 }
 
 main()

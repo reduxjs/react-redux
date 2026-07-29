@@ -5,7 +5,7 @@ import {
   getProxyPath,
   type LeafObjectTracker,
 } from './trackingProxy'
-import { untrackResult } from './untrack'
+import { beginUntrackEvaluation, untrackResult } from './untrack'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore } = React
 
@@ -87,6 +87,9 @@ export function useSignalSelector<S extends object, R>(
 
       leafTracker.accessedObjects.clear()
       leafTracker.traversedPaths.clear()
+      // Activate (or deactivate) the untrack finalization queue for this
+      // evaluation, per the current strategy.
+      beginUntrackEvaluation()
 
       const proxy = createTrackingProxy(
         state,
