@@ -27,8 +27,8 @@ export const alienEngine: SignalEngine = {
     return { get: () => c() }
   },
 
-  effect(fn: () => void): void {
-    alienEffect(fn)
+  effect(fn: () => void): () => void {
+    return alienEffect(fn)
   },
 
   batch(fn: () => void): void {
