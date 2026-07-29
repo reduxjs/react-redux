@@ -5,6 +5,7 @@ import {
   getProxyPath,
   type LeafObjectTracker,
 } from './trackingProxy'
+import { untrackResult } from './untrack'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore } = React
 
@@ -117,7 +118,11 @@ export function useSignalSelector<S extends object, R>(
         }
       }
 
-      return result
+      // Strip tracking proxies before the result crosses into React.
+      // Must run AFTER the dependency reads above (they need the proxies
+      // in hand). Everything downstream — equalityFn, getSnapshot,
+      // components, dispatch payloads — sees only raw state.
+      return untrackResult(result)
     })
 
     // Initialize with current value
