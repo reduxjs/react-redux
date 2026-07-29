@@ -125,8 +125,8 @@ describe('edge cases: identity key values', () => {
 
   it('key values containing dots do not corrupt the prefix index', () => {
     // Emails and composite keys as ids are common. Prefix bookkeeping
-    // splits on '.', so dots (and %, {, }) in key values are
-    // percent-escaped: "users.{id:a@b%2Ecom}.name".
+    // splits on '.', so dots (and %, {, }, ", @) in key values are
+    // percent-escaped: "users.{id:a%40b%2Ecom}.name".
     const state = { users: [{ id: 'a@b.com', name: 'Alice' }] }
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
@@ -139,7 +139,7 @@ describe('edge cases: identity key values', () => {
     const prev = { users: [{ id: 'a@b.com', name: 'Alice' }] }
     const next = { users: [] as { id: string; name: string }[] }
     const identityPath = buildIdentityPath('users', 'id', 'a@b.com')
-    expect(identityPath).toBe('users.{id:a@b%2Ecom}')
+    expect(identityPath).toBe('users.{id:a%40b%2Ecom}')
 
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
@@ -149,6 +149,136 @@ describe('edge cases: identity key values', () => {
     reconcileState(prev, next, registry, alienEngine)
 
     expect(registry.has(`${identityPath}.name`)).toBe(false)
+  })
+})
+
+describe('edge cases: object keys with reserved path characters', () => {
+  // Object property keys are encoded with the same %-escaping as identity
+  // key values. Without encoding, state like { 'a.b': 1, a: { b: 2 } }
+  // maps both locations to the path string "a.b" — updates clobber each
+  // other's signal and one side goes permanently stale.
+
+  it('a dotted key and a nested path do not share a signal', () => {
+    const prev = { 'a.b': 1, a: { b: 2 } }
+    const registry = createPathSignalRegistry(alienEngine)
+    let current: typeof prev = prev
+
+    let dottedRuns = 0
+    const dotted = alienEngine.computed(() => {
+      dottedRuns++
+      const p = createTrackingProxy(current, '', registry, registry.proxyCache)
+      return p['a.b']
+    })
+    let nestedRuns = 0
+    const nested = alienEngine.computed(() => {
+      nestedRuns++
+      const p = createTrackingProxy(current, '', registry, registry.proxyCache)
+      return p.a.b
+    })
+    expect(dotted.get()).toBe(1)
+    expect(nested.get()).toBe(2)
+
+    // Change ONLY the nested a.b — the dotted key's computed must not
+    // re-run, and its value must survive.
+    const next = { 'a.b': 1, a: { b: 99 } }
+    current = next
+    reconcileState(prev, next, registry, alienEngine)
+    expect(nested.get()).toBe(99)
+    expect(nestedRuns).toBe(2)
+    expect(dotted.get()).toBe(1)
+    expect(dottedRuns).toBe(1)
+
+    // Now change ONLY the dotted key — this was the permanently-stale
+    // case before encoding (the signal already held 99, so the real
+    // change no-opped).
+    const final = { 'a.b': 42, a: { b: 99 } }
+    current = final
+    reconcileState(next, final, registry, alienEngine)
+    expect(dotted.get()).toBe(42)
+    expect(dottedRuns).toBe(2)
+    expect(nested.get()).toBe(99)
+    expect(nestedRuns).toBe(2)
+  })
+
+  it('RTK Query style cache keys with dots and quotes stay reactive', () => {
+    const key = 'getUser("a.b@c.com")'
+    const prev = { queries: { [key]: { status: 'pending' } } }
+    const next = { queries: { [key]: { status: 'fulfilled' } } }
+
+    const registry = createPathSignalRegistry(alienEngine)
+    let runs = 0
+    const computed = alienEngine.computed(() => {
+      runs++
+      const p = createTrackingProxy(
+        runs === 1 ? prev : next,
+        '',
+        registry,
+        registry.proxyCache,
+      )
+      return p.queries[key].status
+    })
+    expect(computed.get()).toBe('pending')
+
+    reconcileState(prev, next, registry, alienEngine)
+    expect(computed.get()).toBe('fulfilled')
+    expect(runs).toBe(2)
+  })
+
+  it('a state key literally named "@@keys" does not collide with the keys meta signal', () => {
+    const prev = { obj: { '@@keys': 'v1', x: 1 } }
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+
+    expect(proxy.obj['@@keys']).toBe('v1')
+    // The literal key's signal lives at the encoded path.
+    expect(registry.has('obj.%40%40keys')).toBe(true)
+    expect(registry.has('obj.@@keys')).toBe(false)
+
+    // Iterating keys registers the meta signal at the raw path.
+    expect(Object.keys(proxy.obj)).toEqual(['@@keys', 'x'])
+    expect(registry.has('obj.@@keys')).toBe(true)
+
+    // Updating the literal '@@keys' property fires its own signal, and
+    // the key set is unchanged, so the meta signal must not fire.
+    let current = prev
+    let literalRuns = 0
+    const literal = alienEngine.computed(() => {
+      literalRuns++
+      const p = createTrackingProxy(current, '', registry, registry.proxyCache)
+      return p.obj['@@keys']
+    })
+    expect(literal.get()).toBe('v1')
+
+    const next = { obj: { '@@keys': 'v2', x: 1 } }
+    current = next
+    reconcileState(prev, next, registry, alienEngine)
+    expect(literal.get()).toBe('v2')
+    expect(literalRuns).toBe(2)
+  })
+
+  it('a state key shaped like an identity segment does not collide with identity paths', () => {
+    const state = {
+      items: [{ id: 1, name: 'real' }],
+      lookup: { '{id:1}': 'literal' },
+    }
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    expect(proxy.items[0].name).toBe('real')
+    expect(proxy.lookup['{id:1}']).toBe('literal')
+    expect(registry.has('lookup.%7Bid:1%7D')).toBe(true)
+    expect(registry.has('lookup.{id:1}')).toBe(false)
+  })
+
+  it('column signals encode scanned property names', () => {
+    const state = { rows: [{ id: 1, 'a.b': 'x' }] }
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    const found = proxy.rows.find((r) => r['a.b'] === 'x')
+    expect(found).toBeDefined()
+    expect(registry.has('rows.{*}.a%2Eb')).toBe(true)
+    expect(registry.has('rows.{*}.a.b')).toBe(false)
   })
 })
 

@@ -1,4 +1,9 @@
-import { buildIdentityPath, findKeyField, getKeyValue } from './arrayKeys'
+import {
+  buildIdentityPath,
+  encodePathSegment,
+  findKeyField,
+  getKeyValue,
+} from './arrayKeys'
 import {
   isOverriddenArrayMethod,
   createArrayMethodInterceptor,
@@ -185,11 +190,15 @@ export function createTrackingProxy<T extends object>(
   // this proxy's lifetime, so path keys are stable. Reusing the same
   // string instance avoids re-allocating on every read AND lets V8 cache
   // the string hash, speeding up the registry Map lookups downstream.
+  // Property keys are encoded so reserved path characters in state keys
+  // (dots in RTKQ cache keys, literal '@@keys', etc.) can't collide with
+  // other paths or meta segments. The cache amortizes the encoding.
   const pathKeyCache = new Map<string, string>()
   function getPathKey(prop: string): string {
     let key = pathKeyCache.get(prop)
     if (key === undefined) {
-      key = parentPath ? parentPath + '.' + prop : prop
+      const segment = encodePathSegment(prop)
+      key = parentPath ? parentPath + '.' + segment : segment
       pathKeyCache.set(prop, key)
     }
     return key
@@ -327,8 +336,11 @@ export function createTrackingProxy<T extends object>(
     },
 
     // Track when selectors iterate keys (Object.keys, for...in, .map, .filter, etc.)
+    // Built raw (NOT via getPathKey): '@@keys' is a meta segment, and
+    // getPathKey would %-escape its '@'s like a state key's.
     ownKeys(_obj) {
-      registry.getOrCreate(getPathKey('@@keys'), Reflect.ownKeys(target)).get()
+      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
+      registry.getOrCreate(keysPath, Reflect.ownKeys(target)).get()
       return Reflect.ownKeys(target)
     },
 
