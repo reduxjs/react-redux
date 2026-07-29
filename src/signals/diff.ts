@@ -45,11 +45,16 @@ function diffObject(
 
     // Hoist reference equality check before path construction.
     // Structural sharing means most keys are unchanged — skip early.
-    if (prev[key] === next[key]) continue
+    // The self-inequality test catches NaN (NaN !== NaN would otherwise
+    // descend and re-fire the leaf signal on every dispatch).
+    const prevVal = prev[key]
+    const nextVal = next[key]
+    if (prevVal === nextVal || (prevVal !== prevVal && nextVal !== nextVal))
+      continue
 
     const childPath = parentPath ? parentPath + '.' + key : key
     if (registry.hasPrefix(childPath)) {
-      diffAndUpdateSignals(prev[key], next[key], childPath, registry)
+      diffAndUpdateSignals(prevVal, nextVal, childPath, registry)
     }
   }
 
@@ -206,8 +211,10 @@ export function diffAndUpdateSignals(
   parentPath: string,
   registry: PathSignalRegistry,
 ): void {
-  // Structural sharing: identical references mean nothing changed
-  if (prev === next) return
+  // Structural sharing: identical references mean nothing changed.
+  // The self-inequality test catches NaN (NaN !== NaN would otherwise
+  // fall through to the leaf branch and re-fire on every dispatch).
+  if (prev === next || (prev !== prev && next !== next)) return
 
   // Both plain objects: recurse into properties
   if (isPlainObject(prev) && isPlainObject(next)) {
@@ -221,18 +228,26 @@ export function diffAndUpdateSignals(
     return
   }
 
-  // Leaf value change (primitive, or type mismatch like object→primitive)
+  // Leaf value change: primitive, non-plain object (Date, Map, class
+  // instance — tracked by reference only), or type mismatch
+  // (object→primitive, array→object, ...)
   if (parentPath) {
     registry.update(parentPath, next)
   }
 
-  // If prev was an object/array and next is not, prune child signals
-  if (
-    prev !== null &&
-    typeof prev === 'object' &&
-    (next === null || typeof next !== 'object')
-  ) {
-    registry.prune(parentPath)
+  // If prev was an object/array, we did NOT recurse — any child signals
+  // registered under this path would go silently stale.
+  if (prev !== null && typeof prev === 'object') {
+    if (next === null || typeof next !== 'object') {
+      // object → primitive: the path itself is no longer an object; drop
+      // the whole subtree (fires child signals before removal)
+      registry.prune(parentPath)
+    } else {
+      // object → object we can't diff into (class instance replaced,
+      // array↔object type change): keep this path's just-updated signal
+      // but fire-and-drop the children
+      registry.pruneChildren(parentPath)
+    }
   }
 }
 
@@ -347,9 +362,7 @@ function diffArrayByKey(
     return
   }
 
-  // General case: build Map only from startIdx onward
-  const mayHaveRemovals = next.length < prev.length
-
+  // General case: build Map only from startIdx onward.
   const nextEntityMap = new Map<string | number, unknown>()
   // Carry over skipped prefix entries from prevEntityMap
   for (let i = 0; i < startIdx; i++) {
@@ -357,13 +370,14 @@ function diffArrayByKey(
     if (kv !== undefined) nextEntityMap.set(kv, next[i])
   }
 
-  const seenPrevKeys = mayHaveRemovals ? new Set<string | number>() : null
+  // Track every prev key seen in next so removed entities get pruned.
+  // Removals can happen at ANY relative length — a same-length
+  // remove+add (page swap, temp-id → server-id) still removes entities.
+  const seenPrevKeys = new Set<string | number>()
   // Mark skipped prefix keys as seen (they can't be removed)
-  if (seenPrevKeys) {
-    for (let i = 0; i < startIdx; i++) {
-      const kv = getKeyValue(prev[i], keyField)
-      if (kv !== undefined) seenPrevKeys.add(kv)
-    }
+  for (let i = 0; i < startIdx; i++) {
+    const kv = getKeyValue(prev[i], keyField)
+    if (kv !== undefined) seenPrevKeys.add(kv)
   }
 
   // Structural classification state (only maintained when tracked):
@@ -434,11 +448,11 @@ function diffArrayByKey(
     }
 
     if (prevItem === nextItem) {
-      if (seenPrevKeys) seenPrevKeys.add(kv)
+      seenPrevKeys.add(kv)
       continue
     }
 
-    if (seenPrevKeys) seenPrevKeys.add(kv)
+    seenPrevKeys.add(kv)
 
     const identityPath = buildIdentityPath(parentPath, keyField, kv)
 
@@ -463,12 +477,10 @@ function diffArrayByKey(
     }
   }
 
-  if (seenPrevKeys) {
-    for (const [kv] of prevEntityMap) {
-      if (!seenPrevKeys.has(kv)) {
-        const identityPath = buildIdentityPath(parentPath, keyField, kv)
-        registry.prune(identityPath)
-      }
+  for (const [kv] of prevEntityMap) {
+    if (!seenPrevKeys.has(kv)) {
+      const identityPath = buildIdentityPath(parentPath, keyField, kv)
+      registry.prune(identityPath)
     }
   }
 

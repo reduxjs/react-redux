@@ -1,5 +1,4 @@
 import { React } from '../utils/react'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import { useSignalContext } from './context'
 import {
   createTrackingProxy,
@@ -26,19 +25,20 @@ export function useSignalSelector<S extends object, R>(
 ): R {
   const { store, registry, engine } = useSignalContext<S>()
 
-  // Track latest selector/equalityFn via refs, synced in layout effect (not during render)
+  // Track latest selector/equalityFn via refs. Updated during render
+  // (idempotent ref writes, same approach as React's
+  // useSyncExternalStoreWithSelector) so a selector closing over changed
+  // props is applied in THIS render, not a layout effect later.
   const selectorRef = useRef(selector)
   const equalityFnRef = useRef(equalityFn)
-  useIsomorphicLayoutEffect(() => {
-    selectorRef.current = selector
-    equalityFnRef.current = equalityFn
-  })
+  equalityFnRef.current = equalityFn
 
   // Create the signal bridge once (stable across renders)
   const bridge = useMemo(() => {
     let currentResult: R
     let version = 0
     let notifyReact: (() => void) | null = null
+    let suppressNotify = false
 
     // Create a computed that runs the selector through a tracking proxy.
     // This establishes signal dependencies on the paths the selector reads.
@@ -58,7 +58,30 @@ export function useSignalSelector<S extends object, R>(
       traversedPaths: new Set(),
     }
 
+    // Bumped when the component re-renders with a different selector
+    // function (e.g., an inline selector closing over changed props).
+    // The computed reads it, so bumping forces a re-evaluation with the
+    // new closure — otherwise the selector would keep returning the old
+    // closure's result until an unrelated store change fired a signal.
+    const selectorVersionSignal = engine.signal(0)
+
+    const setSelector = (nextSelector: (state: S) => R): void => {
+      selectorRef.current = nextSelector
+      // Recompute in place WITHOUT notifying React: this runs during
+      // render, and getSnapshot picks up the fresh value in the same
+      // pass. Scheduling a re-render here would loop forever for
+      // selectors that return a new reference on every run.
+      suppressNotify = true
+      try {
+        selectorVersionSignal.set(selectorVersionSignal.get() + 1)
+        currentResult = selectorComputed.get()
+      } finally {
+        suppressNotify = false
+      }
+    }
+
     const selectorComputed = engine.computed(() => {
+      selectorVersionSignal.get()
       const state = store.getState() as S & object
 
       leafTracker.accessedObjects.clear()
@@ -117,6 +140,15 @@ export function useSignalSelector<S extends object, R>(
             return
           }
 
+          if (suppressNotify) {
+            // Render-phase selector swap (setSelector): adopt the value
+            // so the equality baseline is current, but let the ongoing
+            // render pick it up via getSnapshot instead of scheduling
+            // another render.
+            currentResult = newValue
+            return
+          }
+
           // Apply user's equality function
           if (!equalityFnRef.current(currentResult, newValue)) {
             currentResult = newValue
@@ -134,8 +166,18 @@ export function useSignalSelector<S extends object, R>(
       getSnapshot(): R {
         return currentResult
       },
+
+      setSelector,
     }
   }, [store, registry, engine])
+
+  // Render-phase selector swap: if this render brought a different
+  // selector function (inline selector closing over changed props),
+  // re-evaluate now so getSnapshot returns the new closure's value in
+  // this same render.
+  if (selectorRef.current !== selector) {
+    bridge.setSelector(selector)
+  }
 
   // Cleanup scope on unmount
   useEffect(() => {
@@ -144,5 +186,11 @@ export function useSignalSelector<S extends object, R>(
     }
   }, [bridge])
 
-  return useSyncExternalStore(bridge.subscribe, bridge.getSnapshot)
+  // getSnapshot doubles as getServerSnapshot: the computed already ran
+  // during useMemo, so SSR renders the current selected value.
+  return useSyncExternalStore(
+    bridge.subscribe,
+    bridge.getSnapshot,
+    bridge.getSnapshot,
+  )
 }
