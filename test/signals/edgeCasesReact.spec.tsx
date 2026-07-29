@@ -84,11 +84,11 @@ describe('edge cases: React integration', () => {
   })
 
   describe('selector closing over props', () => {
-    // selectorRef is updated in a layout effect, but nothing invalidates
-    // the computed when the selector function changes. The hook keeps
-    // returning the previous selector's cached result until some store
-    // change happens to fire one of the OLD selector's signals.
-    it.fails('re-selects when a prop used by the selector changes', () => {
+    // A render that brings a different selector function triggers a
+    // render-phase swap: the computed is invalidated and re-evaluated in
+    // place, so getSnapshot returns the new closure's value in the same
+    // render (same approach as useSyncExternalStoreWithSelector).
+    it('re-selects when a prop used by the selector changes', () => {
       function CounterValue({ which }: { which: 'counter1' | 'counter2' }) {
         const value = useSignalSelector(
           (s: TestState) => s.counters[which].value,
@@ -171,11 +171,11 @@ describe('edge cases: React integration', () => {
       expect(getByTestId('identity').textContent).toBe('changed')
     })
 
-    // Cached proxies close over the leafTracker of the evaluation that
-    // created them. When component A mounts first and traverses the state,
-    // component B's identity-only reads are recorded into A's tracker —
-    // B's computed ends up with no dependencies and never re-runs.
-    it.fails('a second component still tracks identity changes when another component traversed the same slice first', () => {
+    // The active leafTracker lives in registry.leafTrackerHolder and is
+    // swapped in per evaluation, so component B's identity-only reads land
+    // in B's own tracker even when component A's earlier traversal already
+    // populated the proxy cache.
+    it('a second component still tracks identity changes when another component traversed the same slice first', () => {
       const originalSettings = store.getState().settings
 
       function ThemeReader() {
@@ -294,7 +294,7 @@ describe('edge cases: React integration', () => {
   describe('server-side rendering', () => {
     // useSyncExternalStore is called without a getServerSnapshot argument,
     // so any server render (Next.js etc.) throws.
-    it.fails('supports renderToString', () => {
+    it('supports renderToString', () => {
       function FilterReader() {
         const filter = useSignalSelector((s: TestState) => s.filter)
         return <div>{filter}</div>

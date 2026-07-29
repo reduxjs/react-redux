@@ -9,6 +9,11 @@ function isObjectOrArray(v: unknown): v is object {
   return v !== null && typeof v === 'object'
 }
 
+function isPlainObject(v: object): boolean {
+  const proto = Object.getPrototypeOf(v)
+  return proto === Object.prototype || proto === null
+}
+
 // Fast check for array-index-like property names ('0', '42', ...).
 // Canonical array index strings always start with a digit; named array
 // props ('length', 'includes', ...) never do. Cheaper than Number()+isNaN
@@ -74,6 +79,16 @@ export interface LeafObjectTracker {
  * Caches proxies by their target object identity.
  * Since Immer uses structural sharing, unchanged subtrees keep the same
  * object reference across state snapshots — so we can reuse their proxies.
+ *
+ * KNOWN TRADEOFF: an object aliased at two paths (e.g.
+ * `state.selected = state.items[0]`) reuses the proxy created for
+ * whichever path was read first, so child reads through the second path
+ * register signals under the first path. Per-path proxies would fix the
+ * attribution but break identity comparison (`state.selected ===
+ * state.items[0]` must hold, and two proxies are never `===`). The alias
+ * path itself still gets a version-signal dependency via the leaf-object
+ * tracker, so replacing the aliased object re-runs the selector — the
+ * misattribution can cause excess re-runs, never missed ones.
  */
 export type ProxyCache = WeakMap<object, object>
 
@@ -137,7 +152,10 @@ export function unwrap<T>(value: T): T {
  * @param parentPath - Dot-separated path to this object in the state tree
  * @param registry - Signal registry for dependency tracking
  * @param cache - Proxy cache for deduplication
- * @param leafTracker - Optional tracker for detecting leaf object accesses
+ * @param leafTracker - Optional tracker for detecting leaf object accesses.
+ *   When provided, it becomes the ACTIVE tracker for the registry: all
+ *   proxy traps (including those of previously cached proxies) record
+ *   into it until another evaluation installs a different tracker.
  * @returns A tracking proxy wrapping the target
  */
 export function createTrackingProxy<T extends object>(
@@ -147,6 +165,13 @@ export function createTrackingProxy<T extends object>(
   cache: ProxyCache,
   leafTracker?: LeafObjectTracker,
 ): T {
+  // Install the tracker for this evaluation. Traps read the holder at
+  // access time instead of closing over a tracker, so proxies cached by
+  // an earlier evaluation record into the current evaluation's tracker.
+  if (leafTracker !== undefined) {
+    registry.leafTrackerHolder.current = leafTracker
+  }
+
   // Check proxy cache — reuse proxy if we've already wrapped this exact object
   const cached = cache.get(target)
   if (cached) return cached as T
@@ -176,6 +201,7 @@ export function createTrackingProxy<T extends object>(
       if (typeof prop === 'symbol') return Reflect.get(target, prop)
 
       const value = (target as Record<string, unknown>)[prop]
+      const leafTracker = registry.leafTrackerHolder.current
 
       // Functions: intercept array methods to avoid per-element proxy creation
       if (typeof value === 'function') {
@@ -240,6 +266,20 @@ export function createTrackingProxy<T extends object>(
           }
         }
 
+        // Non-plain objects (Date, Map, Set, class instances): return the
+        // raw object, tracked by reference only. Wrapping them in a proxy
+        // shell breaks prototype methods that need internal slots
+        // ("this is not a Date object"), and the diff can't recurse into
+        // them anyway. Reading the version signal here means a ref swap
+        // at this path re-runs the selector.
+        if (!Array.isArray(value) && !isPlainObject(value as object)) {
+          if (leafTracker) {
+            leafTracker.traversedPaths.add(parentPath)
+          }
+          registry.getOrCreate(pathKey, value).get()
+          return value
+        }
+
         // Register in prefix index (for hasPrefix/diff tracking) but DON'T
         // create a signal. This avoids allocating signals for intermediate
         // objects that are only traversed, not read as terminal values.
@@ -250,13 +290,14 @@ export function createTrackingProxy<T extends object>(
           leafTracker.traversedPaths.add(parentPath)
         }
 
-        // Return cached child proxy (createTrackingProxy checks cache internally)
+        // Return cached child proxy (createTrackingProxy checks cache internally).
+        // No tracker argument: the trap already reads the registry's
+        // active-tracker holder, which this evaluation installed.
         const childProxy = createTrackingProxy(
           value as object,
           pathKey,
           registry,
           cache,
-          leafTracker,
         )
 
         // Track this object access — may be a leaf (identity-only usage)

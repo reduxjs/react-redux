@@ -34,8 +34,9 @@ export const benchEngine: SignalEngine = {
   computed<T>(fn: () => T) {
     return { get: fn }
   },
-  effect(_fn: () => void): void {
+  effect(_fn: () => void): () => void {
     // no-op
+    return () => {}
   },
   batch(fn: () => void): void {
     fn()

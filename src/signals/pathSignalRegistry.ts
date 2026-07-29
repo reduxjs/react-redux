@@ -1,5 +1,5 @@
 import type { ArrayMeta } from './arrayKeys'
-import type { ProxyCache } from './trackingProxy'
+import type { LeafObjectTracker, ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
 /**
@@ -27,6 +27,12 @@ export interface PathSignalRegistry {
    *  Uses a parent→children index for O(subtree) instead of O(total signals). */
   prune(pathKey: PathKey): void
 
+  /** Remove signals for all child paths, keeping the path's own signal.
+   *  Used when a subtree is replaced by a value the diff can't recurse
+   *  into (e.g., a class instance) — child reads fire once instead of
+   *  going silently stale. */
+  pruneChildren(pathKey: PathKey): void
+
   /** Number of active signals. */
   size(): number
 
@@ -41,6 +47,11 @@ export interface PathSignalRegistry {
 
   /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
   proxyCache: ProxyCache
+
+  /** Holder for the leaf tracker of the evaluation currently running.
+   *  Proxies read this at trap time instead of closing over a tracker,
+   *  so cached proxies record into whichever evaluation is active. */
+  leafTrackerHolder: { current: LeafObjectTracker | undefined }
 
   /** Get array metadata for identity-based tracking at a given path. */
   getArrayMeta(arrayPath: string): ArrayMeta | undefined
@@ -221,9 +232,10 @@ export function createPathSignalRegistry(
       const stack: string[] = [pathKey]
       while (stack.length > 0) {
         const key = stack.pop()!
-        // Drop column/structure tracking for any array at or below the pruned path
+        // Drop column/structure/identity tracking for any array at or below the pruned path
         columnsByArray.delete(key)
         structuresByArray.delete(key)
+        arrayMetas.delete(key)
         // Push children onto stack before deleting
         const children = childIndex.get(key)
         if (children) {
@@ -262,6 +274,15 @@ export function createPathSignalRegistry(
       }
     },
 
+    pruneChildren(pathKey: PathKey): void {
+      const children = childIndex.get(pathKey)
+      if (!children) return
+      // prune() mutates the parent's child set — iterate over a copy
+      for (const child of Array.from(children)) {
+        registry.prune(child)
+      }
+    },
+
     size(): number {
       return signals.size
     },
@@ -279,6 +300,8 @@ export function createPathSignalRegistry(
     },
 
     proxyCache: proxyWeakMap,
+
+    leafTrackerHolder: { current: undefined },
 
     getArrayMeta(arrayPath: string): ArrayMeta | undefined {
       return arrayMetas.get(arrayPath)
