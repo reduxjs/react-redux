@@ -12,7 +12,8 @@ export interface ReactiveComputed<T> {
 export interface SignalEngine {
   signal<T>(value: T): ReactiveSignal<T>
   computed<T>(fn: () => T): ReactiveComputed<T>
-  effect(fn: () => void): void
+  /** Create an effect. Returns a dispose function that stops it. */
+  effect(fn: () => void): () => void
   batch(fn: () => void): void
   createScope(): SignalScope
 }

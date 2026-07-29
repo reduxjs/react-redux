@@ -47,16 +47,22 @@ export function useSignalSelector<S extends object, R>(
     // "false sharing" where siblings cause re-runs). Only leaf primitive reads
     // create deps automatically. If the selector returns a proxy (object result),
     // we explicitly read that object's signal to establish the terminal dependency.
+    // Track leaf object accesses for identity comparison support.
+    // Objects read by the selector but never traversed deeper are
+    // "leaf objects" — their identity matters (e.g., `a === b`).
+    // Reused across evaluations (cleared at the start of each) — a
+    // computed never re-enters its own evaluation, so this is safe and
+    // avoids two allocations per eval.
+    const leafTracker: LeafObjectTracker = {
+      accessedObjects: new Map(),
+      traversedPaths: new Set(),
+    }
+
     const selectorComputed = engine.computed(() => {
       const state = store.getState() as S & object
 
-      // Track leaf object accesses for identity comparison support.
-      // Objects read by the selector but never traversed deeper are
-      // "leaf objects" — their identity matters (e.g., `a === b`).
-      const leafTracker: LeafObjectTracker = {
-        accessedObjects: new Map(),
-        traversedPaths: new Set(),
-      }
+      leafTracker.accessedObjects.clear()
+      leafTracker.traversedPaths.clear()
 
       const proxy = createTrackingProxy(
         state,
@@ -101,33 +107,27 @@ export function useSignalSelector<S extends object, R>(
         // Create an effect that fires when the computed value changes.
         // We apply the user's equalityFn here since alien-signals
         // doesn't support custom equality per-computed.
-        // The effect lives inside a scope so unsubscribe can dispose it —
-        // engine.effect() itself returns void, so the scope is the only
-        // way to tear down the subscription.
-        const scope = engine.createScope()
-        scope.run(() => {
-          let isFirst = true
-          return engine.effect(() => {
-            const newValue = selectorComputed.get()
+        let isFirst = true
+        const dispose = engine.effect(() => {
+          const newValue = selectorComputed.get()
 
-            if (isFirst) {
-              // First effect run — just establish tracking, don't notify
-              isFirst = false
-              return
-            }
+          if (isFirst) {
+            // First effect run — just establish tracking, don't notify
+            isFirst = false
+            return
+          }
 
-            // Apply user's equality function
-            if (!equalityFnRef.current(currentResult, newValue)) {
-              currentResult = newValue
-              version++
-              notifyReact?.()
-            }
-          })
+          // Apply user's equality function
+          if (!equalityFnRef.current(currentResult, newValue)) {
+            currentResult = newValue
+            version++
+            notifyReact?.()
+          }
         })
 
         return () => {
           notifyReact = null
-          scope.stop()
+          dispose()
         }
       },
 

@@ -156,6 +156,20 @@ export function createTrackingProxy<T extends object>(
   // so that Array.isArray, instanceof, etc. work correctly.
   const shell = Array.isArray(target) ? [] : Object.create(Object.getPrototypeOf(target))
 
+  // Per-proxy cache of prop -> full path string. parentPath is fixed for
+  // this proxy's lifetime, so path keys are stable. Reusing the same
+  // string instance avoids re-allocating on every read AND lets V8 cache
+  // the string hash, speeding up the registry Map lookups downstream.
+  const pathKeyCache = new Map<string, string>()
+  function getPathKey(prop: string): string {
+    let key = pathKeyCache.get(prop)
+    if (key === undefined) {
+      key = parentPath ? parentPath + '.' + prop : prop
+      pathKeyCache.set(prop, key)
+    }
+    return key
+  }
+
   const proxy = new Proxy(shell, {
     get(_obj, prop, _receiver) {
       // Symbols: read from actual target (iterator protocol, toStringTag, etc.)
@@ -203,7 +217,7 @@ export function createTrackingProxy<T extends object>(
         return value
       }
 
-      let pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
+      let pathKey = getPathKey(prop as string)
 
       if (isObjectOrArray(value)) {
         // For array element access: check if parent array has identity-based tracking.
@@ -273,15 +287,14 @@ export function createTrackingProxy<T extends object>(
 
     // Track when selectors iterate keys (Object.keys, for...in, .map, .filter, etc.)
     ownKeys(_obj) {
-      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
-      registry.getOrCreate(keysPath, Reflect.ownKeys(target)).get()
+      registry.getOrCreate(getPathKey('@@keys'), Reflect.ownKeys(target)).get()
       return Reflect.ownKeys(target)
     },
 
     // Track has() checks for conditional property access (e.g., 'key' in obj)
     has(_obj, prop) {
       if (typeof prop === 'symbol') return Reflect.has(target, prop)
-      const pathKey = parentPath ? parentPath + '.' + (prop as string) : (prop as string)
+      const pathKey = getPathKey(prop as string)
       registry.getOrCreate(pathKey, (target as Record<string, unknown>)[prop]).get()
       return Reflect.has(target, prop)
     },
