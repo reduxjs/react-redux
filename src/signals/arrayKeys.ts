@@ -46,9 +46,52 @@ export interface ArrayMeta {
   entityMap: Map<string | number, unknown>
 }
 
+// Characters that corrupt path bookkeeping if they appear in a key value:
+// '.' breaks the ancestor walks (lastIndexOf('.')), '{'/'}' can collide
+// with meta segments, '%' is the escape character itself, and '"' is
+// reserved for quoting numeric-looking strings (a literal quote in a key
+// would otherwise collide with the quoted form of another key).
+const NEEDS_ESCAPE = /[%.{}"]/
+
+function escapeSegment(s: string): string {
+  return s
+    .replace(/%/g, '%25')
+    .replace(/\./g, '%2E')
+    .replace(/\{/g, '%7B')
+    .replace(/\}/g, '%7D')
+    .replace(/"/g, '%22')
+}
+
+/**
+ * Render a key value as a path segment fragment.
+ *
+ * Two invariants:
+ * 1. No '.', '{', or '}' in the output (escaped as %XX) so path
+ *    prefix walking and pruning stay correct for ids like "a@b.com".
+ * 2. A string key never renders identically to a number key. Strings
+ *    whose escaped form matches a number's rendering (e.g. "1", "1.5")
+ *    are wrapped in quotes: number 1 → `1`, string "1" → `"1"`.
+ * @param keyValue - The identity key value
+ * @returns The encoded segment fragment
+ */
+function encodeKeyValue(keyValue: string | number): string {
+  if (typeof keyValue === 'number') {
+    // Integers (the common case) can't contain escapable characters
+    if (Number.isInteger(keyValue)) return String(keyValue)
+    return escapeSegment(String(keyValue))
+  }
+  const escaped = NEEDS_ESCAPE.test(keyValue)
+    ? escapeSegment(keyValue)
+    : keyValue
+  // Quote strings that would collide with a number's rendering
+  return String(Number(keyValue)) === keyValue ? '"' + escaped + '"' : escaped
+}
+
 /**
  * Build the identity path segment for an array element.
  * e.g., arrayPath="items", keyField="id", element={id: 42} → "items.{id:42}"
+ * Key values are encoded: dots/braces are %-escaped, and numeric-looking
+ * string keys are quoted to stay distinct from number keys.
  * @param arrayPath - Parent array's path
  * @param keyField - The identity key field name
  * @param keyValue - The identity key value
@@ -59,7 +102,8 @@ export function buildIdentityPath(
   keyField: string,
   keyValue: string | number,
 ): string {
-  return arrayPath ? `${arrayPath}.{${keyField}:${keyValue}}` : `{${keyField}:${keyValue}}`
+  const segment = `{${keyField}:${encodeKeyValue(keyValue)}}`
+  return arrayPath ? `${arrayPath}.${segment}` : segment
 }
 
 /**
