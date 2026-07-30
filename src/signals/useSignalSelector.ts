@@ -288,10 +288,20 @@ const useSignalSelectorImpl = <S, R>(
       }
     })
 
-    // Initialize with current value. A selector that throws on mount
-    // surfaces here, during render — same as stock useSelector.
-    currentResult = selectorComputed.get()
-    if (pendingError !== null) {
+    // MOUNT OPT: seed the first-render value with a cheap UNTRACKED run of
+    // the selector against raw state, instead of the eager tracked
+    // `selectorComputed.get()`. Building the tracking proxy + registering
+    // path signals (the expensive part) is deferred to the first
+    // `engine.effect` run inside subscribe(), which React invokes in the
+    // commit phase — off the render-blocking path. The raw run yields the
+    // same value (`untrackResult` is a no-op on already-raw state), so the
+    // first-render snapshot is unchanged; the dependency graph is
+    // established lazily on subscribe. A selector that throws
+    // deterministically still throws here, during render (stock parity).
+    try {
+      currentResult = untrackResult(selectorRef.current(store.getState() as S))
+    } catch (e) {
+      pendingError = e
       throw pendingError
     }
 
