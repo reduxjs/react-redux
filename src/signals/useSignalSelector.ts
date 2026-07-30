@@ -5,7 +5,7 @@ import type {
   UseSelectorOptions,
 } from '../hooks/useSelector'
 import type { ReactReduxContextValue } from '../components/Context'
-import type { EqualityFn, NoInfer } from '../types'
+import type { EqualityFn } from '../types'
 import type { SignalContextValue } from './context'
 import {
   createSignalContextHook,
@@ -41,6 +41,8 @@ const SELECTOR_THREW = Symbol('selector threw') as unknown
  * @param equalityFnOrOptions - Equality function, or an options object
  *   with `equalityFn` and `devModeChecks` (same shape as stock
  *   `useSelector`)
+ * @param useBoundSignalContext - Internal: the context hook to read the
+ *   signal context from. Bound by `createSignalSelectorHook`.
  * @returns The selected value
  */
 const useSignalSelectorImpl = <S, R>(
@@ -184,7 +186,7 @@ const useSignalSelectorImpl = <S, R>(
           try {
             throw new Error()
           } catch (e) {
-            ;({ stack } = e as Error)
+            stack = (e as Error).stack
           }
           console.warn(
             'Selector ' +
@@ -205,7 +207,7 @@ const useSignalSelectorImpl = <S, R>(
           try {
             throw new Error()
           } catch (e) {
-            ;({ stack } = e as Error)
+            stack = (e as Error).stack
           }
           console.warn(
             'Selector ' +
@@ -425,6 +427,7 @@ export interface UseSignalSelector<StateType = unknown> {
  * registry and engine.
  *
  * @param context - Context passed to your `<SignalProvider>`.
+ * @returns A `useSignalSelector` hook bound to the given context.
  */
 export function createSignalSelectorHook(
   context: Context<ReactReduxContextValue<

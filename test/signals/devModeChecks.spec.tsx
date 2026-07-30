@@ -67,7 +67,7 @@ const makeStore = () => {
 type AppStore = ReturnType<typeof makeStore>['store']
 type RootState = ReturnType<AppStore['getState']>
 
-let warnSpy: MockInstance<[message?: any, ...optionalParams: any[]], void>
+let warnSpy: MockInstance<(message?: any, ...optionalParams: any[]) => void>
 
 beforeEach(() => {
   warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})

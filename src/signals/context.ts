@@ -21,6 +21,7 @@ export { ReactReduxContext }
  * context value came from a `<SignalProvider>` (registry + engine present).
  *
  * @param context - Context passed to your `<SignalProvider>`.
+ * @returns A `useSignalContext` hook bound to the given context.
  */
 export function createSignalContextHook(
   context: React.Context<ReactReduxContextValue<
