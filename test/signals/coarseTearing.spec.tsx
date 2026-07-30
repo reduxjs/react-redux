@@ -124,6 +124,32 @@ describe('coarse tier — no desync during the sliced first-touch window', () =>
     }
   })
 
+  it('a queued hook still reflects a later change to its segment when it builds', async () => {
+    const { store, setAll } = makeStore()
+    rtl.render(
+      <SignalProvider store={store}>
+        <Parent />
+      </SignalProvider>,
+    )
+
+    // First change queues all N hooks for the sliced drain (and drops them
+    // from the segment index so a mid-drain dispatch doesn't re-collect them).
+    rtl.act(() => {
+      store.dispatch(setAll(5))
+    })
+    // A second change to the same segment arrives before the drain runs.
+    // The queued builds must pick up this latest value, not the queued-time 5.
+    rtl.act(() => {
+      store.dispatch(setAll(7))
+    })
+
+    await flushMacrotasks()
+
+    for (let i = 0; i < N; i++) {
+      expect(rtl.screen.getByTestId(`leaf-${i}`).textContent).toBe('7')
+    }
+  })
+
   it('sliceThreshold=Infinity runs the first-touch burst inline (atomic)', () => {
     const { store, setAll } = makeStore()
     rtl.render(

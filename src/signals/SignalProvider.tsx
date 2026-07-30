@@ -126,6 +126,13 @@ export function SignalProvider<
         if (!pendingSet.has(sub)) {
           pendingSet.add(sub)
           pending.push(sub)
+          // Drop it from the segment index as soon as it's queued, so a
+          // dispatch arriving mid-drain doesn't re-collect the whole backlog
+          // of already-queued subs (O(unbuilt) per tick during a large
+          // first-touch drain). Safe: the queued build reads the latest
+          // committed state when it runs, so any further change to this
+          // sub's segment while it waits is still picked up.
+          registry.segmentIndex.unregister(sub)
         }
       }
       if (!draining) {
