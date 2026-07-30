@@ -1,6 +1,5 @@
 import type { PathSignalRegistry, StructureKind } from './pathSignalRegistry'
 import { registerRecordingHolder, unwrap } from './trackingProxy'
-import { registerEscapeCandidate } from './untrackQueue'
 
 /**
  * Non-mutating array methods that we override on the tracking proxy.
@@ -331,9 +330,6 @@ export function createArrayMethodInterceptor(
         }
         result = matches
         matched = matches.length > 0
-        // Registry untrack strategy: we created this proxy-bearing array,
-        // so register it for direct finalization (Immer-callback analog).
-        registerEscapeCandidate(matches)
       } else if (FIND_METHODS.has(m)) {
         const isForward = m === 'find'
         const step = isForward ? 1 : -1
@@ -381,7 +377,6 @@ export function createArrayMethodInterceptor(
       for (let i = start; i < end; i++) {
         result.push((proxy as Record<string, unknown>)[i])
       }
-      registerEscapeCandidate(result)
       return result
     }
 
