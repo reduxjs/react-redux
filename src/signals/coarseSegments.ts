@@ -20,6 +20,12 @@
 export interface CoarseSub {
   /** Top-level state segments this subscriber currently depends on. */
   segments: Set<string>
+  /**
+   * Invoked by the provider when a dispatch changed one of this subscriber's
+   * segments — i.e. the selector could now produce a different value. The
+   * subscriber decides what to do (build its deep graph, re-run, notify).
+   */
+  onCoarseHit(): void
 }
 
 /**
@@ -129,4 +135,29 @@ export class SegmentIndex<Sub extends CoarseSub> {
   segmentCount(): number {
     return this.bySegment.size
   }
+}
+
+/**
+ * Top-level segments whose value changed by reference between two state
+ * snapshots (plus added/removed keys). O(number of top-level keys) — this is
+ * the cheap change detection that replaces walking the full state tree, sound
+ * for immutably-updated state: a segment whose reference is unchanged cannot
+ * have produced a different selector result.
+ * @param prev - The previous root state
+ * @param next - The next root state
+ * @returns The list of changed top-level segment names
+ */
+export function changedSegments(
+  prev: Record<string, unknown>,
+  next: Record<string, unknown>,
+): string[] {
+  if (prev === next) return []
+  const result: string[] = []
+  for (const key of Object.keys(next)) {
+    if (prev[key] !== next[key]) result.push(key)
+  }
+  for (const key of Object.keys(prev)) {
+    if (!(key in next)) result.push(key)
+  }
+  return result
 }

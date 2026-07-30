@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  changedSegments,
   recordSegments,
   SegmentIndex,
   type CoarseSub,
@@ -42,6 +43,7 @@ describe('recordSegments', () => {
 describe('SegmentIndex', () => {
   const sub = (...segments: string[]): CoarseSub => ({
     segments: new Set(segments),
+    onCoarseHit() {},
   })
 
   it('collects subscribers of changed segments (union, deduped)', () => {
@@ -97,5 +99,29 @@ describe('SegmentIndex', () => {
 
     index.collect(['c'], out)
     expect(out).toEqual(new Set([s1])) // now under 'c'
+  })
+})
+
+describe('changedSegments', () => {
+  it('returns top-level keys whose reference changed', () => {
+    const a = { x: 1 }
+    const b = { y: 2 }
+    const prev = { a, b, n: 1 }
+    const next = { a, b: { y: 3 }, n: 1 }
+    expect(changedSegments(prev, next)).toEqual(['b'])
+  })
+
+  it('returns [] for the same reference', () => {
+    const s = { a: 1 }
+    expect(changedSegments(s, s)).toEqual([])
+  })
+
+  it('detects added and removed top-level keys', () => {
+    expect(changedSegments({ a: 1 }, { a: 1, b: 2 })).toEqual(['b'])
+    expect(changedSegments({ a: 1, b: 2 }, { a: 1 })).toEqual(['b'])
+  })
+
+  it('detects changed primitive segments', () => {
+    expect(changedSegments({ a: 1, b: 2 }, { a: 1, b: 5 })).toEqual(['b'])
   })
 })

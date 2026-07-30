@@ -9,6 +9,8 @@ import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect'
 import type { SignalContextValue } from './context'
 import { createPathSignalRegistry } from './pathSignalRegistry'
 import { reconcileState } from './diff'
+import { changedSegments } from './coarseSegments'
+import type { CoarseSub } from './coarseSegments'
 import { alienEngine } from './engine'
 import type { SignalEngine } from './types'
 
@@ -76,6 +78,20 @@ export function SignalProvider<
       const next = store.getState()
       prevStateRef.current = next
       reconcileState(prev, next, registry, engine)
+
+      // Coarse tier: build + notify any deferred (not-yet-built) hooks whose
+      // top-level segment changed this dispatch. Built hooks are already
+      // handled by the deep reconcile above and drop out of the index, so
+      // this only ever touches the lazy ones.
+      const changed = changedSegments(
+        prev as Record<string, unknown>,
+        next as Record<string, unknown>,
+      )
+      if (changed.length > 0) {
+        const candidates = new Set<CoarseSub>()
+        registry.segmentIndex.collect(changed, candidates)
+        for (const sub of candidates) sub.onCoarseHit()
+      }
 
       subscription.notifyNestedSubs()
     }

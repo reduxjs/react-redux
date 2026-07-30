@@ -102,6 +102,12 @@ const useSignalSelectorImpl = <S, R>(
     // Coarse-tier registration for this hook (top-level segments it reads),
     // kept so subscribe/cleanup can (un)register it in the segment index.
     let coarseSub: CoarseSub | null = null
+    // Lazy deep-graph state: the alien effect that establishes path signals
+    // and drives React notifications is built on the first coarse hit (a
+    // dispatch that changed one of this hook's segments), not at mount — so
+    // mounting N hooks doesn't build N deep graphs up front.
+    let built = false
+    let disposeEffect: (() => void) | null = null
     // Set when the selector threw during an effect re-evaluation (classic
     // zombie child: an entity was removed while a component selecting it
     // is still mounted). getSnapshot retries and rethrows if it persists.
@@ -310,60 +316,109 @@ const useSignalSelectorImpl = <S, R>(
       throw pendingError
     }
 
+    if (process.env.NODE_ENV !== 'production') {
+      // Dev-mode selector checks normally ride the computed's first eval,
+      // which is now deferred to the first coarse hit. Run them here at mount
+      // so their timing/frequency ('once' vs 'always') is unchanged. They
+      // use raw state — the stability re-run and identity check don't need
+      // the tracking proxy — and consume `firstRun`, so the later computed
+      // eval only re-checks under 'always'.
+      runDevModeChecks(currentResult, store.getState() as S)
+    }
+
+    // Build the alien effect that drives React notifications from the deep
+    // signal graph. Its first run evaluates the computed once — establishing
+    // path-signal dependencies via the tracking proxy — without notifying;
+    // afterwards alien re-runs it whenever a tracked path changes. Deferred
+    // until the first coarse hit, so mount doesn't build N deep graphs.
+    const buildEffect = (): void => {
+      built = true
+      let isFirst = true
+      disposeEffect = engine.effect(() => {
+        const newValue = selectorComputed.get()
+
+        if (pendingError !== null) {
+          // The evaluation threw (newValue is the SELECTOR_THREW sentinel —
+          // never adopt it). Notify React so getSnapshot can retry and
+          // surface or dissolve the error.
+          isFirst = false
+          if (!suppressNotify) {
+            notifyReact?.()
+          }
+          return
+        }
+
+        if (isFirst) {
+          // First effect run — just establish tracking, don't notify.
+          isFirst = false
+          return
+        }
+
+        if (suppressNotify) {
+          // Render-phase selector swap (setSelector): adopt the value so the
+          // equality baseline is current, but let the ongoing render pick it
+          // up via getSnapshot instead of scheduling another render.
+          currentResult = newValue
+          return
+        }
+
+        // Apply user's equality function.
+        if (!equalityFnRef.current(currentResult, newValue)) {
+          currentResult = newValue
+          version++
+          notifyReact?.()
+        }
+      })
+    }
+
     return {
       subscribe(onStoreChange: () => void): () => void {
         notifyReact = onStoreChange
 
-        // Register the coarse top-level segments this selector reads, so a
-        // dispatch can cheaply tell whether this hook could be affected.
-        coarseSub = {
-          segments: recordSegments(
-            store.getState() as object,
-            selectorRef.current as (s: object) => unknown,
-          ),
+        // Record the coarse top-level segments this selector reads. Sound for
+        // immutable state: if none of them changed by reference, the selector
+        // result cannot have changed, so the hook needs no update.
+        const segments = recordSegments(
+          store.getState() as object,
+          selectorRef.current as (s: object) => unknown,
+        )
+
+        if (segments.size === 0) {
+          // No discrete top-level segment (identity selector, key
+          // enumeration, …): the coarse tier can't gate it — build the deep
+          // graph eagerly so it's driven normally and never misses an update.
+          buildEffect()
+        } else {
+          // Defer the deep graph: register in the segment index and build on
+          // the first dispatch that changes one of these segments.
+          coarseSub = {
+            segments,
+            onCoarseHit: () => {
+              if (built) return
+              buildEffect()
+              // buildEffect's first run evaluated the computed against the
+              // just-committed state without notifying. Surface this
+              // dispatch's change now by comparing to the seeded value.
+              if (pendingError !== null) {
+                notifyReact?.()
+              } else {
+                const newValue = selectorComputed.get()
+                if (!equalityFnRef.current(currentResult, newValue)) {
+                  currentResult = newValue
+                  version++
+                  notifyReact?.()
+                }
+              }
+              // Now driven by the deep graph via reconcile — drop the coarse
+              // registration so it isn't hit again.
+              if (coarseSub !== null) {
+                registry.segmentIndex.unregister(coarseSub)
+                coarseSub = null
+              }
+            },
+          }
+          registry.segmentIndex.register(coarseSub)
         }
-        registry.segmentIndex.register(coarseSub)
-
-        // Create an effect that fires when the computed value changes.
-        // We apply the user's equalityFn here since alien-signals
-        // doesn't support custom equality per-computed.
-        let isFirst = true
-        const dispose = engine.effect(() => {
-          const newValue = selectorComputed.get()
-
-          if (pendingError !== null) {
-            // The evaluation threw (newValue is the SELECTOR_THREW
-            // sentinel — never adopt it). Notify React so getSnapshot
-            // can retry and surface or dissolve the error.
-            isFirst = false
-            if (!suppressNotify) {
-              notifyReact?.()
-            }
-            return
-          }
-
-          if (isFirst) {
-            // First effect run — just establish tracking, don't notify
-            isFirst = false
-            return
-          }
-
-          if (suppressNotify) {
-            // Render-phase selector swap (setSelector): adopt the value
-            // so the equality baseline is current, but let the ongoing
-            // render pick it up via getSnapshot instead of scheduling
-            // another render.
-            currentResult = newValue
-            return
-          }
-
-          // Apply user's equality function
-          if (!equalityFnRef.current(currentResult, newValue)) {
-            currentResult = newValue
-            version++
-            notifyReact?.()
-          }
-        })
 
         return () => {
           notifyReact = null
@@ -371,7 +426,11 @@ const useSignalSelectorImpl = <S, R>(
             registry.segmentIndex.unregister(coarseSub)
             coarseSub = null
           }
-          dispose()
+          if (disposeEffect !== null) {
+            disposeEffect()
+            disposeEffect = null
+          }
+          built = false
         }
       },
 
