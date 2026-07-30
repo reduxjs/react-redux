@@ -70,7 +70,11 @@ export function recordSegments<S extends object>(
 export class SegmentIndex<Sub extends CoarseSub> {
   private readonly bySegment = new Map<string, Set<Sub>>()
 
-  /** Add `sub` under each of its current segments. */
+  /**
+   * Add `sub` under each of its current segments.
+   * @param sub - The subscriber to index
+   * @returns Nothing
+   */
   register(sub: Sub): void {
     for (const segment of sub.segments) {
       let set = this.bySegment.get(segment)
@@ -82,7 +86,12 @@ export class SegmentIndex<Sub extends CoarseSub> {
     }
   }
 
-  /** Remove `sub` from each of the given segments (its current set by default). */
+  /**
+   * Remove `sub` from each of the given segments (its current set by default).
+   * @param sub - The subscriber to remove
+   * @param segments - The segments to remove it from; defaults to its current set
+   * @returns Nothing
+   */
   unregister(sub: Sub, segments: Iterable<string> = sub.segments): void {
     for (const segment of segments) {
       const set = this.bySegment.get(segment)
@@ -95,7 +104,12 @@ export class SegmentIndex<Sub extends CoarseSub> {
     }
   }
 
-  /** Add every subscriber of any changed segment into `out`. */
+  /**
+   * Add every subscriber of any changed segment into `out`.
+   * @param changedSegments - The segments that changed in a dispatch
+   * @param out - The set collecting the affected subscribers
+   * @returns Nothing
+   */
   collect(changedSegments: Iterable<string>, out: Set<Sub>): void {
     for (const segment of changedSegments) {
       const set = this.bySegment.get(segment)
@@ -105,7 +119,10 @@ export class SegmentIndex<Sub extends CoarseSub> {
     }
   }
 
-  /** Number of indexed segments (for tests/diagnostics). */
+  /**
+   * Number of indexed segments (for tests/diagnostics).
+   * @returns The count of segments currently in the index
+   */
   segmentCount(): number {
     return this.bySegment.size
   }

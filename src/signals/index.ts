@@ -24,4 +24,6 @@ export type { PathSignalRegistry } from './pathSignalRegistry'
 
 export { createTrackingProxy, unwrap } from './trackingProxy'
 
+export { default as shallowEqual } from '../utils/shallowEqual'
+
 export { diffAndUpdateSignals, reconcileState } from './diff'
