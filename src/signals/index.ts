@@ -2,6 +2,7 @@ export { SignalProvider } from './SignalProvider'
 export type { SignalProviderProps } from './SignalProvider'
 
 export { useSignalSelector } from './useSignalSelector'
+export type { UseSignalSelector } from './useSignalSelector'
 
 export { useSignalContext } from './context'
 export type { SignalContextValue } from './context'
