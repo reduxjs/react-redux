@@ -16,19 +16,13 @@ import { useSignalSelector } from '../../src/signals/useSignalSelector'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { createTrackingProxy, getProxyPath } from '../../src/signals/trackingProxy'
-import {
-  untrackResult,
-  setUntrackStrategy,
-  getUntrackStrategy,
-  beginUntrackEvaluation,
-} from '../../src/signals/untrack'
+import { untrackResult } from '../../src/signals/untrack'
 
 const isTrackingProxy = (v: unknown) =>
   v !== null && typeof v === 'object' && getProxyPath(v) !== undefined
 
 afterEach(() => {
   rtl.cleanup()
-  setUntrackStrategy('recursive')
 })
 
 interface Todo {
@@ -81,7 +75,7 @@ function renderWithCapture<R>(
   return captured
 }
 
-describe('untrack at the hook boundary (recursive strategy)', () => {
+describe('untrack at the hook boundary', () => {
   it('a selector returning a state object yields the raw object, === to store state', () => {
     const { store } = makeStore()
     const captured = renderWithCapture(store, (s) => s.todos.items[0])
@@ -239,16 +233,9 @@ describe('untrackResult unit behavior', () => {
     expect(isTrackingProxy(result.child)).toBe(true)
   })
 
-  it("strategy 'none' passes proxies through untouched", () => {
-    const { proxy } = setup()
-    setUntrackStrategy('none')
-    expect(getUntrackStrategy()).toBe('none')
-    const container = { child: proxy.a }
-    expect(untrackResult(container).child).toBe(proxy.a)
-  })
 })
 
-describe("registry strategy (Immer-style finalization queue)", () => {
+describe('untrackResult with derived arrays', () => {
   interface Row {
     id: number
     status: string
@@ -275,18 +262,15 @@ describe("registry strategy (Immer-style finalization queue)", () => {
     return { state, proxy }
   }
 
-  /** Mimic one hook evaluation under the registry strategy. */
+  /** Mimic one hook evaluation: run the selector, untrack the result. */
   function evaluate<R>(
     proxy: ReturnType<typeof setupArrayState>['proxy'],
     selector: (s: ReturnType<typeof setupArrayState>['proxy']) => R,
   ): R {
-    setUntrackStrategy('registry')
-    beginUntrackEvaluation()
-    const result = selector(proxy)
-    return untrackResult(result)
+    return untrackResult(selector(proxy))
   }
 
-  it('finalizes filter() results to raw elements', () => {
+  it('untracks filter() results to raw elements', () => {
     const { state, proxy } = setupArrayState()
     const result = evaluate(proxy, (s) => s.rows.filter((r) => r.status === 'even'))
     expect(result).toHaveLength(5)
@@ -321,7 +305,7 @@ describe("registry strategy (Immer-style finalization queue)", () => {
     expect(isTrackingProxy(result[1])).toBe(false)
   })
 
-  it('finalizes slice() results', () => {
+  it('untracks slice() results', () => {
     const { state, proxy } = setupArrayState()
     const result = evaluate(proxy, (s) => s.rows.slice(2, 5))
     expect(result).toHaveLength(3)
@@ -331,7 +315,7 @@ describe("registry strategy (Immer-style finalization queue)", () => {
     expect(result[0]).toBe(state.rows[2])
   })
 
-  it('finalizes library containers embedded in user containers', () => {
+  it('untracks library-built arrays embedded in user containers', () => {
     const { state, proxy } = setupArrayState()
     const result = evaluate(proxy, (s) => ({
       matches: s.rows.filter((r) => r.score > 50),
@@ -344,34 +328,4 @@ describe("registry strategy (Immer-style finalization queue)", () => {
     expect(result.first).toBe(state.rows[0])
   })
 
-  it('works end-to-end through the hook', () => {
-    setUntrackStrategy('registry')
-    const { store } = makeStore()
-    const captured = renderWithCapture(store, (s) =>
-      s.todos.items.filter((t) => t.done),
-    )
-    const result = captured[captured.length - 1]
-    expect(result).toHaveLength(1)
-    expect(isTrackingProxy(result[0])).toBe(false)
-    expect(result[0]).toBe(store.getState().todos.items[1])
-  })
-})
-
-describe('untrack strategy switching', () => {
-  it("strategy 'none' passes proxies through untouched (control)", () => {
-    const registry = createPathSignalRegistry(alienEngine)
-    const state = { a: { x: 1 } }
-    Object.freeze(state.a)
-    Object.freeze(state)
-    const proxy = createTrackingProxy(
-      state,
-      '',
-      registry,
-      registry.proxyCache,
-    ) as typeof state
-    setUntrackStrategy('none')
-    expect(getUntrackStrategy()).toBe('none')
-    const container = { child: proxy.a }
-    expect(untrackResult(container).child).toBe(proxy.a)
-  })
 })
