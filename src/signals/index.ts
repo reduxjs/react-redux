@@ -1,10 +1,13 @@
 export { SignalProvider } from './SignalProvider'
 export type { SignalProviderProps } from './SignalProvider'
 
-export { useSignalSelector } from './useSignalSelector'
+export {
+  createSignalSelectorHook,
+  useSignalSelector,
+} from './useSignalSelector'
 export type { UseSignalSelector } from './useSignalSelector'
 
-export { useSignalContext } from './context'
+export { createSignalContextHook, useSignalContext } from './context'
 export type { SignalContextValue } from './context'
 
 export { alienEngine } from './engine'
