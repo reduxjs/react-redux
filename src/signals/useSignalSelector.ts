@@ -18,6 +18,8 @@ import {
   type LeafObjectTracker,
 } from './trackingProxy'
 import { untrackResult } from './untrack'
+import { recordSegments } from './coarseSegments'
+import type { CoarseSub } from './coarseSegments'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore, useDebugValue } =
   React
@@ -97,6 +99,20 @@ const useSignalSelectorImpl = <S, R>(
     let version = 0
     let notifyReact: (() => void) | null = null
     let suppressNotify = false
+    // Coarse-tier registration for this hook (top-level segments it reads),
+    // kept so subscribe/cleanup can (un)register it in the segment index.
+    let coarseSub: CoarseSub | null = null
+    // Lazy deep-graph state: the alien effect that establishes path signals
+    // and drives React notifications is built on the first coarse hit (a
+    // dispatch that changed one of this hook's segments), not at mount — so
+    // mounting N hooks doesn't build N deep graphs up front.
+    let built = false
+    let disposeEffect: (() => void) | null = null
+    // The store state `currentResult` was last computed from, while unbuilt.
+    // Lets getSnapshot recompute from the latest state (only when the state
+    // ref changed, so the snapshot stays referentially stable) — see
+    // getSnapshot for why this prevents tearing during the deferred window.
+    let lastSnapshotState: unknown = null
     // Set when the selector threw during an effect re-evaluation (classic
     // zombie child: an entity was removed while a component selecting it
     // is still mounted). getSnapshot retries and rethrows if it persists.
@@ -288,61 +304,143 @@ const useSignalSelectorImpl = <S, R>(
       }
     })
 
-    // Initialize with current value. A selector that throws on mount
-    // surfaces here, during render — same as stock useSelector.
-    currentResult = selectorComputed.get()
-    if (pendingError !== null) {
+    // MOUNT OPT: seed the first-render value with a cheap UNTRACKED run of
+    // the selector against raw state, instead of the eager tracked
+    // `selectorComputed.get()`. Building the tracking proxy + registering
+    // path signals (the expensive part) is deferred to the first
+    // `engine.effect` run inside subscribe(), which React invokes in the
+    // commit phase — off the render-blocking path. The raw run yields the
+    // same value (`untrackResult` is a no-op on already-raw state), so the
+    // first-render snapshot is unchanged; the dependency graph is
+    // established lazily on subscribe. A selector that throws
+    // deterministically still throws here, during render (stock parity).
+    try {
+      const state = store.getState()
+      lastSnapshotState = state
+      currentResult = untrackResult(selectorRef.current(state as S))
+    } catch (e) {
+      pendingError = e
       throw pendingError
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      // Dev-mode selector checks normally ride the computed's first eval,
+      // which is now deferred to the first coarse hit. Run them here at mount
+      // so their timing/frequency ('once' vs 'always') is unchanged. They
+      // use raw state — the stability re-run and identity check don't need
+      // the tracking proxy — and consume `firstRun`, so the later computed
+      // eval only re-checks under 'always'.
+      runDevModeChecks(currentResult, store.getState() as S)
+    }
+
+    // Build the alien effect that drives React notifications from the deep
+    // signal graph. Its first run evaluates the computed once — establishing
+    // path-signal dependencies via the tracking proxy — without notifying;
+    // afterwards alien re-runs it whenever a tracked path changes. Deferred
+    // until the first coarse hit, so mount doesn't build N deep graphs.
+    const buildEffect = (): void => {
+      built = true
+      let isFirst = true
+      disposeEffect = engine.effect(() => {
+        const newValue = selectorComputed.get()
+
+        if (pendingError !== null) {
+          // The evaluation threw (newValue is the SELECTOR_THREW sentinel —
+          // never adopt it). Notify React so getSnapshot can retry and
+          // surface or dissolve the error.
+          isFirst = false
+          if (!suppressNotify) {
+            notifyReact?.()
+          }
+          return
+        }
+
+        if (isFirst) {
+          // First effect run — just establish tracking, don't notify.
+          isFirst = false
+          return
+        }
+
+        if (suppressNotify) {
+          // Render-phase selector swap (setSelector): adopt the value so the
+          // equality baseline is current, but let the ongoing render pick it
+          // up via getSnapshot instead of scheduling another render.
+          currentResult = newValue
+          return
+        }
+
+        // Apply user's equality function.
+        if (!equalityFnRef.current(currentResult, newValue)) {
+          currentResult = newValue
+          version++
+          notifyReact?.()
+        }
+      })
     }
 
     return {
       subscribe(onStoreChange: () => void): () => void {
         notifyReact = onStoreChange
 
-        // Create an effect that fires when the computed value changes.
-        // We apply the user's equalityFn here since alien-signals
-        // doesn't support custom equality per-computed.
-        let isFirst = true
-        const dispose = engine.effect(() => {
-          const newValue = selectorComputed.get()
+        // Record the coarse top-level segments this selector reads. Sound for
+        // immutable state: if none of them changed by reference, the selector
+        // result cannot have changed, so the hook needs no update.
+        const segments = recordSegments(
+          store.getState() as object,
+          selectorRef.current as (s: object) => unknown,
+        )
 
-          if (pendingError !== null) {
-            // The evaluation threw (newValue is the SELECTOR_THREW
-            // sentinel — never adopt it). Notify React so getSnapshot
-            // can retry and surface or dissolve the error.
-            isFirst = false
-            if (!suppressNotify) {
-              notifyReact?.()
-            }
-            return
+        if (segments.size === 0) {
+          // No discrete top-level segment (identity selector, key
+          // enumeration, …): the coarse tier can't gate it — build the deep
+          // graph eagerly so it's driven normally and never misses an update.
+          buildEffect()
+        } else {
+          // Defer the deep graph: register in the segment index and build on
+          // the first dispatch that changes one of these segments.
+          coarseSub = {
+            segments,
+            onCoarseHit: () => {
+              // Skip if already built, or if the hook unsubscribed while this
+              // candidate was waiting in a sliced drain (cleanup nulls
+              // notifyReact) — don't build a graph for a dead hook.
+              if (built || notifyReact === null) return
+              buildEffect()
+              // buildEffect's first run evaluated the computed against the
+              // just-committed state without notifying. Surface this
+              // dispatch's change now by comparing to the seeded value.
+              if (pendingError !== null) {
+                notifyReact?.()
+              } else {
+                const newValue = selectorComputed.get()
+                if (!equalityFnRef.current(currentResult, newValue)) {
+                  currentResult = newValue
+                  version++
+                  notifyReact?.()
+                }
+              }
+              // Now driven by the deep graph via reconcile — drop the coarse
+              // registration so it isn't hit again.
+              if (coarseSub !== null) {
+                registry.segmentIndex.unregister(coarseSub)
+                coarseSub = null
+              }
+            },
           }
-
-          if (isFirst) {
-            // First effect run — just establish tracking, don't notify
-            isFirst = false
-            return
-          }
-
-          if (suppressNotify) {
-            // Render-phase selector swap (setSelector): adopt the value
-            // so the equality baseline is current, but let the ongoing
-            // render pick it up via getSnapshot instead of scheduling
-            // another render.
-            currentResult = newValue
-            return
-          }
-
-          // Apply user's equality function
-          if (!equalityFnRef.current(currentResult, newValue)) {
-            currentResult = newValue
-            version++
-            notifyReact?.()
-          }
-        })
+          registry.segmentIndex.register(coarseSub)
+        }
 
         return () => {
           notifyReact = null
-          dispose()
+          if (coarseSub !== null) {
+            registry.segmentIndex.unregister(coarseSub)
+            coarseSub = null
+          }
+          if (disposeEffect !== null) {
+            disposeEffect()
+            disposeEffect = null
+          }
+          built = false
         }
       },
 
@@ -362,6 +460,31 @@ const useSignalSelectorImpl = <S, R>(
             throw pendingError
           }
         }
+
+        if (!built) {
+          // Not yet upgraded to the deep signal graph. Behave like stock
+          // useSelector: recompute from the LATEST committed state whenever
+          // it changed (skip when the state ref is unchanged so the snapshot
+          // stays referentially stable for useSyncExternalStore). This closes
+          // the tearing window from the coarse tier's deferred notification —
+          // if an ancestor force-renders this hook before its deferred build
+          // runs, it still reflects the latest state, consistent with built
+          // siblings that update synchronously via reconcile.
+          const state = store.getState()
+          if (state !== lastSnapshotState) {
+            lastSnapshotState = state
+            try {
+              const fresh = untrackResult(selectorRef.current(state as S))
+              if (!equalityFnRef.current(currentResult, fresh)) {
+                currentResult = fresh
+              }
+            } catch (e) {
+              pendingError = e
+              throw pendingError
+            }
+          }
+        }
+
         return currentResult
       },
 

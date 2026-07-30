@@ -1,5 +1,7 @@
 import { encodePathSegment } from './arrayKeys'
 import type { ArrayMeta } from './arrayKeys'
+import { SegmentIndex } from './coarseSegments'
+import type { CoarseSub } from './coarseSegments'
 import type { LeafObjectTracker, ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
@@ -48,6 +50,10 @@ export interface PathSignalRegistry {
 
   /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
   proxyCache: ProxyCache
+
+  /** Coarse tier: top-level segment -> subscribers, for cheaply deciding
+   *  which selectors a dispatch could affect before touching the deep graph. */
+  segmentIndex: SegmentIndex<CoarseSub>
 
   /** Holder for the leaf tracker of the evaluation currently running.
    *  Proxies read this at trap time instead of closing over a tracker,
@@ -174,6 +180,8 @@ export function createPathSignalRegistry(
   // Proxy cache: keyed by target object identity.
   // Reuses proxies for unchanged Immer subtrees across state snapshots.
   const proxyWeakMap: ProxyCache = new WeakMap()
+  // Coarse top-level segment index (see coarseSegments.ts).
+  const segmentIndex = new SegmentIndex<CoarseSub>()
   // Per-array metadata for identity-based tracking.
   // Maps array path → ArrayMeta (keyField + entityMap).
   const arrayMetas = new Map<string, ArrayMeta>()
@@ -314,6 +322,8 @@ export function createPathSignalRegistry(
     },
 
     proxyCache: proxyWeakMap,
+
+    segmentIndex,
 
     leafTrackerHolder: { current: undefined },
 
