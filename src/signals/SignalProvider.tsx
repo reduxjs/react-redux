@@ -11,6 +11,12 @@ import { createPathSignalRegistry } from './pathSignalRegistry'
 import { reconcileState } from './diff'
 import { changedSegments } from './coarseSegments'
 import type { CoarseSub } from './coarseSegments'
+import { scheduleCallback, shouldYield } from './scheduler'
+
+// Above this many candidates in a single dispatch, the coarse pass (each
+// candidate builds its deferred deep graph + notifies) is time-sliced so it
+// never blocks one frame; below it, running inline avoids scheduler overhead.
+const COARSE_SLICE_THRESHOLD = 64
 import { alienEngine } from './engine'
 import type { SignalEngine } from './types'
 
@@ -71,6 +77,50 @@ export function SignalProvider<
   // + signal diff on each dispatch
   useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue
+
+    // Gated, time-sliced drain of coarse candidates. A large first-touch
+    // burst (e.g. every hook depends on the one slice that just changed) is
+    // chunked across macrotasks so it never blocks a frame; a small burst
+    // runs inline. Deferring a candidate only delays its re-render — the
+    // value is read fresh from committed state when it finally builds.
+    let pending: CoarseSub[] = []
+    const pendingSet = new Set<CoarseSub>()
+    let draining = false
+    let disposed = false
+
+    const drainChunk = (): void => {
+      if (disposed) return
+      let sub = pending.pop()
+      while (sub !== undefined) {
+        pendingSet.delete(sub)
+        sub.onCoarseHit()
+        if (pending.length > 0 && shouldYield()) break
+        sub = pending.pop()
+      }
+      if (pending.length > 0) {
+        scheduleCallback(drainChunk)
+      } else {
+        draining = false
+      }
+    }
+
+    const runCoarse = (candidates: Set<CoarseSub>): void => {
+      if (!draining && candidates.size < COARSE_SLICE_THRESHOLD) {
+        for (const sub of candidates) sub.onCoarseHit()
+        return
+      }
+      for (const sub of candidates) {
+        if (!pendingSet.has(sub)) {
+          pendingSet.add(sub)
+          pending.push(sub)
+        }
+      }
+      if (!draining) {
+        draining = true
+        scheduleCallback(drainChunk)
+      }
+    }
+
     subscription.onStateChange = () => {
       // Run signal diff BEFORE notifying nested subs, so computed values
       // are up-to-date when useSelector/useSignalSelector read them
@@ -90,7 +140,7 @@ export function SignalProvider<
       if (changed.length > 0) {
         const candidates = new Set<CoarseSub>()
         registry.segmentIndex.collect(changed, candidates)
-        for (const sub of candidates) sub.onCoarseHit()
+        if (candidates.size > 0) runCoarse(candidates)
       }
 
       subscription.notifyNestedSubs()
@@ -101,6 +151,9 @@ export function SignalProvider<
       subscription.notifyNestedSubs()
     }
     return () => {
+      disposed = true
+      pending = []
+      pendingSet.clear()
       subscription.tryUnsubscribe()
       subscription.onStateChange = undefined
     }

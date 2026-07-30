@@ -108,6 +108,11 @@ const useSignalSelectorImpl = <S, R>(
     // mounting N hooks doesn't build N deep graphs up front.
     let built = false
     let disposeEffect: (() => void) | null = null
+    // The store state `currentResult` was last computed from, while unbuilt.
+    // Lets getSnapshot recompute from the latest state (only when the state
+    // ref changed, so the snapshot stays referentially stable) — see
+    // getSnapshot for why this prevents tearing during the deferred window.
+    let lastSnapshotState: unknown = null
     // Set when the selector threw during an effect re-evaluation (classic
     // zombie child: an entity was removed while a component selecting it
     // is still mounted). getSnapshot retries and rethrows if it persists.
@@ -310,7 +315,9 @@ const useSignalSelectorImpl = <S, R>(
     // established lazily on subscribe. A selector that throws
     // deterministically still throws here, during render (stock parity).
     try {
-      currentResult = untrackResult(selectorRef.current(store.getState() as S))
+      const state = store.getState()
+      lastSnapshotState = state
+      currentResult = untrackResult(selectorRef.current(state as S))
     } catch (e) {
       pendingError = e
       throw pendingError
@@ -394,7 +401,10 @@ const useSignalSelectorImpl = <S, R>(
           coarseSub = {
             segments,
             onCoarseHit: () => {
-              if (built) return
+              // Skip if already built, or if the hook unsubscribed while this
+              // candidate was waiting in a sliced drain (cleanup nulls
+              // notifyReact) — don't build a graph for a dead hook.
+              if (built || notifyReact === null) return
               buildEffect()
               // buildEffect's first run evaluated the computed against the
               // just-committed state without notifying. Surface this
@@ -450,6 +460,31 @@ const useSignalSelectorImpl = <S, R>(
             throw pendingError
           }
         }
+
+        if (!built) {
+          // Not yet upgraded to the deep signal graph. Behave like stock
+          // useSelector: recompute from the LATEST committed state whenever
+          // it changed (skip when the state ref is unchanged so the snapshot
+          // stays referentially stable for useSyncExternalStore). This closes
+          // the tearing window from the coarse tier's deferred notification —
+          // if an ancestor force-renders this hook before its deferred build
+          // runs, it still reflects the latest state, consistent with built
+          // siblings that update synchronously via reconcile.
+          const state = store.getState()
+          if (state !== lastSnapshotState) {
+            lastSnapshotState = state
+            try {
+              const fresh = untrackResult(selectorRef.current(state as S))
+              if (!equalityFnRef.current(currentResult, fresh)) {
+                currentResult = fresh
+              }
+            } catch (e) {
+              pendingError = e
+              throw pendingError
+            }
+          }
+        }
+
         return currentResult
       },
 
