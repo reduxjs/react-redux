@@ -124,6 +124,25 @@ describe('coarse tier — no desync during the sliced first-touch window', () =>
     }
   })
 
+  it('sliceThreshold=Infinity runs the first-touch burst inline (atomic)', () => {
+    const { store, setAll } = makeStore()
+    rtl.render(
+      <SignalProvider store={store} sliceThreshold={Infinity}>
+        <Parent />
+      </SignalProvider>,
+    )
+
+    // With slicing disabled, the whole first-touch burst runs synchronously in
+    // the dispatch — every leaf reflects the new value at once, no drain flush
+    // and no forced re-render needed.
+    rtl.act(() => {
+      store.dispatch(setAll(9))
+    })
+    for (let i = 0; i < N; i++) {
+      expect(rtl.screen.getByTestId(`leaf-${i}`).textContent).toBe('9')
+    }
+  })
+
   it('stays consistent across a second change after warmup (now built, synchronous)', async () => {
     const { store, setAll } = makeStore()
     rtl.render(

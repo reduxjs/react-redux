@@ -13,18 +13,30 @@ import { changedSegments } from './coarseSegments'
 import type { CoarseSub } from './coarseSegments'
 import { scheduleCallback, shouldYield } from './scheduler'
 
-// Above this many candidates in a single dispatch, the coarse pass (each
-// candidate builds its deferred deep graph + notifies) is time-sliced so it
-// never blocks one frame; below it, running inline avoids scheduler overhead.
-const COARSE_SLICE_THRESHOLD = 64
 import { alienEngine } from './engine'
 import type { SignalEngine } from './types'
+
+// Default for SignalProvider's `sliceThreshold`: above this many candidates in
+// a single dispatch, the coarse first-touch pass is time-sliced (responsive,
+// but updates stagger); below it, it runs inline (atomic — all candidates in
+// one synchronous pass). Override via the prop.
+const DEFAULT_SLICE_THRESHOLD = 64
 
 export interface SignalProviderProps<
   A extends Action<string> = UnknownAction,
   S = unknown,
 > extends ProviderProps<A, S> {
   engine?: SignalEngine
+  /**
+   * Candidate count above which the coarse first-touch build+notify burst is
+   * time-sliced across macrotasks (keeps a huge burst from blocking a frame,
+   * at the cost of updates staggering during that burst). Below it the pass
+   * runs inline in one synchronous, atomic step. Default `64`. Set to
+   * `Infinity` to always run inline (atomic, may block on a large first
+   * touch); set to `0` to always slice. Only affects the first-touch burst —
+   * steady-state updates are always synchronous.
+   */
+  sliceThreshold?: number
 }
 
 export function SignalProvider<
@@ -37,6 +49,7 @@ export function SignalProvider<
     serverState,
     store,
     engine = alienEngine,
+    sliceThreshold = DEFAULT_SLICE_THRESHOLD,
   } = providerProps
 
   // Create signal registry once (lazy init via ref)
@@ -105,7 +118,7 @@ export function SignalProvider<
     }
 
     const runCoarse = (candidates: Set<CoarseSub>): void => {
-      if (!draining && candidates.size < COARSE_SLICE_THRESHOLD) {
+      if (!draining && candidates.size < sliceThreshold) {
         for (const sub of candidates) sub.onCoarseHit()
         return
       }
@@ -157,7 +170,7 @@ export function SignalProvider<
       subscription.tryUnsubscribe()
       subscription.onStateChange = undefined
     }
-  }, [contextValue, previousState])
+  }, [contextValue, previousState, sliceThreshold])
 
   const Context = (context || ReactReduxContext) as Context<
     ReactReduxContextValue<S, A> | null
