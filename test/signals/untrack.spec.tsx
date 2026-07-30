@@ -262,7 +262,7 @@ describe('untrackResult with derived arrays', () => {
     return { state, proxy }
   }
 
-  /** Mimic one hook evaluation: run the selector, untrack the result. */
+  // Mimic one hook evaluation: run the selector, untrack the result.
   function evaluate<R>(
     proxy: ReturnType<typeof setupArrayState>['proxy'],
     selector: (s: ReturnType<typeof setupArrayState>['proxy']) => R,
