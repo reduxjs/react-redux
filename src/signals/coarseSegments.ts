@@ -95,32 +95,6 @@ export class SegmentIndex<Sub extends CoarseSub> {
     }
   }
 
-  /**
-   * Re-index `sub` after its segment set changed. `sub.segments` must already
-   * hold the new set; `prevSegments` is the set it was registered under.
-   */
-  reindex(sub: Sub, prevSegments: Set<string>): void {
-    for (const segment of prevSegments) {
-      if (!sub.segments.has(segment)) {
-        const set = this.bySegment.get(segment)
-        if (set !== undefined) {
-          set.delete(sub)
-          if (set.size === 0) this.bySegment.delete(segment)
-        }
-      }
-    }
-    for (const segment of sub.segments) {
-      if (!prevSegments.has(segment)) {
-        let set = this.bySegment.get(segment)
-        if (set === undefined) {
-          set = new Set()
-          this.bySegment.set(segment, set)
-        }
-        set.add(sub)
-      }
-    }
-  }
-
   /** Add every subscriber of any changed segment into `out`. */
   collect(changedSegments: Iterable<string>, out: Set<Sub>): void {
     for (const segment of changedSegments) {

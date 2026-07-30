@@ -84,22 +84,6 @@ describe('SegmentIndex', () => {
     expect(out.size).toBe(0)
   })
 
-  it('reindex moves a subscriber to its new segment set', () => {
-    const index = new SegmentIndex<CoarseSub>()
-    const s1 = sub('a', 'b')
-    index.register(s1)
-
-    const prev = new Set(s1.segments)
-    s1.segments = new Set(['b', 'c'])
-    index.reindex(s1, prev)
-
-    const out = new Set<CoarseSub>()
-    index.collect(['a'], out)
-    expect(out.size).toBe(0) // no longer under 'a'
-
-    index.collect(['c'], out)
-    expect(out).toEqual(new Set([s1])) // now under 'c'
-  })
 })
 
 describe('changedSegments', () => {
