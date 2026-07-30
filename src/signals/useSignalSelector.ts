@@ -1,4 +1,9 @@
 import { React } from '../utils/react'
+import type {
+  DevModeChecks,
+  UseSelectorOptions,
+} from '../hooks/useSelector'
+import type { EqualityFn, NoInfer } from '../types'
 import { useSignalContext } from './context'
 import {
   createTrackingProxy,
@@ -7,7 +12,10 @@ import {
 } from './trackingProxy'
 import { untrackResult } from './untrack'
 
-const { useRef, useMemo, useEffect, useSyncExternalStore } = React
+const { useRef, useMemo, useEffect, useSyncExternalStore, useDebugValue } =
+  React
+
+const refEquality: EqualityFn<any> = Object.is
 
 // Returned by the computed when the selector threw. A unique sentinel
 // (never a real result) so alien-signals sees the value as changed and
@@ -23,14 +31,38 @@ const SELECTOR_THREW = Symbol('selector threw') as unknown
  *
  * Must be used within a <SignalProvider>.
  * @param selector - Function that extracts a value from the store state
- * @param equalityFn - Custom equality function for change detection
+ * @param equalityFnOrOptions - Equality function, or an options object
+ *   with `equalityFn` and `devModeChecks` (same shape as stock
+ *   `useSelector`)
  * @returns The selected value
  */
-export function useSignalSelector<S extends object, R>(
+const useSignalSelectorImpl = <S, R>(
   selector: (state: S) => R,
-  equalityFn: (a: R, b: R) => boolean = Object.is,
-): R {
-  const { store, registry, engine } = useSignalContext<S>()
+  equalityFnOrOptions: EqualityFn<R> | UseSelectorOptions<R> = {},
+): R => {
+  const { equalityFn = refEquality as EqualityFn<R>, devModeChecks = {} } =
+    typeof equalityFnOrOptions === 'function'
+      ? { equalityFn: equalityFnOrOptions, devModeChecks: {} }
+      : equalityFnOrOptions
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (!selector) {
+      throw new Error(`You must pass a selector to useSignalSelector`)
+    }
+    if (typeof selector !== 'function') {
+      throw new Error(
+        `You must pass a function as a selector to useSignalSelector`,
+      )
+    }
+    if (typeof equalityFn !== 'function') {
+      throw new Error(
+        `You must pass a function as an equality function to useSignalSelector`,
+      )
+    }
+  }
+
+  const reduxContext = useSignalContext<S>()
+  const { store, registry, engine } = reduxContext
 
   // Track latest selector/equalityFn via refs. Updated during render
   // (idempotent ref writes, same approach as React's
@@ -39,6 +71,15 @@ export function useSignalSelector<S extends object, R>(
   const selectorRef = useRef(selector)
   const equalityFnRef = useRef(equalityFn)
   equalityFnRef.current = equalityFn
+
+  // Dev-mode check settings. Per-hook `devModeChecks` overrides merge over
+  // the Provider-level defaults, matching stock useSelector. Kept in refs
+  // (idempotent render-phase writes) so the bridge closure always reads
+  // the latest values.
+  const devModeChecksRef = useRef<Partial<DevModeChecks>>(devModeChecks)
+  devModeChecksRef.current = devModeChecks
+  const contextRef = useRef(reduxContext)
+  contextRef.current = reduxContext
 
   // Create the signal bridge once (stable across renders)
   const bridge = useMemo(() => {
@@ -107,6 +148,70 @@ export function useSignalSelector<S extends object, R>(
       }
     }
 
+    // Dev-mode selector checks (stability / identity function), matching
+    // stock useSelector. They run inside the computed because that is the
+    // only place the selector executes. `firstRun` is per hook instance:
+    // 'once' means literally once, on the first evaluation — a later
+    // render-phase selector swap does NOT re-arm it.
+    let firstRun = true
+    const runDevModeChecks = (selected: R, proxy: S): void => {
+      const { stabilityCheck = 'once', identityFunctionCheck = 'once' } =
+        contextRef.current
+      const finalChecks: DevModeChecks = {
+        stabilityCheck,
+        identityFunctionCheck,
+        ...devModeChecksRef.current,
+      }
+
+      if (
+        finalChecks.stabilityCheck === 'always' ||
+        (finalChecks.stabilityCheck === 'once' && firstRun)
+      ) {
+        // Re-running the selector against the same proxy registers the
+        // same dependencies (idempotent) and returns proxy-consistent
+        // values, so === / shallowEqual comparisons behave correctly.
+        const toCompare = selectorRef.current(proxy)
+        if (!equalityFnRef.current(selected, toCompare)) {
+          let stack: string | undefined = undefined
+          try {
+            throw new Error()
+          } catch (e) {
+            ;({ stack } = e as Error)
+          }
+          console.warn(
+            'Selector ' +
+              (selectorRef.current.name || 'unknown') +
+              ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
+              '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
+            { selected, selected2: toCompare, stack },
+          )
+        }
+      }
+
+      if (
+        finalChecks.identityFunctionCheck === 'always' ||
+        (finalChecks.identityFunctionCheck === 'once' && firstRun)
+      ) {
+        if ((selected as unknown) === proxy) {
+          let stack: string | undefined = undefined
+          try {
+            throw new Error()
+          } catch (e) {
+            ;({ stack } = e as Error)
+          }
+          console.warn(
+            'Selector ' +
+              (selectorRef.current.name || 'unknown') +
+              ' returned the root state when called. With useSignalSelector this component will NEVER re-render, because signal dependencies are only created for the specific paths a selector reads — and this selector read none.' +
+              '\nSelect the smallest values your component needs instead of the entire state object.',
+            { stack },
+          )
+        }
+      }
+
+      firstRun = false
+    }
+
     const selectorComputed = engine.computed(() => {
       selectorVersionSignal.get()
       // pendingError reflects the LAST evaluation: a successful re-run
@@ -126,6 +231,10 @@ export function useSignalSelector<S extends object, R>(
           leafTracker,
         )
         const result = selectorRef.current(proxy as S)
+
+        if (process.env.NODE_ENV !== 'production') {
+          runDevModeChecks(result, proxy as S)
+        }
 
         // If the selector returned a tracking proxy (object), explicitly
         // read its signal to establish a reactive dependency on that path.
@@ -267,9 +376,41 @@ export function useSignalSelector<S extends object, R>(
 
   // getSnapshot doubles as getServerSnapshot: the computed already ran
   // during useMemo, so SSR renders the current selected value.
-  return useSyncExternalStore(
+  const selectedState = useSyncExternalStore(
     bridge.subscribe,
     bridge.getSnapshot,
     bridge.getSnapshot,
   )
+
+  useDebugValue(selectedState)
+
+  return selectedState
 }
+
+/**
+ * The signal-based `useSignalSelector` hook, including the `withTypes`
+ * helper for creating a pre-typed version:
+ *
+ * ```ts
+ * export const useAppSignalSelector = useSignalSelector.withTypes<RootState>()
+ * ```
+ */
+export interface UseSignalSelector<StateType = unknown> {
+  <TState extends StateType = StateType, Selected = unknown>(
+    selector: (state: TState) => Selected,
+    equalityFnOrOptions?:
+      | EqualityFn<NoInfer<Selected>>
+      | UseSelectorOptions<NoInfer<Selected>>,
+  ): Selected
+
+  withTypes: <
+    OverrideStateType extends StateType,
+  >() => UseSignalSelector<OverrideStateType>
+}
+
+export const useSignalSelector = /* @__PURE__ */ Object.assign(
+  useSignalSelectorImpl,
+  {
+    withTypes: () => useSignalSelector,
+  },
+) as UseSignalSelector
