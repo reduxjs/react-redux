@@ -222,6 +222,9 @@ jobs:
         working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
         env:
           NODE_OPTIONS: --openssl-legacy-provider
+          # The RTK examples are cloned at a pinned commit, so their
+          # `caniuse-lite` is frozen and will always look stale here.
+          BROWSERSLIST_IGNORE_OLD_DATA: true
         run: yarn build
 
       - name: Run test step
