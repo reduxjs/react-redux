@@ -18,6 +18,8 @@ import {
   type LeafObjectTracker,
 } from './trackingProxy'
 import { untrackResult } from './untrack'
+import { recordSegments } from './coarseSegments'
+import type { CoarseSub } from './coarseSegments'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore, useDebugValue } =
   React
@@ -97,6 +99,9 @@ const useSignalSelectorImpl = <S, R>(
     let version = 0
     let notifyReact: (() => void) | null = null
     let suppressNotify = false
+    // Coarse-tier registration for this hook (top-level segments it reads),
+    // kept so subscribe/cleanup can (un)register it in the segment index.
+    let coarseSub: CoarseSub | null = null
     // Set when the selector threw during an effect re-evaluation (classic
     // zombie child: an entity was removed while a component selecting it
     // is still mounted). getSnapshot retries and rethrows if it persists.
@@ -309,6 +314,16 @@ const useSignalSelectorImpl = <S, R>(
       subscribe(onStoreChange: () => void): () => void {
         notifyReact = onStoreChange
 
+        // Register the coarse top-level segments this selector reads, so a
+        // dispatch can cheaply tell whether this hook could be affected.
+        coarseSub = {
+          segments: recordSegments(
+            store.getState() as object,
+            selectorRef.current as (s: object) => unknown,
+          ),
+        }
+        registry.segmentIndex.register(coarseSub)
+
         // Create an effect that fires when the computed value changes.
         // We apply the user's equalityFn here since alien-signals
         // doesn't support custom equality per-computed.
@@ -352,6 +367,10 @@ const useSignalSelectorImpl = <S, R>(
 
         return () => {
           notifyReact = null
+          if (coarseSub !== null) {
+            registry.segmentIndex.unregister(coarseSub)
+            coarseSub = null
+          }
           dispose()
         }
       },
