@@ -9,6 +9,12 @@ import { untrackResult } from './untrack'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore } = React
 
+// Returned by the computed when the selector threw. A unique sentinel
+// (never a real result) so alien-signals sees the value as changed and
+// keeps propagating to the effect — returning the previous result would
+// cut off propagation and React would never be notified of the error.
+const SELECTOR_THREW = Symbol('selector threw') as unknown
+
 
 /**
  * A React hook that selects state from a Redux store using signal-based
@@ -40,6 +46,10 @@ export function useSignalSelector<S extends object, R>(
     let version = 0
     let notifyReact: (() => void) | null = null
     let suppressNotify = false
+    // Set when the selector threw during an effect re-evaluation (classic
+    // zombie child: an entity was removed while a component selecting it
+    // is still mounted). getSnapshot retries and rethrows if it persists.
+    let pendingError: unknown = null
 
     // Create a computed that runs the selector through a tracking proxy.
     // This establishes signal dependencies on the paths the selector reads.
@@ -66,67 +76,105 @@ export function useSignalSelector<S extends object, R>(
     // closure's result until an unrelated store change fired a signal.
     const selectorVersionSignal = engine.signal(0)
 
-    const setSelector = (nextSelector: (state: S) => R): void => {
-      selectorRef.current = nextSelector
-      // Recompute in place WITHOUT notifying React: this runs during
-      // render, and getSnapshot picks up the fresh value in the same
-      // pass. Scheduling a re-render here would loop forever for
-      // selectors that return a new reference on every run.
+    // Force a fresh evaluation of the computed WITHOUT notifying React.
+    // Bumping the version signal dirties the computed; a plain .get()
+    // alone would return the cached value. On a selector error the
+    // computed records pendingError and yields the SELECTOR_THREW
+    // sentinel, which must never replace the last good result.
+    const recomputeInPlace = (): void => {
       suppressNotify = true
       try {
         selectorVersionSignal.set(selectorVersionSignal.get() + 1)
-        currentResult = selectorComputed.get()
+        const value = selectorComputed.get()
+        if (pendingError === null) {
+          currentResult = value
+        }
       } finally {
         suppressNotify = false
       }
     }
 
+    const setSelector = (nextSelector: (state: S) => R): void => {
+      selectorRef.current = nextSelector
+      // Recompute in place: this runs during render, and getSnapshot
+      // picks up the fresh value in the same pass. Scheduling a
+      // re-render here would loop forever for selectors that return a
+      // new reference on every run.
+      recomputeInPlace()
+      if (pendingError !== null) {
+        // The new closure threw — surface it in this render.
+        throw pendingError
+      }
+    }
+
     const selectorComputed = engine.computed(() => {
       selectorVersionSignal.get()
-      const state = store.getState() as S & object
+      // pendingError reflects the LAST evaluation: a successful re-run
+      // clears an earlier error.
+      pendingError = null
+      try {
+        const state = store.getState() as S & object
 
-      leafTracker.accessedObjects.clear()
-      leafTracker.traversedPaths.clear()
+        leafTracker.accessedObjects.clear()
+        leafTracker.traversedPaths.clear()
 
-      const proxy = createTrackingProxy(
-        state,
-        '',
-        registry,
-        registry.proxyCache,
-        leafTracker,
-      )
-      const result = selectorRef.current(proxy as S)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+          leafTracker,
+        )
+        const result = selectorRef.current(proxy as S)
 
-      // If the selector returned a tracking proxy (object), explicitly
-      // read its signal to establish a reactive dependency on that path.
-      const proxyPath = getProxyPath(result)
-      if (proxyPath !== undefined) {
-        registry.getOrCreate(proxyPath, result).get()
-      }
+        // If the selector returned a tracking proxy (object), explicitly
+        // read its signal to establish a reactive dependency on that path.
+        const proxyPath = getProxyPath(result)
+        if (proxyPath !== undefined) {
+          registry.getOrCreate(proxyPath, result).get()
+        }
 
-      // Read version signals for leaf objects — objects that were accessed
-      // but never had their properties read. These are used for identity
-      // comparison (===) and need their ref-change signals tracked.
-      for (const [objPath, rawValue] of leafTracker.accessedObjects) {
-        if (!leafTracker.traversedPaths.has(objPath)) {
-          // This object was read but never traversed — it's a leaf.
-          // Read its version signal to track identity changes.
-          // Skip root path since root changes every dispatch.
-          if (objPath !== '') {
-            registry.getOrCreate(objPath, rawValue).get()
+        // Read version signals for leaf objects — objects that were accessed
+        // but never had their properties read. These are used for identity
+        // comparison (===) and need their ref-change signals tracked.
+        for (const [objPath, rawValue] of leafTracker.accessedObjects) {
+          if (!leafTracker.traversedPaths.has(objPath)) {
+            // This object was read but never traversed — it's a leaf.
+            // Read its version signal to track identity changes.
+            // Skip root path since root changes every dispatch.
+            if (objPath !== '') {
+              registry.getOrCreate(objPath, rawValue).get()
+            }
           }
         }
-      }
 
-      // Strip tracking proxies before the result crosses into React.
-      // Must run AFTER the dependency reads above (they need the proxies
-      // in hand). Everything downstream — equalityFn, getSnapshot,
-      // components, dispatch payloads — sees only raw state.
-      return untrackResult(result)
+        // Strip tracking proxies before the result crosses into React.
+        // Must run AFTER the dependency reads above (they need the proxies
+        // in hand). Everything downstream — equalityFn, getSnapshot,
+        // components, dispatch payloads — sees only raw state.
+        return untrackResult(result)
+      } catch (e) {
+        // The selector threw — typically a zombie child whose entity was
+        // removed in the same dispatch that will unmount it. The error
+        // CANNOT propagate from here: alien-signals evaluates dirty
+        // computeds during its flush (checkDirty), so an uncaught throw
+        // escapes store.dispatch and skips every remaining component's
+        // effect. Record it and yield the sentinel; the effect notifies
+        // React and getSnapshot re-evaluates — if a parent unmounts this
+        // component first the error dissolves, otherwise it rethrows
+        // into the render where an error boundary owns it (matching
+        // stock useSelector under React's useSyncExternalStore).
+        pendingError = e
+        return SELECTOR_THREW as R
+      }
     })
 
-    // Initialize with current value
+    // Initialize with current value. A selector that throws on mount
+    // surfaces here, during render — same as stock useSelector.
     currentResult = selectorComputed.get()
+    if (pendingError !== null) {
+      throw pendingError
+    }
 
     return {
       subscribe(onStoreChange: () => void): () => void {
@@ -138,6 +186,17 @@ export function useSignalSelector<S extends object, R>(
         let isFirst = true
         const dispose = engine.effect(() => {
           const newValue = selectorComputed.get()
+
+          if (pendingError !== null) {
+            // The evaluation threw (newValue is the SELECTOR_THREW
+            // sentinel — never adopt it). Notify React so getSnapshot
+            // can retry and surface or dissolve the error.
+            isFirst = false
+            if (!suppressNotify) {
+              notifyReact?.()
+            }
+            return
+          }
 
           if (isFirst) {
             // First effect run — just establish tracking, don't notify
@@ -169,6 +228,21 @@ export function useSignalSelector<S extends object, R>(
       },
 
       getSnapshot(): R {
+        if (pendingError !== null) {
+          // A previous evaluation threw. Retry against current state:
+          // the situation may have resolved (entity restored, or this is
+          // a fresh render pass after the parent re-rendered). Clear
+          // first — the effect's catch re-sets it if the selector still
+          // throws. On rethrow, LEAVE pendingError set so the next
+          // getSnapshot (React retries during render after a
+          // subscription-phase throw) re-evaluates instead of returning
+          // a stale value.
+          pendingError = null
+          recomputeInPlace()
+          if (pendingError !== null) {
+            throw pendingError
+          }
+        }
         return currentResult
       },
 
