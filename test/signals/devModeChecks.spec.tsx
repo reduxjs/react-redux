@@ -17,7 +17,6 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import React from 'react'
-import type { MockInstance } from 'vitest'
 import { SignalProvider, useSignalSelector } from '../../src/signals'
 
 const makeStore = () => {
@@ -67,10 +66,13 @@ const makeStore = () => {
 type AppStore = ReturnType<typeof makeStore>['store']
 type RootState = ReturnType<AppStore['getState']>
 
-let warnSpy: MockInstance<(message?: any, ...optionalParams: any[]) => void>
+const spyOnConsoleWarn = () =>
+  vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+let warnSpy: ReturnType<typeof spyOnConsoleWarn>
 
 beforeEach(() => {
-  warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  warnSpy = spyOnConsoleWarn()
 })
 
 afterEach(() => {
