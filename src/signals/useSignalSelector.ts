@@ -1,10 +1,17 @@
+import type { Context } from 'react'
 import { React } from '../utils/react'
 import type {
   DevModeChecks,
   UseSelectorOptions,
 } from '../hooks/useSelector'
+import type { ReactReduxContextValue } from '../components/Context'
 import type { EqualityFn, NoInfer } from '../types'
-import { useSignalContext } from './context'
+import type { SignalContextValue } from './context'
+import {
+  createSignalContextHook,
+  ReactReduxContext,
+  useSignalContext,
+} from './context'
 import {
   createTrackingProxy,
   getProxyPath,
@@ -39,6 +46,7 @@ const SELECTOR_THREW = Symbol('selector threw') as unknown
 const useSignalSelectorImpl = <S, R>(
   selector: (state: S) => R,
   equalityFnOrOptions: EqualityFn<R> | UseSelectorOptions<R> = {},
+  useBoundSignalContext: <SS>() => SignalContextValue<SS> = useSignalContext,
 ): R => {
   const { equalityFn = refEquality as EqualityFn<R>, devModeChecks = {} } =
     typeof equalityFnOrOptions === 'function'
@@ -61,7 +69,7 @@ const useSignalSelectorImpl = <S, R>(
     }
   }
 
-  const reduxContext = useSignalContext<S>()
+  const reduxContext = useBoundSignalContext<S>()
   const { store, registry, engine } = reduxContext
 
   // Track latest selector/equalityFn via refs. Updated during render
@@ -408,9 +416,38 @@ export interface UseSignalSelector<StateType = unknown> {
   >() => UseSignalSelector<OverrideStateType>
 }
 
-export const useSignalSelector = /* @__PURE__ */ Object.assign(
-  useSignalSelectorImpl,
-  {
-    withTypes: () => useSignalSelector,
-  },
-) as UseSignalSelector
+/**
+ * Hook factory, which creates a `useSignalSelector` hook bound to a given
+ * context. Mirrors stock `createSelectorHook`.
+ *
+ * The context must be provided by a `<SignalProvider context={...}>` —
+ * the returned hook validates that the context value carries the signal
+ * registry and engine.
+ *
+ * @param context - Context passed to your `<SignalProvider>`.
+ */
+export function createSignalSelectorHook(
+  context: Context<ReactReduxContextValue<
+    any,
+    any
+  > | null> = ReactReduxContext,
+): UseSignalSelector {
+  const useBoundSignalContext =
+    context === ReactReduxContext
+      ? useSignalContext
+      : createSignalContextHook(context)
+
+  const useSignalSelectorBound = <S, R>(
+    selector: (state: S) => R,
+    equalityFnOrOptions: EqualityFn<R> | UseSelectorOptions<R> = {},
+  ): R =>
+    useSignalSelectorImpl(selector, equalityFnOrOptions, useBoundSignalContext)
+
+  const boundHook = Object.assign(useSignalSelectorBound, {
+    withTypes: () => boundHook,
+  }) as UseSignalSelector
+
+  return boundHook
+}
+
+export const useSignalSelector = /* @__PURE__ */ createSignalSelectorHook()
