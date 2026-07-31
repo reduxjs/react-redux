@@ -75,7 +75,20 @@ export function SignalProvider<
       const prev = prevStateRef.current
       const next = store.getState()
       prevStateRef.current = next
-      reconcileState(prev, next, registry, engine)
+      const changedRootKeys = reconcileState(prev, next, registry, engine)
+
+      // Coarse tier: wake deferred subscribers whose top-level segments
+      // changed (null = root wasn't diffable, every subscriber is a
+      // candidate). Runs before notifyNestedSubs so a promoted hook's
+      // deep graph and current result are ready when React reads its
+      // snapshot. collect() returns a snapshot array — subscribers
+      // unregister themselves from the index inside onCoarseHit.
+      if (prev !== next && registry.segmentIndex.size() > 0) {
+        const hits = registry.segmentIndex.collect(changedRootKeys)
+        for (let i = 0; i < hits.length; i++) {
+          hits[i].onCoarseHit()
+        }
+      }
 
       subscription.notifyNestedSubs()
     }

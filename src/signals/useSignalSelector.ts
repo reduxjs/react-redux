@@ -6,6 +6,8 @@ import type {
 } from '../hooks/useSelector'
 import type { ReactReduxContextValue } from '../components/Context'
 import type { EqualityFn } from '../types'
+import { createProbeProxy } from './coarseSegments'
+import type { CoarseSub } from './coarseSegments'
 import type { SignalContextValue } from './context'
 import {
   createSignalContextHook,
@@ -29,6 +31,15 @@ const refEquality: EqualityFn<any> = Object.is
 // keeps propagating to the effect — returning the previous result would
 // cut off propagation and React would never be notified of the error.
 const SELECTOR_THREW = Symbol('selector threw') as unknown
+
+// Only plain-object roots can be probed by the coarse tier: method calls
+// through a proxy over a Map/Set/class-instance root would run with the
+// proxy as `this` and break internal-slot access.
+function isPlainObjectState(v: unknown): v is object {
+  if (v === null || typeof v !== 'object') return false
+  const proto = Object.getPrototypeOf(v)
+  return proto === Object.prototype || proto === null
+}
 
 
 /**
@@ -102,6 +113,25 @@ const useSignalSelectorImpl = <S, R>(
     // is still mounted). getSnapshot retries and rethrows if it persists.
     let pendingError: unknown = null
 
+    // --- Coarse tier state ---
+    // The hook starts "unbuilt": no tracking proxies, no path signals,
+    // no alien-signals effect. At mount, one shallow probe records which
+    // top-level state keys the selector reads; the hook then waits in
+    // the segment index and is promoted to the deep tier on the first
+    // dispatch that changes one of those keys.
+    let built = false
+    let disposeEffect: (() => void) | null = null
+    let coarseSub: CoarseSub | null = null
+    let probeSegments = new Set<string>()
+    // Footprint can't be gated: the selector read no top-level keys,
+    // returned the root, or enumerated root keys — or the root isn't a
+    // plain object. Such hooks build the deep tier eagerly.
+    let ungateable = false
+    // State ref that probeSegments/currentResult were probed against.
+    let probedState: unknown = null
+    // Freshness cache for unbuilt getSnapshot recomputes.
+    let lastSnapshotState: unknown = null
+
     // Create a computed that runs the selector through a tracking proxy.
     // This establishes signal dependencies on the paths the selector reads.
     //
@@ -147,14 +177,52 @@ const useSignalSelectorImpl = <S, R>(
 
     const setSelector = (nextSelector: (state: S) => R): void => {
       selectorRef.current = nextSelector
-      // Recompute in place: this runs during render, and getSnapshot
-      // picks up the fresh value in the same pass. Scheduling a
-      // re-render here would loop forever for selectors that return a
-      // new reference on every run.
-      recomputeInPlace()
-      if (pendingError !== null) {
-        // The new closure threw — surface it in this render.
-        throw pendingError
+
+      if (built) {
+        // Recompute in place: this runs during render, and getSnapshot
+        // picks up the fresh value in the same pass. Scheduling a
+        // re-render here would loop forever for selectors that return a
+        // new reference on every run.
+        recomputeInPlace()
+        if (pendingError !== null) {
+          // The new closure threw — surface it in this render.
+          throw pendingError
+        }
+        return
+      }
+
+      // Still in the coarse tier: the registered footprint reflects the
+      // OLD closure. Re-probe with the new one and swap the registration
+      // — `s => flag ? s.a : s.b` left registered under {a} alone would
+      // silently miss every change to b.
+      const state = store.getState()
+      if (isPlainObjectState(state)) {
+        // A probe throw propagates into this render (stock parity for
+        // selector swaps); the old registration stays until a working
+        // closure lands.
+        probe(state as S & object)
+        if (coarseSub !== null) {
+          registry.segmentIndex.unregister(coarseSub)
+          coarseSub = {
+            // Ungateable after the swap (returns root / enumerates keys):
+            // the deep effect can't be attached during render, so
+            // register a wildcard — the next root change promotes it.
+            segments: ungateable ? null : probeSegments,
+            onCoarseHit,
+          }
+          registry.segmentIndex.register(coarseSub)
+        }
+        // Not subscribed yet: subscribe() handles registration (and the
+        // eager build for ungateable footprints).
+      } else {
+        // Root became non-plain while never subscribed (a dispatch in
+        // the render→subscribe gap) — can't probe it. Promote now; the
+        // effect attaches in subscribe().
+        built = true
+        recomputeInPlace()
+        if (pendingError !== null) {
+          throw pendingError
+        }
       }
     }
 
@@ -288,65 +356,197 @@ const useSignalSelectorImpl = <S, R>(
       }
     })
 
-    // Initialize with current value. A selector that throws on mount
-    // surfaces here, during render — same as stock useSelector.
-    currentResult = selectorComputed.get()
-    if (pendingError !== null) {
-      throw pendingError
+    // Create the alien-signals effect that drives the deep tier: fires
+    // when the computed value changes, applies the user's equalityFn,
+    // and notifies React. Extracted from subscribe() because promotion
+    // from the coarse tier (first coarse hit) also attaches it.
+    const attachEffect = (): void => {
+      let isFirst = true
+      disposeEffect = engine.effect(() => {
+        const newValue = selectorComputed.get()
+
+        if (pendingError !== null) {
+          // The evaluation threw (newValue is the SELECTOR_THREW
+          // sentinel — never adopt it). Notify React so getSnapshot
+          // can retry and surface or dissolve the error.
+          isFirst = false
+          if (!suppressNotify) {
+            notifyReact?.()
+          }
+          return
+        }
+
+        if (isFirst) {
+          // First effect run — just establish tracking, don't notify
+          isFirst = false
+          return
+        }
+
+        if (suppressNotify) {
+          // Render-phase selector swap (setSelector): adopt the value
+          // so the equality baseline is current, but let the ongoing
+          // render pick it up via getSnapshot instead of scheduling
+          // another render.
+          currentResult = newValue
+          return
+        }
+
+        // Apply user's equality function
+        if (!equalityFnRef.current(currentResult, newValue)) {
+          currentResult = newValue
+          version++
+          notifyReact?.()
+        }
+      })
+    }
+
+    // Run the selector once through a one-level shallow probe proxy:
+    // seeds currentResult and records the coarse footprint (which
+    // top-level keys it read) without building tracking proxies or path
+    // signals. Throws propagate to the caller — mount render / selector
+    // swap, stock parity.
+    const probe = (state: S & object): void => {
+      const { proxy, record } = createProbeProxy(state)
+      const value = selectorRef.current(proxy as S)
+      if (process.env.NODE_ENV !== 'production') {
+        runDevModeChecks(value, proxy as S)
+      }
+      currentResult = untrackResult(value)
+      probeSegments = record.segments
+      ungateable = record.segments.size === 0 || record.enumerated
+      probedState = state
+      lastSnapshotState = state
+    }
+
+    // Promotion: a dispatch changed one of this hook's root segments.
+    // Build the deep tier — evaluate the computed (creating tracking
+    // proxies and path signals), attach the driving effect, and notify
+    // React if the value actually changed. Runs synchronously inside
+    // the Provider's onStateChange, before notifyNestedSubs.
+    const onCoarseHit = (): void => {
+      if (built || notifyReact === null) return
+      if (coarseSub !== null) {
+        registry.segmentIndex.unregister(coarseSub)
+        coarseSub = null
+      }
+      built = true
+      attachEffect()
+      // The effect's first run evaluated the computed (isFirst skip);
+      // this read returns the cached value.
+      const newValue = selectorComputed.get()
+      if (pendingError !== null) {
+        // Zombie-child window: the dispatch that woke us also removed
+        // the entity. getSnapshot retries and surfaces or dissolves it.
+        notifyReact?.()
+        return
+      }
+      if (!equalityFnRef.current(currentResult, newValue)) {
+        currentResult = newValue
+        version++
+        notifyReact?.()
+      }
+    }
+
+    // --- Mount seeding ---
+    // Probe the selector's coarse footprint and seed the initial value.
+    // Footprints that can't be gated (and non-plain-object roots, which
+    // can't be probed) fall back to building the deep tier eagerly — the
+    // pre-coarse-tier behavior. A selector that throws on mount surfaces
+    // here, during render — same as stock useSelector.
+    const initialState = store.getState()
+    if (isPlainObjectState(initialState)) {
+      probe(initialState as S & object)
+    } else {
+      ungateable = true
+    }
+    if (ungateable) {
+      built = true
+      currentResult = selectorComputed.get()
+      if (pendingError !== null) {
+        throw pendingError
+      }
     }
 
     return {
       subscribe(onStoreChange: () => void): () => void {
         notifyReact = onStoreChange
 
-        // Create an effect that fires when the computed value changes.
-        // We apply the user's equalityFn here since alien-signals
-        // doesn't support custom equality per-computed.
-        let isFirst = true
-        const dispose = engine.effect(() => {
-          const newValue = selectorComputed.get()
-
-          if (pendingError !== null) {
-            // The evaluation threw (newValue is the SELECTOR_THREW
-            // sentinel — never adopt it). Notify React so getSnapshot
-            // can retry and surface or dissolve the error.
-            isFirst = false
-            if (!suppressNotify) {
-              notifyReact?.()
+        if (!built) {
+          // A dispatch may have landed between render (probe) and
+          // subscribe. Re-probe so the registered footprint and seeded
+          // value reflect the state we're subscribing against.
+          const state = store.getState()
+          if (state !== probedState) {
+            if (isPlainObjectState(state)) {
+              try {
+                probe(state as S & object)
+              } catch {
+                // The selector threw against the newer state (zombie
+                // window). Fall back to the deep tier — its pendingError
+                // machinery owns surfacing (effect notify → getSnapshot
+                // rethrow into render).
+                built = true
+                recomputeInPlace()
+              }
+            } else {
+              built = true
+              recomputeInPlace()
             }
-            return
           }
 
-          if (isFirst) {
-            // First effect run — just establish tracking, don't notify
-            isFirst = false
-            return
+          if (!built) {
+            if (ungateable) {
+              // Can't gate this footprint — build eagerly. On error the
+              // computed set pendingError; the effect's first run
+              // notifies and getSnapshot rethrows into render.
+              built = true
+              const value = selectorComputed.get()
+              if (pendingError === null) {
+                currentResult = value
+              }
+            } else {
+              coarseSub = { segments: probeSegments, onCoarseHit }
+              registry.segmentIndex.register(coarseSub)
+            }
           }
+        }
 
-          if (suppressNotify) {
-            // Render-phase selector swap (setSelector): adopt the value
-            // so the equality baseline is current, but let the ongoing
-            // render pick it up via getSnapshot instead of scheduling
-            // another render.
-            currentResult = newValue
-            return
-          }
-
-          // Apply user's equality function
-          if (!equalityFnRef.current(currentResult, newValue)) {
-            currentResult = newValue
-            version++
-            notifyReact?.()
-          }
-        })
+        if (built && disposeEffect === null) {
+          attachEffect()
+        }
 
         return () => {
           notifyReact = null
-          dispose()
+          if (coarseSub !== null) {
+            registry.segmentIndex.unregister(coarseSub)
+            coarseSub = null
+          }
+          if (disposeEffect !== null) {
+            disposeEffect()
+            disposeEffect = null
+          }
         }
       },
 
       getSnapshot(): R {
+        if (!built) {
+          // Deferred: no effect is watching yet. Serve fresh values for
+          // dispatches in the render→subscribe gap (and wildcard waits)
+          // by recomputing against RAW state — no proxies, no signals,
+          // no untracking needed. Cached per state ref; equalityFn
+          // preserves the previous result's identity for equal-but-new
+          // references. A throw propagates into render — stock parity.
+          const state = store.getState()
+          if (state !== lastSnapshotState) {
+            lastSnapshotState = state
+            const fresh = selectorRef.current(state as S)
+            if (!equalityFnRef.current(currentResult, fresh)) {
+              currentResult = fresh
+            }
+          }
+          return currentResult
+        }
+
         if (pendingError !== null) {
           // A previous evaluation threw. Retry against current state:
           // the situation may have resolved (entity restored, or this is

@@ -142,6 +142,18 @@ export function getProxyTarget(value: object): object | undefined {
   return proxyTargetMap.get(value)
 }
 
+/**
+ * Register a proxy→target mapping for a proxy created outside this
+ * module (the coarse-tier probe proxy). Makes `unwrap` and
+ * `untrackResult` treat it like any tracking proxy.
+ * @param proxy - The proxy object
+ * @param target - The raw object it wraps
+ * @returns void
+ */
+export function registerProxyTarget(proxy: object, target: object): void {
+  proxyTargetMap.set(proxy, target)
+}
+
 export function unwrap<T>(value: T): T {
   if (value !== null && typeof value === 'object') {
     const target = proxyTargetMap.get(value as object)
