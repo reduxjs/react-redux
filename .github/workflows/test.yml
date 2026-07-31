@@ -27,7 +27,7 @@ jobs:
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Lint
         run: yarn lint
@@ -89,7 +89,7 @@ jobs:
           path: .
 
       - name: Install deps
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Install React ${{ matrix.react.version }} and React-DOM ${{ matrix.react.react-dom.version }}
         run: yarn add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
@@ -175,51 +175,57 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
 
+      # The clone deliberately lives outside the workspace. Yarn merges every
+      # `.yarnrc.yml` it finds walking up from the cwd, and RTK pins its own
+      # (older) Yarn via `yarnPath`. Nesting the clone under our checkout would
+      # feed our settings to that older Yarn, which aborts on any option it
+      # doesn't recognise.
       - name: Clone RTK repo (pinned to known-good commit)
         run: |
-          git init ./redux-toolkit
-          git -C ./redux-toolkit fetch --depth 1 https://github.com/reduxjs/redux-toolkit.git d974a4d252090eab9e029842042757bc43af8980
-          git -C ./redux-toolkit checkout FETCH_HEAD
+          git init "$RUNNER_TEMP/redux-toolkit"
+          git -C "$RUNNER_TEMP/redux-toolkit" fetch --depth 1 https://github.com/reduxjs/redux-toolkit.git d974a4d252090eab9e029842042757bc43af8980
+          git -C "$RUNNER_TEMP/redux-toolkit" checkout FETCH_HEAD
 
       - name: Cache example deps
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
-          path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}/node_modules
+          path: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}/node_modules
           key: test-published-artifact-${{ matrix.example }}-node_modules
 
       - name: Check folder contents
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: ls -l .
 
       - name: Install example deps
-        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         env:
           YARN_ENABLE_SCRIPTS: false
         run: yarn install
 
       - name: Install Playwright browser if necessary
-        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         continue-on-error: true
         run: yarn playwright install || true
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: package
-          path: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+          path: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
 
       - name: Check folder contents
-        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: ls -l .
 
       - name: Install build artifact
-        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn add ./package.tgz
 
       - name: Show installed package versions
-        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn info react-redux && yarn why react-redux
 
       - name: Build example
-        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         env:
           NODE_OPTIONS: --openssl-legacy-provider
           # The RTK examples are cloned at a pinned commit, so their
@@ -228,7 +234,7 @@ jobs:
         run: yarn build
 
       - name: Run test step
-        working-directory: ./redux-toolkit/examples/publish-ci/${{ matrix.example }}
+        working-directory: ${{ runner.temp }}/redux-toolkit/examples/publish-ci/${{ matrix.example }}
         run: yarn test
 
   test-published-artifact-local:
@@ -257,7 +263,7 @@ jobs:
           cache: 'yarn'
 
       - name: Install deps
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Remove existing React-Redux
         run: yarn remove react-redux
@@ -314,7 +320,7 @@ jobs:
           cache: 'yarn'
 
       - name: Install deps
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       - name: Download build artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0

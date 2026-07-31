@@ -22,6 +22,6 @@ jobs:
           node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
           cache: 'yarn'
-      - run: yarn install --frozen-lockfile
+      - run: yarn install --immutable
       - run: yarn test
       - run: npm publish --access public --provenance
