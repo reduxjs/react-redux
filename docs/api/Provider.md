@@ -21,7 +21,7 @@ The [Hooks](./hooks.md) and [`connect`](./connect.md) APIs can then access the p
 ### Props
 
 ```ts
-interface ProviderProps<A extends Action = AnyAction, S = any> {
+interface ProviderProps<A extends Action<string> = UnknownAction, S = unknown> {
   /**
    * The single Redux store in your application.
    */
@@ -45,7 +45,10 @@ interface ProviderProps<A extends Action = AnyAction, S = any> {
   context?: Context<ReactReduxContextValue<S, A> | null>
 
   /** Global configuration for the `useSelector` stability check */
-  stabilityCheck?: StabilityCheck
+  stabilityCheck?: DevModeCheckFrequency
+
+  /** Global configuration for the `useSelector` identity function check */
+  identityFunctionCheck?: DevModeCheckFrequency
 
   /** The top-level React elements in your component tree, such as `<App />` **/
   children: ReactNode
