@@ -1,5 +1,7 @@
 import { encodePathSegment } from './arrayKeys'
 import type { ArrayMeta } from './arrayKeys'
+import { createSegmentIndex } from './coarseSegments'
+import type { SegmentIndex } from './coarseSegments'
 import type { LeafObjectTracker, ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
@@ -45,6 +47,11 @@ export interface PathSignalRegistry {
 
   /** Return all registered signal paths (for testing/debugging). */
   debugPaths(): string[]
+
+  /** Coarse tier: inverted index of top-level state keys → deferred
+   *  subscribers. Driven by SignalProvider with the changed root keys
+   *  reconcileState reports each dispatch. */
+  segmentIndex: SegmentIndex
 
   /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
   proxyCache: ProxyCache
@@ -312,6 +319,8 @@ export function createPathSignalRegistry(
     debugPaths(): string[] {
       return Array.from(signals.keys()).sort()
     },
+
+    segmentIndex: createSegmentIndex(),
 
     proxyCache: proxyWeakMap,
 

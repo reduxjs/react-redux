@@ -21,6 +21,10 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
  * @param next - Next object state
  * @param parentPath - Dot-separated path to this object in the state tree
  * @param registry - Signal registry to update
+ * @param changedRootKeys - Root call only: collects the raw (unencoded)
+ *   keys whose values changed, were added, or were removed. Feeds the
+ *   coarse segment index — the ref-compare over root keys happens here
+ *   anyway, so collection is a push per *changed* key, not a second pass.
  * @returns void
  */
 function diffObject(
@@ -28,6 +32,7 @@ function diffObject(
   next: Record<string, unknown>,
   parentPath: string,
   registry: PathSignalRegistry,
+  changedRootKeys?: string[],
 ): void {
   const nextKeys = Object.keys(next)
   const prevKeys = Object.keys(prev)
@@ -50,8 +55,24 @@ function diffObject(
     // descend and re-fire the leaf signal on every dispatch).
     const prevVal = prev[key]
     const nextVal = next[key]
-    if (prevVal === nextVal || (prevVal !== prevVal && nextVal !== nextVal))
+    if (prevVal === nextVal || (prevVal !== prevVal && nextVal !== nextVal)) {
+      // Added key whose value is `undefined`: ref-equal to the missing
+      // read (undefined === undefined), but `in` / hasOwnProperty gates
+      // on this key still flipped — the root collector must see it. The
+      // extra `in` check only runs for undefined-valued keys.
+      if (
+        changedRootKeys !== undefined &&
+        nextVal === undefined &&
+        !(key in prev)
+      ) {
+        changedRootKeys.push(key)
+      }
       continue
+    }
+
+    if (changedRootKeys !== undefined) {
+      changedRootKeys.push(key)
+    }
 
     // Keys are encoded to match the proxy's pathKey construction —
     // reserved path characters in state keys (dots, braces, '@') are
@@ -69,6 +90,9 @@ function diffObject(
 
     for (let i = 0; i < prevKeys.length; i++) {
       if (!(prevKeys[i] in next)) {
+        if (changedRootKeys !== undefined) {
+          changedRootKeys.push(prevKeys[i])
+        }
         const segment = encodePathSegment(prevKeys[i])
         const childPath = parentPath ? parentPath + '.' + segment : segment
         registry.prune(childPath)
@@ -572,21 +596,39 @@ function diffArrayByIndex(
   }
 }
 
+const NO_CHANGED_KEYS: string[] = []
+
 /**
  * Wrapper that batches all signal updates into a single propagation pass.
+ *
+ * Returns the raw root keys whose values changed (added / removed /
+ * ref-changed) so the SignalProvider can wake coarse-tier subscribers,
+ * or `null` when the root wasn't a diffable pair of plain objects (the
+ * caller must treat every coarse subscriber as a candidate).
  * @param prev - Previous state
  * @param next - Next state
  * @param registry - Signal registry to update
  * @param engine - Signal engine for batching
- * @returns void
+ * @returns Changed root keys, or null if the root couldn't be diffed
  */
 export function reconcileState(
   prev: unknown,
   next: unknown,
   registry: PathSignalRegistry,
   engine: SignalEngine,
-): void {
+): string[] | null {
+  if (prev === next) return NO_CHANGED_KEYS
+
+  if (isPlainObject(prev) && isPlainObject(next)) {
+    const changedRootKeys: string[] = []
+    engine.batch(() => {
+      diffObject(prev, next, '', registry, changedRootKeys)
+    })
+    return changedRootKeys
+  }
+
   engine.batch(() => {
     diffAndUpdateSignals(prev, next, '', registry)
   })
+  return null
 }
