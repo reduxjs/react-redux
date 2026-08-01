@@ -98,5 +98,5 @@
     "typescript-eslint": "^7.12.0",
     "vitest": "^4.1.8"
   },
-  "packageManager": "yarn@4.4.1"
+  "packageManager": "yarn@4.18.0"
 }
