@@ -142,9 +142,9 @@ const useSignalSelectorImpl = <S, R>(
     // Track leaf object accesses for identity comparison support.
     // Objects read by the selector but never traversed deeper are
     // "leaf objects" — their identity matters (e.g., `a === b`).
-    // Reused across evaluations (cleared at the start of each) — a
-    // computed never re-enters its own evaluation, so this is safe and
-    // avoids two allocations per eval.
+    // The holder object is stable; its containers are swapped for fresh
+    // ones at the start of each evaluation (a computed never re-enters
+    // its own evaluation, so this is safe).
     const leafTracker: LeafObjectTracker = {
       accessedObjects: new Map(),
       traversedPaths: new Set(),
@@ -298,8 +298,8 @@ const useSignalSelectorImpl = <S, R>(
       try {
         const state = store.getState() as S & object
 
-        leafTracker.accessedObjects.clear()
-        leafTracker.traversedPaths.clear()
+        leafTracker.accessedObjects = new Map()
+        leafTracker.traversedPaths = new Set()
 
         const proxy = createTrackingProxy(
           state,
