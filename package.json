@@ -94,7 +94,7 @@
     "redux": "^5.0.1",
     "rimraf": "^6.1.3",
     "tsup": "^8.5.1",
-    "typescript": "^5.8.2",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^7.12.0",
     "vitest": "^4.1.8"
   },
