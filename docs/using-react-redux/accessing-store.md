@@ -30,7 +30,7 @@ React Redux's `<Provider>` component uses `<ReactReduxContext.Provider>` to put 
 
 ## Using the `useStore` Hook
 
-The [`useStore` hook](../api/hooks.md#useStore) returns the current store instance from the default `ReactReduxContext`. If you truly need to access the store, this is the recommended approach.
+The [`useStore` hook](../api/hooks.md#usestore) returns the current store instance from the default `ReactReduxContext`. If you truly need to access the store, this is the recommended approach.
 
 ## Providing Custom Context
 
