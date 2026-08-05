@@ -92,7 +92,7 @@ describe('React', () => {
           mapStateSpy2()
 
           return {
-            mappedProp: ownProps.list.map((id) => state.byId[id]),
+            mappedProp: ownProps.list.map((id) => state.byId[id] ?? ''),
           }
         },
       )
