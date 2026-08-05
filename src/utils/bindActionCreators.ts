@@ -1,6 +1,6 @@
 import type { ActionCreatorsMapObject, Dispatch } from 'redux'
 
-export default function bindActionCreators(
+export function bindActionCreators(
   actionCreators: ActionCreatorsMapObject,
   dispatch: Dispatch,
 ): ActionCreatorsMapObject {

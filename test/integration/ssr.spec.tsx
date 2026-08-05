@@ -156,13 +156,13 @@ describe('New v8 serverState behavior', () => {
         <Provider store={clientStore}>
           <App />
         </Provider>,
-        {
-          onRecoverableError: IS_REACT_19
-            ? (error, errorInfo) => {
+        IS_REACT_19
+          ? {
+              onRecoverableError: (error, errorInfo) => {
                 console.error(error)
-              }
-            : undefined,
-        },
+              },
+            }
+          : undefined,
       )
     })
 
