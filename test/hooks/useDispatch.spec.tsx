@@ -13,7 +13,7 @@ const store2 = createStore((c: number = 1): number => c + 2)
 
 describe('React', () => {
   describe('hooks', () => {
-    describe('useDispatch', () => {
+    describe(useDispatch, () => {
       it("returns the store's dispatch function", () => {
         type PropsType = Omit<ProviderProps, 'store'>
         const { result } = renderHook(() => useDispatch(), {
@@ -25,7 +25,7 @@ describe('React', () => {
         expect(result.current).toBe(store.dispatch)
       })
     })
-    describe('createDispatchHook', () => {
+    describe(createDispatchHook, () => {
       it("returns the correct store's dispatch function", () => {
         const nestedContext =
           React.createContext<ReactReduxContextValue | null>(null)
