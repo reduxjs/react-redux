@@ -141,7 +141,7 @@ jobs:
 
       # Note: We currently expect "FalseCJS" failures for Node16 + `moduleResolution: "node16",
       - name: Run are-the-types-wrong
-        run: yarn attw ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
+        run: yarn attw ./package.tgz --format table --ignore-rules false-cjs
 
   test-published-artifact:
     name: Test Published Artifact ${{ matrix.example }}
