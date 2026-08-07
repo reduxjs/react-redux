@@ -100,6 +100,29 @@ describe('type tests', () => {
     const selected2 = useAppSelector((state) => state.stateProp, shallowEqual)
 
     expectTypeOf(selected2).toBeString()
+
+    // https://github.com/reduxjs/react-redux/issues/2186
+    // The equality function must not be an inference site for `Selected`,
+    // otherwise `shallowEqual`'s `any` parameters widen the result to `any`.
+
+    // Selector declared separately (rather than inline) with `withTypes`.
+    const selectStateProp = (state: TestState) => state.stateProp
+
+    const selected3 = useAppSelector(selectStateProp, shallowEqual)
+
+    expectTypeOf(selected3).toBeString()
+
+    // Selector declared separately with plain `useSelector`.
+    const selected4 = useSelector(selectStateProp, shallowEqual)
+
+    expectTypeOf(selected4).toBeString()
+
+    // `shallowEqual` passed via the options object.
+    const selected5 = useAppSelector((state) => state.stateProp, {
+      equalityFn: shallowEqual,
+    })
+
+    expectTypeOf(selected5).toBeString()
   })
 
   test('useDispatch', () => {
