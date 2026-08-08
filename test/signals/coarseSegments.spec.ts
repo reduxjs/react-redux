@@ -30,9 +30,7 @@ describe('SegmentIndex', () => {
     index.register(subB)
     index.register(subAB)
 
-    expect(index.collect(['a'])).toEqual(
-      expect.arrayContaining([subA, subAB]),
-    )
+    expect(index.collect(['a'])).toEqual(expect.arrayContaining([subA, subAB]))
     expect(index.collect(['a'])).toHaveLength(2)
     expect(index.collect(['c'])).toHaveLength(0)
   })
@@ -221,7 +219,7 @@ describe('createProbeProxy', () => {
     const { proxy } = createProbeProxy(state)
 
     expect(() => {
-      ;(proxy as any).a = 42
+      (proxy as any).a = 42
     }).toThrow(TypeError)
     expect(() => {
       delete (proxy as any).a
@@ -254,9 +252,7 @@ describe('reconcileState changed-root-keys return value', () => {
     const prev: Record<string, unknown> = { a: 1 }
     const next = { a: 1, added: 2 }
 
-    expect(reconcileState(prev, next, registry, alienEngine)).toEqual([
-      'added',
-    ])
+    expect(reconcileState(prev, next, registry, alienEngine)).toEqual(['added'])
   })
 
   it('includes keys added with an undefined value', () => {
@@ -264,9 +260,7 @@ describe('reconcileState changed-root-keys return value', () => {
     const prev: Record<string, unknown> = { a: 1 }
     const next = { a: 1, added: undefined }
 
-    expect(reconcileState(prev, next, registry, alienEngine)).toEqual([
-      'added',
-    ])
+    expect(reconcileState(prev, next, registry, alienEngine)).toEqual(['added'])
   })
 
   it('includes removed keys', () => {
