@@ -14,6 +14,17 @@ import type { PathKey, ReactiveSignal, SignalEngine } from './types'
  */
 export type StructureKind = 'append' | 'insertOrReorder' | 'remove'
 
+export interface RegistryStats {
+  signals: number
+  prefixCounts: number
+  prefixOnlyPaths: number
+  childIndex: number
+  arrayMetas: number
+  columnsByArray: number
+  structuresByArray: number
+  segmentSubs: number
+}
+
 export interface PathSignalRegistry {
   /** Get or create a signal for a path. Object/array values use version counters. */
   getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown>
@@ -47,6 +58,9 @@ export interface PathSignalRegistry {
 
   /** Return all registered signal paths (for testing/debugging). */
   debugPaths(): string[]
+
+  /** Entry counts for every internal structure (for testing/debugging). */
+  debugStats(): RegistryStats
 
   /** Coarse tier: inverted index of top-level state keys → deferred
    *  subscribers. Driven by SignalProvider with the changed root keys
@@ -318,6 +332,19 @@ export function createPathSignalRegistry(
 
     debugPaths(): string[] {
       return Array.from(signals.keys()).sort()
+    },
+
+    debugStats(): RegistryStats {
+      return {
+        signals: signals.size,
+        prefixCounts: prefixCounts.size,
+        prefixOnlyPaths: prefixOnlyPaths.size,
+        childIndex: childIndex.size,
+        arrayMetas: arrayMetas.size,
+        columnsByArray: columnsByArray.size,
+        structuresByArray: structuresByArray.size,
+        segmentSubs: registry.segmentIndex.size(),
+      }
     },
 
     segmentIndex: createSegmentIndex(),
