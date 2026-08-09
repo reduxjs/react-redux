@@ -1,11 +1,12 @@
 import {
-  signal as alienSignal,
-  computed as alienComputed,
-  effect as alienEffect,
-  effectScope as alienEffectScope,
+  signal as createSignal,
+  computed as createComputed,
+  effect as createEffect,
+  effectScope as createEffectScope,
   startBatch,
   endBatch,
-} from 'alien-signals'
+} from './reactiveSystem'
+import type { SignalOwner } from './reactiveSystem'
 import type {
   SignalEngine,
   ReactiveSignal,
@@ -13,22 +14,27 @@ import type {
   SignalScope,
 } from './types'
 
+/**
+ * The default engine, backed by the vendored reactive layer in
+ * `./reactiveSystem`.
+ *
+ * `signal` and `computed` return the graph nodes directly. The nodes
+ * implement `get`/`set` themselves, so unlike the previous wrapper over
+ * `alien-signals`' bound-function API there is no per-signal wrapper
+ * object or closure pair to allocate — which matters because one node
+ * exists per tracked state path.
+ */
 export const alienEngine: SignalEngine = {
-  signal<T>(value: T): ReactiveSignal<T> {
-    const s = alienSignal(value)
-    return {
-      get: () => s(),
-      set: (v: T) => s(v),
-    }
+  signal<T>(value: T, owner?: SignalOwner, path?: string): ReactiveSignal<T> {
+    return createSignal(value, owner, path)
   },
 
   computed<T>(fn: () => T): ReactiveComputed<T> {
-    const c = alienComputed(fn)
-    return { get: () => c() }
+    return createComputed(fn)
   },
 
   effect(fn: () => void): () => void {
-    return alienEffect(fn)
+    return createEffect(fn)
   },
 
   batch(fn: () => void): void {
@@ -46,7 +52,7 @@ export const alienEngine: SignalEngine = {
     return {
       run<T>(fn: () => T): T {
         let result: T
-        dispose = alienEffectScope(() => {
+        dispose = createEffectScope(() => {
           result = fn()
         })
         return result!

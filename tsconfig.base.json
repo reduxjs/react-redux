@@ -16,7 +16,12 @@
     "noUnusedParameters": false,
     "paths": {
       "@internal/*": ["./src/*"],
-      "react-redux": ["./src/index.ts"] // @remap-prod-remove-line
+      "react-redux": ["./src/index.ts"], // @remap-prod-remove-line
+      // `moduleResolution: "Node"` predates `exports` maps, so it cannot
+      // find the types for alien-signals' `./system` subpath export.
+      // Vite and tsup both resolve it correctly at runtime; this only
+      // points the type checker at the declarations.
+      "alien-signals/system": ["./node_modules/alien-signals/types/system.d.ts"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

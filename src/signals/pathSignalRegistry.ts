@@ -47,6 +47,26 @@ export interface PathSignalRegistry {
    *  going silently stale. */
   pruneChildren(pathKey: PathKey): void
 
+  /** Drop all bookkeeping for a path whose signal just lost its last
+   *  subscriber. Called by the signal itself, from inside the reactive
+   *  system's `unlink`, when the last watching component unmounts.
+   *
+   *  Distinct from `prune()` in two ways that matter:
+   *
+   *  - No sentinel write and no signal mutation of any kind. It runs
+   *    mid-`unlink`, so touching the graph would reenter it. `prune()`
+   *    fires the signal because state actually changed; here the state
+   *    is untouched and there is by definition nobody left to notify.
+   *  - No subtree walk. Each descendant signal gets its own `unwatched`
+   *    callback, so a subtree unmounting releases bottom-up on its own.
+   *
+   *  `node` is checked against the currently registered signal for the
+   *  path. `prune()` can delete a signal and a later `getOrCreate` can
+   *  install a fresh one at the same path before the old node's links
+   *  are torn down; without the identity check that late callback would
+   *  evict the live replacement. */
+  release(pathKey: PathKey, node: ReactiveSignal<unknown>): void
+
   /** Number of active signals. */
   size(): number
 
@@ -221,12 +241,75 @@ export function createPathSignalRegistry(
     children.add(pathKey)
   }
 
+  // Remove a path from its parent's child set, dropping the parent's
+  // entry entirely once it has no children left.
+  function detachFromParent(pathKey: string): void {
+    const idx = pathKey.lastIndexOf('.')
+    if (idx === -1) return
+    const parent = pathKey.substring(0, idx)
+    const siblings = childIndex.get(parent)
+    if (siblings === undefined) return
+    siblings.delete(pathKey)
+    if (siblings.size === 0) {
+      childIndex.delete(parent)
+    }
+  }
+
+  /**
+   * After releasing a path, walk up and drop every ancestor that has
+   * nothing left underneath it, stopping at the first one that is still
+   * alive.
+   *
+   * Two kinds of ancestor need this. Prefix-only paths, registered by
+   * `ensurePrefix`, never get a signal, so `unwatched` can never fire
+   * for them; without this they would keep `hasPrefix` true forever and
+   * the diff would keep descending into an empty subtree, which is the
+   * exact cost this whole mechanism exists to remove. Link-only paths
+   * are ones whose own signal was already released while descendants
+   * were still alive, so `release` deliberately left them attached.
+   *
+   * A prefix-only path contributes 1 to its own prefix count, plus 1
+   * for every signal registered at or below it. So a count of 1 or less
+   * means that self-registration is all that is left and the path is
+   * dead. Removing it decrements its own ancestors, which can in turn
+   * make the next one up dead — walking upward handles that cascade in
+   * a single pass.
+   */
+  function releaseDeadAncestors(pathKey: string): void {
+    let idx = pathKey.lastIndexOf('.')
+    while (idx !== -1) {
+      const ancestor = pathKey.substring(0, idx)
+      if (childIndex.has(ancestor)) {
+        // Descendants still live here, so neither this path nor
+        // anything above it is dead.
+        return
+      }
+      if (prefixOnlyPaths.has(ancestor)) {
+        if ((prefixCounts.get(ancestor) ?? 0) > 1) return
+        prefixOnlyPaths.delete(ancestor)
+        decrementPrefixes(prefixCounts, ancestor)
+        detachFromParent(ancestor)
+      } else if (!signals.has(ancestor)) {
+        // A link-only node: its own signal was released earlier while
+        // children were still alive, so `release` left it attached.
+        // That last child is now gone, so it can finally be unlinked.
+        detachFromParent(ancestor)
+      } else {
+        // A live signal — it and everything above it stay.
+        return
+      }
+      idx = ancestor.lastIndexOf('.')
+    }
+  }
+
   const registry: PathSignalRegistry = {
     getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown> {
       let sig = signals.get(pathKey)
       if (!sig) {
         const initialValue = isObjectOrArray(currentValue) ? 0 : currentValue
-        sig = engine.signal(initialValue)
+        // Passing the registry as owner is what makes the signal call
+        // back into `release` when its last subscriber goes away.
+        sig = engine.signal(initialValue, registry, pathKey)
         signals.set(pathKey, sig)
         addToChildIndex(pathKey)
         // If ensurePrefix was called first, prefixes are already counted
@@ -307,6 +390,65 @@ export function createPathSignalRegistry(
           }
         }
       }
+    },
+
+    release(pathKey: PathKey, node: ReactiveSignal<unknown>): void {
+      // Identity guard: a fresh signal may already have replaced this
+      // one at the same path (see the interface docs).
+      if (signals.get(pathKey) !== node) return
+
+      signals.delete(pathKey)
+      decrementPrefixes(prefixCounts, pathKey)
+      columnsByArray.delete(pathKey)
+      structuresByArray.delete(pathKey)
+      arrayMetas.delete(pathKey)
+
+      // Only unlink this path structurally once nothing lives below it.
+      // The child index is shared structure, not per-signal: releasing
+      // "dyn.y" while "dyn.y.v" is still watched must leave the
+      // parent→child chain intact, or a later prune("dyn.y") cannot
+      // reach "dyn.y.v" and it leaks permanently. When children remain,
+      // the path stays as a link-only node and is cleaned up by
+      // `releaseDeadAncestors` once the last of them goes.
+      if (!childIndex.has(pathKey)) {
+        detachFromParent(pathKey)
+      }
+
+      // A column signal lives at `<arrayPath>.{*}.<prop>`, so releasing
+      // it has to drop `prop` from the array's tracked column set as
+      // well, or diffArray keeps shallow-comparing a column nobody
+      // reads. Same shape of problem for structure signals.
+      const columnMark = pathKey.lastIndexOf('.{*}.')
+      if (columnMark !== -1) {
+        const arrayPath = pathKey.substring(0, columnMark)
+        const cols = columnsByArray.get(arrayPath)
+        if (cols !== undefined) {
+          // The set holds raw props while the path holds encoded ones,
+          // and there is no decoder. Encoding each candidate is fine —
+          // a tracked column set is a handful of entries, and encoding
+          // returns the input unchanged for the common case.
+          const encodedProp = pathKey.substring(columnMark + 5)
+          for (const prop of cols) {
+            if (encodePathSegment(prop) === encodedProp) {
+              cols.delete(prop)
+              break
+            }
+          }
+          if (cols.size === 0) columnsByArray.delete(arrayPath)
+        }
+      } else {
+        const structureMark = pathKey.lastIndexOf('.@@')
+        if (structureMark !== -1) {
+          const arrayPath = pathKey.substring(0, structureMark)
+          const kinds = structuresByArray.get(arrayPath)
+          if (kinds !== undefined) {
+            kinds.delete(pathKey.substring(structureMark + 3) as StructureKind)
+            if (kinds.size === 0) structuresByArray.delete(arrayPath)
+          }
+        }
+      }
+
+      releaseDeadAncestors(pathKey)
     },
 
     pruneChildren(pathKey: PathKey): void {
