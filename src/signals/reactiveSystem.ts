@@ -102,7 +102,7 @@ const { link, unlink, propagate, checkDirty, shallowPropagate } =
       let effect = node as EffectNode
       let insertIndex = queuedLength
       let firstInsertedIndex = insertIndex
-      do {
+      for (;;) {
         queued[insertIndex++] = effect
         effect.flags &= ~Watching
         const next = effect.subs?.sub as EffectNode | undefined
@@ -110,7 +110,7 @@ const { link, unlink, propagate, checkDirty, shallowPropagate } =
           break
         }
         effect = next
-      } while (true)
+      }
       queuedLength = insertIndex
       while (firstInsertedIndex < --insertIndex) {
         const left = queued[firstInsertedIndex]
@@ -312,6 +312,10 @@ export function effect(fn: () => void | (() => void)): () => void {
  * effect created inside links itself to that scope. Stopping the scope
  * unlinks those deps, which drops each child effect's last subscriber
  * and cascades disposal through `unwatched`.
+ *
+ * @param fn - Runs once, immediately, with the scope active.
+ * @returns A dispose function that stops the scope and every effect
+ *   created inside it.
  */
 export function effectScope(fn: () => void): () => void {
   const e: EffectNode = {
@@ -337,6 +341,9 @@ export function effectScope(fn: () => void): () => void {
 /**
  * Unlink any child effects this sub created on its previous run. They
  * are re-created by the run that follows.
+ *
+ * @param sub - The effect or scope whose child effects are dropped.
+ * @returns Nothing.
  */
 function unlinkChildEffects(sub: ReactiveNode): void {
   let current = sub.depsTail
@@ -438,6 +445,9 @@ function runCleanup(e: EffectNode): void {
  * dep it holds (which is what cascades `unwatched` down through
  * computeds to path signals), detach it from its parent, then run its
  * cleanup if it has one.
+ *
+ * @param e - The effect or scope node to dispose.
+ * @returns Nothing.
  */
 function stopEffect(e: EffectNode): void {
   e.flags = 0

@@ -121,10 +121,16 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          const store = createStore((c: number = 1): number => c + 1, -1)
+          const store = createStore(
+            ({ c }: { c: number } = { c: 1 }) => ({ c: c + 1 }),
+            { c: -1 },
+          )
 
           const Comp = () => {
-            const selector = useCallback((c: number): number => c + 1, [])
+            const selector = useCallback(
+              ({ c }: { c: number }): number => c + 1,
+              [],
+            )
             const value = useSelector(selector)
             renderedItems.push(value)
             return <div />
@@ -251,10 +257,13 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        const store = createStore((c: number = 1): number => c + 1, -1)
+        const store = createStore(
+          ({ c }: { c: number } = { c: 1 }) => ({ c: c + 1 }),
+          { c: -1 },
+        )
 
         const Comp = () => {
-          const selector = useCallback((c: number): number => c, [])
+          const selector = useCallback(({ c }: { c: number }): number => c, [])
           const count = useSelector(selector)
           renderedItems.push(count)
           return <Child parentCount={count} />
@@ -523,7 +532,7 @@ describe('React', () => {
           const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
-            const result = useSelector((count: number) => {
+            const result = useSelector(({ count }: { count: number }) => {
               if (count > 0) {
                 // console.log('Throwing error')
                 throw new Error('Panic!')
@@ -535,7 +544,11 @@ describe('React', () => {
             return <div>{result}</div>
           }
 
-          const store = createStore((count: number = -1): number => count + 1)
+          const store = createStore(
+            ({ count }: { count: number } = { count: -1 }) => ({
+              count: count + 1,
+            }),
+          )
 
           const App = () => (
             <ProviderMock store={store}>
@@ -669,15 +682,15 @@ describe('React', () => {
         })
 
         it('should have linear or better unsubscribe time, not quadratic', () => {
-          const reducer = (state: number = 0, action: any) =>
-            action.type === 'INC' ? state + 1 : state
+          const reducer = (state: { n: number } = { n: 0 }, action: any) =>
+            action.type === 'INC' ? { n: state.n + 1 } : state
           const store = createStore(reducer)
           const increment = () => ({ type: 'INC' })
 
           const numChildren = 100000
 
           function App() {
-            useSelector((s: number) => s)
+            useSelector((s: { n: number }) => s.n)
             const dispatch = useDispatch()
 
             const [children, setChildren] = useState(numChildren)
