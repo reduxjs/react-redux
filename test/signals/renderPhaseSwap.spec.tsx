@@ -227,3 +227,83 @@ describe('render-phase selector swap', () => {
     expect(getByTestId('name').textContent).toBe('two')
   })
 })
+
+/**
+ * The render-phase swap re-evaluates the selector and adopts the result.
+ * That adoption has to go through the user's equality function, exactly
+ * like the effect path does. Skipping it hands React a brand-new
+ * reference on every render for any selector that builds its result
+ * (`() => [1, 2, 3]`), which is the case a custom equalityFn exists to
+ * defuse.
+ *
+ * Two assignment sites had to be covered, because `recomputeInPlace`
+ * sets `suppressNotify` and then bumps the version signal, which runs
+ * the driving effect synchronously. The effect's suppressNotify branch
+ * assigns first, so an equality check in only one of the two places
+ * still leaks the new reference through.
+ */
+describe('equality function on a render-phase swap', () => {
+  it('keeps the previous result when the equality function reports equal', () => {
+    const { store, actions } = makeStore()
+    const alwaysEqual = () => true
+    const seen: number[][] = []
+
+    function Watcher() {
+      // Drives a re-render on dispatch, so the swap below runs again.
+      const name = useSignalSelector((s: AppState) => s.items.list[0].name)
+      // A new closure AND a new array on every single render.
+      const items = useSignalSelector(() => [1, 2, 3], alwaysEqual)
+      seen.push(items)
+      return <div data-testid="name">{name}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        <Watcher />
+      </SignalProvider>,
+    )
+
+    rtl.act(() => {
+      store.dispatch(actions.renameFirst('renamed'))
+    })
+
+    expect(getByTestId('name').textContent).toBe('renamed')
+    expect(seen.length).toBeGreaterThan(1)
+    for (const value of seen) {
+      expect(value).toBe(seen[0])
+    }
+  })
+
+  it('adopts the new result when the equality function reports unequal', () => {
+    const { store } = makeStore()
+    const byFirstElement = (a: string[], b: string[]) => a[0] === b[0]
+
+    function Watcher() {
+      const [index, setIndex] = useState(0)
+      // Inline selector closing over `index`: a new closure each render.
+      const [name] = useSignalSelector(
+        (s: AppState) => [s.items.list[index].name],
+        byFirstElement,
+      )
+      return (
+        <div>
+          <div data-testid="name">{name}</div>
+          <button data-testid="switch" onClick={() => setIndex(1)}>
+            switch
+          </button>
+        </div>
+      )
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        <Watcher />
+      </SignalProvider>,
+    )
+
+    expect(getByTestId('name').textContent).toBe('one')
+
+    rtl.fireEvent.click(getByTestId('switch'))
+    expect(getByTestId('name').textContent).toBe('two')
+  })
+})
