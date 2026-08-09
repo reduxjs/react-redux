@@ -1,3 +1,5 @@
+import type { SignalOwner } from './reactiveSystem'
+
 export type PathKey = string // dot-joined: "todos.0.text", "counters.counter1.value"
 
 export interface ReactiveSignal<T> {
@@ -10,7 +12,13 @@ export interface ReactiveComputed<T> {
 }
 
 export interface SignalEngine {
-  signal<T>(value: T): ReactiveSignal<T>
+  /**
+   * Create a signal. When `owner` and `path` are supplied, the signal
+   * calls `owner.release(path, node)` as soon as it loses its last
+   * subscriber, which is how `pathSignalRegistry` drops a path once no
+   * mounted component watches it.
+   */
+  signal<T>(value: T, owner?: SignalOwner, path?: string): ReactiveSignal<T>
   computed<T>(fn: () => T): ReactiveComputed<T>
   /** Create an effect. Returns a dispose function that stops it. */
   effect(fn: () => void): () => void
