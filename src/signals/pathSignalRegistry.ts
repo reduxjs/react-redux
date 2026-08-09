@@ -255,50 +255,119 @@ export function createPathSignalRegistry(
     }
   }
 
+  // Paths whose signal has been released but whose prefix accounting and
+  // structural unlinking have not been applied yet. Draining is deferred
+  // so that a subtree unmounting - which fires one `release` per node -
+  // pays for each shared ancestor once instead of once per node.
+  const pendingReleases = new Set<string>()
+
+  function depthOf(path: string): number {
+    let depth = 0
+    for (let i = 0; i < path.length; i++) {
+      if (path.charCodeAt(i) === 46 /* '.' */) depth++
+    }
+    return depth
+  }
+
   /**
-   * After releasing a path, walk up and drop every ancestor that has
-   * nothing left underneath it, stopping at the first one that is still
-   * alive.
+   * Apply the prefix accounting and structural unlinking owed by every
+   * released path, in one pass.
    *
-   * Two kinds of ancestor need this. Prefix-only paths, registered by
-   * `ensurePrefix`, never get a signal, so `unwatched` can never fire
-   * for them; without this they would keep `hasPrefix` true forever and
-   * the diff would keep descending into an empty subtree, which is the
-   * exact cost this whole mechanism exists to remove. Link-only paths
-   * are ones whose own signal was already released while descendants
-   * were still alive, so `release` deliberately left them attached.
+   * Doing this per-release is quadratic in two separate ways. A list of
+   * 100 items unmounting under `todos` walks `todos` and the root 100
+   * times over, and each dead prefix-only ancestor found on the way up
+   * kicks off its own full ancestor walk to decrement counts. Both
+   * collapse if the released paths are processed together.
    *
-   * A prefix-only path contributes 1 to its own prefix count, plus 1
-   * for every signal registered at or below it. So a count of 1 or less
-   * means that self-registration is all that is left and the path is
-   * dead. Removing it decrements its own ancestors, which can in turn
-   * make the next one up dead — walking upward handles that cascade in
-   * a single pass.
+   * The pass works deepest-first over every path touched. Each path
+   * carries a count of how many decrements it is owed, merged from all
+   * of its released descendants, and passes that total to its parent
+   * once applied. Depth ordering guarantees a path is only reached
+   * after every one of its children has contributed, so each unique
+   * ancestor is visited exactly once regardless of how many releases
+   * pointed at it.
+   *
+   * Two kinds of ancestor get structurally removed here. Prefix-only
+   * paths, registered by `ensurePrefix`, never get a signal, so
+   * `unwatched` can never fire for them; without this they would keep
+   * `hasPrefix` true forever and the diff would keep descending into an
+   * empty subtree, which is the exact cost this whole mechanism exists
+   * to remove. A prefix-only path contributes 1 to its own count plus 1
+   * per signal at or below it, so a remaining count of 1 or less means
+   * only that self-registration is left and the path is dead; clearing
+   * it adds one more decrement to everything above. Link-only paths are
+   * ones whose own signal was released while descendants were still
+   * alive, so the release deliberately left them attached; once the
+   * last child goes they can finally be unlinked.
+   *
+   * A path still holding children, or still holding a live signal, is
+   * left alone. No early exit is needed for that: a live path keeps its
+   * entry in its parent's child set, so every ancestor above it fails
+   * the `childIndex.has` test on its own.
+   *
+   * Touches only `prefixCounts`, `prefixOnlyPaths` and `childIndex` -
+   * never a signal - so it is safe to run from anywhere, including
+   * mid-`unlink`.
    */
-  function releaseDeadAncestors(pathKey: string): void {
-    let idx = pathKey.lastIndexOf('.')
-    while (idx !== -1) {
-      const ancestor = pathKey.substring(0, idx)
-      if (childIndex.has(ancestor)) {
-        // Descendants still live here, so neither this path nor
-        // anything above it is dead.
+  function flushReleases(): void {
+    // How many prefix-count decrements each touched path still owes.
+    const owed = new Map<string, number>()
+    // Touched paths bucketed by depth, so the pass can go deepest-first
+    // without sorting.
+    const byDepth: (string[] | undefined)[] = []
+
+    function addOwed(path: string, count: number): void {
+      const prev = owed.get(path)
+      if (prev !== undefined) {
+        owed.set(path, prev + count)
         return
       }
-      if (prefixOnlyPaths.has(ancestor)) {
-        if ((prefixCounts.get(ancestor) ?? 0) > 1) return
-        prefixOnlyPaths.delete(ancestor)
-        decrementPrefixes(prefixCounts, ancestor)
-        detachFromParent(ancestor)
-      } else if (!signals.has(ancestor)) {
-        // A link-only node: its own signal was released earlier while
-        // children were still alive, so `release` left it attached.
-        // That last child is now gone, so it can finally be unlinked.
-        detachFromParent(ancestor)
-      } else {
-        // A live signal — it and everything above it stay.
-        return
+      owed.set(path, count)
+      const depth = depthOf(path)
+      const bucket = byDepth[depth]
+      if (bucket === undefined) byDepth[depth] = [path]
+      else bucket.push(path)
+    }
+
+    for (const path of pendingReleases) addOwed(path, 1)
+    // Cleared up front: the pass only reads `signals`, and a released
+    // path was removed from it synchronously.
+    pendingReleases.clear()
+
+    for (let depth = byDepth.length - 1; depth >= 0; depth--) {
+      const bucket = byDepth[depth]
+      if (bucket === undefined) continue
+      // Parents are strictly shallower, so entries appended below always
+      // land in a bucket this loop has not reached yet.
+      for (const path of bucket) {
+        let count = owed.get(path)!
+
+        const current = prefixCounts.get(path)
+        if (current !== undefined) {
+          if (current <= count) prefixCounts.delete(path)
+          else prefixCounts.set(path, current - count)
+        }
+
+        if (!childIndex.has(path)) {
+          if (prefixOnlyPaths.has(path)) {
+            if ((prefixCounts.get(path) ?? 0) <= 1) {
+              prefixOnlyPaths.delete(path)
+              prefixCounts.delete(path)
+              detachFromParent(path)
+              count += 1
+            }
+          } else if (!signals.has(path)) {
+            // Either a path just released, or a link-only node whose
+            // last child has now gone. A path resurrected by
+            // `getOrCreate` before this flush ran is live again and
+            // correctly falls through untouched.
+            detachFromParent(path)
+          }
+        }
+
+        const dot = path.lastIndexOf('.')
+        if (dot !== -1) addOwed(path.substring(0, dot), count)
       }
-      idx = ancestor.lastIndexOf('.')
     }
   }
 
@@ -306,6 +375,7 @@ export function createPathSignalRegistry(
     getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown> {
       let sig = signals.get(pathKey)
       if (!sig) {
+        if (pendingReleases.size !== 0) flushReleases()
         const initialValue = isObjectOrArray(currentValue) ? 0 : currentValue
         // Passing the registry as owner is what makes the signal call
         // back into `release` when its last subscriber goes away.
@@ -325,6 +395,9 @@ export function createPathSignalRegistry(
     ensurePrefix(pathKey: PathKey): void {
       // Already has a signal or already prefix-registered — nothing to do
       if (signals.has(pathKey) || prefixOnlyPaths.has(pathKey)) return
+      // Flush only removes entries from these structures, so the checks
+      // above cannot flip from false to true across it.
+      if (pendingReleases.size !== 0) flushReleases()
       prefixOnlyPaths.add(pathKey)
       addToChildIndex(pathKey)
       incrementPrefixes(prefixCounts, pathKey)
@@ -343,6 +416,7 @@ export function createPathSignalRegistry(
     },
 
     prune(pathKey: PathKey): void {
+      if (pendingReleases.size !== 0) flushReleases()
       // Recursively remove this path and all descendants using the child index.
       // O(subtree size) instead of O(total signals).
       const stack: string[] = [pathKey]
@@ -398,21 +472,9 @@ export function createPathSignalRegistry(
       if (signals.get(pathKey) !== node) return
 
       signals.delete(pathKey)
-      decrementPrefixes(prefixCounts, pathKey)
       columnsByArray.delete(pathKey)
       structuresByArray.delete(pathKey)
       arrayMetas.delete(pathKey)
-
-      // Only unlink this path structurally once nothing lives below it.
-      // The child index is shared structure, not per-signal: releasing
-      // "dyn.y" while "dyn.y.v" is still watched must leave the
-      // parent→child chain intact, or a later prune("dyn.y") cannot
-      // reach "dyn.y.v" and it leaks permanently. When children remain,
-      // the path stays as a link-only node and is cleaned up by
-      // `releaseDeadAncestors` once the last of them goes.
-      if (!childIndex.has(pathKey)) {
-        detachFromParent(pathKey)
-      }
 
       // A column signal lives at `<arrayPath>.{*}.<prop>`, so releasing
       // it has to drop `prop` from the array's tracked column set as
@@ -448,10 +510,18 @@ export function createPathSignalRegistry(
         }
       }
 
-      releaseDeadAncestors(pathKey)
+      // Prefix accounting and structural unlinking are deferred to the
+      // next `flushReleases`, which merges this path's ancestor walk
+      // with every other release queued alongside it. Until then
+      // `prefixCounts` reads high, so `hasPrefix` can say yes for a
+      // subtree that is already dead - a missed optimization for the
+      // rest of the current teardown, never a wrong answer, and every
+      // reader of that state flushes first.
+      pendingReleases.add(pathKey)
     },
 
     pruneChildren(pathKey: PathKey): void {
+      if (pendingReleases.size !== 0) flushReleases()
       const children = childIndex.get(pathKey)
       if (!children) return
       // prune() mutates the parent's child set — iterate over a copy
@@ -469,6 +539,7 @@ export function createPathSignalRegistry(
     },
 
     hasPrefix(prefix: string): boolean {
+      if (pendingReleases.size !== 0) flushReleases()
       return (prefixCounts.get(prefix) || 0) > 0
     },
 
@@ -477,6 +548,7 @@ export function createPathSignalRegistry(
     },
 
     debugStats(): RegistryStats {
+      if (pendingReleases.size !== 0) flushReleases()
       return {
         signals: signals.size,
         prefixCounts: prefixCounts.size,

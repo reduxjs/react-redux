@@ -358,6 +358,48 @@ describe('selectors that switch which paths they read', () => {
   })
 })
 
+describe('partial unmount under a shared ancestor', () => {
+  it('keeps the shared ancestor alive while any sibling still reads it', () => {
+    const store = makeStore()
+    const { rerender, unmount } = rtl.render(
+      <Tree store={store} count={SLICE_COUNT} />,
+    )
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+    expect(registry.debugPaths()).toContain(`slices.s${SLICE_COUNT - 1}.nested.n`)
+
+    // Drop 15 of the 20 watchers in a single commit. Every released
+    // path shares the `slices` ancestor, so its bookkeeping takes 15
+    // decrements merged into one pass. The arithmetic has to land
+    // exactly: over-decrement and `slices` is dropped while five live
+    // paths still sit under it, which would make `hasPrefix` say no and
+    // stop the diff from ever reaching them again.
+    rerender(<Tree store={store} count={5} />)
+
+    const paths = registry.debugPaths()
+    for (let i = 0; i < 5; i++) {
+      expect(paths).toContain(`slices.s${i}.nested.n`)
+    }
+    for (let i = 5; i < SLICE_COUNT; i++) {
+      expect(paths).not.toContain(`slices.s${i}.nested.n`)
+    }
+    expect(registry.hasPrefix('slices')).toBe(true)
+
+    // The survivors have to still be wired up, not just present in the
+    // registry — this is what catches a severed ancestor chain.
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's4' })
+    })
+    expect(rtl.screen.getByTestId('w4').textContent).toBe('41')
+
+    unmount()
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+})
+
 describe('repeated mount/unmount churn', () => {
   it('does not grow across cycles that reuse the same store and selectors', () => {
     const store = makeStore()
