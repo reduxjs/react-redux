@@ -308,6 +308,8 @@ export function createPathSignalRegistry(
    * Touches only `prefixCounts`, `prefixOnlyPaths` and `childIndex` -
    * never a signal - so it is safe to run from anywhere, including
    * mid-`unlink`.
+   *
+   * @returns Nothing.
    */
   function flushReleases(): void {
     // How many prefix-count decrements each touched path still owes.

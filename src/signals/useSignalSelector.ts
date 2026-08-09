@@ -171,7 +171,13 @@ const useSignalSelectorImpl = <S, R>(
         selectorVersionSignal.set(selectorVersionSignal.get() + 1)
         const value = selectorComputed.get()
         if (pendingError === null) {
-          currentResult = value
+          // Apply the equality function before adopting. A selector that
+          // returns a new reference every call (`() => [1, 2, 3]`) paired
+          // with a custom equalityFn must keep the PREVIOUS reference, or
+          // every render hands React a new value and defeats the check.
+          if (!equalityFnRef.current(currentResult, value)) {
+            currentResult = value
+          }
         }
       } finally {
         suppressNotify = false
@@ -235,7 +241,7 @@ const useSignalSelectorImpl = <S, R>(
     // 'once' means literally once, on the first evaluation — a later
     // render-phase selector swap does NOT re-arm it.
     let firstRun = true
-    const runDevModeChecks = (selected: R, proxy: S): void => {
+    const runDevModeChecks = (selected: R, proxy: S, rawState: S): void => {
       const { stabilityCheck = 'once', identityFunctionCheck = 'once' } =
         contextRef.current
       const finalChecks: DevModeChecks = {
@@ -264,7 +270,11 @@ const useSignalSelectorImpl = <S, R>(
               (selectorRef.current.name || 'unknown') +
               ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
               '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
-            { selected, selected2: toCompare, stack },
+            // `state` is the RAW store state, not the proxy the selector
+            // ran against — the warning is user-facing and a tracking
+            // proxy in the console would register phantom dependencies
+            // for anything the user expanded in devtools.
+            { state: rawState, selected, selected2: toCompare, stack },
           )
         }
       }
@@ -314,7 +324,7 @@ const useSignalSelectorImpl = <S, R>(
         const result = selectorRef.current(proxy as S)
 
         if (process.env.NODE_ENV !== 'production') {
-          runDevModeChecks(result, proxy as S)
+          runDevModeChecks(result, proxy as S, state as S)
         }
 
         // If the selector returned a tracking proxy (object), explicitly
@@ -389,8 +399,13 @@ const useSignalSelectorImpl = <S, R>(
           // Render-phase selector swap (setSelector): adopt the value
           // so the equality baseline is current, but let the ongoing
           // render pick it up via getSnapshot instead of scheduling
-          // another render.
-          currentResult = newValue
+          // another render. Equality still applies: this effect runs
+          // synchronously inside recomputeInPlace, so skipping the check
+          // here would adopt the new reference before recomputeInPlace
+          // ever gets to reject it.
+          if (!equalityFnRef.current(currentResult, newValue)) {
+            currentResult = newValue
+          }
           return
         }
 
@@ -412,7 +427,7 @@ const useSignalSelectorImpl = <S, R>(
       const { proxy, record } = createProbeProxy(state)
       const value = selectorRef.current(proxy as S)
       if (process.env.NODE_ENV !== 'production') {
-        runDevModeChecks(value, proxy as S)
+        runDevModeChecks(value, proxy as S, state as S)
       }
       currentResult = untrackResult(value)
       probeSegments = record.segments
