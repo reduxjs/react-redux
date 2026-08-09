@@ -250,7 +250,7 @@ describe('registry lifecycle: after promotion to the deep graph', () => {
     unmount()
   })
 
-  it('retains path signals after unmount — the registry is scoped to state shape, not to components', () => {
+  it('releases every path signal once the last watching component unmounts', () => {
     const store = makeStore()
     const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
     const registry = requireRegistry()
@@ -259,14 +259,102 @@ describe('registry lifecycle: after promotion to the deep graph', () => {
       store.dispatch({ type: 'bump', key: 's0' })
     })
     const mounted = registry.debugStats()
+    expect(mounted.signals).toBeGreaterThan(0)
 
     unmount()
-    const afterUnmount = registry.debugStats()
 
-    expect(afterUnmount.segmentSubs).toBe(0)
-    expect(afterUnmount.signals).toBe(mounted.signals)
-    expect(afterUnmount.prefixCounts).toBe(mounted.prefixCounts)
-    expect(afterUnmount.childIndex).toBe(mounted.childIndex)
+    // Unmount disposes each hook's effect, which drops the last
+    // subscriber from its computed and cascades `unwatched` down to
+    // every path signal it read. The registry ends up back at the
+    // state it had before anything mounted.
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+
+  it('keeps a shared path alive until the last of its watchers unmounts', () => {
+    const store = makeStore()
+
+    // Both watchers read `slices.s0.nested.n`, and both sit under one
+    // provider, so they share a single registry entry for that path.
+    function Pair({ showSecond }: { showSecond: boolean }) {
+      return (
+        <SignalProvider store={store}>
+          <CaptureRegistry />
+          <Watcher index={0} />
+          {showSecond ? <Watcher index={0} /> : null}
+        </SignalProvider>
+      )
+    }
+
+    const { rerender, unmount } = rtl.render(<Pair showSecond />)
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+
+    const shared = registry.debugPaths()
+    expect(shared).toContain('slices.s0.nested.n')
+
+    // One watcher goes away; the other still reads the path, so the
+    // signal keeps its subscriber and must survive.
+    rerender(<Pair showSecond={false} />)
+    expect(registry.debugPaths()).toEqual(shared)
+
+    unmount()
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+})
+
+describe('selectors that switch which paths they read', () => {
+  it('holds only the current branch as a conditional selector alternates', () => {
+    const store = makeStore()
+
+    function Branching({ index }: { index: number }) {
+      const n = useSignalSelector((s: AppState) => s.slices[`s${index}`].nested.n)
+      return <div data-testid="branch">{n}</div>
+    }
+
+    function App({ index }: { index: number }) {
+      return (
+        <SignalProvider store={store}>
+          <CaptureRegistry />
+          <Branching index={index} />
+        </SignalProvider>
+      )
+    }
+
+    const { rerender, unmount } = rtl.render(<App index={0} />)
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+    expect(registry.debugPaths()).toContain('slices.s0.nested.n')
+
+    // Re-running the selector against a different branch relinks the
+    // computed onto the new path. The old path loses its only
+    // subscriber, so it must not linger — otherwise every branch ever
+    // visited stays in the registry and keeps `hasPrefix` true, which
+    // is the traversal cost this mechanism exists to remove.
+    const visited: number[] = [1, 2, 3, 4]
+    for (const index of visited) {
+      rerender(<App index={index} />)
+      rtl.act(() => {
+        store.dispatch({ type: 'bump', key: `s${index}` })
+      })
+
+      const paths = registry.debugPaths()
+      expect(paths).toContain(`slices.s${index}.nested.n`)
+      for (const other of visited) {
+        if (other !== index) {
+          expect(paths).not.toContain(`slices.s${other}.nested.n`)
+        }
+      }
+      expect(paths).not.toContain('slices.s0.nested.n')
+    }
+
+    unmount()
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
   })
 })
 
@@ -459,7 +547,11 @@ describe('state keys that disappear', () => {
     })
 
     const afterRemoval = registry.debugStats()
-    expect(afterRemoval.signals).toBeLessThan(withDyn.signals)
+    // Not `toBeLessThan`: the components stay mounted and keep reading
+    // `dyn.x`/`dyn.y`, so the registry swaps the `.v` leaf signals for
+    // signals on the now-undefined parent keys rather than shrinking.
+    // What matters is that the removed leaves are gone.
+    expect(afterRemoval.signals).toBeLessThanOrEqual(withDyn.signals)
     expect(registry.debugPaths()).not.toContain('dyn.x.v')
     expect(registry.debugPaths()).not.toContain('dyn.y.v')
 
