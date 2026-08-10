@@ -48,6 +48,17 @@ function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
 
 const IS_REACT_18 = React.version.startsWith('18')
 
+/**
+ * Which implementation `react-redux` was aliased to (see
+ * `vitest.config.mts` and `test/entries/`). Only a couple of tests here
+ * need to know: the ones that assert on stock's `Subscription` chain,
+ * which the signal implementation does not use at all — it propagates
+ * through the Provider's single store subscription and the signal graph
+ * instead, so no per-component listener ever joins that chain. Those
+ * tests assert a mechanism, not observable behavior.
+ */
+const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
+
 describe('React', () => {
   describe('hooks', () => {
     describe('useSelector', () => {
@@ -151,7 +162,7 @@ describe('React', () => {
           expect(renderedItems).toEqual([1, 2])
         })
 
-        it('subscribes to the store synchronously', () => {
+        it.skipIf(IS_SIGNALS)('subscribes to the store synchronously', () => {
           let appSubscription: Subscription | null = null
 
           const Child = () => {
@@ -182,7 +193,7 @@ describe('React', () => {
           expect(appSubscription!.getListeners().get().length).toBe(2)
         })
 
-        it('unsubscribes when the component is unmounted', () => {
+        it.skipIf(IS_SIGNALS)('unsubscribes when the component is unmounted', () => {
           let appSubscription: Subscription | null = null
 
           const Parent = () => {
