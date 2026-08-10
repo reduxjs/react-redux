@@ -16,7 +16,12 @@
     "noUnusedParameters": false,
     "paths": {
       "@internal/*": ["./src/*"],
-      "react-redux": ["./src/index.ts"], // @remap-prod-remove-line
+      // Type-level counterpart to the `react-redux` alias in
+      // `vitest.config.mts`. The type tests resolve through tsconfig
+      // paths rather than the Vite alias, so they must point at the same
+      // stock entry — otherwise a benchmark override in `src/exports.ts`
+      // silently changes what the type tests are checking.
+      "react-redux": ["./test/entries/stock.ts"], // @remap-prod-remove-line
       // `moduleResolution: "Node"` predates `exports` maps, so it cannot
       // find the types for alien-signals' `./system` subpath export.
       // Vite and tsup both resolve it correctly at runtime; this only

@@ -45,6 +45,8 @@
     "lint:fix": "oxlint src test --fix",
     "prepack": "pnpm build",
     "test": "vitest --run --typecheck",
+    "test:signals": "cross-env TEST_IMPL=signals vitest --run",
+    "test:both": "yarn test && yarn test:signals",
     "test:watch": "vitest --watch",
     "type-tests": "tsc --noEmit -p tsconfig.test.json"
   },
