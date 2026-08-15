@@ -105,6 +105,10 @@ const useSignalSelectorImpl = <S, R>(
   // Create the signal bridge once (stable across renders)
   const bridge = useMemo(() => {
     let currentResult: R
+    // Whether currentResult has ever been seeded. User equality
+    // functions must never be called with the unseeded value — stock
+    // useSelector never compares against a nonexistent previous result.
+    let hasResult = false
     let version = 0
     let notifyReact: (() => void) | null = null
     let suppressNotify = false
@@ -225,13 +229,13 @@ const useSignalSelectorImpl = <S, R>(
         // eager build for ungateable footprints).
       } else {
         // Root became non-plain while never subscribed (a dispatch in
-        // the render→subscribe gap) — can't probe it. Promote now; the
-        // effect attaches in subscribe().
-        built = true
-        recomputeInPlace()
-        if (pendingError !== null) {
-          throw pendingError
-        }
+        // the render→subscribe gap) — can't probe it. Don't build during
+        // render either (an uncommitted component would orphan the
+        // build). Invalidate the snapshot cache so getSnapshot re-runs
+        // the NEW closure in this render; subscribe() builds the deep
+        // tier on commit.
+        ungateable = true
+        lastSnapshotState = null
       }
     }
 
@@ -429,7 +433,16 @@ const useSignalSelectorImpl = <S, R>(
       if (process.env.NODE_ENV !== 'production') {
         runDevModeChecks(value, proxy as S, state as S)
       }
-      currentResult = untrackResult(value)
+      // Apply the equality function before adopting (except on the very
+      // first probe, when there is no previous result). A re-probe after
+      // a render-phase selector swap must keep the PREVIOUS reference
+      // for equal-but-new results, or the identity handed to React
+      // changes on every swap and defeats the equality check.
+      const fresh = untrackResult(value)
+      if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
+        currentResult = fresh
+        hasResult = true
+      }
       probeSegments = record.segments
       ungateable = record.segments.size === 0 || record.enumerated
       probedState = state
@@ -467,22 +480,25 @@ const useSignalSelectorImpl = <S, R>(
 
     // --- Mount seeding ---
     // Probe the selector's coarse footprint and seed the initial value.
-    // Footprints that can't be gated (and non-plain-object roots, which
-    // can't be probed) fall back to building the deep tier eagerly — the
-    // pre-coarse-tier behavior. A selector that throws on mount surfaces
-    // here, during render — same as stock useSelector.
+    // A selector that throws on mount surfaces here, during render —
+    // same as stock useSelector.
+    //
+    // The deep tier is NEVER built during render, even for ungateable
+    // footprints. React only calls subscribe for components that commit,
+    // so a render-phase build has no owner until then: a component that
+    // suspends, a transition render that gets abandoned, or the extra
+    // bridge from StrictMode's useMemo double-invoke would orphan the
+    // computed and permanently anchor path signals in the registry.
+    // Until subscribe builds the deep tier, getSnapshot serves values by
+    // running the raw selector (see the unbuilt branch below).
     const initialState = store.getState()
     if (isPlainObjectState(initialState)) {
       probe(initialState as S & object)
     } else {
+      // Non-plain root: can't probe it. getSnapshot's unbuilt path runs
+      // the raw selector during render (throw-on-mount parity);
+      // subscribe() builds the deep tier on commit.
       ungateable = true
-    }
-    if (ungateable) {
-      built = true
-      currentResult = selectorComputed.get()
-      if (pendingError !== null) {
-        throw pendingError
-      }
     }
 
     const getSnapshot = (): R => {
@@ -497,8 +513,9 @@ const useSignalSelectorImpl = <S, R>(
         if (state !== lastSnapshotState) {
           lastSnapshotState = state
           const fresh = selectorRef.current(state as S)
-          if (!equalityFnRef.current(currentResult, fresh)) {
+          if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
             currentResult = fresh
+            hasResult = true
           }
         }
         return currentResult
@@ -554,10 +571,19 @@ const useSignalSelectorImpl = <S, R>(
               // Can't gate this footprint — build eagerly. On error the
               // computed set pendingError; the effect's first run
               // notifies and getSnapshot rethrows into render.
+              // Equality applies before adopting: the probe already
+              // seeded currentResult, and a selector that returns a
+              // new-but-equal reference must not change the identity
+              // React saw during render (that would force an immediate
+              // extra re-render at subscribe time).
               built = true
               const value = selectorComputed.get()
-              if (pendingError === null) {
+              if (
+                pendingError === null &&
+                (!hasResult || !equalityFnRef.current(currentResult, value))
+              ) {
                 currentResult = value
+                hasResult = true
               }
             } else {
               coarseSub = { segments: probeSegments, onCoarseHit }
