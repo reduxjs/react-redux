@@ -17,15 +17,23 @@ export interface SignalProviderProps<
 > extends ProviderProps<A, S> {}
 
 export function SignalProvider<
-  S extends object,
-  A extends Action = UnknownAction,
+  A extends Action<string> = UnknownAction,
+  S extends object = object,
 >(providerProps: SignalProviderProps<A, S>) {
   const { children, context, serverState, store } = providerProps
 
-  const [registry] = React.useState(() => createPathSignalRegistry(alienEngine))
-
-  // Track previous state for signal diffing
-  const prevStateRef = React.useRef<S>(store.getState())
+  // The signal graph and the diff baseline are keyed to the store:
+  // swapping the `store` prop starts over with a fresh registry, the
+  // same way stock Provider rebuilds its Subscription. `prevState` is
+  // mutable — onStateChange advances it after each diff.
+  const signalState = React.useMemo(
+    () => ({
+      registry: createPathSignalRegistry(alienEngine),
+      prevState: store.getState() as S,
+    }),
+    [store],
+  )
+  const registry = signalState.registry
 
   // Build context value: standard ReactReduxContextValue + signal fields
   const contextValue = React.useMemo(() => {
@@ -60,9 +68,9 @@ export function SignalProvider<
     subscription.onStateChange = () => {
       // Run signal diff BEFORE notifying nested subs, so computed values
       // are up-to-date when useSelector/useSignalSelector read them
-      const prev = prevStateRef.current
+      const prev = signalState.prevState
       const next = store.getState()
-      prevStateRef.current = next
+      signalState.prevState = next
       const changedRootKeys = reconcileState(prev, next, registry, alienEngine)
 
       // Coarse tier: wake deferred subscribers whose top-level segments
