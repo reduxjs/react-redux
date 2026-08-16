@@ -172,9 +172,7 @@ describe('zombie children', () => {
 
   it('a throwing selector on a component that stays mounted reaches an error boundary', () => {
     const store = makeStore()
-    const consoleSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {})
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     function StubbornWatcher() {
       // Not conditionally rendered by any parent — stays mounted after
@@ -208,9 +206,7 @@ describe('zombie children', () => {
 
   it('other components are still notified when one selector throws', () => {
     const store = makeStore()
-    const consoleSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => {})
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     function StubbornWatcher() {
       const name = useSignalSelector(
@@ -242,7 +238,9 @@ describe('zombie children', () => {
     })
 
     expect(rtl.screen.getByTestId('count').textContent).toBe('1')
-    expect(rtl.screen.getByTestId('boundary')).toBeDefined()
+    expect(rtl.screen.getByTestId('boundary').textContent).toMatch(
+      /Cannot read properties of undefined/,
+    )
     consoleSpy.mockRestore()
   })
 })

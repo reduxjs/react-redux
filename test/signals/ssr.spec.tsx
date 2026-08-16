@@ -74,7 +74,8 @@ const selectCount = (state: AppState) => state.count
 const selectTheme = (state: AppState) => state.user.prefs.theme
 const selectDoneCount = (state: AppState) =>
   state.todos.filter((t) => t.done).length
-const selectTexts = (state: AppState) => state.todos.map((t) => t.text).join(',')
+const selectTexts = (state: AppState) =>
+  state.todos.map((t) => t.text).join(',')
 
 function Body({
   useHook,
@@ -189,7 +190,9 @@ describe('renderToString parity', () => {
 })
 
 describe('hydration', () => {
-  const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const consoleErrorSpy = vi
+    .spyOn(console, 'error')
+    .mockImplementation(() => {})
 
   afterEach(() => {
     vi.clearAllMocks()

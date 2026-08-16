@@ -2,7 +2,11 @@
 
 import * as rtl from '@testing-library/react'
 import React, { useLayoutEffect } from 'react'
-import { configureStore, createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import {
+  configureStore,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit'
 import { SignalProvider, useSignalSelector } from '../../src/signals'
 
 // ============================================================================
@@ -34,7 +38,11 @@ const todosSlice = createSlice({
       if (todo) todo.completed = !todo.completed
     },
     add(state, action: PayloadAction<{ id: number; text: string }>) {
-      state.push({ id: action.payload.id, text: action.payload.text, completed: false })
+      state.push({
+        id: action.payload.id,
+        text: action.payload.text,
+        completed: false,
+      })
     },
     remove(state, action: PayloadAction<number>) {
       return state.filter((t) => t.id !== action.payload)
@@ -355,8 +363,10 @@ describe('useSignalSelector', () => {
         </SignalProvider>,
       )
 
-      expect(todoSelectorCalls).toBeGreaterThanOrEqual(1)
-      expect(counterSelectorCalls).toBeGreaterThanOrEqual(1)
+      // Mount: one probe run each, plus one extra from the default
+      // stabilityCheck: 'once' dev check
+      expect(todoSelectorCalls).toBe(2)
+      expect(counterSelectorCalls).toBe(2)
 
       const todoCallsBefore = todoSelectorCalls
       const counterCallsBefore = counterSelectorCalls
@@ -365,10 +375,10 @@ describe('useSignalSelector', () => {
         store.dispatch(countersSlice.actions.increment('counter1'))
       })
 
-      // Counter selector should have run, todo selector should NOT
-      expect(counterSelectorCalls - counterCallsBefore).toBeGreaterThanOrEqual(
-        1,
-      )
+      // Counter selector runs twice: once on promotion (old inline ref),
+      // once when the re-render swaps in the new inline function.
+      // The todo selector must NOT run at all.
+      expect(counterSelectorCalls - counterCallsBefore).toBe(2)
       expect(todoSelectorCalls - todoCallsBefore).toBe(0)
     })
 
@@ -407,7 +417,8 @@ describe('useSignalSelector', () => {
       })
 
       expect(getByTestId('todo').textContent).toBe('pending')
-      expect(todoSelector.getCalls()).toBeGreaterThanOrEqual(1)
+      // Stable selector ref: exactly one run on promotion, no swap re-run
+      expect(todoSelector.getCalls()).toBe(1)
       expect(counterSelector.getCalls()).toBe(0)
     })
 
@@ -444,7 +455,8 @@ describe('useSignalSelector', () => {
       })
 
       expect(getByTestId('todos').textContent).toBe('4')
-      expect(todoSelector.getCalls()).toBeGreaterThanOrEqual(1)
+      // Stable selector ref: exactly one run on promotion, no swap re-run
+      expect(todoSelector.getCalls()).toBe(1)
       expect(filterSelector.getCalls()).toBe(0)
     })
 
@@ -492,9 +504,9 @@ describe('useSignalSelector', () => {
         store.dispatch(countersSlice.actions.increment('counter1'))
       })
 
-      // counter1 value changed → must re-render
+      // counter1 value changed → exactly one re-render
       expect(getByTestId('counter1').textContent).toBe('1')
-      expect(counter1Renders).toBeGreaterThan(renders1After)
+      expect(counter1Renders).toBe(renders1After + 1)
 
       // counter2 value did NOT change → should NOT re-render
       // (Object.is cutoff on the primitive computed result)
@@ -599,7 +611,9 @@ describe('useSignalSelector', () => {
 
       // Verify nested state is frozen
       expect(Object.isFrozen(frozenStore.getState().counters)).toBe(true)
-      expect(Object.isFrozen(frozenStore.getState().counters.counter1)).toBe(true)
+      expect(Object.isFrozen(frozenStore.getState().counters.counter1)).toBe(
+        true,
+      )
 
       expect(getByTestId('value').textContent).toBe('0')
 
@@ -861,5 +875,3 @@ describe('useSignalSelector', () => {
     })
   })
 })
-
-

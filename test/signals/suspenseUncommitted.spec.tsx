@@ -195,7 +195,7 @@ describe('component suspends before commit, promise never resolves', () => {
       </SignalProvider>,
     )
 
-    expect(getByTestId('fallback')).toBeTruthy()
+    expect(getByTestId('fallback').textContent).toBe('loading')
     // The coarse sub is only registered inside subscribe, which never
     // ran; the probe itself creates no signals. Nothing to leak.
     expect(registry().debugStats()).toEqual(EMPTY_STATS)
@@ -224,7 +224,7 @@ describe('component suspends before commit, promise never resolves', () => {
       </SignalProvider>,
     )
 
-    expect(getByTestId('fallback')).toBeTruthy()
+    expect(getByTestId('fallback').textContent).toBe('loading')
     // The component rendered but never committed: subscribe never ran,
     // no effect exists, and no cleanup path will ever fire for this
     // hook. Anything it left in the registry is unreachable garbage.
@@ -279,7 +279,7 @@ describe('component suspends, then commits when the promise resolves', () => {
       </SignalProvider>,
     )
 
-    expect(getByTestId('fallback')).toBeTruthy()
+    expect(getByTestId('fallback').textContent).toBe('loading')
 
     await rtl.act(async () => {
       await gate.open()
@@ -302,7 +302,7 @@ describe('component suspends, then commits when the promise resolves', () => {
 })
 
 describe("today's only recovery path: pruning when state paths disappear", () => {
-  it('a never-committed hook\'s leaked leaf signal is removed when its state key is deleted', async () => {
+  it("a never-committed hook's leaked leaf signal is removed when its state key is deleted", async () => {
     // This test documents CURRENT behavior, not desired behavior: the
     // leaked path signal sits in the registry until the state key it
     // tracks is deleted, and prune() removes it as part of normal diff
@@ -376,7 +376,7 @@ describe('transitions', () => {
     }
 
     const { unmount, getByTestId } = rtl.render(<App />)
-    expect(getByTestId('idle')).toBeTruthy()
+    expect(getByTestId('idle').textContent).toBe('idle')
 
     // Mount the suspending component inside a transition. The transition
     // render runs the hook (and, today, the eager deep build), then
@@ -386,7 +386,7 @@ describe('transitions', () => {
         setShowOuter!(true)
       })
     })
-    expect(getByTestId('idle')).toBeTruthy()
+    expect(getByTestId('idle').textContent).toBe('idle')
 
     unmount()
     expect(registry().debugStats()).toEqual(EMPTY_STATS)
@@ -433,7 +433,7 @@ describe('transitions', () => {
       setShowOuter!(false)
     })
 
-    expect(getByTestId('idle')).toBeTruthy()
+    expect(getByTestId('idle').textContent).toBe('idle')
     expect(registry().debugStats()).toEqual(EMPTY_STATS)
   })
 })
@@ -498,7 +498,7 @@ describe('StrictMode', () => {
       </StrictMode>,
     )
 
-    expect(getByTestId('fallback')).toBeTruthy()
+    expect(getByTestId('fallback').textContent).toBe('loading')
     unmount()
     expect(registry().debugStats()).toEqual(EMPTY_STATS)
   })

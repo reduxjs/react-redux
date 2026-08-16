@@ -173,8 +173,8 @@ describe('SignalEngine (alien-signals)', () => {
 
       // Only the final value should be seen after batch
       expect(s.get()).toBe(3)
-      // Effect should have run once (or a small number), not 3 times
-      expect(effectCount).toBeLessThanOrEqual(1)
+      // Nested batches coalesce into a single propagation, not 3
+      expect(effectCount).toBe(1)
 
       scope.stop()
     })
