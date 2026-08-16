@@ -61,7 +61,7 @@ To continuously watch and run tests, run the following:
 pnpm test:watch
 ```
 
-To perform linting with `eslint`, run the following:
+To perform linting with `oxlint`, run the following:
 
 ```
 pnpm lint
