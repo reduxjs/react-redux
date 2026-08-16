@@ -20,26 +20,31 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
 
       - name: Run test suite
-        run: yarn test
+        run: pnpm test
 
       - name: Build
-        run: yarn build
+        run: pnpm build
 
+      # `pnpm pack` names the tarball `<name>-<version>.tgz`; `yarn pack`
+      # defaulted to `package.tgz`, which every downstream job expects.
       - name: Pack
-        run: yarn pack
+        run: pnpm pack --out package.tgz
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -76,11 +81,14 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Download build artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -89,16 +97,16 @@ jobs:
           path: .
 
       - name: Install deps
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Install React ${{ matrix.react.version }} and React-DOM ${{ matrix.react.react-dom.version }}
-        run: yarn add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
+        run: pnpm add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
 
       - name: Install TypeScript ${{ matrix.ts }}
-        run: yarn add typescript@${{ matrix.ts }}
+        run: pnpm add typescript@${{ matrix.ts }}
 
       - name: Install build artifact
-        run: yarn add ./package.tgz
+        run: pnpm add ./package.tgz
 
       - name: Erase path aliases
         run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json
@@ -107,8 +115,8 @@ jobs:
         env:
           TEST_DIST: true
         run: |
-          yarn tsc --version
-          yarn type-tests
+          pnpm exec tsc --version
+          pnpm type-tests
 
   are-the-types-wrong:
     name: Check package config with are-the-types-wrong
@@ -125,11 +133,14 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -137,11 +148,11 @@ jobs:
           path: .
 
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install
 
       # Note: We currently expect "FalseCJS" failures for Node16 + `moduleResolution: "node16",
       - name: Run are-the-types-wrong
-        run: yarn attw ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
+        run: pnpm exec attw ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
 
   test-published-artifact:
     name: Test Published Artifact ${{ matrix.example }}
@@ -169,17 +180,23 @@ jobs:
         with:
           persist-credentials: false
 
+      # This job runs Yarn only, inside the RTK clone in $RUNNER_TEMP, and
+      # never installs at the repo root. There is no root yarn.lock to key a
+      # `cache: 'yarn'` entry on any more, and setup-node errors when the
+      # lockfile it looks for is missing. The example's node_modules are
+      # cached explicitly by the actions/cache step below instead.
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
 
-      # The clone deliberately lives outside the workspace. Yarn merges every
-      # `.yarnrc.yml` it finds walking up from the cwd, and RTK pins its own
-      # (older) Yarn via `yarnPath`. Nesting the clone under our checkout would
-      # feed our settings to that older Yarn, which aborts on any option it
-      # doesn't recognise.
+      # The clone deliberately lives outside the checkout. It originally
+      # guarded against Yarn merging every `.yarnrc.yml` found walking up from
+      # the cwd: this repo used to ship one, and RTK pins its own older Yarn
+      # via `yarnPath`, which aborts on any option it doesn't recognise. This
+      # repo is on pnpm now and has no `.yarnrc.yml`, but pnpm resolves
+      # `.npmrc` hierarchically the same way, so keeping the clone outside the
+      # checkout is still the safer arrangement.
       - name: Clone RTK repo (pinned to known-good commit)
         run: |
           git init "$RUNNER_TEMP/redux-toolkit"
@@ -256,11 +273,15 @@ jobs:
         with:
           persist-credentials: false
 
+      # This example is still a Yarn project with its own yarn.lock, and every
+      # step here runs inside it. Point the cache at that lockfile, since the
+      # root one is gone.
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
+          cache-dependency-path: examples/publish-ci/${{ matrix.example }}/yarn.lock
 
       - name: Install deps
         run: yarn install --immutable
@@ -313,14 +334,17 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Install deps
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Download build artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
@@ -332,10 +356,10 @@ jobs:
         run: ls -lah
 
       - name: Install React ${{ matrix.react.version }} and React-DOM ${{ matrix.react.react-dom.version }}
-        run: yarn add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
+        run: pnpm add -D react@${{ matrix.react.version }} react-dom@${{ matrix.react.react-dom.version }} @types/react@${{ matrix.react.types }} @types/react-dom@${{ matrix.react.react-dom.types }}
 
       - name: Install build artifact
-        run: yarn add ./package.tgz
+        run: pnpm add ./package.tgz
 
       - name: Erase path aliases
         run: sed -i -e /@remap-prod-remove-line/d ./tsconfig.base.json
@@ -343,4 +367,4 @@ jobs:
       - name: Run local tests against the build artifact
         env:
           TEST_DIST: true
-        run: yarn test
+        run: pnpm test
