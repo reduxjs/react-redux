@@ -17,8 +17,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - run: corepack enable
-
+      # No `corepack enable` here. pnpm/action-setup installs pnpm itself and
+      # reads the version from the packageManager field; running both means a
+      # Corepack shim and an action-installed binary competing on PATH.
       - uses: pnpm/action-setup@v4
 
       - name: Setup Node
