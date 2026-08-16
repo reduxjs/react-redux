@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createTrackingProxy, getProxyPath, unwrap } from '../../src/signals/trackingProxy'
+import {
+  createTrackingProxy,
+  getProxyPath,
+  unwrap,
+} from '../../src/signals/trackingProxy'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { reconcileState } from '../../src/signals/diff'
 import { alienEngine } from '../../src/signals/engine'
@@ -200,7 +204,9 @@ describe('createTrackingProxy', () => {
     const registry = makeRegistry()
     const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
 
-    const names = proxy.items.map((item: { id: number; name: string }) => item.name)
+    const names = proxy.items.map(
+      (item: { id: number; name: string }) => item.name,
+    )
     expect(names).toEqual(['A', 'B'])
   })
 
@@ -446,14 +452,24 @@ describe('createTrackingProxy', () => {
     const c1 = scope.run(() =>
       alienEngine.computed(() => {
         comp1Calls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         return proxy.counter.value
       }),
     )
     const c2 = scope.run(() =>
       alienEngine.computed(() => {
         comp2Calls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         return proxy.counter.value
       }),
     )
@@ -491,7 +507,12 @@ describe('createTrackingProxy', () => {
     const c = scope.run(() =>
       alienEngine.computed(() => {
         calls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         const result = proxy.nested.deep
         // Simulate what useSignalSelector does: detect proxy result
         // and explicitly read the object's signal for terminal dependency
@@ -530,7 +551,12 @@ describe('createTrackingProxy', () => {
     const c = scope.run(() =>
       alienEngine.computed(() => {
         calls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         // Read through intermediate objects to a leaf
         return proxy.nested.deep.value
       }),
@@ -566,7 +592,12 @@ describe('createTrackingProxy', () => {
     const parentComp = scope.run(() =>
       alienEngine.computed(() => {
         parentCalls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         return proxy.parent
       }),
     )
@@ -575,7 +606,12 @@ describe('createTrackingProxy', () => {
     const leafComp = scope.run(() =>
       alienEngine.computed(() => {
         leafCalls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         return proxy.parent.child.leaf
       }),
     )
@@ -599,7 +635,12 @@ describe('createTrackingProxy', () => {
     const nested = { x: 1, y: 2 }
     const registry = makeRegistry()
     // Create proxy with a base path — simulates a proxy for a nested subtree
-    const proxy = createTrackingProxy(nested, 'root.sub', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(
+      nested,
+      'root.sub',
+      registry,
+      registry.proxyCache,
+    )
 
     proxy.x
 
@@ -611,9 +652,7 @@ describe('createTrackingProxy', () => {
 
   it('establishes signal dependencies for computed tracking', () => {
     const state = Object.freeze({
-      todos: Object.freeze([
-        Object.freeze({ id: 1, text: 'Test' }),
-      ]),
+      todos: Object.freeze([Object.freeze({ id: 1, text: 'Test' })]),
       filter: 'all' as const,
     })
     const registry = makeRegistry()
@@ -625,7 +664,12 @@ describe('createTrackingProxy', () => {
     const c = scope.run(() => {
       return alienEngine.computed(() => {
         callCount++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         return proxy.filter
       })
     })
@@ -664,7 +708,12 @@ describe('createTrackingProxy', () => {
     const todoComputed = scope.run(() =>
       alienEngine.computed(() => {
         todoCalls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         const result = proxy.todos
         // Simulate terminal dependency for object result
         const proxyPath = getProxyPath(result)
@@ -678,7 +727,12 @@ describe('createTrackingProxy', () => {
     const counterComputed = scope.run(() =>
       alienEngine.computed(() => {
         counterCalls++
-        const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+        const proxy = createTrackingProxy(
+          state,
+          '',
+          registry,
+          registry.proxyCache,
+        )
         return proxy.counter
       }),
     )
@@ -833,7 +887,7 @@ describe('array method dependency tracking', () => {
    */
   function makeFrozenState(items: TodoItem[]): TodoState {
     return Object.freeze({
-      items: Object.freeze(items.map(i => Object.freeze(i))),
+      items: Object.freeze(items.map((i) => Object.freeze(i))),
     }) as TodoState
   }
 
@@ -851,7 +905,7 @@ describe('array method dependency tracking', () => {
   ): TodoState {
     return Object.freeze({
       items: Object.freeze(
-        state.items.map(item =>
+        state.items.map((item) =>
           item.id === id ? Object.freeze({ ...item, ...patch }) : item,
         ),
       ),
@@ -928,9 +982,13 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.find(x => x.done)?.text,
+      (s: TodoState) => s.items.find((x) => x.done)?.text,
       registry,
     )
 
@@ -955,9 +1013,13 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.find(x => x.done)?.text,
+      (s: TodoState) => s.items.find((x) => x.done)?.text,
       registry,
     )
 
@@ -976,14 +1038,16 @@ describe('array method dependency tracking', () => {
   })
 
   it('find(x => x.done) — SHOULD re-run when a new element is added', () => {
-    let state = makeFrozenState([
-      { id: 1, text: 'a', done: false },
-    ])
+    let state = makeFrozenState([{ id: 1, text: 'a', done: false }])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.find(x => x.done)?.text ?? 'none',
+      (s: TodoState) => s.items.find((x) => x.done)?.text ?? 'none',
       registry,
     )
 
@@ -994,7 +1058,7 @@ describe('array method dependency tracking', () => {
     const prevState = state
     state = makeFrozenState([
       { id: 1, text: 'a', done: false },
-      { id: 2, text: 'b', done: true },  // new, done
+      { id: 2, text: 'b', done: true }, // new, done
     ])
     reconcileState(prevState, state, registry, alienEngine)
     expect(c.get()).toBe('b')
@@ -1013,9 +1077,17 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+      (s: TodoState) =>
+        s.items
+          .filter((x) => x.done)
+          .map((x) => x.text)
+          .join(','),
       registry,
     )
 
@@ -1040,9 +1112,17 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+      (s: TodoState) =>
+        s.items
+          .filter((x) => x.done)
+          .map((x) => x.text)
+          .join(','),
       registry,
     )
 
@@ -1068,9 +1148,13 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.some(x => x.done),
+      (s: TodoState) => s.items.some((x) => x.done),
       registry,
     )
 
@@ -1094,9 +1178,13 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.every(x => x.done),
+      (s: TodoState) => s.items.every((x) => x.done),
       registry,
     )
 
@@ -1123,9 +1211,13 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.map(x => x.text).join(','),
+      (s: TodoState) => s.items.map((x) => x.text).join(','),
       registry,
     )
 
@@ -1149,9 +1241,13 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.map(x => x.text).join(','),
+      (s: TodoState) => s.items.map((x) => x.text).join(','),
       registry,
     )
 
@@ -1163,11 +1259,9 @@ describe('array method dependency tracking', () => {
     state = updateItem(state, 1, { done: true })
     reconcileState(prevState, state, registry, alienEngine)
     expect(c.get()).toBe('a,b')
-    // Ideally callCount stays 1, but diff fires item's parent signal
-    // which causes re-eval. The computed's value is === equal so the effect
-    // won't notify React, but the computed itself re-evaluates.
-    // Accept 1 or 2 here — the important thing is correctness.
-    expect(getCallCount()).toBeLessThanOrEqual(2)
+    // Only `text` was read via the column signal, so changing `done` fires
+    // no tracked dependency and the selector does not re-run at all.
+    expect(getCallCount()).toBe(1)
 
     stop()
   })
@@ -1182,7 +1276,11 @@ describe('array method dependency tracking', () => {
     const registry = makeRegistry()
     const targetItem = state.items[0] // raw ref
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
       (s: TodoState) => s.items.includes(targetItem as TodoItem),
       registry,
@@ -1206,14 +1304,20 @@ describe('array method dependency tracking', () => {
   // ─── slice — structural ───
 
   it('slice(0, 2) — SHOULD re-run when array gains elements', () => {
-    let state = makeFrozenState([
-      { id: 1, text: 'a', done: false },
-    ])
+    let state = makeFrozenState([{ id: 1, text: 'a', done: false }])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.slice(0, 2).map(x => x.text).join(','),
+      (s: TodoState) =>
+        s.items
+          .slice(0, 2)
+          .map((x) => x.text)
+          .join(','),
       registry,
     )
 
@@ -1242,9 +1346,13 @@ describe('array method dependency tracking', () => {
     ])
     const registry = makeRegistry()
 
-    const { computed: c, getCallCount, stop } = createSelectorComputed(
+    const {
+      computed: c,
+      getCallCount,
+      stop,
+    } = createSelectorComputed(
       () => state,
-      (s: TodoState) => s.items.findIndex(x => x.done),
+      (s: TodoState) => s.items.findIndex((x) => x.done),
       registry,
     )
 
@@ -1288,7 +1396,7 @@ describe('array method dependency tracking', () => {
      */
     function removeItem(state: TodoState, id: number): TodoState {
       return Object.freeze({
-        items: Object.freeze(state.items.filter(i => i.id !== id)),
+        items: Object.freeze(state.items.filter((i) => i.id !== id)),
       }) as TodoState
     }
 
@@ -1299,7 +1407,11 @@ describe('array method dependency tracking', () => {
      * @param item - New item
      * @returns New frozen state
      */
-    function insertItem(state: TodoState, index: number, item: TodoItem): TodoState {
+    function insertItem(
+      state: TodoState,
+      index: number,
+      item: TodoItem,
+    ): TodoState {
       const items = [...state.items]
       items.splice(index, 0, Object.freeze(item) as TodoItem)
       return Object.freeze({ items: Object.freeze(items) }) as TodoState
@@ -1312,9 +1424,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.find(x => x.done)?.text,
+        (s: TodoState) => s.items.find((x) => x.done)?.text,
         registry,
       )
 
@@ -1339,9 +1455,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.find(x => x.done)?.text,
+        (s: TodoState) => s.items.find((x) => x.done)?.text,
         registry,
       )
 
@@ -1366,9 +1486,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.find(x => x.done)?.text,
+        (s: TodoState) => s.items.find((x) => x.done)?.text,
         registry,
       )
 
@@ -1392,9 +1516,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.find(x => x.done)?.text,
+        (s: TodoState) => s.items.find((x) => x.done)?.text,
         registry,
       )
 
@@ -1420,9 +1548,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.findIndex(x => x.done),
+        (s: TodoState) => s.items.findIndex((x) => x.done),
         registry,
       )
 
@@ -1446,9 +1578,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.some(x => x.done),
+        (s: TodoState) => s.items.some((x) => x.done),
         registry,
       )
 
@@ -1466,14 +1602,16 @@ describe('array method dependency tracking', () => {
     })
 
     it('some (true) — does NOT re-run on append', () => {
-      let state = makeFrozenState([
-        { id: 1, text: 'a', done: true },
-      ])
+      let state = makeFrozenState([{ id: 1, text: 'a', done: true }])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.some(x => x.done),
+        (s: TodoState) => s.items.some((x) => x.done),
         registry,
       )
 
@@ -1491,14 +1629,16 @@ describe('array method dependency tracking', () => {
     })
 
     it('every (true) — SHOULD re-run on append (new element might fail predicate)', () => {
-      let state = makeFrozenState([
-        { id: 1, text: 'a', done: true },
-      ])
+      let state = makeFrozenState([{ id: 1, text: 'a', done: true }])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.every(x => x.done),
+        (s: TodoState) => s.items.every((x) => x.done),
         registry,
       )
 
@@ -1521,9 +1661,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.every(x => x.done),
+        (s: TodoState) => s.items.every((x) => x.done),
         registry,
       )
 
@@ -1547,9 +1691,13 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.every(x => x.done),
+        (s: TodoState) => s.items.every((x) => x.done),
         registry,
       )
 
@@ -1574,9 +1722,17 @@ describe('array method dependency tracking', () => {
       ])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+        (s: TodoState) =>
+          s.items
+            .filter((x) => x.done)
+            .map((x) => x.text)
+            .join(','),
         registry,
       )
 
@@ -1593,14 +1749,20 @@ describe('array method dependency tracking', () => {
     })
 
     it('filter — SHOULD re-run on append', () => {
-      let state = makeFrozenState([
-        { id: 1, text: 'a', done: true },
-      ])
+      let state = makeFrozenState([{ id: 1, text: 'a', done: true }])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.filter(x => x.done).map(x => x.text).join(','),
+        (s: TodoState) =>
+          s.items
+            .filter((x) => x.done)
+            .map((x) => x.text)
+            .join(','),
         registry,
       )
 
@@ -1617,14 +1779,16 @@ describe('array method dependency tracking', () => {
     })
 
     it('find (missed) — SHOULD re-run on append', () => {
-      let state = makeFrozenState([
-        { id: 1, text: 'a', done: false },
-      ])
+      let state = makeFrozenState([{ id: 1, text: 'a', done: false }])
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: TodoState) => s.items.find(x => x.done)?.text ?? 'none',
+        (s: TodoState) => s.items.find((x) => x.done)?.text ?? 'none',
         registry,
       )
 
@@ -1647,9 +1811,13 @@ describe('array method dependency tracking', () => {
       }) as NumState
       const registry = makeRegistry()
 
-      const { computed: c, getCallCount, stop } = createSelectorComputed(
+      const {
+        computed: c,
+        getCallCount,
+        stop,
+      } = createSelectorComputed(
         () => state,
-        (s: NumState) => s.nums.find(x => x > 2),
+        (s: NumState) => s.nums.find((x) => x > 2),
         registry,
       )
 

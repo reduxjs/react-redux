@@ -291,6 +291,152 @@ describe('edge cases: React integration', () => {
     })
   })
 
+  describe('selector errors', () => {
+    class ErrorBoundary extends React.Component<
+      { children: React.ReactNode },
+      { error: Error | null }
+    > {
+      state = { error: null as Error | null }
+      static getDerivedStateFromError(error: Error) {
+        return { error }
+      }
+      render() {
+        if (this.state.error) {
+          return <div data-testid="boundary">{this.state.error.message}</div>
+        }
+        return this.props.children
+      }
+    }
+
+    it('recovers when a throwing evaluation is superseded before React renders', () => {
+      // Two dispatches in one act: the first makes the selector throw
+      // during the effect's re-evaluation, the second fixes the state.
+      // The successful re-run must clear the pending error so the
+      // render that follows never sees it.
+      let throwCount = 0
+      function FilterReader() {
+        const filter = useSignalSelector((s: TestState) => {
+          if (s.filter === 'active') {
+            throwCount++
+            throw new Error('transient selector failure')
+          }
+          return s.filter
+        })
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId, queryByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <ErrorBoundary>
+            <FilterReader />
+          </ErrorBoundary>
+        </SignalProvider>,
+      )
+      expect(getByTestId('filter').textContent).toBe('all')
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+        store.dispatch(filterSlice.actions.set('completed'))
+      })
+
+      // The throw really happened — recovery is what is being tested,
+      // not a selector that never saw the bad state.
+      expect(throwCount).toBeGreaterThan(0)
+      expect(queryByTestId('boundary')).toBeNull()
+      expect(getByTestId('filter').textContent).toBe('completed')
+    })
+
+    it('recovers when a store subscriber corrects the throwing state during notification', () => {
+      // Same retry leg, driven re-entrantly: the subscriber sees the
+      // bad state mid-notification and dispatches the fix before React
+      // gets to render.
+      let throwCount = 0
+      function FilterReader() {
+        const filter = useSignalSelector((s: TestState) => {
+          if (s.filter === 'active') {
+            throwCount++
+            throw new Error('transient selector failure')
+          }
+          return s.filter
+        })
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId, queryByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <ErrorBoundary>
+            <FilterReader />
+          </ErrorBoundary>
+        </SignalProvider>,
+      )
+
+      // Promote out of the coarse tier first so the deep effect
+      // re-evaluates the selector synchronously on each dispatch —
+      // otherwise the hook never observes the intermediate state.
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('completed'))
+      })
+      expect(getByTestId('filter').textContent).toBe('completed')
+
+      const unsubscribe = store.subscribe(() => {
+        if (store.getState().filter === 'active') {
+          store.dispatch(filterSlice.actions.set('all'))
+        }
+      })
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+      })
+
+      expect(throwCount).toBeGreaterThan(0)
+      expect(queryByTestId('boundary')).toBeNull()
+      expect(getByTestId('filter').textContent).toBe('all')
+      unsubscribe()
+    })
+  })
+
+  describe('dispatch during a selector', () => {
+    it('a selector that dispatches once during evaluation settles on the final state', () => {
+      // Dispatching from a selector is an application bug, but it must
+      // not corrupt the graph or loop forever — the guarded dispatch
+      // lands and every hook settles on the post-dispatch state.
+      let dispatched = false
+
+      function GreedyReader() {
+        const value = useSignalSelector((s: TestState) => {
+          if (!dispatched && s.counters.counter1.value === 1) {
+            dispatched = true
+            store.dispatch(countersSlice.actions.increment('counter1'))
+          }
+          return s.counters.counter1.value
+        })
+        return <div data-testid="greedy">{value}</div>
+      }
+
+      function OtherReader() {
+        const value = useSignalSelector(
+          (s: TestState) => s.counters.counter1.value,
+        )
+        return <div data-testid="other">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <GreedyReader />
+          <OtherReader />
+        </SignalProvider>,
+      )
+      expect(getByTestId('greedy').textContent).toBe('0')
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      expect(getByTestId('greedy').textContent).toBe('2')
+      expect(getByTestId('other').textContent).toBe('2')
+    })
+  })
+
   describe('server-side rendering', () => {
     // useSyncExternalStore is called without a getServerSnapshot argument,
     // so any server render (Next.js etc.) throws.

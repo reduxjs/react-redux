@@ -65,6 +65,7 @@ describe('diffAndUpdateSignals', () => {
       // Identity-based path for keyed array element
       const todoTextSig = registry.getOrCreate('todos.{id:1}.text', 'hi')
       const todosSig = registry.getOrCreate('todos', todos)
+      const countSig = registry.getOrCreate('count', 0)
       const initialTodosVersion = todosSig.get()
       const initialText = todoTextSig.get()
 
@@ -74,7 +75,7 @@ describe('diffAndUpdateSignals', () => {
       expect(todosSig.get()).toBe(initialTodosVersion)
       expect(todoTextSig.get()).toBe(initialText)
       // count should be updated
-      expect(registry.getOrCreate('count', 1).get()).toBe(1)
+      expect(countSig.get()).toBe(1)
     })
   })
 
@@ -88,10 +89,13 @@ describe('diffAndUpdateSignals', () => {
         s.age
       })
 
+      const nameSig = registry.getOrCreate('name', 'Alice')
+      const ageSig = registry.getOrCreate('age', 30)
+
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(registry.getOrCreate('name', 'Bob').get()).toBe('Bob')
-      expect(registry.getOrCreate('age', 30).get()).toBe(30) // unchanged
+      expect(nameSig.get()).toBe('Bob')
+      expect(ageSig.get()).toBe(30) // unchanged
     })
 
     it('handles number changes', () => {
@@ -99,9 +103,11 @@ describe('diffAndUpdateSignals', () => {
       const next = { value: 42 }
       const registry = setupRegistry(prev, (s) => s.value)
 
+      const valueSig = registry.getOrCreate('value', 0)
+
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(registry.getOrCreate('value', 42).get()).toBe(42)
+      expect(valueSig.get()).toBe(42)
     })
 
     it('handles boolean changes', () => {
@@ -109,9 +115,11 @@ describe('diffAndUpdateSignals', () => {
       const next = { active: false }
       const registry = setupRegistry(prev, (s) => s.active)
 
+      const activeSig = registry.getOrCreate('active', true)
+
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(registry.getOrCreate('active', false).get()).toBe(false)
+      expect(activeSig.get()).toBe(false)
     })
 
     it('handles null ↔ value changes', () => {
@@ -119,9 +127,11 @@ describe('diffAndUpdateSignals', () => {
       const next = { data: 'loaded' }
       const registry = setupRegistry(prev, (s) => s.data)
 
+      const dataSig = registry.getOrCreate('data', null)
+
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(registry.getOrCreate('data', 'loaded').get()).toBe('loaded')
+      expect(dataSig.get()).toBe('loaded')
     })
 
     it('handles undefined ↔ value changes', () => {
@@ -129,9 +139,11 @@ describe('diffAndUpdateSignals', () => {
       const next = { data: 'loaded' }
       const registry = setupRegistry(prev, (s) => s.data)
 
+      const dataSig = registry.getOrCreate('data', undefined)
+
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(registry.getOrCreate('data', 'loaded').get()).toBe('loaded')
+      expect(dataSig.get()).toBe('loaded')
     })
   })
 
@@ -143,12 +155,13 @@ describe('diffAndUpdateSignals', () => {
       const registry = setupRegistry(prev, (s) => s.user.name)
 
       const userSig = registry.getOrCreate('user', prev.user)
+      const nameSig = registry.getOrCreate('user.name', 'Alice')
       const initialVersion = userSig.get() as number
 
       diffAndUpdateSignals(prev, next, '', registry)
 
       expect(userSig.get()).toBe(initialVersion + 1)
-      expect(registry.getOrCreate('user.name', 'Bob').get()).toBe('Bob')
+      expect(nameSig.get()).toBe('Bob')
     })
 
     it('does not update untracked paths', () => {
@@ -176,10 +189,12 @@ describe('diffAndUpdateSignals', () => {
 
       const registry = setupRegistry(prev, (s) => s.a.b.c.d)
 
+      const leafSig = registry.getOrCreate('a.b.c.d', 'original')
+
       diffAndUpdateSignals(prev, next, '', registry)
 
       // Leaf signal should be updated
-      expect(registry.getOrCreate('a.b.c.d', 'changed').get()).toBe('changed')
+      expect(leafSig.get()).toBe('changed')
       // Intermediate objects have no signals (only prefix registrations)
       // They don't get version bumps — that's the optimization
       expect(registry.has('a')).toBe(false)
@@ -291,10 +306,17 @@ describe('diffAndUpdateSignals', () => {
         s.todos[1].completed
       })
 
+      // Identity-based paths: elements have 'id' field
+      const completedSig = registry.getOrCreate('todos.{id:1}.completed', false)
+      const otherCompletedSig = registry.getOrCreate(
+        'todos.{id:2}.completed',
+        false,
+      )
+
       diffAndUpdateSignals(prev, next, '', registry)
 
-      // Identity-based paths: elements have 'id' field
-      expect(registry.getOrCreate('todos.{id:1}.completed', true).get()).toBe(true)
+      expect(completedSig.get()).toBe(true)
+      expect(otherCompletedSig.get()).toBe(false) // unchanged
     })
 
     it('handles array item addition (push)', () => {
@@ -370,13 +392,13 @@ describe('diffAndUpdateSignals', () => {
       )
       proxy.items.length // triggers @@keys and items tracking
 
-      const keysPath = 'items.@@keys'
-      registry.getOrCreate(keysPath, prev.length)
+      const keysSig = registry.getOrCreate('items.@@keys', prev.length)
+      const initialKeysVersion = keysSig.get()
 
       diffAndUpdateSignals({ items: prev }, { items: next }, '', registry)
 
       // @@keys updated for length change
-      // The items signal itself should be version-bumped
+      expect(keysSig.get()).not.toBe(initialKeysVersion)
     })
 
     it('handles empty array to non-empty', () => {
@@ -387,15 +409,16 @@ describe('diffAndUpdateSignals', () => {
         s.items.length
       })
 
-      registry.getOrCreate('items.@@keys', 0)
+      const keysSig = registry.getOrCreate('items.@@keys', 0)
+      const itemsSig = registry.getOrCreate('items', prev.items)
+      const initialKeysVersion = keysSig.get()
+      const initialItemsVersion = itemsSig.get()
 
       diffAndUpdateSignals(prev, next, '', registry)
 
-      // @@keys should be updated
-      const keysSignal = registry.getOrCreate('items.@@keys', 3)
-      // items should be version-bumped
-      const itemsSig = registry.getOrCreate('items', next.items)
-      expect(typeof itemsSig.get()).toBe('number')
+      // @@keys should be updated and items version-bumped
+      expect(keysSig.get()).not.toBe(initialKeysVersion)
+      expect(itemsSig.get()).not.toBe(initialItemsVersion)
     })
   })
 
@@ -668,16 +691,21 @@ describe('diffAndUpdateSignals', () => {
       const next = { a: 1 }
       const registry = createPathSignalRegistry(alienEngine)
 
-      // Should not throw
-      diffAndUpdateSignals(prev, next, '', registry)
+      expect(() => diffAndUpdateSignals(prev, next, '', registry)).not.toThrow()
+      // Nothing was tracked, so nothing should be created
+      expect(registry.size()).toBe(0)
     })
 
     it('handles root-level primitive comparison', () => {
       // Edge case: comparing primitives at root level
       const registry = createPathSignalRegistry(alienEngine)
+      const rootSig = registry.getOrCreate('root', 'old')
 
-      // Should not throw — just returns because prev !== next but neither is object
-      diffAndUpdateSignals('old', 'new', 'root', registry)
+      expect(() =>
+        diffAndUpdateSignals('old', 'new', 'root', registry),
+      ).not.toThrow()
+      // A tracked signal at the offset path gets the new primitive value
+      expect(rootSig.get()).toBe('new')
     })
 
     it('handles nested path offset correctly', () => {
@@ -685,12 +713,12 @@ describe('diffAndUpdateSignals', () => {
       const next = { value: 20 }
 
       const registry = createPathSignalRegistry(alienEngine)
-      registry.getOrCreate('nested.obj.value', 10)
+      const valueSig = registry.getOrCreate('nested.obj.value', 10)
 
       // Diff starting from a path offset
       diffAndUpdateSignals(prev, next, 'nested.obj', registry)
 
-      expect(registry.getOrCreate('nested.obj.value', 20).get()).toBe(20)
+      expect(valueSig.get()).toBe(20)
     })
   })
 })

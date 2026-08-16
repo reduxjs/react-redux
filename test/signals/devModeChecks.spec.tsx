@@ -197,9 +197,9 @@ describe('dev-mode argument validation', () => {
   }
 
   it('throws if no selector is passed', () => {
-    expect(() =>
-      renderWith(() => (useSignalSelector as any)()),
-    ).toThrow(/You must pass a selector to useSignalSelector/)
+    expect(() => renderWith(() => (useSignalSelector as any)())).toThrow(
+      /You must pass a selector to useSignalSelector/,
+    )
   })
 
   it('throws if the selector is not a function', () => {
@@ -391,7 +391,9 @@ describe('stabilityCheck', () => {
     rtl.act(() => {
       store.dispatch(addTodo())
     })
-    expect(stabilityWarnings().length).toBeGreaterThanOrEqual(2)
+    // One more warning per selector evaluation after the dispatch:
+    // one for the promotion run, one for the render-phase swap run
+    expect(stabilityWarnings()).toHaveLength(3)
   })
 
   it('"once" does not re-check on later evaluations', () => {
