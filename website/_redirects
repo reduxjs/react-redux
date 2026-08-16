@@ -5,6 +5,13 @@
 
 /docs/*          /:splat
 
+# Lowercase aliases for camelCase API page URLs
+/api/useselector          /api/useSelector
+/api/usedispatch          /api/useDispatch
+/api/usestore             /api/useStore
+/api/usesignalselector    /api/useSignalSelector
+/api/signalprovider       /api/SignalProvider
+
 # Renamed pages
 /introduction/quick-start               /introduction/getting-started
 /next/introduction/quick-started        /introduction/getting-started
