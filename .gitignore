@@ -9,9 +9,8 @@ redux-toolkit/
 .vscode/
 
 .cache/
-# `website/` and `examples/publish-ci/rr-rsc-context/` are still Yarn projects.
+# `website/` is still a Yarn project.
 website/.yarn/
-examples/publish-ci/*/.yarn/
 .pnp.*
 *.tgz
 
