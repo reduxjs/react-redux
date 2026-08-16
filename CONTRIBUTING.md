@@ -20,10 +20,10 @@ Fork, then clone the repo:
 git clone https://github.com/your-username/react-redux.git
 ```
 
-This repository uses Yarn v2 to manage packages. You'll need to have Yarn v1.22 installed globally on your system first, as Yarn v2 depends on that being available first. Install dependencies with:
+This repository uses pnpm to manage packages. The required version is pinned in the `packageManager` field of `package.json`, so the simplest way to get it is to enable Corepack (`corepack enable`) and let it pick the right one. Install dependencies with:
 
 ```
-yarn install
+pnpm install
 ```
 
 ### Building
@@ -31,20 +31,20 @@ yarn install
 Running the `build` task will create both a CommonJS module-per-module build and a UMD build.
 
 ```
-yarn build
+pnpm build
 ```
 
 To create just a CommonJS module-per-module build:
 
 ```
-yarn build:lib
+pnpm build:lib
 ```
 
 To create just a UMD build:
 
 ```
-yarn build:umd
-yarn build:umd:min
+pnpm build:umd
+pnpm build:umd:min
 ```
 
 ### Testing and Linting
@@ -52,19 +52,19 @@ yarn build:umd:min
 To run the tests:
 
 ```
-yarn test
+pnpm test
 ```
 
 To continuously watch and run tests, run the following:
 
 ```
-yarn test --watch
+pnpm test:watch
 ```
 
 To perform linting with `eslint`, run the following:
 
 ```
-yarn lint
+pnpm lint
 ```
 
 ### New Features
