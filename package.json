@@ -39,7 +39,8 @@
   "scripts": {
     "build": "pnpm clean && tsup",
     "clean": "rimraf lib dist es coverage",
-    "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
+    "format": "oxfmt \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
+    "format:check": "oxfmt --check \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "lint": "oxlint src test",
     "lint:fix": "oxlint src test --fix",
     "prepack": "pnpm build",
