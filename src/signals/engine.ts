@@ -15,8 +15,14 @@ import type {
 } from './types'
 
 /**
- * The default engine, backed by the vendored reactive layer in
- * `./reactiveSystem`.
+ * The engine backing `pathSignalRegistry` and `reconcileState`, built on
+ * the vendored reactive layer in `./reactiveSystem`.
+ *
+ * This is internal-only and is not part of the public API. It exists as
+ * an injection seam: the reconcile benchmark substitutes a
+ * no-propagation stub to measure pure diff cost, and unit tests use
+ * `createScope` to contain effects. Application code always gets this
+ * implementation.
  *
  * `signal` and `computed` return the graph nodes directly. The nodes
  * implement `get`/`set` themselves, so unlike the previous wrapper over
