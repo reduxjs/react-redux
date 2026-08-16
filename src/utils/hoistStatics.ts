@@ -71,14 +71,16 @@ export type NonReactStatics<
     [key: string]: true
   } = {},
 > = {
-  [key in Exclude<
-    keyof Source,
-    Source extends MemoExoticComponent<any>
-      ? keyof typeof MEMO_STATICS | keyof C
-      : Source extends ForwardRefExoticComponent<any>
-        ? keyof typeof FORWARD_REF_STATICS | keyof C
-        : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
-  >]: Source[key]
+  [
+    key in Exclude<
+      keyof Source,
+      Source extends MemoExoticComponent<any>
+        ? keyof typeof MEMO_STATICS | keyof C
+        : Source extends ForwardRefExoticComponent<any>
+          ? keyof typeof FORWARD_REF_STATICS | keyof C
+          : keyof typeof REACT_STATICS | keyof typeof KNOWN_STATICS | keyof C
+    >
+  ]: Source[key]
 }
 
 const defineProperty = Object.defineProperty
