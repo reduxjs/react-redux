@@ -1,0 +1,10 @@
+# This example is an independent project, not part of the root pnpm project.
+#
+# pnpm finds a project's root by walking up until it finds a
+# pnpm-workspace.yaml. Without this file, pnpm run from here walks up to the
+# repo root and operates on the react-redux project instead of this example.
+# This file stops that walk. It replaces the way this example used to inherit
+# the repo root's `.yarnrc.yml` and its pinned `yarnPath` under Yarn.
+
+# Matches the flat layout this example had under Yarn's node-modules linker.
+nodeLinker: hoisted
