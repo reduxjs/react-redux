@@ -35,7 +35,7 @@ export const CounterComponent = () => {
 
 The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
 
-See [Using Redux: Deriving Data with Selectors](https://redux.js.org/usage/deriving-data-selectors) in the Redux docs for more details on writing and using selector functions.
+See [Using Redux: Deriving Data with Selectors](/usage/deriving-data-selectors) in the Redux docs for more details on writing and using selector functions.
 
 :::
 
@@ -228,7 +228,7 @@ export const App = () => {
 }
 ```
 
-However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that selector's memoization behavior is properly configured (see [here](https://reselect.js.org/faq/#can-i-share-a-selector-across-multiple-component-instances) for details).
+However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that selector's memoization behavior is properly configured (see [here](/reselect/FAQ#can-i-share-a-selector-across-multiple-component-instances) for details).
 
 ### Development mode checks
 
