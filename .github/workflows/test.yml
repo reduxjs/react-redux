@@ -273,21 +273,24 @@ jobs:
         with:
           persist-credentials: false
 
-      # This example is still a Yarn project with its own yarn.lock, and every
-      # step here runs inside it. Point the cache at that lockfile, since the
-      # root one is gone.
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      # This example is its own pnpm project with its own lockfile, and every
+      # `run` step here executes inside it. Point the cache at that lockfile
+      # rather than the root one.
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ matrix.node }}
-          cache: 'yarn'
-          cache-dependency-path: examples/publish-ci/${{ matrix.example }}/yarn.lock
+          cache: 'pnpm'
+          cache-dependency-path: examples/publish-ci/${{ matrix.example }}/pnpm-lock.yaml
 
       - name: Install deps
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Remove existing React-Redux
-        run: yarn remove react-redux
+        run: pnpm remove react-redux
 
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -298,13 +301,15 @@ jobs:
         run: ls -l .
 
       - name: Install build artifact
-        run: yarn add ./package.tgz
+        run: pnpm add ./package.tgz
 
+      # `pnpm info` queries the registry, unlike `yarn info`, which reported the
+      # installed package. `pnpm list` is the local equivalent.
       - name: Show installed React-Redux versions
-        run: yarn info react-redux && yarn why react-redux
+        run: pnpm list react-redux && pnpm why react-redux
 
       - name: Build example
-        run: yarn build
+        run: pnpm build
 
   test-dist:
     name: Run local tests against build artifact (React ${{ matrix.react.version }})
