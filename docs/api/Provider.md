@@ -18,6 +18,8 @@ Since any React component in a React Redux app can be connected to the store, mo
 
 The [Hooks](./hooks.md) and [`connect`](./connect.md) APIs can then access the provided store instance via React's Context mechanism.
 
+If you want to use the [`useSignalSelector`](./useSignalSelector.md) hook, use the drop-in [`<SignalProvider>`](./SignalProvider.md) replacement instead.
+
 ### Props
 
 ```ts
