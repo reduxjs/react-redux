@@ -39,7 +39,6 @@
   "scripts": {
     "build": "pnpm clean && tsup",
     "clean": "rimraf lib dist es coverage",
-    "api-types": "api-extractor run --local",
     "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "lint": "eslint src test",
     "lint:fix": "eslint src test --fix",
@@ -69,7 +68,6 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
-    "@microsoft/api-extractor": "^7.47.0",
     "@reduxjs/toolkit": "^2.2.5",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
