@@ -1,9 +1,6 @@
 import type { Context } from 'react'
 import { React } from '../utils/react'
-import type {
-  DevModeChecks,
-  UseSelectorOptions,
-} from '../hooks/useSelector'
+import type { DevModeChecks, UseSelectorOptions } from '../hooks/useSelector'
 import type { ReactReduxContextValue } from '../components/Context'
 import type { EqualityFn } from '../types'
 import { createProbeProxy } from './coarseSegments'
@@ -19,6 +16,7 @@ import {
   getProxyPath,
   type LeafObjectTracker,
 } from './trackingProxy'
+import { computed, effect, signal } from './reactiveSystem'
 import { untrackResult } from './untrack'
 
 const { useRef, useMemo, useEffect, useSyncExternalStore, useDebugValue } =
@@ -40,7 +38,6 @@ function isPlainObjectState(v: unknown): v is object {
   const proto = Object.getPrototypeOf(v)
   return proto === Object.prototype || proto === null
 }
-
 
 /**
  * A React hook that selects state from a Redux store using signal-based
@@ -83,7 +80,7 @@ const useSignalSelectorImpl = <S, R>(
   }
 
   const reduxContext = useBoundSignalContext<S>()
-  const { store, registry, engine } = reduxContext
+  const { store, registry } = reduxContext
 
   // Track latest selector/equalityFn via refs. Updated during render
   // (idempotent ref writes, same approach as React's
@@ -162,7 +159,7 @@ const useSignalSelectorImpl = <S, R>(
     // The computed reads it, so bumping forces a re-evaluation with the
     // new closure — otherwise the selector would keep returning the old
     // closure's result until an unrelated store change fired a signal.
-    const selectorVersionSignal = engine.signal(0)
+    const selectorVersionSignal = signal(0)
 
     // Force a fresh evaluation of the computed WITHOUT notifying React.
     // Bumping the version signal dirties the computed; a plain .get()
@@ -307,7 +304,7 @@ const useSignalSelectorImpl = <S, R>(
       firstRun = false
     }
 
-    const selectorComputed = engine.computed(() => {
+    const selectorComputed = computed(() => {
       selectorVersionSignal.get()
       // pendingError reflects the LAST evaluation: a successful re-run
       // clears an earlier error.
@@ -379,7 +376,7 @@ const useSignalSelectorImpl = <S, R>(
     // from the coarse tier (first coarse hit) also attaches it.
     const attachEffect = (): void => {
       let isFirst = true
-      disposeEffect = engine.effect(() => {
+      disposeEffect = effect(() => {
         const newValue = selectorComputed.get()
 
         if (pendingError !== null) {
@@ -633,8 +630,7 @@ const useSignalSelectorImpl = <S, R>(
 
       setSelector,
     }
-  }, [store, registry, engine])
-
+  }, [store, registry])
 
   // Render-phase selector swap: if this render brought a different
   // selector function (inline selector closing over changed props),
@@ -695,10 +691,7 @@ export interface UseSignalSelector<StateType = unknown> {
  * @returns A `useSignalSelector` hook bound to the given context.
  */
 export function createSignalSelectorHook(
-  context: Context<ReactReduxContextValue<
-    any,
-    any
-  > | null> = ReactReduxContext,
+  context: Context<ReactReduxContextValue<any, any> | null> = ReactReduxContext,
 ): UseSignalSelector {
   const useBoundSignalContext =
     context === ReactReduxContext

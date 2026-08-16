@@ -10,30 +10,19 @@ import type { SignalContextValue } from './context'
 import { createPathSignalRegistry } from './pathSignalRegistry'
 import { reconcileState } from './diff'
 import { alienEngine } from './engine'
-import type { SignalEngine } from './types'
 
 export interface SignalProviderProps<
   A extends Action<string> = UnknownAction,
   S = unknown,
-> extends ProviderProps<A, S> {
-  engine?: SignalEngine
-}
+> extends ProviderProps<A, S> {}
 
 export function SignalProvider<
   S extends object,
   A extends Action = UnknownAction,
 >(providerProps: SignalProviderProps<A, S>) {
-  const {
-    children,
-    context,
-    serverState,
-    store,
-    engine = alienEngine,
-  } = providerProps
+  const { children, context, serverState, store } = providerProps
 
-  // Create signal registry once (lazy init via ref)
-  const registryRef = React.useRef(createPathSignalRegistry(engine))
-  const registry = registryRef.current
+  const [registry] = React.useState(() => createPathSignalRegistry(alienEngine))
 
   // Track previous state for signal diffing
   const prevStateRef = React.useRef<S>(store.getState())
@@ -47,7 +36,6 @@ export function SignalProvider<
       subscription,
       getServerState: serverState ? () => serverState : undefined,
       registry,
-      engine,
     }
 
     if (process.env.NODE_ENV === 'production') {
@@ -61,7 +49,7 @@ export function SignalProvider<
         identityFunctionCheck,
       })
     }
-  }, [store, serverState, registry, engine])
+  }, [store, serverState, registry])
 
   const previousState = React.useMemo(() => store.getState(), [store])
 
@@ -75,7 +63,7 @@ export function SignalProvider<
       const prev = prevStateRef.current
       const next = store.getState()
       prevStateRef.current = next
-      const changedRootKeys = reconcileState(prev, next, registry, engine)
+      const changedRootKeys = reconcileState(prev, next, registry, alienEngine)
 
       // Coarse tier: wake deferred subscribers whose top-level segments
       // changed (null = root wasn't diffable, every subscriber is a
@@ -103,9 +91,8 @@ export function SignalProvider<
     }
   }, [contextValue, previousState])
 
-  const Context = (context || ReactReduxContext) as Context<
-    ReactReduxContextValue<S, A> | null
-  >
+  const Context = (context ||
+    ReactReduxContext) as Context<ReactReduxContextValue<S, A> | null>
 
   return (
     <Context.Provider value={contextValue as ReactReduxContextValue<S, A>}>

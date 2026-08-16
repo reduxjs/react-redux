@@ -10,14 +10,7 @@ export type { UseSignalSelector } from './useSignalSelector'
 export { createSignalContextHook, useSignalContext } from './context'
 export type { SignalContextValue } from './context'
 
-export { alienEngine } from './engine'
-export type {
-  PathKey,
-  ReactiveSignal,
-  ReactiveComputed,
-  SignalEngine,
-  SignalScope,
-} from './types'
+export type { PathKey, ReactiveSignal, ReactiveComputed } from './types'
 
 export { createPathSignalRegistry } from './pathSignalRegistry'
 export type { PathSignalRegistry } from './pathSignalRegistry'

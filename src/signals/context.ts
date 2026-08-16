@@ -3,14 +3,12 @@ import { React } from '../utils/react'
 import type { ReactReduxContextValue } from '../components/Context'
 import { ReactReduxContext } from '../components/Context'
 import type { PathSignalRegistry } from './pathSignalRegistry'
-import type { SignalEngine } from './types'
 
 export interface SignalContextValue<
   SS = any,
   A extends Action<string> = UnknownAction,
 > extends ReactReduxContextValue<SS, A> {
   registry: PathSignalRegistry
-  engine: SignalEngine
 }
 
 export { ReactReduxContext }
@@ -18,7 +16,7 @@ export { ReactReduxContext }
 /**
  * Hook factory, which creates a `useSignalContext` hook bound to a given
  * context. Mirrors stock `createReduxContextHook`, but validates that the
- * context value came from a `<SignalProvider>` (registry + engine present).
+ * context value came from a `<SignalProvider>` (registry present).
  *
  * @param context - Context passed to your `<SignalProvider>`.
  * @returns A `useSignalContext` hook bound to the given context.
@@ -40,8 +38,8 @@ export function createSignalContextHook(
       )
     }
 
-    // Verify this is actually a signal context (has registry + engine)
-    if (!('registry' in contextValue) || !('engine' in contextValue)) {
+    // Verify this is actually a signal context (has registry)
+    if (!('registry' in contextValue)) {
       throw new Error(
         'useSignalSelector must be used within a <SignalProvider>, not a regular <Provider>',
       )
