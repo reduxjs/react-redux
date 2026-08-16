@@ -1,0 +1,52 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "import", "unicorn", "oxc"],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/lib/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "website/**",
+    "examples/**"
+  ],
+  "rules": {
+    "no-unused-vars": "off",
+    "no-redeclare": "error",
+    "typescript/ban-ts-comment": "off",
+    "typescript/ban-types": "off",
+    "typescript/no-explicit-any": "off",
+    "typescript/consistent-type-imports": [
+      "error",
+      { "fixStyle": "separate-type-imports" }
+    ],
+    "typescript/consistent-type-exports": "error",
+    "react/display-name": "off",
+    "react/jsx-no-undef": "error",
+    "react/no-is-mounted": "off",
+    "react/no-string-refs": "off",
+    "react/react-in-jsx-scope": "off",
+    "react/exhaustive-deps": "off"
+  },
+  "overrides": [
+    {
+      "files": ["test/**/*.{ts,tsx}"],
+      "rules": {
+        "react/no-did-mount-set-state": "off",
+        "react/no-unsafe": "off"
+      }
+    },
+    {
+      "files": ["test/typetests/**/*.test-d.tsx"],
+      "rules": {
+        "no-unused-expressions": "off"
+      }
+    }
+  ]
+}
