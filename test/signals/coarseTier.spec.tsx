@@ -149,10 +149,7 @@ describe('coarse tier: deferred deep-graph build', () => {
       renders++
       const [useB, setUseB] = useState(false)
       const value = useSignalSelector(
-        useCallback(
-          (s: AppState) => (useB ? s.b.value : s.a.value),
-          [useB],
-        ),
+        useCallback((s: AppState) => (useB ? s.b.value : s.a.value), [useB]),
         noStabilityCheck,
       )
       return (
@@ -285,8 +282,8 @@ describe('coarse tier: deferred deep-graph build', () => {
     expect(getByTestId('count').textContent).toBe('2')
   })
 
-  it('builds eagerly for an identity selector and returns the raw state', () => {
-    const { store, bumpA } = makeStore()
+  it('skips coarse registration for an identity selector and returns the raw state', () => {
+    const { store } = makeStore()
     const { captured, Capture } = makeRegistryCapture()
     let selected: AppState | null = null
 
