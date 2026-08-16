@@ -78,6 +78,7 @@
     "codecov": "^3.8.3",
     "cross-env": "^7.0.3",
     "jsdom": "^25.0.1",
+    "oxfmt": "^0.63.0",
     "oxlint": "^1.78.0",
     "pkg-pr-new": "^0.0.75",
     "prettier": "^3.3.3",
