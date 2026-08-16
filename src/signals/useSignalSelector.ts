@@ -19,8 +19,7 @@ import {
 import { computed, effect, signal } from './reactiveSystem'
 import { untrackResult } from './untrack'
 
-const { useRef, useMemo, useEffect, useSyncExternalStore, useDebugValue } =
-  React
+const { useRef, useMemo, useSyncExternalStore, useDebugValue } = React
 
 const refEquality: EqualityFn<any> = Object.is
 
@@ -106,7 +105,6 @@ const useSignalSelectorImpl = <S, R>(
     // functions must never be called with the unseeded value — stock
     // useSelector never compares against a nonexistent previous result.
     let hasResult = false
-    let version = 0
     let notifyReact: (() => void) | null = null
     let suppressNotify = false
     // Set when the selector threw during an effect re-evaluation (classic
@@ -136,13 +134,6 @@ const useSignalSelectorImpl = <S, R>(
     let lastServerState: unknown = null
     let serverResult: R
 
-    // Create a computed that runs the selector through a tracking proxy.
-    // This establishes signal dependencies on the paths the selector reads.
-    //
-    // Intermediate object traversals don't create signal dependencies (to avoid
-    // "false sharing" where siblings cause re-runs). Only leaf primitive reads
-    // create deps automatically. If the selector returns a proxy (object result),
-    // we explicitly read that object's signal to establish the terminal dependency.
     // Track leaf object accesses for identity comparison support.
     // Objects read by the selector but never traversed deeper are
     // "leaf objects" — their identity matters (e.g., `a === b`).
@@ -304,6 +295,13 @@ const useSignalSelectorImpl = <S, R>(
       firstRun = false
     }
 
+    // The computed runs the selector through a tracking proxy, which
+    // establishes signal dependencies on the paths the selector reads.
+    // Intermediate object traversals don't create signal dependencies
+    // (avoiding "false sharing" where sibling changes cause re-runs);
+    // only leaf primitive reads create deps automatically. If the
+    // selector returns a proxy (object result), the terminal dependency
+    // is established by explicitly reading that object's signal below.
     const selectorComputed = computed(() => {
       selectorVersionSignal.get()
       // pendingError reflects the LAST evaluation: a successful re-run
@@ -413,7 +411,6 @@ const useSignalSelectorImpl = <S, R>(
         // Apply user's equality function
         if (!equalityFnRef.current(currentResult, newValue)) {
           currentResult = newValue
-          version++
           notifyReact?.()
         }
       })
@@ -470,7 +467,6 @@ const useSignalSelectorImpl = <S, R>(
       }
       if (!equalityFnRef.current(currentResult, newValue)) {
         currentResult = newValue
-        version++
         notifyReact?.()
       }
     }
@@ -639,13 +635,6 @@ const useSignalSelectorImpl = <S, R>(
   if (selectorRef.current !== selector) {
     bridge.setSelector(selector)
   }
-
-  // Cleanup scope on unmount
-  useEffect(() => {
-    return () => {
-      // bridge.subscribe's cleanup handles effect disposal
-    }
-  }, [bridge])
 
   const selectedState = useSyncExternalStore(
     bridge.subscribe,

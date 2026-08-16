@@ -115,7 +115,10 @@ export interface PathSignalRegistry {
   /** Register a structural signal for an array: a dependency on a specific
    *  kind of membership/order change (append, insertOrReorder, remove).
    *  Fired selectively by diff based on how the array actually changed. */
-  trackStructure(arrayPath: string, kind: StructureKind): ReactiveSignal<unknown>
+  trackStructure(
+    arrayPath: string,
+    kind: StructureKind,
+  ): ReactiveSignal<unknown>
 
   /** Get the set of tracked structure kinds for an array path. */
   getTrackedStructures(arrayPath: string): Set<StructureKind> | undefined
@@ -149,6 +152,17 @@ function buildColumnPath(arrayPath: string, prop: string): string {
  */
 function buildStructurePath(arrayPath: string, kind: StructureKind): string {
   return arrayPath + '.@@' + kind
+}
+
+/**
+ * Object/array/column/structure signals hold version counters, not
+ * values. Bump forces every subscribed computed to re-evaluate. The
+ * non-number fallback resets a signal whose last value was a PRUNED
+ * sentinel or a real leaf value before the path's shape changed.
+ */
+function bumpVersion(sig: ReactiveSignal<unknown>): void {
+  const current = sig.get()
+  sig.set(typeof current === 'number' ? current + 1 : 0)
 }
 
 function isObjectOrArray(v: unknown): v is object {
@@ -374,7 +388,10 @@ export function createPathSignalRegistry(
   }
 
   const registry: PathSignalRegistry = {
-    getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown> {
+    getOrCreate(
+      pathKey: PathKey,
+      currentValue: unknown,
+    ): ReactiveSignal<unknown> {
       let sig = signals.get(pathKey)
       if (!sig) {
         if (pendingReleases.size !== 0) flushReleases()
@@ -410,8 +427,7 @@ export function createPathSignalRegistry(
       if (!sig) return
 
       if (isObjectOrArray(newValue)) {
-        const current = sig.get()
-        sig.set(typeof current === 'number' ? current + 1 : 0)
+        bumpVersion(sig)
       } else {
         sig.set(newValue)
       }
@@ -596,9 +612,7 @@ export function createPathSignalRegistry(
 
     bumpColumn(arrayPath: string, prop: string): void {
       const sig = signals.get(buildColumnPath(arrayPath, prop))
-      if (!sig) return
-      const current = sig.get()
-      sig.set(typeof current === 'number' ? current + 1 : 0)
+      if (sig) bumpVersion(sig)
     },
 
     trackStructure(
@@ -620,9 +634,7 @@ export function createPathSignalRegistry(
 
     bumpStructure(arrayPath: string, kind: StructureKind): void {
       const sig = signals.get(buildStructurePath(arrayPath, kind))
-      if (!sig) return
-      const current = sig.get()
-      sig.set(typeof current === 'number' ? current + 1 : 0)
+      if (sig) bumpVersion(sig)
     },
   }
 

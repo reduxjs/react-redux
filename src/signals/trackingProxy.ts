@@ -3,6 +3,8 @@ import {
   encodePathSegment,
   findKeyField,
   getKeyValue,
+  joinPath,
+  keysMetaPath,
 } from './arrayKeys'
 import {
   isOverriddenArrayMethod,
@@ -110,27 +112,6 @@ export function getProxyPath(value: unknown): string | undefined {
 }
 
 /**
- * Get the raw target object from a tracking proxy, or the value itself if not a proxy.
- *
- * Use this when you need identity comparison between values that may be
- * tracking proxies. Since `proxy === rawObject` is always `false` in JS,
- * unwrapping both sides allows correct identity checks:
- *
- * ```ts
- * import { unwrap } from 'react-redux/signals'
- *
- * const selector = (state) => {
- *   const current = unwrap(state.current)
- *   return state.items.find(item => item === current)
- * }
- * ```
- *
- * Safe to call on non-proxy values — returns them unchanged.
- *
- * @param value - The value to unwrap (proxy or raw)
- * @returns The raw target object, or the original value if not a tracking proxy
- */
-/**
  * Get the raw target of a tracking proxy, or undefined if the value is
  * not a tracking proxy. Unlike unwrap(), this distinguishes "was a
  * proxy" from "was already raw", which the result-untracking walk needs
@@ -154,6 +135,27 @@ export function registerProxyTarget(proxy: object, target: object): void {
   proxyTargetMap.set(proxy, target)
 }
 
+/**
+ * Get the raw target object from a tracking proxy, or the value itself if not a proxy.
+ *
+ * Use this when you need identity comparison between values that may be
+ * tracking proxies. Since `proxy === rawObject` is always `false` in JS,
+ * unwrapping both sides allows correct identity checks:
+ *
+ * ```ts
+ * import { unwrap } from 'react-redux/signals'
+ *
+ * const selector = (state) => {
+ *   const current = unwrap(state.current)
+ *   return state.items.find(item => item === current)
+ * }
+ * ```
+ *
+ * Safe to call on non-proxy values — returns them unchanged.
+ *
+ * @param value - The value to unwrap (proxy or raw)
+ * @returns The raw target object, or the original value if not a tracking proxy
+ */
 export function unwrap<T>(value: T): T {
   if (value !== null && typeof value === 'object') {
     const target = proxyTargetMap.get(value as object)
@@ -176,7 +178,10 @@ export function unwrap<T>(value: T): T {
  * that forbids returning different values for non-configurable properties.
  * The proxy reads actual values from the real frozen state object.
  *
- * Child proxies are cached within a single evaluation to avoid duplicates.
+ * Child proxies are cached in `registry.proxyCache`, keyed by target
+ * identity. The cache persists across evaluations and dispatches, so an
+ * unchanged subtree yields the same proxy object every time — selector
+ * results built from those proxies stay referentially equal.
  * @param target - The frozen state object to wrap
  * @param parentPath - Dot-separated path to this object in the state tree
  * @param registry - Signal registry for dependency tracking
@@ -208,7 +213,9 @@ export function createTrackingProxy<T extends object>(
   // Use an unfrozen shell as the proxy target to avoid ES Proxy invariant
   // violations with frozen objects. The shell copies the target's prototype
   // so that Array.isArray, instanceof, etc. work correctly.
-  const shell = Array.isArray(target) ? [] : Object.create(Object.getPrototypeOf(target))
+  const shell = Array.isArray(target)
+    ? []
+    : Object.create(Object.getPrototypeOf(target))
 
   // Per-proxy cache of prop -> full path string. parentPath is fixed for
   // this proxy's lifetime, so path keys are stable. Reusing the same
@@ -221,8 +228,7 @@ export function createTrackingProxy<T extends object>(
   function getPathKey(prop: string): string {
     let key = pathKeyCache.get(prop)
     if (key === undefined) {
-      const segment = encodePathSegment(prop)
-      key = parentPath ? parentPath + '.' + segment : segment
+      key = joinPath(parentPath, encodePathSegment(prop))
       pathKeyCache.set(prop, key)
     }
     return key
@@ -246,7 +252,13 @@ export function createTrackingProxy<T extends object>(
           if (leafTracker) {
             leafTracker.traversedPaths.add(parentPath)
           }
-          return createArrayMethodInterceptor(target, proxy, prop as string, registry, parentPath)
+          return createArrayMethodInterceptor(
+            target,
+            proxy,
+            prop as string,
+            registry,
+            parentPath,
+          )
         }
         return value
       }
@@ -281,7 +293,11 @@ export function createTrackingProxy<T extends object>(
       if (isObjectOrArray(value)) {
         // For array element access: check if parent array has identity-based tracking.
         // If so, use the identity path (items.{id:42}) instead of index path (items.0).
-        if (Array.isArray(target) && !Array.isArray(value) && !isNaN(Number(prop))) {
+        if (
+          Array.isArray(target) &&
+          !Array.isArray(value) &&
+          !isNaN(Number(prop))
+        ) {
           let meta = registry.getArrayMeta(parentPath)
           if (!meta) {
             // First time accessing this array's elements — try to detect key field
@@ -360,11 +376,10 @@ export function createTrackingProxy<T extends object>(
     },
 
     // Track when selectors iterate keys (Object.keys, for...in, .map, .filter, etc.)
-    // Built raw (NOT via getPathKey): '@@keys' is a meta segment, and
-    // getPathKey would %-escape its '@'s like a state key's.
     ownKeys(_obj) {
-      const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
-      registry.getOrCreate(keysPath, Reflect.ownKeys(target)).get()
+      registry
+        .getOrCreate(keysMetaPath(parentPath), Reflect.ownKeys(target))
+        .get()
       return Reflect.ownKeys(target)
     },
 
@@ -372,7 +387,9 @@ export function createTrackingProxy<T extends object>(
     has(_obj, prop) {
       if (typeof prop === 'symbol') return Reflect.has(target, prop)
       const pathKey = getPathKey(prop as string)
-      registry.getOrCreate(pathKey, (target as Record<string, unknown>)[prop]).get()
+      registry
+        .getOrCreate(pathKey, (target as Record<string, unknown>)[prop])
+        .get()
       return Reflect.has(target, prop)
     },
 

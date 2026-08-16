@@ -18,7 +18,8 @@ const KEY_CANDIDATES = ['id', 'key', '_id', '__id'] as const
  * @returns The key field name, or undefined if none found
  */
 export function findKeyField(obj: unknown): string | undefined {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return undefined
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj))
+    return undefined
   for (let i = 0; i < KEY_CANDIDATES.length; i++) {
     const candidate = KEY_CANDIDATES[i]
     if (candidate in (obj as Record<string, unknown>)) {
@@ -76,6 +77,31 @@ export function encodePathSegment(s: string): string {
 }
 
 /**
+ * Join an ALREADY-ENCODED segment (or an array index) onto a parent
+ * path. The root object's path is the empty string, so a root-level
+ * segment is the path by itself. Callers must run object keys through
+ * `encodePathSegment` first; array indexes need no encoding.
+ * @param parentPath - Path of the containing object ('' for the root)
+ * @param segment - Encoded segment or array index
+ * @returns The joined path key
+ */
+export function joinPath(parentPath: string, segment: string | number): string {
+  return parentPath ? parentPath + '.' + segment : String(segment)
+}
+
+/**
+ * Path of the `@@keys` meta signal for an object/array. Built raw (NOT
+ * via encodePathSegment): '@@keys' is a meta segment, and encoding
+ * would turn it into an ordinary (escaped) property path. A state key
+ * literally named '@@keys' encodes to '%40%40keys' and cannot collide.
+ * @param parentPath - Path of the object whose key set is tracked
+ * @returns The meta path key
+ */
+export function keysMetaPath(parentPath: string): string {
+  return parentPath ? parentPath + '.@@keys' : '@@keys'
+}
+
+/**
  * Render a key value as a path segment fragment.
  *
  * Two invariants:
@@ -128,7 +154,11 @@ export function getKeyValue(
   element: unknown,
   keyField: string,
 ): string | number | undefined {
-  if (element === null || typeof element !== 'object' || Array.isArray(element)) {
+  if (
+    element === null ||
+    typeof element !== 'object' ||
+    Array.isArray(element)
+  ) {
     return undefined
   }
   const value = (element as Record<string, unknown>)[keyField]
