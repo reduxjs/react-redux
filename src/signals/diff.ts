@@ -3,6 +3,8 @@ import {
   encodePathSegment,
   findKeyField,
   getKeyValue,
+  joinPath,
+  keysMetaPath,
 } from './arrayKeys'
 import type { ArrayMeta } from './arrayKeys'
 import type { PathSignalRegistry } from './pathSignalRegistry'
@@ -77,25 +79,21 @@ function diffObject(
     // Keys are encoded to match the proxy's pathKey construction —
     // reserved path characters in state keys (dots, braces, '@') are
     // %-escaped on both sides.
-    const segment = encodePathSegment(key)
-    const childPath = parentPath ? parentPath + '.' + segment : segment
+    const childPath = joinPath(parentPath, encodePathSegment(key))
     if (registry.hasPrefix(childPath)) {
       diffAndUpdateSignals(prevVal, nextVal, childPath, registry)
     }
   }
 
   if (keysChanged) {
-    const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
-    registry.update(keysPath, nextKeys)
+    registry.update(keysMetaPath(parentPath), nextKeys)
 
     for (let i = 0; i < prevKeys.length; i++) {
       if (!(prevKeys[i] in next)) {
         if (changedRootKeys !== undefined) {
           changedRootKeys.push(prevKeys[i])
         }
-        const segment = encodePathSegment(prevKeys[i])
-        const childPath = parentPath ? parentPath + '.' + segment : segment
-        registry.prune(childPath)
+        registry.prune(joinPath(parentPath, encodePathSegment(prevKeys[i])))
       }
     }
   }
@@ -121,10 +119,8 @@ function diffArray(
   }
 
   if (prev.length !== next.length) {
-    const keysPath = parentPath ? parentPath + '.@@keys' : '@@keys'
-    registry.update(keysPath, next.length)
-    const lengthPath = parentPath ? parentPath + '.length' : 'length'
-    registry.update(lengthPath, next.length)
+    registry.update(keysMetaPath(parentPath), next.length)
+    registry.update(joinPath(parentPath, 'length'), next.length)
   }
 
   let meta = registry.getArrayMeta(parentPath)
@@ -326,7 +322,14 @@ function diffArrayByKey(
         diffAndUpdateSignals(prev[i], next[i], identityPath, registry)
       }
       if (fired && cols) {
-        bumpColumnsForElement(prev[i], next[i], parentPath, registry, cols, fired)
+        bumpColumnsForElement(
+          prev[i],
+          next[i],
+          parentPath,
+          registry,
+          cols,
+          fired,
+        )
       }
       prevEntityMap.set(nextKv, next[i])
     }
@@ -428,7 +431,7 @@ function diffArrayByKey(
 
     if (kv === undefined) {
       sawUnkeyed = true
-      const childPath = parentPath ? parentPath + '.' + i : String(i)
+      const childPath = joinPath(parentPath, i)
       const prevItem = i < prev.length ? prev[i] : undefined
       if (prevItem !== nextItem) {
         if (registry.hasPrefix(childPath)) {
@@ -459,10 +462,7 @@ function diffArrayByKey(
         // Subsequence check: survivors must appear in prev in the same
         // relative order. Advance pointer to this key; if we run off the
         // end, order changed.
-        while (
-          pi < prev.length &&
-          getKeyValue(prev[pi], keyField) !== kv
-        ) {
+        while (pi < prev.length && getKeyValue(prev[pi], keyField) !== kv) {
           pi++
         }
         if (pi >= prev.length) {
@@ -566,7 +566,7 @@ function diffArrayByIndex(
   const minLen = Math.min(prev.length, next.length)
   for (let i = 0; i < minLen; i++) {
     if (prev[i] !== next[i]) {
-      const childPath = parentPath ? parentPath + '.' + i : String(i)
+      const childPath = joinPath(parentPath, i)
       if (registry.hasPrefix(childPath)) {
         diffAndUpdateSignals(prev[i], next[i], childPath, registry)
       }
@@ -585,14 +585,13 @@ function diffArrayByIndex(
     }
   }
   for (let i = minLen; i < next.length; i++) {
-    const childPath = parentPath ? parentPath + '.' + i : String(i)
+    const childPath = joinPath(parentPath, i)
     if (registry.hasPrefix(childPath)) {
       diffAndUpdateSignals(undefined, next[i], childPath, registry)
     }
   }
   for (let i = next.length; i < prev.length; i++) {
-    const childPath = parentPath ? parentPath + '.' + i : String(i)
-    registry.prune(childPath)
+    registry.prune(joinPath(parentPath, i))
   }
 }
 

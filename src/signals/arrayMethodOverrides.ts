@@ -386,9 +386,7 @@ export function createArrayMethodInterceptor(
     // If the search argument is a tracking proxy, unwrap it to the raw target
     // so the comparison works against raw array elements.
     if (m === 'includes' || m === 'indexOf' || m === 'lastIndexOf') {
-      const unwrappedArgs = args.map((arg, i) =>
-        i === 0 ? unwrap(arg) : arg,
-      )
+      const unwrappedArgs = args.map((arg, i) => (i === 0 ? unwrap(arg) : arg))
       return (target as any)[m](...unwrappedArgs)
     }
 
