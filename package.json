@@ -29,6 +29,11 @@
       "types": "./dist/react-redux.d.ts",
       "import": "./dist/react-redux.mjs",
       "default": "./dist/cjs/index.js"
+    },
+    "./signals": {
+      "types": "./dist/react-redux-signals.d.ts",
+      "import": "./dist/react-redux-signals.mjs",
+      "default": "./dist/cjs/signals.js"
     }
   },
   "sideEffects": false,
