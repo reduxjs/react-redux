@@ -37,14 +37,14 @@
     "src"
   ],
   "scripts": {
-    "build": "yarn clean && tsup",
+    "build": "pnpm clean && tsup",
     "clean": "rimraf lib dist es coverage",
     "api-types": "api-extractor run --local",
     "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "lint": "eslint src test",
     "lint:fix": "eslint src test --fix",
-    "prepack": "yarn build",
-    "pretest": "yarn lint",
+    "prepack": "pnpm build",
+    "pretest": "pnpm lint",
     "test": "vitest --run --typecheck",
     "test:watch": "vitest --watch",
     "type-tests": "tsc --noEmit -p tsconfig.test.json",
