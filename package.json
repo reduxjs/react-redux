@@ -37,7 +37,7 @@
     "src"
   ],
   "scripts": {
-    "build": "pnpm clean && tsup",
+    "build": "pnpm clean && tsdown",
     "clean": "rimraf lib dist es coverage",
     "format": "oxfmt \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "format:check": "oxfmt --check \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
@@ -89,6 +89,7 @@
     "tsdown": "^0.22.14",
     "tsup": "^8.5.1",
     "typescript": "^5.8.2",
+    "unrun": "^0.3.1",
     "vitest": "^4.1.8"
   },
   "packageManager": "pnpm@11.22.0"
