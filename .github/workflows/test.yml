@@ -121,6 +121,49 @@ jobs:
           pnpm exec tsc --version
           pnpm type-tests
 
+  test-types-typescript-7:
+    name: 'Test Types: TypeScript 7 (advisory)'
+
+    runs-on: ubuntu-latest
+    # Advisory only. TypeScript 7 is not a supported target yet, so this job
+    # reports differences without blocking the workflow.
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['24.x']
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+
+      - name: Use node ${{ matrix.node }}
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      # Installed under an npm alias so the `typescript` devDependency, and
+      # every other tool that resolves it, stays on the supported version.
+      - name: Install TypeScript 7
+        run: pnpm add -D typescript-7@npm:typescript@7
+
+      # Invoked by path rather than through `pnpm exec tsc`. The alias also
+      # claims the `tsc` bin, so `pnpm exec tsc` happens to resolve to 7 today,
+      # but relying on that would let this job silently test the wrong compiler.
+      - name: Test types with TypeScript 7
+        run: |
+          node node_modules/typescript-7/bin/tsc --version
+          node node_modules/typescript-7/bin/tsc -p tsconfig.test.json --noEmit
+
   are-the-types-wrong:
     name: Check package config with are-the-types-wrong
 
