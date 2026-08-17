@@ -29,11 +29,11 @@ describe('type tests', () => {
 
       expectTypeOf(state.counter).toBeNumber()
 
-      // NOTE: We can't do `expectTypeOf(store.dispatch).toBeCallableWith(incrementAsync(1))`
-      // because `.toBeCallableWith()` does not work well with function overloads.
       store.dispatch(incrementAsync(1))
 
-      expectTypeOf(store.dispatch).toEqualTypeOf(dispatch)
+      expectTypeOf(store.dispatch).toBeCallableWith(incrementAsync(1))
+
+      expectTypeOf(store.dispatch).toEqualTypeOf<typeof dispatch>()
 
       return (
         <button
