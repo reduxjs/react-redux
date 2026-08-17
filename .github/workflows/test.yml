@@ -289,9 +289,13 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Remove existing React-Redux
-        run: pnpm remove react-redux
-
+      # There is deliberately no "remove the existing react-redux" step here.
+      # `pnpm add ./package.tgz` below replaces the dependency on its own, and
+      # every other job in this workflow installs the tarball that way. A
+      # `pnpm remove` step also intermittently left a child process holding the
+      # step's stdout pipe open after the command itself had finished, which
+      # Actions reports as a step that never ends: the job hung for hours with
+      # `Done in 876ms` as its last line.
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: package
