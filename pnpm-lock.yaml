@@ -74,13 +74,16 @@ importers:
         version: 6.1.3
       tsdown:
         specifier: ^0.22.14
-        version: 0.22.14(@arethetypeswrong/core@0.18.3)(typescript@5.8.2)
+        version: 0.22.14(@arethetypeswrong/core@0.18.3)(typescript@5.8.2)(unrun@0.3.1)
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(@microsoft/api-extractor@7.52.1(@types/node@25.9.3))(postcss@8.5.15)(supports-color@8.1.1)(typescript@5.8.2)
       typescript:
         specifier: ^5.8.2
         version: 5.8.2
+      unrun:
+        specifier: ^0.3.1
+        version: 0.3.1
       vitest:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.3)(jsdom@25.0.1(supports-color@8.1.1))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.7))
@@ -2361,6 +2364,16 @@ packages:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
     engines: {node: '>= 10.0.0'}
 
+  unrun@0.3.1:
+    resolution: {integrity: sha512-onIck/oNnCaytwths1ZVp1LK2Gq2hPoyFhiHebObuUXqR3S0uHuLLaBK8K6mRRgV7Ptip8AnNvaUsgzwWwBZuA==}
+    engines: {node: ^22.13.0 || >=24.0.0}
+    hasBin: true
+    peerDependencies:
+      synckit: ^0.11.11
+    peerDependenciesMeta:
+      synckit:
+        optional: true
+
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
@@ -4388,7 +4401,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsdown@0.22.14(@arethetypeswrong/core@0.18.3)(typescript@5.8.2):
+  tsdown@0.22.14(@arethetypeswrong/core@0.18.3)(typescript@5.8.2)(unrun@0.3.1):
     dependencies:
       ansis: 4.3.1
       cac: 7.0.0
@@ -4408,6 +4421,7 @@ snapshots:
     optionalDependencies:
       '@arethetypeswrong/core': 0.18.3
       typescript: 5.8.2
+      unrun: 0.3.1
     transitivePeerDependencies:
       - '@typescript/native-preview'
       - '@volar/typescript'
@@ -4464,6 +4478,10 @@ snapshots:
   universalify@2.0.1:
     optional: true
 
+  unrun@0.3.1:
+    dependencies:
+      rolldown: 1.2.4
+
   uri-js@4.4.1:
     dependencies:
       punycode: 2.3.1
@@ -4486,7 +4504,7 @@ snapshots:
   vite@8.0.16(@types/node@25.9.3)(esbuild@0.27.7):
     dependencies:
       lightningcss: 1.32.0
-      picomatch: 4.0.4
+      picomatch: 4.0.5
       postcss: 8.5.15
       rolldown: 1.0.3
       tinyglobby: 0.2.17
