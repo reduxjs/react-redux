@@ -16,6 +16,7 @@ import type {
 
 import type {
   MapStateToPropsParam,
+  MapStateToPropsFactory,
   MapDispatchToPropsParam,
   MergeProps,
   MapDispatchToPropsNonObject,
@@ -281,6 +282,11 @@ export interface Connect<DefaultState = unknown> {
   // tslint:disable:no-unnecessary-generics
   (): InferableComponentEnhancer<DispatchProp>
 
+  /** mapState only (factory) */
+  <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+  ): InferableComponentEnhancerWithProps<TStateProps & DispatchProp, TOwnProps>
+
   /** mapState only */
   <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
@@ -301,6 +307,15 @@ export interface Connect<DefaultState = unknown> {
     TOwnProps
   >
 
+  /** mapState (factory) and mapDispatch (as a function)*/
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
   /** mapState and mapDispatch (as a function)*/
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
@@ -310,11 +325,26 @@ export interface Connect<DefaultState = unknown> {
     TOwnProps
   >
 
+  /** mapState (factory) and mapDispatch (nullish) */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: null | undefined,
+  ): InferableComponentEnhancerWithProps<TStateProps, TOwnProps>
+
   /** mapState and mapDispatch (nullish) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
     mapDispatchToProps: null | undefined,
   ): InferableComponentEnhancerWithProps<TStateProps, TOwnProps>
+
+  /** mapState (factory) and mapDispatch (as an object) */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & ResolveThunks<TDispatchProps>,
+    TOwnProps
+  >
 
   /** mapState and mapDispatch (as an object) */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
@@ -330,6 +360,19 @@ export interface Connect<DefaultState = unknown> {
     mapStateToProps: null | undefined,
     mapDispatchToProps: null | undefined,
     mergeProps: MergeProps<undefined, DispatchProp, TOwnProps, TMergedProps>,
+  ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+
+  /** mapState (factory) and mergeProps */
+  <
+    TStateProps = {},
+    no_dispatch = {},
+    TOwnProps = {},
+    TMergedProps = {},
+    State = DefaultState,
+  >(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: null | undefined,
+    mergeProps: MergeProps<TStateProps, DispatchProp, TOwnProps, TMergedProps>,
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
 
   /** mapState and mergeProps */
@@ -351,6 +394,14 @@ export interface Connect<DefaultState = unknown> {
     mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
     mergeProps: MergeProps<undefined, TDispatchProps, TOwnProps, TMergedProps>,
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
+
+  /** mapState (factory) and options */
+  <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: null | undefined,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<DispatchProp & TStateProps, TOwnProps>
 
   /** mapState and options */
   <TStateProps = {}, no_dispatch = {}, TOwnProps = {}, State = DefaultState>(
@@ -379,6 +430,17 @@ export interface Connect<DefaultState = unknown> {
     TOwnProps
   >
 
+  /** mapState (factory),  mapDispatch (as a function), and options */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsNonObject<TDispatchProps, TOwnProps>,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
   /** mapState,  mapDispatch (as a function), and options */
   <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
     mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
@@ -387,6 +449,17 @@ export interface Connect<DefaultState = unknown> {
     options: ConnectOptions<State, TStateProps, TOwnProps>,
   ): InferableComponentEnhancerWithProps<
     TStateProps & TDispatchProps,
+    TOwnProps
+  >
+
+  /** mapState (factory),  mapDispatch (as an object), and options */
+  <TStateProps = {}, TDispatchProps = {}, TOwnProps = {}, State = DefaultState>(
+    mapStateToProps: MapStateToPropsFactory<TStateProps, TOwnProps, State>,
+    mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
+    mergeProps: null | undefined,
+    options: ConnectOptions<State, TStateProps, TOwnProps>,
+  ): InferableComponentEnhancerWithProps<
+    TStateProps & ResolveThunks<TDispatchProps>,
     TOwnProps
   >
 
