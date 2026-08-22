@@ -1,6 +1,7 @@
 # dependencies
 /node_modules
 /package.lock.json
+.pnpm-store
 
 # production
 /build
