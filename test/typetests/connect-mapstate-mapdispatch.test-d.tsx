@@ -389,6 +389,67 @@ describe('type tests', () => {
     const verify = <Test foo="bar" />
   })
 
+  test('map state factory with mergeProps and options', () => {
+    interface OwnProps {
+      foo: string
+    }
+    interface StateProps {
+      bar: number
+    }
+
+    class TestComponent extends React.Component<OwnProps & StateProps> {}
+
+    const mapStateToPropsFactory = () => () => ({
+      bar: 1,
+    })
+
+    const mapDispatchToProps = () => ({
+      onClick: () => {},
+    })
+
+    const mergeProps = (
+      stateProps: StateProps,
+      dispatchProps: unknown,
+      ownProps: OwnProps,
+    ) => ({ ...stateProps, ...ownProps })
+
+    // `stateProps` is deliberately not annotated here, so the type of the
+    // state props has to come from inferring the factory form.
+    const WithMergeProps = connect(
+      mapStateToPropsFactory,
+      null,
+      (stateProps, dispatchProps, ownProps: OwnProps) => ({
+        ...ownProps,
+        bar: stateProps.bar,
+      }),
+    )(TestComponent)
+    const verifyMergeProps = <WithMergeProps foo="bar" />
+
+    const WithOptions = connect(
+      mapStateToPropsFactory,
+      null,
+      null,
+      {},
+    )(TestComponent)
+    const verifyOptions = <WithOptions foo="bar" />
+
+    const WithDispatchAndOptions = connect(
+      mapStateToPropsFactory,
+      mapDispatchToProps,
+      null,
+      {},
+    )(TestComponent)
+    const verifyDispatchAndOptions = <WithDispatchAndOptions foo="bar" />
+
+    const WithEverything = connect(
+      mapStateToPropsFactory,
+      mapDispatchToProps,
+      mergeProps,
+      {},
+    )(TestComponent)
+    const verifyEverything = <WithEverything foo="bar" />
+  })
+
   test('map state and dispatch and merge', () => {
     interface OwnProps {
       foo: string
