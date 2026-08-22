@@ -52,6 +52,12 @@ const siteConfig: Config = {
   /* path to images for header/footer */
   favicon: 'img/favicon/favicon.ico',
 
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn'
+    }
+  },
+
   // Add custom scripts here that would be placed in <script> tags.
   scripts: [
     '/scripts/sidebarScroll.js',
@@ -68,6 +74,10 @@ const siteConfig: Config = {
   },
   themes: [require.resolve('@getcanary/docusaurus-theme-search-pagefind')],
   themeConfig: {
+    tableOfContents: {
+      minHeadingLevel: 2,
+      maxHeadingLevel: 4
+    },
     metadata: [{ name: 'twitter:card', content: 'summary' }],
     prism: {
       theme: require('./static/scripts/monokaiTheme.js'),
@@ -208,6 +218,12 @@ const siteConfig: Config = {
       } satisfies UmamiOptions,
     ],
   ],
+  future: {
+    v4: {
+      removeLegacyPostBuildHeadAttribute: true,
+      fasterByDefault: true
+    }
+  }
 }
 
 export default siteConfig
