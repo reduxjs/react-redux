@@ -27,7 +27,7 @@ class ExampleComponent extends React.PureComponent<Props> {
     defaultBooleanProp: false,
   }
 
-  render() {
+  override render() {
     const { defaultBooleanProp, stringProp } = this.props
     return defaultBooleanProp && stringProp
   }
@@ -114,7 +114,7 @@ interface DispatchOwnProps {
 class ClickableComponent extends React.PureComponent<
   DispatchProps & DispatchOwnProps
 > {
-  render() {
+  override render() {
     return null
   }
 }
@@ -163,7 +163,7 @@ function testFactoryMapStateWithFactoryMapDispatch() {
   class Combined extends React.PureComponent<
     StateProps & DispatchProps & OwnProps
   > {
-    render() {
+    override render() {
       return null
     }
   }

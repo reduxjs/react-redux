@@ -14,10 +14,10 @@ const createExampleTextReducer =
     state
 
 describe('React', () => {
-  describe('Provider', () => {
+  describe(Provider, () => {
     const createChild = (storeKey = 'store') => {
       class Child extends Component {
-        render() {
+        override render() {
           return (
             <ReactReduxContext.Consumer>
               {(props) => {
@@ -105,7 +105,7 @@ describe('React', () => {
           externalSetState = this.setState.bind(this)
         }
 
-        render() {
+        override render() {
           return (
             <Provider store={this.state.store}>
               <Child />
@@ -169,7 +169,7 @@ describe('React', () => {
         count: state,
       }))
       class Inner extends Component<TStateProps> {
-        render(): JSX.Element {
+        override render(): JSX.Element {
           return <div>{this.props.count}</div>
         }
       }
@@ -180,7 +180,7 @@ describe('React', () => {
 
       const outerStore = createStore(reducer)
       class Outer extends Component {
-        render() {
+        override render() {
           return (
             <Provider store={innerStore}>
               <WrapperInner />
@@ -230,7 +230,7 @@ describe('React', () => {
         parentState: string
       }
       class ChildContainer extends Component<ChildContainerProps> {
-        render() {
+        override render() {
           return <div />
         }
       }
@@ -255,7 +255,7 @@ describe('React', () => {
           store.dispatch({ type: 'APPEND', body: 'b' })
         }
 
-        render() {
+        override render() {
           return (
             <div>
               <button onClick={this.emitChange.bind(this)}>change</button>
@@ -366,7 +366,7 @@ describe('React', () => {
       const storeB = createStore(reducerB)
 
       class ComponentA extends Component<PropsType> {
-        render() {
+        override render() {
           return <div data-testid="value">{this.props.value}</div>
         }
       }
@@ -378,7 +378,7 @@ describe('React', () => {
       )(ComponentA)
 
       class ComponentB extends Component<PropsType> {
-        render() {
+        override render() {
           return <div data-testid="value">{this.props.value}</div>
         }
       }
