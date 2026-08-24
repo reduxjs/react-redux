@@ -30,9 +30,13 @@ jobs:
       # Version pinned here rather than read from the packageManager field,
       # because this job rewrites the working tree to the base commit partway
       # through and that commit's package.json still says yarn.
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
           version: 11.22.0
+          # compressed-size-action runs the installs itself, once per side,
+          # after resetting the tree to the base commit. Installing here would
+          # install the PR tree before that reset happens.
+          install: false
 
       - uses: preactjs/compressed-size-action@66325aad6443cb7cf89c4bfcd414aea2367cda94 # v2
         with:

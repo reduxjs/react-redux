@@ -21,7 +21,11 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          # Every job here runs its own install step, with the flags that job
+          # needs. pnpm/setup installs by default, which would install twice.
+          install: false
 
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
@@ -82,7 +86,11 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          # Every job here runs its own install step, with the flags that job
+          # needs. pnpm/setup installs by default, which would install twice.
+          install: false
 
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
@@ -134,7 +142,11 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          # Every job here runs its own install step, with the flags that job
+          # needs. pnpm/setup installs by default, which would install twice.
+          install: false
 
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
@@ -274,7 +286,13 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          # `defaults.run.working-directory` applies to `run` steps only, never
+          # to `uses` steps, so pnpm/setup's default install would run at the
+          # repo root and install the wrong project. This job installs the
+          # example itself below.
+          install: false
 
       # This example is its own pnpm project with its own lockfile, and every
       # `run` step here executes inside it. Point the cache at that lockfile
@@ -344,7 +362,11 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          # Every job here runs its own install step, with the flags that job
+          # needs. pnpm/setup installs by default, which would install twice.
+          install: false
 
       - name: Use node ${{ matrix.node }}
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
