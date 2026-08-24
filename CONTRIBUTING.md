@@ -28,23 +28,10 @@ pnpm install
 
 ### Building
 
-Running the `build` task will create both a CommonJS module-per-module build and a UMD build.
+Running the `build` task writes ESM and CJS bundles plus type definitions to `dist/`.
 
 ```
 pnpm build
-```
-
-To create just a CommonJS module-per-module build:
-
-```
-pnpm build:lib
-```
-
-To create just a UMD build:
-
-```
-pnpm build:umd
-pnpm build:umd:min
 ```
 
 ### Testing and Linting
