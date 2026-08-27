@@ -15,8 +15,8 @@ const EMPTY_STATS: RegistryStats = {
   segmentSubs: 0,
 }
 
-/** Subscribe an effect to a signal; stopping the scope drops the last
- *  subscriber, which makes the signal call back into registry.release. */
+// Subscribe an effect to a signal; stopping the scope drops the last
+// subscriber, which makes the signal call back into registry.release.
 function watch(sig: ReactiveSignal<unknown>) {
   const scope = alienEngine.createScope()
   scope.run(() => {

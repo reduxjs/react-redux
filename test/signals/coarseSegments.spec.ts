@@ -191,12 +191,13 @@ describe('createProbeProxy', () => {
 
   it('rejects writes at the top level and through nested dev write guards', () => {
     const { proxy } = createProbeProxy(state)
+    const writable = proxy as any
 
     expect(() => {
-      ;(proxy as any).a = { value: 9 }
+      writable.a = { value: 9 }
     }).toThrow(/must not mutate state/)
     expect(() => {
-      ;(proxy as any).a.value = 9
+      writable.a.value = 9
     }).toThrow(/assign to property 'value'/)
     expect(() => proxy.list.slice().sort()).not.toThrow()
     expect(() => (proxy.list as number[]).sort()).toThrow(
@@ -237,9 +238,10 @@ describe('createProbeProxy', () => {
 
   it('rejects writes', () => {
     const { proxy } = createProbeProxy(state)
+    const writable = proxy as any
 
     expect(() => {
-      ;(proxy as any).a = 42
+      writable.a = 42
     }).toThrow(TypeError)
     expect(() => {
       delete (proxy as any).a
