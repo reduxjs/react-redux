@@ -154,12 +154,10 @@ function buildStructurePath(arrayPath: string, kind: StructureKind): string {
   return arrayPath + '.@@' + kind
 }
 
-/**
- * Object/array/column/structure signals hold version counters, not
- * values. Bump forces every subscribed computed to re-evaluate. The
- * non-number fallback resets a signal whose last value was a PRUNED
- * sentinel or a real leaf value before the path's shape changed.
- */
+// Object/array/column/structure signals hold version counters, not
+// values. Bump forces every subscribed computed to re-evaluate. The
+// non-number fallback resets a signal whose last value was a PRUNED
+// sentinel or a real leaf value before the path's shape changed.
 function bumpVersion(sig: ReactiveSignal<unknown>): void {
   const current = sig.get()
   sig.set(typeof current === 'number' ? current + 1 : 0)

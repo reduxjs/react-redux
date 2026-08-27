@@ -11,6 +11,7 @@
  * @param op - The kind of write that was attempted
  * @param path - Dot-separated state path, or a bare property name when
  *   the full path is unknown
+ * @returns Never returns — always throws a `TypeError`
  */
 export function throwStateMutationError(
   op: 'set' | 'delete' | 'defineProperty' | 'setPrototypeOf',
