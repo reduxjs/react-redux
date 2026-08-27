@@ -10,6 +10,7 @@ import {
   isOverriddenArrayMethod,
   createArrayMethodInterceptor,
 } from './arrayMethodOverrides'
+import { throwStateMutationError } from './mutationError'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 
 function isObjectOrArray(v: unknown): v is object {
@@ -415,11 +416,11 @@ export function createTrackingProxy<T extends object>(
     },
 
     // Prevent mutation
-    set() {
-      return false
+    set(_obj, prop) {
+      throwStateMutationError('set', String(prop))
     },
-    deleteProperty() {
-      return false
+    deleteProperty(_obj, prop) {
+      throwStateMutationError('delete', String(prop))
     },
   }) as T
 
