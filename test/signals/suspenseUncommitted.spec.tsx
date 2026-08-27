@@ -123,7 +123,7 @@ function makeRegistryCapture() {
   return { registry, Capture }
 }
 
-/** A manually-controlled Suspense gate. */
+// A manually-controlled Suspense gate.
 function makeGate() {
   let resolve!: () => void
   let resolved = false
