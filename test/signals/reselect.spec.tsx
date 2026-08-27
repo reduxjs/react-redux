@@ -58,7 +58,7 @@ const makeStore = () =>
             return state
         }
       },
-      counter: (state = { value: 0 }, action: any) =>
+      counter: (state: { value: number } = { value: 0 }, action: any) =>
         action.type === 'increment' ? { value: state.value + 1 } : state,
       filter: (state = { showCompleted: true }, action: any) =>
         action.type === 'setFilter' ? { showCompleted: action.payload } : state,
