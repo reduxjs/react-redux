@@ -135,11 +135,13 @@ describe('createProbeProxy', () => {
     list: Object.freeze([1, 2, 3]),
   })
 
-  it('records top-level keys read through the proxy and returns raw values', () => {
+  it('records top-level keys read through the proxy and reads through to raw values', () => {
     const { proxy, record } = createProbeProxy(state)
 
     const a = proxy.a
-    expect(a).toBe(state.a) // raw value, not a nested proxy
+    // In dev, nested objects come back wrapped in a write guard that
+    // reads through to the raw object and unwraps to it.
+    expect(unwrap(a)).toBe(state.a)
     expect(a.value).toBe(1)
 
     expect(record.segments).toEqual(new Set(['a']))
@@ -183,8 +185,26 @@ describe('createProbeProxy', () => {
     const { proxy, record } = createProbeProxy(state)
 
     const copy = { ...proxy }
-    expect(copy.a).toBe(state.a)
+    expect(unwrap(copy.a)).toBe(state.a)
     expect(record.enumerated).toBe(true)
+  })
+
+  it('rejects writes at the top level and through nested dev write guards', () => {
+    const { proxy } = createProbeProxy(state)
+
+    expect(() => {
+      ;(proxy as any).a = { value: 9 }
+    }).toThrow(/must not mutate state/)
+    expect(() => {
+      ;(proxy as any).a.value = 9
+    }).toThrow(/assign to property 'value'/)
+    expect(() => proxy.list.slice().sort()).not.toThrow()
+    expect(() => (proxy.list as number[]).sort()).toThrow(
+      /must not mutate state/,
+    )
+    // Frozen state was never touched.
+    expect(state.a.value).toBe(1)
+    expect(state.list).toEqual([1, 2, 3])
   })
 
   it('does not record symbol reads', () => {
@@ -219,7 +239,7 @@ describe('createProbeProxy', () => {
     const { proxy } = createProbeProxy(state)
 
     expect(() => {
-      (proxy as any).a = 42
+      ;(proxy as any).a = 42
     }).toThrow(TypeError)
     expect(() => {
       delete (proxy as any).a

@@ -1,3 +1,4 @@
+import { throwStateMutationError } from './mutationError'
 import type { PathSignalRegistry, StructureKind } from './pathSignalRegistry'
 import { registerRecordingHolder, unwrap } from './trackingProxy'
 
@@ -161,11 +162,11 @@ function createScanRecorder(): ScanRecorder {
     getPrototypeOf() {
       return Object.getPrototypeOf(holder.current as object)
     },
-    set() {
-      return false
+    set(_obj, prop) {
+      throwStateMutationError('set', String(prop))
     },
-    deleteProperty() {
-      return false
+    deleteProperty(_obj, prop) {
+      throwStateMutationError('delete', String(prop))
     },
   })
 

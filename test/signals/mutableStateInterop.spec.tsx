@@ -350,22 +350,22 @@ describe('selectors that mutate state', () => {
   it('calling .sort() on a state array throws a TypeError', () => {
     const proxy = buildProxy()
     // Array.prototype.sort writes back through the proxy's set trap,
-    // which rejects mutation. This raw TypeError is the current
-    // first-contact experience (it's what the Slack trial hit).
+    // which throws a descriptive mutation error (the Slack trial hit
+    // the engine's raw "trap returned falsish" before this existed).
     expect(() => proxy.items.sort()).toThrow(TypeError)
-    expect(() => proxy.items.sort()).toThrow(/'set' on proxy/)
+    expect(() => proxy.items.sort()).toThrow(/must not mutate state/)
   })
 
   it('calling .push() on a state array throws a TypeError', () => {
     const proxy = buildProxy()
-    expect(() => proxy.items.push(4)).toThrow(/'set' on proxy/)
+    expect(() => proxy.items.push(4)).toThrow(/must not mutate state/)
   })
 
   it('assigning a property throws a TypeError', () => {
     const proxy = buildProxy()
     expect(() => {
       proxy.user.name = 'bob'
-    }).toThrow(/'set' on proxy/)
+    }).toThrow(/assign to property 'name'/)
   })
 
   it('deleting a property throws a TypeError', () => {
@@ -373,17 +373,17 @@ describe('selectors that mutate state', () => {
     expect(() => {
       // @ts-expect-error -- deleting a required property on purpose
       delete proxy.user.name
-    }).toThrow(/'deleteProperty' on proxy/)
+    }).toThrow(/delete property 'name'/)
   })
 
   it('Object.assign onto state throws a TypeError', () => {
     const proxy = buildProxy()
     expect(() => Object.assign(proxy.user, { name: 'bob' })).toThrow(
-      /'set' on proxy/,
+      /must not mutate state/,
     )
   })
 
-  it('a sorting selector mutates real state at mount (coarse probe), then throws on promotion', () => {
+  it('a sorting selector throws at mount (dev write guard) without corrupting store state', () => {
     interface ItemsState {
       items: number[]
     }
@@ -425,21 +425,54 @@ describe('selectors that mutate state', () => {
           </Boundary>
         </SignalProvider>,
       )
-      // At mount the hook is in the coarse tier: the probe proxy only
-      // wraps the top level, so `s.items` is the RAW array and sort()
-      // silently mutates real store state. No error — corrupted state.
-      expect(getByTestId('items').textContent).toBe('1,2,3')
-      expect(store.getState().items).toEqual([1, 2, 3])
-
-      // A dispatch touching the segment promotes the hook to the deep
-      // tracking proxy, whose set trap rejects the write.
-      rtl.act(() => {
-        store.dispatch({ type: 'setItems', items: [9, 7, 8] })
-      })
-      expect(getByTestId('boundary').textContent).toMatch(/'set' on proxy/)
+      // At mount the hook is in the coarse tier. The probe proxy wraps
+      // nested objects in dev-only write guards, so sort()'s write-back
+      // throws during the mount evaluation instead of silently mutating
+      // real store state.
+      expect(getByTestId('boundary').textContent).toMatch(
+        /must not mutate state/,
+      )
+      expect(store.getState().items).toEqual([3, 1, 2])
     } finally {
       spy.mockRestore()
     }
+  })
+
+  it('read-only selectors still get raw values through the mount probe', () => {
+    interface ItemsState {
+      items: Array<{ id: number; text: string }>
+      other: number
+    }
+    type ItemsAction = { type: 'bump' } | { type: 'init' }
+    const initial: ItemsState = {
+      items: [
+        { id: 1, text: 'a' },
+        { id: 2, text: 'b' },
+      ],
+      other: 0,
+    }
+    const reducer: Reducer<ItemsState, ItemsAction> = (
+      state = initial,
+      action,
+    ) => (action.type === 'bump' ? { ...state, other: state.other + 1 } : state)
+    const store = createStore(reducer)
+
+    const seen: Array<Array<{ id: number; text: string }>> = []
+    function Items() {
+      const items = useSignalSelector((s: ItemsState) => s.items)
+      seen.push(items)
+      return <div data-testid="items">{items.map((i) => i.text).join(',')}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        <Items />
+      </SignalProvider>,
+    )
+    expect(getByTestId('items').textContent).toBe('a,b')
+    // untrackResult strips the dev-mode write guard from the selector
+    // result: the component sees the raw store array, not a proxy.
+    expect(seen.at(-1)).toBe(store.getState().items)
   })
 })
 
