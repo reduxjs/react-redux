@@ -2236,41 +2236,46 @@ describe('React', () => {
         expect(actualState).toEqual(expectedState)
       })
 
-      it('should use a custom context provider and consumer if passed as a prop to the component', () => {
-        class Container extends Component {
-          render() {
-            return <Passthrough />
+      it.each(['development', 'production'])(
+        'should use a custom context prop in %s',
+        (nodeEnv) => {
+          vi.stubEnv('NODE_ENV', nodeEnv)
+          class Container extends Component {
+            render() {
+              return <Passthrough />
+            }
           }
-        }
 
-        const context = React.createContext<ReactReduxContextValue<
-          any,
-          AnyAction
-        > | null>(null)
+          const context = React.createContext<ReactReduxContextValue<
+            any,
+            AnyAction
+          > | null>(null)
 
-        let actualState
+          let actualState
 
-        const expectedState = { foos: {} }
-        const ignoredState = { bars: {} }
+          const expectedState = { foos: {} }
+          const ignoredState = { bars: {} }
 
-        const decorator = connect((state) => {
-          actualState = state
-          return { a: 42 }
-        })
-        const Decorated = decorator(Container)
+          const decorator = connect((state) => {
+            actualState = state
+            return { a: 42 }
+          })
+          const Decorated = decorator(Container)
 
-        const store1 = createStore(() => expectedState)
-        const store2 = createStore(() => ignoredState)
-        rtl.render(
-          <ProviderMock context={context} store={store1}>
-            <ProviderMock store={store2}>
-              <Decorated context={context} />
-            </ProviderMock>
-          </ProviderMock>,
-        )
+          const store1 = createStore(() => expectedState)
+          const store2 = createStore(() => ignoredState)
+          rtl.render(
+            <ProviderMock context={context} store={store1}>
+              <ProviderMock store={store2}>
+                <Decorated context={context} />
+              </ProviderMock>
+            </ProviderMock>,
+          )
 
-        expect(actualState).toEqual(expectedState)
-      })
+          expect(actualState).toEqual(expectedState)
+          vi.unstubAllEnvs()
+        },
+      )
 
       it('should ignore non-react-context values that are passed as a prop to the component', () => {
         class Container extends Component {
