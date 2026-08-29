@@ -2236,7 +2236,7 @@ describe('React', () => {
         expect(actualState).toEqual(expectedState)
       })
 
-      it.each(['development', 'production'])(
+      it.for(['development', 'production'] as const)(
         'should use a custom context prop in %s',
         (nodeEnv) => {
           vi.stubEnv('NODE_ENV', nodeEnv)
