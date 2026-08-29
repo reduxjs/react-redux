@@ -124,8 +124,8 @@ describe('New v8 serverState behavior', () => {
     vi.restoreAllMocks()
   })
 
-  it.each([0, false, '', null])(
-    'uses a falsy serverState value of %p',
+  it.for([0, false, '', null] as const)(
+    'uses a falsy serverState value of %s',
     (serverState) => {
       const store = createStore((state: unknown = 'client') => state)
 
