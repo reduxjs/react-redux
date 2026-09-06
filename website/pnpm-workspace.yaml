@@ -19,3 +19,19 @@ storeDir: .pnpm-store
 allowBuilds:
   '@swc/core': true
   core-js: true
+
+# Security fixes that Docusaurus 3.10's transitive dependency ranges cannot
+# reach on their own. Each one is a devDependency of the build or dev server,
+# never shipped to the site. Drop an entry once `pnpm audit` is clean without it.
+overrides:
+  # copy-webpack-plugin@11 and css-minimizer-webpack-plugin@5 pin ^6. 7.0.0's
+  # only breaking change is requiring Node 20+.
+  'serialize-javascript@6': ^7.0.3
+  # sockjs@0.3.24 pins ^8. It only uses `require('uuid').v4`, which uuid 11
+  # still exports from its CommonJS entry.
+  'uuid@8': ^11.1.1
+  # express@4 / body-parser pin ~6.15.
+  'qs@6': ^6.16.0
+  # In range already, but `pnpm update --depth Infinity` would not move them.
+  'ajv@8': ^8.18.0
+  'fast-uri@3': ^3.1.4
