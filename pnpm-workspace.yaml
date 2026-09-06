@@ -11,6 +11,12 @@
 # layout. Tightening to pnpm's default isolated layout is a separate change.
 nodeLinker: hoisted
 
+# pnpm installs unmet peer dependencies by default, including optional ones
+# such as vite's optional `esbuild` peer. Anything a tool needs as a peer is
+# declared as a devDependency here instead, so the tree only contains what
+# package.json asks for.
+autoInstallPeers: false
+
 # Translation of Yarn's `enableScripts: true`. pnpm blocks dependency build
 # scripts by default and needs an explicit allowlist. In pnpm 11 the setting
 # is `allowBuilds` (a map); pnpm 10's `onlyBuiltDependencies` list is ignored.
