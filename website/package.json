@@ -23,5 +23,5 @@
   "devDependencies": {
     "netlify-plugin-cache": "^1.0.3"
   },
-  "packageManager": "yarn@4.18.0"
+  "packageManager": "pnpm@11.23.0"
 }
