@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { Options } from 'tsup'
-import { defineConfig } from 'tsup'
+import type { UserConfig } from 'tsdown'
+import { defineConfig } from 'tsdown'
 
 async function writeCommonJSEntry() {
   await fs.writeFile(
@@ -15,19 +15,24 @@ if (process.env.NODE_ENV === 'production') {
   )
 }
 
-const tsconfig = 'tsconfig.build.json' satisfies Options['tsconfig']
+const tsconfig = 'tsconfig.build.json'
 
-export default defineConfig((options): Options[] => {
-  const commonOptions: Options = {
+export default defineConfig((options): UserConfig[] => {
+  const commonOptions = {
     entry: {
       'react-redux': 'src/index.ts',
     },
     sourcemap: true,
-    clean: true,
+    // `pnpm clean` already removes `dist/`; letting each of the seven builds
+    // clean would race them against each other.
+    clean: false,
+    hash: false,
     target: ['esnext'],
     tsconfig,
+    dts: false,
+    report: false,
     ...options,
-  }
+  } satisfies UserConfig
 
   return [
     // Standard ESM, embedded `process.env.NODE_ENV` checks
@@ -35,7 +40,7 @@ export default defineConfig((options): Options[] => {
       ...commonOptions,
       name: 'Modern ESM',
       format: ['esm'],
-      outExtension: () => ({ js: '.mjs' }),
+      outExtensions: () => ({ js: '.mjs' }),
     },
     {
       ...commonOptions,
@@ -44,8 +49,7 @@ export default defineConfig((options): Options[] => {
         rsc: 'src/index-rsc.ts',
       },
       format: ['esm'],
-      outExtension: () => ({ js: '.mjs' }),
-      dts: false,
+      outExtensions: () => ({ js: '.mjs' }),
     },
 
     // Support Webpack 4 by pointing `"module"` to a file with a `.js` extension
@@ -58,7 +62,7 @@ export default defineConfig((options): Options[] => {
       },
       target: ['es2017'],
       format: ['esm'],
-      outExtension: () => ({ js: '.js' }),
+      outExtensions: () => ({ js: '.js' }),
     },
 
     // Meant to be served up via CDNs like `unpkg`.
@@ -73,7 +77,7 @@ export default defineConfig((options): Options[] => {
         NODE_ENV: 'production',
       },
       format: ['esm'],
-      outExtension: () => ({ js: '.mjs' }),
+      outExtensions: () => ({ js: '.mjs' }),
       minify: true,
     },
     {
@@ -87,7 +91,7 @@ export default defineConfig((options): Options[] => {
       },
       format: ['cjs'],
       outDir: './dist/cjs/',
-      outExtension: () => ({ js: '.cjs' }),
+      outExtensions: () => ({ js: '.cjs' }),
     },
     {
       ...commonOptions,
@@ -100,7 +104,7 @@ export default defineConfig((options): Options[] => {
       },
       format: ['cjs'],
       outDir: './dist/cjs/',
-      outExtension: () => ({ js: '.cjs' }),
+      outExtensions: () => ({ js: '.cjs' }),
       minify: true,
       onSuccess: async () => {
         await writeCommonJSEntry()
@@ -108,9 +112,10 @@ export default defineConfig((options): Options[] => {
     },
     {
       ...commonOptions,
-      name: 'CJS Type definitions',
-      format: ['cjs'],
-      dts: { only: true },
+      name: 'Type definitions',
+      format: ['esm'],
+      dts: { emitDtsOnly: true },
+      outExtensions: () => ({ dts: '.d.ts' }),
     },
   ]
 })
