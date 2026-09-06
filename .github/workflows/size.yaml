@@ -16,6 +16,28 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+      # compressed-size-action picks its package manager by looking for a
+      # lockfile, and at this pinned SHA it already maps pnpm-lock.yaml to
+      # `pnpm install --frozen-lockfile` + `pnpm run build`. It does not
+      # install the package manager, though, and this job has no setup steps —
+      # it relied on yarn being preinstalled on the runner. pnpm has to be put
+      # on PATH explicitly.
+      #
+      # The action also builds the PR's base commit for comparison, and
+      # re-detects the package manager for that side. While master is still on
+      # Yarn it will use yarn there, which is why this job has to work with
+      # both on PATH at once.
+      # Version pinned here rather than read from the packageManager field,
+      # because this job rewrites the working tree to the base commit partway
+      # through and that commit's package.json still says yarn.
+      - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          version: 11.23.0
+          # compressed-size-action runs the installs itself, once per side,
+          # after resetting the tree to the base commit. Installing here would
+          # install the PR tree before that reset happens.
+          install: false
+
       - uses: preactjs/compressed-size-action@66325aad6443cb7cf89c4bfcd414aea2367cda94 # v2
         with:
           repo-token: '${{ secrets.GITHUB_TOKEN }}'

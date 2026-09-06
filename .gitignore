@@ -9,15 +9,8 @@ redux-toolkit/
 .vscode/
 
 .cache/
-.yarn/cache/
+# `website/` is still a Yarn project.
 website/.yarn/
-.yarnrc
-.yarn/*
-!.yarn/patches
-!.yarn/releases
-!.yarn/plugins
-!.yarn/sdks
-!.yarn/versions
 .pnp.*
 *.tgz
 

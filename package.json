@@ -37,14 +37,12 @@
     "src"
   ],
   "scripts": {
-    "build": "yarn clean && tsup",
+    "build": "pnpm clean && tsup",
     "clean": "rimraf lib dist es coverage",
-    "api-types": "api-extractor run --local",
     "format": "prettier --write \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "lint": "eslint src test",
     "lint:fix": "eslint src test --fix",
-    "prepack": "yarn build",
-    "pretest": "yarn lint",
+    "prepack": "pnpm build",
     "test": "vitest --run --typecheck",
     "test:watch": "vitest --watch",
     "type-tests": "tsc --noEmit -p tsconfig.test.json",
@@ -69,7 +67,6 @@
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
-    "@microsoft/api-extractor": "^7.47.0",
     "@reduxjs/toolkit": "^2.2.5",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -98,5 +95,5 @@
     "typescript-eslint": "^7.12.0",
     "vitest": "^4.1.8"
   },
-  "packageManager": "yarn@4.18.0"
+  "packageManager": "pnpm@11.23.0"
 }

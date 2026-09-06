@@ -1,0 +1,19 @@
+# pnpm settings file.
+#
+# This repo has no pnpm workspace packages. `website/` is an independent
+# project that still uses Yarn, and `examples/publish-ci/rr-rsc-context` is an
+# independent pnpm project with its own pnpm-workspace.yaml marking it as a
+# separate root. This file exists only because pnpm 11 reads its settings from
+# here: pnpm 11 no
+# longer reads pnpm-specific settings from `.npmrc`, and no longer reads the
+# "pnpm" field in package.json. Both are ignored, with no error.
+
+# Translation of Yarn's `nodeLinker: node-modules`. Reproduces the flat
+# layout. Tightening to pnpm's default isolated layout is a separate change.
+nodeLinker: hoisted
+
+# Translation of Yarn's `enableScripts: true`. pnpm blocks dependency build
+# scripts by default and needs an explicit allowlist. In pnpm 11 the setting
+# is `allowBuilds` (a map); pnpm 10's `onlyBuiltDependencies` list is ignored.
+allowBuilds:
+  esbuild: true
