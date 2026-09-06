@@ -90,7 +90,9 @@ export interface UseSelector<StateType = unknown> {
    */
   <TState extends StateType = StateType, Selected = unknown>(
     selector: (state: TState) => Selected,
-    equalityFnOrOptions?: EqualityFn<Selected> | UseSelectorOptions<Selected>,
+    equalityFnOrOptions?:
+      | EqualityFn<NoInfer<Selected>>
+      | UseSelectorOptions<NoInfer<Selected>>,
   ): Selected
 
   /**
