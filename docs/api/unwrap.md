@@ -22,8 +22,8 @@ Resolves a [`useSignalSelector`](./useSignalSelector.md) tracking proxy to the r
 
 ### Parameters
 
-| Name    | Description                             |
-| :------ | :--------------------------------------- |
+| Name    | Description                                       |
+| :------ | :------------------------------------------------ |
 | `value` | The value to unwrap - a proxy or any other value. |
 
 ### Returns
@@ -32,7 +32,7 @@ The raw state object if `value` is a tracking proxy, otherwise `value` itself.
 
 ## Usage Guide
 
-Inside a `useSignalSelector` selector, nested objects read from `state` are tracking proxies. A proxy is never `===` to the raw object it wraps, so identity comparisons against object references captured *outside* the current selector run always fail. `unwrap` resolves the proxy so the comparison works:
+Inside a `useSignalSelector` selector, nested objects read from `state` are tracking proxies. A proxy is never `===` to the raw object it wraps, so identity comparisons against object references captured _outside_ the current selector run always fail. `unwrap` resolves the proxy so the comparison works:
 
 ```ts
 import { unwrap, useSignalSelector } from 'react-redux'

@@ -41,8 +41,8 @@ All of the standard React Redux APIs - [`useSelector`](./useSelector.md), [`useD
 
 `SignalProvider` accepts the same props as [`<Provider>`](./Provider.md):
 
-| Name                     | Description                                                                                                                                          |
-| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name                     | Description                                                                                                                                         |
+| :----------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `store`                  | The single Redux store in your application.                                                                                                         |
 | `children`               | The top-level React elements in your component tree.                                                                                                |
 | `context?`               | An optional custom context instance, as with `<Provider>`.                                                                                          |
