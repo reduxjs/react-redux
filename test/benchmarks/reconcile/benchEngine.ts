@@ -2,7 +2,11 @@
  * Minimal SignalEngine stub for benchmarking.
  * Signals store values but don't propagate — we measure diff cost, not signal propagation.
  */
-import type { SignalEngine, ReactiveSignal, SignalScope } from '../../../src/signals/types'
+import type {
+  SignalEngine,
+  ReactiveSignal,
+  SignalScope,
+} from '../../../src/signals/types'
 
 let updateCount = 0
 

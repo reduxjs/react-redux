@@ -76,7 +76,9 @@ function main() {
 
   console.log(`Total: ${elapsed.toFixed(1)} ms`)
   console.log(`Per iteration: ${(elapsed / iterations).toFixed(4)} ms`)
-  console.log(`Iterations/sec: ${Math.round(1000 / (elapsed / iterations)).toLocaleString()}`)
+  console.log(
+    `Iterations/sec: ${Math.round(1000 / (elapsed / iterations)).toLocaleString()}`,
+  )
 }
 
 main()

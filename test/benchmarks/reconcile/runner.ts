@@ -26,7 +26,10 @@ interface BenchResult {
   itersPerSec: number
 }
 
-function runScenario(scenario: BenchmarkScenario, iterations: number): BenchResult {
+function runScenario(
+  scenario: BenchmarkScenario,
+  iterations: number,
+): BenchResult {
   const { forward, reverse, registry } = scenario
 
   // Warmup
@@ -71,12 +74,42 @@ function runScenario(scenario: BenchmarkScenario, iterations: number): BenchResu
 function formatTable(results: BenchResult[]): string {
   const cols = [
     { key: 'name' as const, header: 'Scenario', width: 24 },
-    { key: 'trackedPaths' as const, header: 'Tracked', width: 8, align: 'right' as const },
-    { key: 'signalUpdatesForward' as const, header: 'Fwd Upd', width: 9, align: 'right' as const },
-    { key: 'signalUpdatesReverse' as const, header: 'Rev Upd', width: 9, align: 'right' as const },
-    { key: 'msPerIter' as const, header: 'ms/iter', width: 10, align: 'right' as const },
-    { key: 'itersPerSec' as const, header: 'iter/s', width: 10, align: 'right' as const },
-    { key: 'totalMs' as const, header: 'Total ms', width: 10, align: 'right' as const },
+    {
+      key: 'trackedPaths' as const,
+      header: 'Tracked',
+      width: 8,
+      align: 'right' as const,
+    },
+    {
+      key: 'signalUpdatesForward' as const,
+      header: 'Fwd Upd',
+      width: 9,
+      align: 'right' as const,
+    },
+    {
+      key: 'signalUpdatesReverse' as const,
+      header: 'Rev Upd',
+      width: 9,
+      align: 'right' as const,
+    },
+    {
+      key: 'msPerIter' as const,
+      header: 'ms/iter',
+      width: 10,
+      align: 'right' as const,
+    },
+    {
+      key: 'itersPerSec' as const,
+      header: 'iter/s',
+      width: 10,
+      align: 'right' as const,
+    },
+    {
+      key: 'totalMs' as const,
+      header: 'Total ms',
+      width: 10,
+      align: 'right' as const,
+    },
   ]
 
   function pad(s: string, w: number, align: 'left' | 'right' = 'left'): string {
@@ -127,14 +160,20 @@ function main() {
   }
 
   console.log(`\nReconcile Diff Benchmark`)
-  console.log(`Warmup: ${WARMUP} | Iterations: ${iterations} (forward+reverse per iter)\n`)
+  console.log(
+    `Warmup: ${WARMUP} | Iterations: ${iterations} (forward+reverse per iter)\n`,
+  )
 
   let scenarios = createScenarios()
   if (filterName) {
     scenarios = scenarios.filter((s) => s.name === filterName)
     if (scenarios.length === 0) {
       console.error(`Unknown scenario: ${filterName}`)
-      console.error(`Available: ${createScenarios().map((s) => s.name).join(', ')}`)
+      console.error(
+        `Available: ${createScenarios()
+          .map((s) => s.name)
+          .join(', ')}`,
+      )
       process.exit(1)
     }
   }

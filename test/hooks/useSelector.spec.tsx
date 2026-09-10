@@ -193,36 +193,39 @@ describe('React', () => {
           expect(appSubscription!.getListeners().get().length).toBe(2)
         })
 
-        it.skipIf(IS_SIGNALS)('unsubscribes when the component is unmounted', () => {
-          let appSubscription: Subscription | null = null
+        it.skipIf(IS_SIGNALS)(
+          'unsubscribes when the component is unmounted',
+          () => {
+            let appSubscription: Subscription | null = null
 
-          const Parent = () => {
-            const contextVal = useContext(ReactReduxContext)
-            appSubscription = contextVal && contextVal.subscription
-            const count = useNormalSelector((s) => s.count)
-            return count === 0 ? <Child /> : null
-          }
+            const Parent = () => {
+              const contextVal = useContext(ReactReduxContext)
+              appSubscription = contextVal && contextVal.subscription
+              const count = useNormalSelector((s) => s.count)
+              return count === 0 ? <Child /> : null
+            }
 
-          const Child = () => {
-            const count = useNormalSelector((s) => s.count)
-            return <div>{count}</div>
-          }
+            const Child = () => {
+              const count = useNormalSelector((s) => s.count)
+              return <div>{count}</div>
+            }
 
-          rtl.render(
-            <ProviderMock store={normalStore}>
-              <Parent />
-            </ProviderMock>,
-          )
-          // Parent + 1 child component
-          expect(appSubscription!.getListeners().get().length).toBe(2)
+            rtl.render(
+              <ProviderMock store={normalStore}>
+                <Parent />
+              </ProviderMock>,
+            )
+            // Parent + 1 child component
+            expect(appSubscription!.getListeners().get().length).toBe(2)
 
-          rtl.act(() => {
-            normalStore.dispatch({ type: '' })
-          })
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
 
-          // Parent component only
-          expect(appSubscription!.getListeners().get().length).toBe(1)
-        })
+            // Parent component only
+            expect(appSubscription!.getListeners().get().length).toBe(1)
+          },
+        )
 
         it('notices store updates between render and store subscription effect', () => {
           const Child = ({ count }: { count: number }) => {

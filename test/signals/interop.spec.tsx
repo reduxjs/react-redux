@@ -138,9 +138,11 @@ describe('connect() under SignalProvider', () => {
 
   it('dispatches from a connected component and updates a sibling signal hook', () => {
     const store = makeStore()
-    const Button = connect()(({ dispatch }: { dispatch: Store['dispatch'] }) => (
-      <button onClick={() => dispatch(incA())}>inc</button>
-    ))
+    const Button = connect()(
+      ({ dispatch }: { dispatch: Store['dispatch'] }) => (
+        <button onClick={() => dispatch(incA())}>inc</button>
+      ),
+    )
     function SignalDisplay() {
       const a = useSignalSelector((state: CounterState) => state.a)
       return <div data-testid="a">{a}</div>
@@ -181,7 +183,9 @@ describe('connect() under SignalProvider', () => {
       rtl.act(() => {
         store.dispatch(incA())
       })
-      expect(rtl.screen.getByTestId('connected').textContent).toBe(String(i + 1))
+      expect(rtl.screen.getByTestId('connected').textContent).toBe(
+        String(i + 1),
+      )
       expect(rtl.screen.getByTestId('signal').textContent).toBe(String(i + 1))
     }
   })
@@ -448,9 +452,14 @@ describe('nested providers', () => {
   it('connect() reads a custom context supplied by SignalProvider', () => {
     const store = makeStore()
     const SignalContext = createContext<ReactReduxContextValue | null>(null)
-    const Display = connect((state: CounterState) => ({ a: state.a }), null, null, {
-      context: SignalContext,
-    })(({ a }: { a: number }) => <div data-testid="a">{a}</div>)
+    const Display = connect(
+      (state: CounterState) => ({ a: state.a }),
+      null,
+      null,
+      {
+        context: SignalContext,
+      },
+    )(({ a }: { a: number }) => <div data-testid="a">{a}</div>)
 
     rtl.render(
       <SignalProvider store={store} context={SignalContext}>
