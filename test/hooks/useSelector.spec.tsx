@@ -48,6 +48,17 @@ function ProviderMock<A extends Action<any> = AnyAction, S = unknown>({
 
 const IS_REACT_18 = React.version.startsWith('18')
 
+/**
+ * Which implementation `react-redux` was aliased to (see
+ * `vitest.config.mts` and `test/entries/`). Only a couple of tests here
+ * need to know: the ones that assert on stock's `Subscription` chain,
+ * which the signal implementation does not use at all — it propagates
+ * through the Provider's single store subscription and the signal graph
+ * instead, so no per-component listener ever joins that chain. Those
+ * tests assert a mechanism, not observable behavior.
+ */
+const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
+
 describe('React', () => {
   describe('hooks', () => {
     describe('useSelector', () => {
@@ -121,10 +132,16 @@ describe('React', () => {
 
       describe('lifecycle interactions', () => {
         it('always uses the latest state', () => {
-          const store = createStore((c: number = 1): number => c + 1, -1)
+          const store = createStore(
+            ({ c }: { c: number } = { c: 1 }) => ({ c: c + 1 }),
+            { c: -1 },
+          )
 
           const Comp = () => {
-            const selector = useCallback((c: number): number => c + 1, [])
+            const selector = useCallback(
+              ({ c }: { c: number }): number => c + 1,
+              [],
+            )
             const value = useSelector(selector)
             renderedItems.push(value)
             return <div />
@@ -145,7 +162,7 @@ describe('React', () => {
           expect(renderedItems).toEqual([1, 2])
         })
 
-        it('subscribes to the store synchronously', () => {
+        it.skipIf(IS_SIGNALS)('subscribes to the store synchronously', () => {
           let appSubscription: Subscription | null = null
 
           const Child = () => {
@@ -176,36 +193,39 @@ describe('React', () => {
           expect(appSubscription!.getListeners().get().length).toBe(2)
         })
 
-        it('unsubscribes when the component is unmounted', () => {
-          let appSubscription: Subscription | null = null
+        it.skipIf(IS_SIGNALS)(
+          'unsubscribes when the component is unmounted',
+          () => {
+            let appSubscription: Subscription | null = null
 
-          const Parent = () => {
-            const contextVal = useContext(ReactReduxContext)
-            appSubscription = contextVal && contextVal.subscription
-            const count = useNormalSelector((s) => s.count)
-            return count === 0 ? <Child /> : null
-          }
+            const Parent = () => {
+              const contextVal = useContext(ReactReduxContext)
+              appSubscription = contextVal && contextVal.subscription
+              const count = useNormalSelector((s) => s.count)
+              return count === 0 ? <Child /> : null
+            }
 
-          const Child = () => {
-            const count = useNormalSelector((s) => s.count)
-            return <div>{count}</div>
-          }
+            const Child = () => {
+              const count = useNormalSelector((s) => s.count)
+              return <div>{count}</div>
+            }
 
-          rtl.render(
-            <ProviderMock store={normalStore}>
-              <Parent />
-            </ProviderMock>,
-          )
-          // Parent + 1 child component
-          expect(appSubscription!.getListeners().get().length).toBe(2)
+            rtl.render(
+              <ProviderMock store={normalStore}>
+                <Parent />
+              </ProviderMock>,
+            )
+            // Parent + 1 child component
+            expect(appSubscription!.getListeners().get().length).toBe(2)
 
-          rtl.act(() => {
-            normalStore.dispatch({ type: '' })
-          })
+            rtl.act(() => {
+              normalStore.dispatch({ type: '' })
+            })
 
-          // Parent component only
-          expect(appSubscription!.getListeners().get().length).toBe(1)
-        })
+            // Parent component only
+            expect(appSubscription!.getListeners().get().length).toBe(1)
+          },
+        )
 
         it('notices store updates between render and store subscription effect', () => {
           const Child = ({ count }: { count: number }) => {
@@ -251,10 +271,13 @@ describe('React', () => {
       })
 
       it('works properly with memoized selector with dispatch in Child useLayoutEffect', () => {
-        const store = createStore((c: number = 1): number => c + 1, -1)
+        const store = createStore(
+          ({ c }: { c: number } = { c: 1 }) => ({ c: c + 1 }),
+          { c: -1 },
+        )
 
         const Comp = () => {
-          const selector = useCallback((c: number): number => c, [])
+          const selector = useCallback(({ c }: { c: number }): number => c, [])
           const count = useSelector(selector)
           renderedItems.push(count)
           return <Child parentCount={count} />
@@ -523,7 +546,7 @@ describe('React', () => {
           const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
           const Comp = () => {
-            const result = useSelector((count: number) => {
+            const result = useSelector(({ count }: { count: number }) => {
               if (count > 0) {
                 // console.log('Throwing error')
                 throw new Error('Panic!')
@@ -535,7 +558,11 @@ describe('React', () => {
             return <div>{result}</div>
           }
 
-          const store = createStore((count: number = -1): number => count + 1)
+          const store = createStore(
+            ({ count }: { count: number } = { count: -1 }) => ({
+              count: count + 1,
+            }),
+          )
 
           const App = () => (
             <ProviderMock store={store}>
@@ -669,15 +696,15 @@ describe('React', () => {
         })
 
         it('should have linear or better unsubscribe time, not quadratic', () => {
-          const reducer = (state: number = 0, action: any) =>
-            action.type === 'INC' ? state + 1 : state
+          const reducer = (state: { n: number } = { n: 0 }, action: any) =>
+            action.type === 'INC' ? { n: state.n + 1 } : state
           const store = createStore(reducer)
           const increment = () => ({ type: 'INC' })
 
           const numChildren = 100000
 
           function App() {
-            useSelector((s: number) => s)
+            useSelector((s: { n: number }) => s.n)
             const dispatch = useDispatch()
 
             const [children, setChildren] = useState(numChildren)

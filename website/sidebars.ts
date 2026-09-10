@@ -35,7 +35,32 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'API Reference',
-      items: ['api/provider', 'api/hooks', 'api/connect', 'api/batch'],
+      items: [
+        {
+          type: 'category',
+          label: 'Components',
+          collapsed: false,
+          items: ['api/provider', 'api/SignalProvider', 'api/connect'],
+        },
+        {
+          type: 'category',
+          label: 'Hooks',
+          collapsed: false,
+          link: { type: 'doc', id: 'api/hooks' },
+          items: [
+            'api/useSelector',
+            'api/useDispatch',
+            'api/useStore',
+            'api/useSignalSelector',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Other',
+          collapsed: false,
+          items: ['api/unwrap', 'api/batch'],
+        },
+      ],
     },
     {
       type: 'category',

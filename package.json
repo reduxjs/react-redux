@@ -29,6 +29,11 @@
       "types": "./dist/react-redux.d.ts",
       "import": "./dist/react-redux.mjs",
       "default": "./dist/cjs/index.js"
+    },
+    "./signals": {
+      "types": "./dist/react-redux-signals.d.ts",
+      "import": "./dist/react-redux-signals.mjs",
+      "default": "./dist/cjs/signals.js"
     }
   },
   "sideEffects": false,
@@ -45,6 +50,8 @@
     "lint:fix": "oxlint src test --fix",
     "prepack": "pnpm build",
     "test": "vitest --run --typecheck",
+    "test:signals": "cross-env TEST_IMPL=signals vitest --run",
+    "test:both": "pnpm test && pnpm test:signals",
     "test:watch": "vitest --watch",
     "type-tests": "tsc --noEmit -p tsconfig.test.json"
   },
@@ -63,6 +70,7 @@
   },
   "dependencies": {
     "@types/use-sync-external-store": "^0.0.6",
+    "alien-signals": "^3.2.1",
     "use-sync-external-store": "^1.4.0"
   },
   "devDependencies": {
@@ -83,6 +91,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "redux": "^5.0.1",
+    "reselect": "^5.2.0",
     "rimraf": "^6.1.3",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.3",
