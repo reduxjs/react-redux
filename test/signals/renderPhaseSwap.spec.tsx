@@ -20,7 +20,11 @@
  * event handler into ONE render, so a notify-triggered render can still
  * carry a changed closure.
  */
-import { configureStore, createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import {
+  configureStore,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import React, { useCallback, useState } from 'react'
 import { SignalProvider, useSignalSelector } from '../../src/signals'
@@ -74,10 +78,9 @@ describe('render-phase selector swap', () => {
 
     function Watcher() {
       const [idx, setIdx] = useState(0)
-      const name = useSignalSelector(
-        (s: AppState) => s.items.list[idx].name,
-        { devModeChecks: { stabilityCheck: 'never' } },
-      )
+      const name = useSignalSelector((s: AppState) => s.items.list[idx].name, {
+        devModeChecks: { stabilityCheck: 'never' },
+      })
       return (
         <div>
           <div data-testid="name">{name}</div>

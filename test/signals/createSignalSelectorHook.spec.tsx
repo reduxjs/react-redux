@@ -44,10 +44,9 @@ const makeStore = (initialValue = 0) => {
 
 type RootState = { counter: { value: number } }
 
-const customContext = createContext<ReactReduxContextValue<
-  any,
-  any
-> | null>(null)
+const customContext = createContext<ReactReduxContextValue<any, any> | null>(
+  null,
+)
 
 const useCustomSelector = createSignalSelectorHook(customContext)
 
@@ -78,9 +77,7 @@ describe('createSignalSelectorHook', () => {
     const customStore = makeStore(100)
 
     function Display() {
-      const defaultValue = useSignalSelector(
-        (s: RootState) => s.counter.value,
-      )
+      const defaultValue = useSignalSelector((s: RootState) => s.counter.value)
       const customValue = useCustomSelector((s: RootState) => s.counter.value)
       return (
         <div>

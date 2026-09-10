@@ -65,21 +65,36 @@ export function createScenarios(): BenchmarkScenario[] {
       'Remove first of 1000 entities (flat array), all shift by 1',
       entityShift.forward,
       entityShift.reverse,
-      (reg, state) => registerEntityArrayPaths(state as Record<string, unknown>, 'entities', reg),
+      (reg, state) =>
+        registerEntityArrayPaths(
+          state as Record<string, unknown>,
+          'entities',
+          reg,
+        ),
     ),
     makeScenario(
       'entity-single-update',
       'Update 1 entity name in 1000 (structural sharing)',
       entitySingle.forward,
       entitySingle.reverse,
-      (reg, state) => registerEntityArrayPaths(state as Record<string, unknown>, 'entities', reg),
+      (reg, state) =>
+        registerEntityArrayPaths(
+          state as Record<string, unknown>,
+          'entities',
+          reg,
+        ),
     ),
     makeScenario(
       'entity-bulk-update',
       'Update 10% of 1000 entities (every 10th, structural sharing)',
       entityBulk.forward,
       entityBulk.reverse,
-      (reg, state) => registerEntityArrayPaths(state as Record<string, unknown>, 'entities', reg),
+      (reg, state) =>
+        registerEntityArrayPaths(
+          state as Record<string, unknown>,
+          'entities',
+          reg,
+        ),
     ),
     makeScenario(
       'deep-nested',
@@ -93,21 +108,32 @@ export function createScenarios(): BenchmarkScenario[] {
       '500 top-level keys (2 fields each), change 5',
       wideFlat.forward,
       wideFlat.reverse,
-      (reg, state) => registerWideFlatPaths(state as Record<string, unknown>, reg),
+      (reg, state) =>
+        registerWideFlatPaths(state as Record<string, unknown>, reg),
     ),
     makeScenario(
       'array-reorder',
       'Reverse 100-element entity array',
       arrayReorder.forward,
       arrayReorder.reverse,
-      (reg, state) => registerEntityArrayPaths(state as Record<string, unknown>, 'items', reg),
+      (reg, state) =>
+        registerEntityArrayPaths(
+          state as Record<string, unknown>,
+          'items',
+          reg,
+        ),
     ),
     makeScenario(
       'array-append',
       'Append 10 items to 1000-element array',
       arrayAppend.forward,
       arrayAppend.reverse,
-      (reg, state) => registerEntityArrayPaths(state as Record<string, unknown>, 'items', reg),
+      (reg, state) =>
+        registerEntityArrayPaths(
+          state as Record<string, unknown>,
+          'items',
+          reg,
+        ),
     ),
   ]
 }

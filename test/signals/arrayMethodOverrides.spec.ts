@@ -1,7 +1,10 @@
 import { describe, test, expect, vi } from 'vitest'
 import { alienEngine } from '@internal/signals/engine'
 import { createPathSignalRegistry } from '@internal/signals/pathSignalRegistry'
-import { createTrackingProxy, type ProxyCache } from '@internal/signals/trackingProxy'
+import {
+  createTrackingProxy,
+  type ProxyCache,
+} from '@internal/signals/trackingProxy'
 import { getProxyPath, unwrap } from '@internal/signals/trackingProxy'
 
 function deepFreeze<T>(obj: T): T {
@@ -558,7 +561,10 @@ describe('Array method overrides on tracking proxy', () => {
     test('flat with depth', () => {
       const state = deepFreeze({ items: [[[1, 2]], [[3, 4]]] })
       const { proxy } = setup(state)
-      expect(proxy.items.flat(1)).toEqual([[1, 2], [3, 4]])
+      expect(proxy.items.flat(1)).toEqual([
+        [1, 2],
+        [3, 4],
+      ])
       expect(proxy.items.flat(2)).toEqual([1, 2, 3, 4])
     })
   })
@@ -724,7 +730,13 @@ describe('Array method overrides on tracking proxy', () => {
     test('nested array access', () => {
       const state = deepFreeze({
         groups: [
-          { id: 1, items: [{ id: 10, name: 'a' }, { id: 11, name: 'b' }] },
+          {
+            id: 1,
+            items: [
+              { id: 10, name: 'a' },
+              { id: 11, name: 'b' },
+            ],
+          },
           { id: 2, items: [{ id: 20, name: 'c' }] },
         ],
       })
