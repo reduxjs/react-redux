@@ -5,7 +5,11 @@
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { SignalEngine } from '../../../src/signals/types'
-import { findKeyField, buildIdentityPath, getKeyValue } from '../../../src/signals/arrayKeys'
+import {
+  findKeyField,
+  buildIdentityPath,
+  getKeyValue,
+} from '../../../src/signals/arrayKeys'
 
 /**
  * Walk an object and register all leaf paths as tracked signals.
@@ -36,7 +40,11 @@ export function registerAllPaths(
     const keys = Object.keys(state as Record<string, unknown>)
     for (const key of keys) {
       const childPath = parentPath ? `${parentPath}.${key}` : key
-      registerAllPaths((state as Record<string, unknown>)[key], childPath, registry)
+      registerAllPaths(
+        (state as Record<string, unknown>)[key],
+        childPath,
+        registry,
+      )
     }
   }
 }
@@ -102,9 +110,10 @@ export function registerEntityArrayPaths(
       let itemPath: string
       if (keyField) {
         const kv = getKeyValue(item, keyField)
-        itemPath = kv !== undefined
-          ? buildIdentityPath(arrayPath, keyField, kv)
-          : `${arrayPath}.${i}`
+        itemPath =
+          kv !== undefined
+            ? buildIdentityPath(arrayPath, keyField, kv)
+            : `${arrayPath}.${i}`
       } else {
         itemPath = `${arrayPath}.${i}`
       }

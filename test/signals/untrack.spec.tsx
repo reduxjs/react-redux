@@ -15,7 +15,10 @@ import { SignalProvider } from '../../src/signals/SignalProvider'
 import { useSignalSelector } from '../../src/signals/useSignalSelector'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
-import { createTrackingProxy, getProxyPath } from '../../src/signals/trackingProxy'
+import {
+  createTrackingProxy,
+  getProxyPath,
+} from '../../src/signals/trackingProxy'
 import { untrackResult } from '../../src/signals/untrack'
 
 const isTrackingProxy = (v: unknown) =>
@@ -232,7 +235,6 @@ describe('untrackResult unit behavior', () => {
     // are skipped for the same check, which is the common (safe) case.
     expect(isTrackingProxy(result.child)).toBe(true)
   })
-
 })
 
 describe('untrackResult with derived arrays', () => {
@@ -272,7 +274,9 @@ describe('untrackResult with derived arrays', () => {
 
   it('untracks filter() results to raw elements', () => {
     const { state, proxy } = setupArrayState()
-    const result = evaluate(proxy, (s) => s.rows.filter((r) => r.status === 'even'))
+    const result = evaluate(proxy, (s) =>
+      s.rows.filter((r) => r.status === 'even'),
+    )
     expect(result).toHaveLength(5)
     for (let i = 0; i < result.length; i++) {
       expect(isTrackingProxy(result[i])).toBe(false)
@@ -284,7 +288,9 @@ describe('untrackResult with derived arrays', () => {
   it('handles filter().sort() — user mutation of a library-built array', () => {
     const { state, proxy } = setupArrayState()
     const result = evaluate(proxy, (s) =>
-      s.rows.filter((r) => r.status === 'even').sort((a, b) => b.score - a.score),
+      s.rows
+        .filter((r) => r.status === 'even')
+        .sort((a, b) => b.score - a.score),
     )
     expect(result.map((r) => r.id)).toEqual([8, 6, 4, 2, 0])
     for (const r of result) {
@@ -300,7 +306,9 @@ describe('untrackResult with derived arrays', () => {
       matches[0] = { wrapped: s.extra }
       return matches
     })
-    expect(isTrackingProxy((result[0] as { wrapped: object }).wrapped)).toBe(false)
+    expect(isTrackingProxy((result[0] as { wrapped: object }).wrapped)).toBe(
+      false,
+    )
     expect((result[0] as { wrapped: object }).wrapped).toBe(state.extra)
     expect(isTrackingProxy(result[1])).toBe(false)
   })
@@ -327,5 +335,4 @@ describe('untrackResult with derived arrays', () => {
     expect(isTrackingProxy(result.first)).toBe(false)
     expect(result.first).toBe(state.rows[0])
   })
-
 })

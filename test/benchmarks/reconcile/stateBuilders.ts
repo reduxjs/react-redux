@@ -109,11 +109,17 @@ export function buildDeepNested(depth = 5, breadth = 5) {
 
   // Change one deep leaf with structural sharing along the path
   // Path: level0.level0.level0.level0.level0.leaf0
-  function changeDeepLeaf(state: Record<string, unknown>, d: number): Record<string, unknown> {
+  function changeDeepLeaf(
+    state: Record<string, unknown>,
+    d: number,
+  ): Record<string, unknown> {
     if (d === 0) {
       return { ...state, leaf0: 'CHANGED' }
     }
-    return { ...state, level0: changeDeepLeaf(state.level0 as Record<string, unknown>, d - 1) }
+    return {
+      ...state,
+      level0: changeDeepLeaf(state.level0 as Record<string, unknown>, d - 1),
+    }
   }
 
   const next = deepFreeze(changeDeepLeaf(base, depth))

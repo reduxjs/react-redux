@@ -752,9 +752,7 @@ describe('identity-based array tracking: diff', () => {
       })
 
       // Should not throw — just works with last-wins semantics
-      expect(() =>
-        diffAndUpdateSignals(prev, next, '', registry),
-      ).not.toThrow()
+      expect(() => diffAndUpdateSignals(prev, next, '', registry)).not.toThrow()
     })
 
     it('handles entity with id=0', () => {
@@ -778,9 +776,9 @@ describe('identity-based array tracking: diff', () => {
 
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(registry.getOrCreate('items.{id:0}.name', 'Zero Updated').get()).toBe(
-        'Zero Updated',
-      )
+      expect(
+        registry.getOrCreate('items.{id:0}.name', 'Zero Updated').get(),
+      ).toBe('Zero Updated')
       expect(registry.getOrCreate('items.{id:1}.name', 'One').get()).toBe('One')
     })
 
@@ -859,14 +857,10 @@ describe('identity-based array tracking: diff', () => {
       diffAndUpdateSignals(prev, next, '', registry)
 
       expect(
-        registry
-          .getOrCreate('data.nested.items.{id:a}.val', 1)
-          .get(),
+        registry.getOrCreate('data.nested.items.{id:a}.val', 1).get(),
       ).toBe(1)
       expect(
-        registry
-          .getOrCreate('data.nested.items.{id:b}.val', 99)
-          .get(),
+        registry.getOrCreate('data.nested.items.{id:b}.val', 99).get(),
       ).toBe(99)
     })
 
@@ -891,12 +885,12 @@ describe('identity-based array tracking: diff', () => {
 
       diffAndUpdateSignals(prev, next, '', registry)
 
-      expect(
-        registry.getOrCreate('items.{id:1}.profile.age', 31).get(),
-      ).toBe(31)
-      expect(
-        registry.getOrCreate('items.{id:2}.profile.age', 25).get(),
-      ).toBe(25)
+      expect(registry.getOrCreate('items.{id:1}.profile.age', 31).get()).toBe(
+        31,
+      )
+      expect(registry.getOrCreate('items.{id:2}.profile.age', 25).get()).toBe(
+        25,
+      )
     })
   })
 

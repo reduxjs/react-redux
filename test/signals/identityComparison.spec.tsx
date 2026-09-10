@@ -400,8 +400,7 @@ describe('object identity comparison in selectors', () => {
     it('returns true when current and saved are different refs', () => {
       const Comp = () => {
         const hasChanges = useSignalSelector(
-          (state: RootState) =>
-            state.identity.current !== state.identity.saved,
+          (state: RootState) => state.identity.current !== state.identity.saved,
         )
         return <div data-testid="result">{String(hasChanges)}</div>
       }
@@ -642,7 +641,9 @@ describe('object identity comparison in selectors', () => {
           // state.identity.selectedItem is also a proxy.
           // Array.includes on a proxy array checks if the proxy of
           // selectedItem is in the proxy array.
-          return state.identity.items.includes(state.identity.selectedItem as Item)
+          return state.identity.items.includes(
+            state.identity.selectedItem as Item,
+          )
         })
         return <div data-testid="result">{String(isFirstItemSelected)}</div>
       }
@@ -912,9 +913,8 @@ describe('object identity comparison in selectors', () => {
           // Read a primitive from each to establish signal deps
           const draftTitle = (state.identity.draft as Record<string, unknown>)
             ?.title
-          const pubTitle = (
-            state.identity.published as Record<string, unknown>
-          )?.title
+          const pubTitle = (state.identity.published as Record<string, unknown>)
+            ?.title
           return draftTitle === pubTitle
         })
         return <div data-testid="result">{String(result)}</div>
@@ -1052,9 +1052,7 @@ describe('object identity comparison in selectors', () => {
       expect(getByTestId('result').textContent).toBe('none')
 
       rtl.act(() => {
-        store.dispatch(
-          identitySlice.actions.setMaybeNull({ label: 'new-obj' }),
-        )
+        store.dispatch(identitySlice.actions.setMaybeNull({ label: 'new-obj' }))
       })
       expect(getByTestId('result').textContent).toBe('exists')
     })
@@ -1098,9 +1096,7 @@ describe('object identity comparison in selectors', () => {
 
     it('tracks when deeply nested object becomes same ref as sibling', () => {
       // First diverge them
-      store.dispatch(
-        identitySlice.actions.setObjA({ label: 'diverged' }),
-      )
+      store.dispatch(identitySlice.actions.setObjA({ label: 'diverged' }))
 
       const Comp = () => {
         const isSame = useSignalSelector(
@@ -1128,8 +1124,7 @@ describe('object identity comparison in selectors', () => {
 
       // After Immer, these are different refs even with same content
       const state = store.getState()
-      const expected =
-        state.identity.deep.nested.target === state.identity.objA
+      const expected = state.identity.deep.nested.target === state.identity.objA
       expect(getByTestId('result').textContent).toBe(String(expected))
     })
   })
@@ -1145,8 +1140,7 @@ describe('object identity comparison in selectors', () => {
     it('tracks identity between sibling objects', () => {
       const Comp = () => {
         const isSame = useSignalSelector(
-          (state: RootState) =>
-            state.identity.objA === state.identity.objB,
+          (state: RootState) => state.identity.objA === state.identity.objB,
         )
         return <div data-testid="result">{String(isSame)}</div>
       }
@@ -1162,9 +1156,7 @@ describe('object identity comparison in selectors', () => {
 
       // Diverge objA
       rtl.act(() => {
-        store.dispatch(
-          identitySlice.actions.setObjA({ label: 'changed' }),
-        )
+        store.dispatch(identitySlice.actions.setObjA({ label: 'changed' }))
       })
 
       expect(getByTestId('result').textContent).toBe('false')
@@ -1172,14 +1164,11 @@ describe('object identity comparison in selectors', () => {
 
     it('tracks when siblings converge to same ref', () => {
       // Diverge first
-      store.dispatch(
-        identitySlice.actions.setObjA({ label: 'different' }),
-      )
+      store.dispatch(identitySlice.actions.setObjA({ label: 'different' }))
 
       const Comp = () => {
         const isSame = useSignalSelector(
-          (state: RootState) =>
-            state.identity.objA === state.identity.objB,
+          (state: RootState) => state.identity.objA === state.identity.objB,
         )
         return <div data-testid="result">{String(isSame)}</div>
       }
@@ -1194,9 +1183,7 @@ describe('object identity comparison in selectors', () => {
 
       // Change objB to match objA's content (Immer creates new refs)
       rtl.act(() => {
-        store.dispatch(
-          identitySlice.actions.setObjB({ label: 'different' }),
-        )
+        store.dispatch(identitySlice.actions.setObjB({ label: 'different' }))
       })
 
       const state = store.getState()
@@ -1220,8 +1207,7 @@ describe('object identity comparison in selectors', () => {
       const Comp = () => {
         renderCount++
         const isSame = useSignalSelector(
-          (state: RootState) =>
-            state.identity.objA === state.identity.objB,
+          (state: RootState) => state.identity.objA === state.identity.objB,
         )
         return <div data-testid="result">{String(isSame)}</div>
       }
@@ -1281,9 +1267,7 @@ describe('object identity comparison in selectors', () => {
 
       // Diverge objA — different refs now
       rtl.act(() => {
-        store.dispatch(
-          identitySlice.actions.setObjA({ label: 'alpha' }),
-        )
+        store.dispatch(identitySlice.actions.setObjA({ label: 'alpha' }))
       })
 
       expect(getByTestId('result').textContent).toBe('alpha vs shared-nested')
@@ -1354,9 +1338,7 @@ describe('object identity comparison in selectors', () => {
       const callsAfterMount = selectorCalls
 
       rtl.act(() => {
-        store.dispatch(
-          identitySlice.actions.setObjA({ label: 'updated' }),
-        )
+        store.dispatch(identitySlice.actions.setObjA({ label: 'updated' }))
       })
 
       expect(getByTestId('result').textContent).toBe('updated')
@@ -1376,8 +1358,7 @@ describe('object identity comparison in selectors', () => {
     it('tracks both identity and primitive changes', () => {
       const Comp = () => {
         const result = useSignalSelector((state: RootState) => {
-          const isSame =
-            state.identity.draft === state.identity.published
+          const isSame = state.identity.draft === state.identity.published
           const count = state.identity.siblingPrimitive
           return `${isSame}-${count}`
         })

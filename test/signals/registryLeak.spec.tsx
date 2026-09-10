@@ -63,7 +63,10 @@ function makeInitialState(): AppState {
   return { slices, dyn: {}, items, other: { flag: false } }
 }
 
-function reducer(state: AppState = makeInitialState(), action: Action): AppState {
+function reducer(
+  state: AppState = makeInitialState(),
+  action: Action,
+): AppState {
   switch (action.type) {
     case 'bump': {
       const prev = state.slices[action.key]
@@ -310,7 +313,9 @@ describe('selectors that switch which paths they read', () => {
     const store = makeStore()
 
     function Branching({ index }: { index: number }) {
-      const n = useSignalSelector((s: AppState) => s.slices[`s${index}`].nested.n)
+      const n = useSignalSelector(
+        (s: AppState) => s.slices[`s${index}`].nested.n,
+      )
       return <div data-testid="branch">{n}</div>
     }
 
@@ -369,7 +374,9 @@ describe('partial unmount under a shared ancestor', () => {
     rtl.act(() => {
       store.dispatch({ type: 'bump', key: 's0' })
     })
-    expect(registry.debugPaths()).toContain(`slices.s${SLICE_COUNT - 1}.nested.n`)
+    expect(registry.debugPaths()).toContain(
+      `slices.s${SLICE_COUNT - 1}.nested.n`,
+    )
 
     // Drop 15 of the 20 watchers in a single commit. Every released
     // path shares the `slices` ancestor, so its bookkeeping takes 15
@@ -513,9 +520,7 @@ describe('array metadata', () => {
     let registry: PathSignalRegistry | null = null
 
     for (let cycle = 0; cycle < 4; cycle++) {
-      const { unmount } = rtl.render(
-        <Tree store={store} count={0} withList />,
-      )
+      const { unmount } = rtl.render(<Tree store={store} count={0} withList />)
       registry = requireRegistry()
       rtl.act(() => {
         store.dispatch({ type: 'toggleItem', id: 1 })
