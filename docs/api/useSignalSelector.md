@@ -68,8 +68,8 @@ const result: Selected = useSignalSelector(
 
 Both parameters behave exactly as they do in [`useSelector`](./useSelector.md#parameters):
 
-| Name       | Description                                                                                                                                    |
-| :--------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name       | Description                                                                                                                                   |
+| :--------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
 | `selector` | A function that receives the entire Redux store state and returns the value this component needs. Must be [pure](./useSelector.md).           |
 | `options?` | Either an equality function (such as `shallowEqual`), or an options object with `equalityFn` and `devModeChecks` fields, as in `useSelector`. |
 
@@ -98,7 +98,7 @@ This is the same family of technique used by `proxy-memoize` and by fine-grained
 - Your app dispatches frequently, and most dispatches are irrelevant to most components
 - Selectors read narrow, deep paths (`state.entities.todos[id].completed`)
 
-It helps least (and can cost slightly more than `useSelector`) when most dispatches change state that most components read anyway, or when selectors read broad swaths of the state. Tracked selector evaluation itself costs roughly 3-4x an untracked run, so the win comes from the runs that are *skipped*, not from the runs themselves.
+It helps least (and can cost slightly more than `useSelector`) when most dispatches change state that most components read anyway, or when selectors read broad swaths of the state. Tracked selector evaluation itself costs roughly 3-4x an untracked run, so the win comes from the runs that are _skipped_, not from the runs themselves.
 
 Because `useSelector` and `useSignalSelector` coexist under one `<SignalProvider>`, you can adopt it incrementally in the components with the highest subscription counts.
 
@@ -108,12 +108,13 @@ The observable behavior - what your components render, when they re-render, what
 
 #### Hard constraints
 
-| Constraint | Explanation |
-| :--- | :--- |
-| **Requires `<SignalProvider>`** | Calling `useSignalSelector` under a plain `<Provider>` throws. |
-| **The state root must be a plain object** | Path tracking operates on the root object's keys. If the root is not a plain object, the hook still works, but falls back to untracked evaluation (behaving like `useSelector`). |
-| **`state => state` never updates** | A selector that returns the entire root state records no field reads, so no dispatch will ever re-run it. This is already an anti-pattern (`useSelector`'s [identity function check](./useSelector.md#identity-function-state--state-check) warns about it), but with `useSignalSelector` it goes from "wasteful" to "broken": the component will not update. The dev-mode check catches this. |
-| **Mutations inside `Map`, `Set`, `Date`, and class instances are not tracked** | Only plain objects and arrays get per-field tracking. Other object types are tracked by reference: replacing the instance triggers an update, but reading `myMap.get('key')` does not record a per-entry dependency. Since Redux state should be [immutably updated](https://redux.js.org/style-guide/#do-not-mutate-state) plain data anyway, this mostly matters for state produced by libraries. |
+| Constraint                                                                     | Explanation                                                                                                                                                                                                                                                                                                                                                                                                               |
+| :----------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Requires `<SignalProvider>`**                                                | Calling `useSignalSelector` under a plain `<Provider>` throws.                                                                                                                                                                                                                                                                                                                                                            |
+| **The state root must be a plain object**                                      | Path tracking operates on the root object's keys. If the root is not a plain object, the hook still works, but falls back to untracked evaluation (behaving like `useSelector`).                                                                                                                                                                                                                                          |
+| **`state => state` never updates**                                             | A selector that returns the entire root state records no field reads, so no dispatch will ever re-run it. This is already an anti-pattern (`useSelector`'s [identity function check](./useSelector.md#identity-function-state--state-check) warns about it), but with `useSignalSelector` it goes from "wasteful" to "broken": the component will not update. The dev-mode check catches this.                            |
+| **Selectors must not mutate state**                                            | Writing to the state from inside a selector (`state.items.sort()`, `state.foo = 1`, `delete state.bar`) throws a `TypeError` in development explaining which property the selector tried to change. `useSelector` silently allows these writes, which corrupt the store; `useSignalSelector` rejects them because the proxy sees every write. Use non-mutating alternatives (`state.items.slice().sort()`, `toSorted()`). |
+| **Mutations inside `Map`, `Set`, `Date`, and class instances are not tracked** | Only plain objects and arrays get per-field tracking. Other object types are tracked by reference: replacing the instance triggers an update, but reading `myMap.get('key')` does not record a per-entry dependency. Since Redux state should be [immutably updated](https://redux.js.org/style-guide/#do-not-mutate-state) plain data anyway, this mostly matters for state produced by libraries.                       |
 
 #### Gotchas
 
@@ -121,7 +122,7 @@ These are behaviors that differ from `useSelector` in ways you might notice, but
 
 ##### Proxies and identity
 
-Inside the selector, nested objects you read from `state` are tracking proxies, not the raw state objects. The values are identical; the object identity is not. This matters only for `===` comparisons **inside the selector body** against object references obtained *outside* the current selector run:
+Inside the selector, nested objects you read from `state` are tracking proxies, not the raw state objects. The values are identical; the object identity is not. This matters only for `===` comparisons **inside the selector body** against object references obtained _outside_ the current selector run:
 
 ```ts
 import { unwrap, useSignalSelector } from 'react-redux'
@@ -140,7 +141,7 @@ const selected = useSignalSelector((state) => {
 
 See [`unwrap`](./unwrap.md) for details. Comparisons between two values both read from `state` in the same selector run work correctly without unwrapping.
 
-**Proxies never escape the selector.** The hook unwraps the selector's return value before handing it to React, so your components, effects, equality functions, and dispatched actions always see plain Redux state. `console.log` of a selector result shows plain data. For the same reason, avoid *storing* a state object read during one selector run in an external variable for use later - the same rule as holding onto an Immer draft. Use `unwrap()` first if you need to do this.
+**Proxies never escape the selector.** The hook unwraps the selector's return value before handing it to React, so your components, effects, equality functions, and dispatched actions always see plain Redux state. `console.log` of a selector result shows plain data. For the same reason, avoid _storing_ a state object read during one selector run in an external variable for use later - the same rule as holding onto an Immer draft. Use `unwrap()` first if you need to do this.
 
 ##### Memoized (Reselect) selectors
 
@@ -152,7 +153,7 @@ Selectors that enumerate the root state's keys (`Object.keys(state)`, spreading 
 
 ##### Aliased state objects
 
-If the same object instance is reachable via two different state paths (for example, an entity stored in two lookup tables), tracking attributes reads to the first path encountered. The consequence is only ever *extra* selector re-runs, never missed updates.
+If the same object instance is reachable via two different state paths (for example, an entity stored in two lookup tables), tracking attributes reads to the first path encountered. The consequence is only ever _extra_ selector re-runs, never missed updates.
 
 ##### Stale props and "zombie children"
 

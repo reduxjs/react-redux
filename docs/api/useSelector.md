@@ -67,7 +67,7 @@ const result: Selected = useSelector(
 
 | Name       | Description                                                                                                                                                                                                                                             |
 | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `selector` | A function that receives the entire Redux store state as its only argument, and returns the value this component needs from it.                                                                                                                        |
+| `selector` | A function that receives the entire Redux store state as its only argument, and returns the value this component needs from it.                                                                                                                         |
 | `options?` | Either an equality function used to compare selector results (such as `shallowEqual`), or an options object containing an `equalityFn` field and a [`devModeChecks`](#development-mode-checks) field for configuring the development-mode checks below. |
 
 ### Returns
