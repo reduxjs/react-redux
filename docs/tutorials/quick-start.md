@@ -31,9 +31,13 @@ Welcome to the React Redux Quick Start tutorial! **This tutorial will briefly in
 
 This page will focus on just how to set up a Redux application with Redux Toolkit and the main APIs you'll use. For explanations of what Redux is, how it works, and full examples of how to use Redux Toolkit, see [the Redux core docs tutorials](https://redux.js.org/tutorials/index).
 
-For this tutorial, we assume that you're using Redux Toolkit and React Redux together, as that is the standard Redux usage pattern. The examples are based on [a typical Create-React-App folder structure](https://create-react-app.dev/docs/folder-structure) where all the application code is in a `src`, but the patterns can be adapted to whatever project or folder setup you're using.
+For this tutorial, we assume that you're using Redux Toolkit and React Redux together, as that is the standard Redux usage pattern. The examples are based on a typical Vite project structure where all the application code is in a `src` folder, but the patterns can be adapted to whatever project or folder setup you're using.
 
-The [Redux+JS template for Create-React-App](https://github.com/reduxjs/cra-template-redux) comes with this same project setup already configured.
+The [Redux+TS template for Vite](https://github.com/reduxjs/redux-templates/tree/master/packages/vite-template-redux) comes with this same project setup already configured. You can create a new project from it with `tiged`:
+
+```sh
+npx tiged reduxjs/redux-templates/packages/vite-template-redux my-app
+```
 
 ## Usage Summary
 

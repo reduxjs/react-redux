@@ -17,8 +17,8 @@ Both of these already have Redux Toolkit and React-Redux configured appropriatel
 
 ```bash
 # Vite with our Redux+TS template
-# (using the `degit` tool to clone and extract the template)
-npx degit reduxjs/redux-templates/packages/vite-template-redux my-app
+# (using the `tiged` tool to clone and extract the template)
+npx tiged reduxjs/redux-templates/packages/vite-template-redux my-app
 
 # Next.js using the `with-redux` template
 npx create-next-app --example with-redux my-app

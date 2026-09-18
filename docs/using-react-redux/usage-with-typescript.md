@@ -26,7 +26,7 @@ We assume that a typical Redux project is using Redux Toolkit and React Redux to
 
 [Redux Toolkit](https://redux-toolkit.js.org) (RTK) is the standard approach for writing modern Redux logic. RTK is already written in TypeScript, and its API is designed to provide a good experience for TypeScript usage.
 
-The [Redux+TS template for Create-React-App](https://github.com/reduxjs/cra-template-redux-typescript) comes with a working example of these patterns already configured.
+The [Redux+TS template for Vite](https://github.com/reduxjs/redux-templates/tree/master/packages/vite-template-redux) comes with a working example of these patterns already configured.
 
 ### Define Root State and Dispatch Types
 

@@ -31,7 +31,7 @@ This page focuses on just how to set up the TypeScript aspects. For explanations
 
 [React Redux](/) is also written in TypeScript as of version 8, and also includes its own type definitions.
 
-The [Redux+TS template for Create-React-App](https://github.com/reduxjs/cra-template-redux-typescript) comes with a working example of these patterns already configured.
+The [Redux+TS template for Vite](https://github.com/reduxjs/redux-templates/tree/master/packages/vite-template-redux) comes with a working example of these patterns already configured.
 
 :::info
 
