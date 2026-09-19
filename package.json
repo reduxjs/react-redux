@@ -37,7 +37,7 @@
     "src"
   ],
   "scripts": {
-    "build": "pnpm clean && tsdown",
+    "build": "pnpm clean && tsdown && unrun scripts/stripSourcemapFileField.mts",
     "clean": "rimraf lib dist es coverage",
     "format": "oxfmt \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
     "format:check": "oxfmt --check \"{src,test}/**/*.{js,ts,tsx}\" \"docs/**/*.md\"",
