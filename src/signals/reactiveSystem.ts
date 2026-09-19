@@ -85,62 +85,66 @@ function isSignalNode(node: ReactiveNode): node is SignalNode<unknown> {
   return 'currentValue' in node
 }
 
-const { link, unlink, propagate, checkDirty, shallowPropagate } =
-  createReactiveSystem({
-    update(node: ReactiveNode): boolean {
-      if (isComputedNode(node)) {
-        return updateComputed(node)
-      }
-      if (isSignalNode(node)) {
-        return updateSignal(node)
-      }
-      node.flags = Mutable
-      return true
-    },
+// Kept as a single object rather than destructured: bundlers cannot drop a
+// pure call whose result is destructured at the top level, but they can drop
+// `system` when nothing that reads it survives tree-shaking. That lets an app
+// importing only the stock hooks from the main entry point shed the whole
+// reactive system.
+const system = /* @__PURE__ */ createReactiveSystem({
+  update(node: ReactiveNode): boolean {
+    if (isComputedNode(node)) {
+      return updateComputed(node)
+    }
+    if (isSignalNode(node)) {
+      return updateSignal(node)
+    }
+    node.flags = Mutable
+    return true
+  },
 
-    notify(node: ReactiveNode): void {
-      let effect = node as EffectNode
-      let insertIndex = queuedLength
-      let firstInsertedIndex = insertIndex
-      for (;;) {
-        queued[insertIndex++] = effect
-        effect.flags &= ~Watching
-        const next = effect.subs?.sub as EffectNode | undefined
-        if (next === undefined || !(next.flags & Watching)) {
-          break
-        }
-        effect = next
+  notify(node: ReactiveNode): void {
+    let effect = node as EffectNode
+    let insertIndex = queuedLength
+    let firstInsertedIndex = insertIndex
+    for (;;) {
+      queued[insertIndex++] = effect
+      effect.flags &= ~Watching
+      const next = effect.subs?.sub as EffectNode | undefined
+      if (next === undefined || !(next.flags & Watching)) {
+        break
       }
-      queuedLength = insertIndex
-      while (firstInsertedIndex < --insertIndex) {
-        const left = queued[firstInsertedIndex]
-        queued[firstInsertedIndex++] = queued[insertIndex]
-        queued[insertIndex] = left
-      }
-    },
+      effect = next
+    }
+    queuedLength = insertIndex
+    while (firstInsertedIndex < --insertIndex) {
+      const left = queued[firstInsertedIndex]
+      queued[firstInsertedIndex++] = queued[insertIndex]
+      queued[insertIndex] = left
+    }
+  },
 
-    unwatched(node: ReactiveNode): void {
-      if (isComputedNode(node)) {
-        if (node.depsTail !== undefined) {
-          node.flags = Mutable | Dirty
-          disposeAllDepsInReverse(node)
-        }
-        return
+  unwatched(node: ReactiveNode): void {
+    if (isComputedNode(node)) {
+      if (node.depsTail !== undefined) {
+        node.flags = Mutable | Dirty
+        disposeAllDepsInReverse(node)
       }
-      if (isSignalNode(node)) {
-        // The one behavioral addition over upstream, whose branch here
-        // is empty. Runs from inside `unlink`, which itself runs during
-        // effect re-runs and disposal, so `release` must not read or
-        // write any signal value.
-        const owner = node.ownerRegistry
-        if (owner !== undefined) {
-          owner.release(node.ownerPath, node)
-        }
-        return
+      return
+    }
+    if (isSignalNode(node)) {
+      // The one behavioral addition over upstream, whose branch here
+      // is empty. Runs from inside `unlink`, which itself runs during
+      // effect re-runs and disposal, so `release` must not read or
+      // write any signal value.
+      const owner = node.ownerRegistry
+      if (owner !== undefined) {
+        owner.release(node.ownerPath, node)
       }
-      stopEffect(node as EffectNode)
-    },
-  })
+      return
+    }
+    stopEffect(node as EffectNode)
+  },
+})
 
 export class SignalNode<T> implements ReactiveSignal<T>, ReactiveNode {
   currentValue: T
@@ -164,13 +168,13 @@ export class SignalNode<T> implements ReactiveSignal<T>, ReactiveNode {
       if (updateSignal(this)) {
         const subs = this.subs
         if (subs !== undefined) {
-          shallowPropagate(subs)
+          system.shallowPropagate(subs)
         }
       }
     }
     const sub = activeSub
     if (sub !== undefined) {
-      link(this, sub, cycle)
+      system.link(this, sub, cycle)
     }
     return this.currentValue
   }
@@ -180,7 +184,7 @@ export class SignalNode<T> implements ReactiveSignal<T>, ReactiveNode {
       this.flags = Mutable | Dirty
       const subs = this.subs
       if (subs !== undefined) {
-        propagate(subs, !!runDepth)
+        system.propagate(subs, !!runDepth)
         if (!batchDepth) {
           flush()
         }
@@ -207,13 +211,13 @@ export class ComputedNode<T> implements ReactiveComputed<T>, ReactiveNode {
     if (
       flags & Dirty ||
       (flags & Pending &&
-        (checkDirty(this.deps!, this) ||
+        (system.checkDirty(this.deps!, this) ||
           ((this.flags = flags & ~Pending), false)))
     ) {
       if (updateComputed(this)) {
         const subs = this.subs
         if (subs !== undefined) {
-          shallowPropagate(subs)
+          system.shallowPropagate(subs)
         }
       }
     } else if (!flags) {
@@ -228,7 +232,7 @@ export class ComputedNode<T> implements ReactiveComputed<T>, ReactiveNode {
     }
     const sub = activeSub
     if (sub !== undefined) {
-      link(this, sub, cycle)
+      system.link(this, sub, cycle)
     }
     return this.value as T
   }
@@ -293,7 +297,7 @@ export function effect(fn: () => void | (() => void)): () => void {
   }
   const prevSub = setActiveSub(e)
   if (prevSub !== undefined) {
-    link(e, prevSub, 0)
+    system.link(e, prevSub, 0)
     prevSub.flags |= HasChildEffect
   }
   try {
@@ -327,7 +331,7 @@ export function effectScope(fn: () => void): () => void {
   }
   const prevSub = setActiveSub(e)
   if (prevSub !== undefined) {
-    link(e, prevSub, 0)
+    system.link(e, prevSub, 0)
     prevSub.flags |= HasChildEffect
   }
   try {
@@ -351,7 +355,7 @@ function unlinkChildEffects(sub: ReactiveNode): void {
     const prev = current.prevDep
     const dep = current.dep
     if (!isComputedNode(dep) && !isSignalNode(dep)) {
-      unlink(current, sub)
+      system.unlink(current, sub)
     }
     current = prev
   }
@@ -382,7 +386,7 @@ function updateSignal<T>(s: SignalNode<T>): boolean {
 
 function run(e: EffectNode): void {
   const flags = e.flags
-  if (flags & Dirty || (flags & Pending && checkDirty(e.deps!, e))) {
+  if (flags & Dirty || (flags & Pending && system.checkDirty(e.deps!, e))) {
     if (flags & HasChildEffect) {
       unlinkChildEffects(e)
     }
@@ -454,7 +458,7 @@ function stopEffect(e: EffectNode): void {
   disposeAllDepsInReverse(e)
   const sub = e.subs
   if (sub !== undefined) {
-    unlink(sub)
+    system.unlink(sub)
   }
   if (e.cleanup) {
     runCleanup(e)
@@ -465,7 +469,7 @@ function disposeAllDepsInReverse(sub: ReactiveNode): void {
   let current = sub.depsTail
   while (current !== undefined) {
     const prev = current.prevDep
-    unlink(current, sub)
+    system.unlink(current, sub)
     current = prev
   }
 }
@@ -474,6 +478,6 @@ function purgeDeps(sub: ReactiveNode): void {
   const depsTail = sub.depsTail
   let dep = depsTail !== undefined ? depsTail.nextDep : sub.deps
   while (dep !== undefined) {
-    dep = unlink(dep, sub)
+    dep = system.unlink(dep, sub)
   }
 }
