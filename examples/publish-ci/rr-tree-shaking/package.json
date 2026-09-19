@@ -1,0 +1,23 @@
+{
+  "name": "rr-tree-shaking",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.23.0",
+  "scripts": {
+    "build": "vite build && node check-tree-shaking.mjs"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-redux": "^9.3.0",
+    "redux": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "^5.2.0",
+    "typescript": "5.9.3",
+    "vite": "^8.2.2"
+  }
+}
