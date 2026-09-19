@@ -330,7 +330,7 @@ jobs:
       fail-fast: false
       matrix:
         node: ['24.x']
-        example: ['rr-rsc-context']
+        example: ['rr-rsc-context', 'rr-tree-shaking']
     defaults:
       run:
         working-directory: ./examples/publish-ci/${{ matrix.example }}
