@@ -124,6 +124,25 @@ describe('New v8 serverState behavior', () => {
     vi.restoreAllMocks()
   })
 
+  it.for([0, false, '', null] as const)(
+    'uses a falsy serverState value of %s',
+    (serverState) => {
+      const store = createStore((state: unknown = 'client') => state)
+
+      function Value() {
+        return <span>{String(useSelector((state: unknown) => state))}</span>
+      }
+
+      const markup = renderToString(
+        <Provider store={store} serverState={serverState}>
+          <Value />
+        </Provider>,
+      )
+
+      expect(markup).toBe(`<span>${String(serverState)}</span>`)
+    },
+  )
+
   it('Handles hydration correctly', async () => {
     const ssrStore = createStore(dataSlice.reducer)
 

@@ -736,8 +736,8 @@ function _connect<
                 'You must pass a valid React context consumer as `props.context`',
               )
             }
-            ResultContext = propsContext
           }
+          ResultContext = propsContext
         }
         return ResultContext
       }, [propsContext, Context])
