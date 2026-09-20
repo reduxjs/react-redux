@@ -112,7 +112,7 @@ const siteConfig: Config = {
           position: 'right',
         },
         {
-          to: 'using-react-redux/connect-mapstate',
+          to: 'using-react-redux/usage-with-typescript',
           label: 'Using React Redux',
           position: 'right',
         },
@@ -124,7 +124,7 @@ const siteConfig: Config = {
           className: 'github',
         },
         {
-          href: '/introduction/getting-started#help-and-discussion',
+          href: 'https://redux.js.org/introduction/getting-started#help-and-discussion',
           label: 'Need help?',
           position: 'right',
         },
@@ -148,7 +148,7 @@ const siteConfig: Config = {
             },
             {
               label: 'Using React Redux',
-              to: 'using-react-redux/connect-mapstate',
+              to: 'using-react-redux/usage-with-typescript',
             },
             {
               label: 'API Reference',

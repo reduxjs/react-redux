@@ -10,6 +10,12 @@ description: 'Usage > mapState: options for reading state with connect'
 
 # Connect: Extracting Data with `mapStateToProps`
 
+:::warning Deprecated
+
+`connect` is marked as deprecated as of React-Redux 9.3.0. It still works, and we do not intend to remove it, but [**we recommend using the `useSelector` hook instead**](../api/hooks.md#useselector). See [Migrating to Modern Redux: Modernizing React Components](/usage/migrating-to-modern-redux#modernizing-react-components-with-react-redux) for how to convert `connect` usage to hooks.
+
+:::
+
 As the first argument passed in to `connect`, `mapStateToProps` is used for selecting the part of the data from the store that the connected component needs. It’s frequently referred to as just `mapState` for short.
 
 - It is called every time the store state changes.
@@ -106,7 +112,7 @@ function mapStateToProps(state) {
 
 ### Use Selector Functions to Extract and Transform Data
 
-We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree. Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Computing Derived Data](https://redux.js.org/recipes/computing-derived-data) page for more details on why and how to use selectors.)
+We highly encourage the use of "selector" functions to help encapsulate the process of extracting values from specific locations in the state tree. Memoized selector functions also play a key role in improving application performance (see the following sections in this page and the [Advanced Usage: Computing Derived Data](/usage/deriving-data-selectors) page for more details on why and how to use selectors.)
 
 ### `mapStateToProps` Functions Should Be Fast
 
@@ -143,7 +149,7 @@ Many common operations result in new object or array references being created:
 - Copying values with `Object.assign`
 - Copying values with the spread operator `{ ...oldState, ...newData }`
 
-Put these operations in [memoized selector functions](https://redux.js.org/recipes/computing-derived-data#creating-a-memoized-selector) to ensure that they only run if the input values have changed. This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
+Put these operations in [memoized selector functions](/usage/deriving-data-selectors#writing-memoized-selectors-with-reselect) to ensure that they only run if the input values have changed. This will also ensure that if the input values _haven't_ changed, `mapStateToProps` will still return the same result values as before, and `connect` can skip re-rendering.
 
 ### Only Perform Expensive Operations When Data Changes
 
@@ -153,7 +159,7 @@ There are a few ways to approach this:
 
 - Some transformations could be calculated in an action creator or reducer, and the transformed data could be kept in the store
 - Transformations can also be done in a component's `render()` method
-- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions](https://redux.js.org/recipes/computing-derived-data#creating-a-memoized-selector) to ensure the transformation is only run when the input values have changed.
+- If the transformation does need to be done in a `mapStateToProps` function, then we recommend using [memoized selector functions](/usage/deriving-data-selectors#writing-memoized-selectors-with-reselect) to ensure the transformation is only run when the input values have changed.
 
 #### Immutable.js Performance Concerns
 
@@ -226,7 +232,6 @@ function mapStateToProps(...args) {
 
 **Q&A**
 
-- [Why Is My Component Re-Rendering Too Often?](https://redux.js.org/faq/react-redux#why-is-my-component-re-rendering-too-often)
-- [Why isn't my component re-rendering, or my mapStateToProps running](https://redux.js.org/faq/react-redux#why-isnt-my-component-re-rendering-or-my-mapstatetoprops-running)
-- [How can I speed up my mapStateToProps?](https://redux.js.org/faq/react-redux#how-can-i-speed-up-my-mapstatetoprops)
-- [Should I only connect my top component, or can I connect multiple components in my tree?](https://redux.js.org/faq/react-redux#should-i-only-connect-my-top-component-or-can-i-connect-multiple-components-in-my-tree)
+- [Why Is My Component Re-Rendering Too Often?](/faq/react-redux#why-is-my-component-re-rendering-too-often)
+- [Why isn't my component re-rendering, or my mapStateToProps running](/faq/react-redux#why-isnt-my-component-re-rendering)
+- [How can I speed up my mapStateToProps?](/faq/react-redux#why-is-my-component-re-rendering-too-often)
