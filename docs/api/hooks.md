@@ -70,7 +70,7 @@ Allows you to extract data from the Redux store state for use in this component,
 
 The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
 
-See [Using Redux: Deriving Data with Selectors](https://redux.js.org/usage/deriving-data-selectors) in the Redux docs for more details on writing and using selector functions.
+See [Using Redux: Deriving Data with Selectors](/usage/deriving-data-selectors) in the Redux docs for more details on writing and using selector functions.
 
 :::
 
@@ -553,7 +553,7 @@ much conceptual overhead and syntactic complexity.
 
 You should probably prefer to call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
 and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
-[`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
+[`bindActionCreators`](/api/bindactioncreators) function in your own code to bind action creators,
 or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
 
 However, if you'd like to still use this hook yourself, here's a copy-pastable version that supports passing in action
