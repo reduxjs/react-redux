@@ -26,7 +26,6 @@ const siteConfig: Config = {
           editUrl: 'https://github.com/reduxjs/react-redux/edit/master/website',
           include: [
             '{api,introduction,using-react-redux,tutorials}/*.{md,mdx}',
-            'troubleshooting.md',
           ], // no other way to exclude node_modules
         },
         theme: {
@@ -108,7 +107,7 @@ const siteConfig: Config = {
           position: 'right',
         },
         {
-          to: 'tutorials/quick-start',
+          href: 'https://redux.js.org/tutorials/quick-start',
           label: 'Tutorial',
           position: 'right',
         },
@@ -156,8 +155,8 @@ const siteConfig: Config = {
               to: 'api/hooks',
             },
             {
-              label: 'Guides',
-              to: 'troubleshooting',
+              label: 'Troubleshooting',
+              href: 'https://redux.js.org/usage/troubleshooting',
             },
           ],
         },

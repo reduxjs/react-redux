@@ -21,3 +21,6 @@
 /7.0/*          /:splat
 /7.1/*          /:splat
 /versions       /introduction/getting-started
+# Quick Start tutorials merged into the core docs Quick Start
+/tutorials/quick-start                  https://redux.js.org/tutorials/quick-start
+/tutorials/typescript-quick-start       https://redux.js.org/tutorials/quick-start

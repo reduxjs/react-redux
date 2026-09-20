@@ -280,6 +280,6 @@ If you're using `connect`, **we recommend using the `ConnectedProps<T>` approach
 For additional information, see these additional resources:
 
 - [Redux docs: Usage with TypeScript](https://redux.js.org/recipes/usage-with-typescript): Examples of how to use Redux Toolkit, the Redux core, and React Redux with TypeScript
-- [Redux Toolkit docs: TypeScript Quick start](https://redux-toolkit.js.org/tutorials/typescript): shows how to use RTK and the React-Redux hooks API with TypeScript
+- [Redux docs: Quick Start](https://redux.js.org/tutorials/quick-start): shows how to use RTK and the React-Redux hooks API with TypeScript
 - [React+TypeScript Cheatsheet](https://github.com/typescript-cheatsheets/react-typescript-cheatsheet): a comprehensive guide to using React with TypeScript
 - [React + Redux in TypeScript Guide](https://github.com/piotrwitek/react-redux-typescript-guide): extensive information on patterns for using React and Redux with TypeScript

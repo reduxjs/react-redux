@@ -16,8 +16,11 @@ const sidebars: SidebarsConfig = {
       label: 'Tutorials',
       collapsed: false,
       items: [
-        'tutorials/quick-start',
-        'tutorials/typescript-quick-start',
+        {
+          type: 'link',
+          label: 'Quick Start',
+          href: 'https://redux.js.org/tutorials/quick-start'
+        },
         'tutorials/connect',
       ],
     },
@@ -40,7 +43,13 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Guides',
-      items: ['troubleshooting'],
+      items: [
+        {
+          type: 'link',
+          label: 'Troubleshooting',
+          href: 'https://redux.js.org/usage/troubleshooting',
+        },
+      ],
     },
   ],
 }
