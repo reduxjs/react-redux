@@ -27,10 +27,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Using React Redux',
       collapsed: false,
-      items: [
-        'using-react-redux/usage-with-typescript',
-        'using-react-redux/accessing-store',
-      ],
+      items: ['using-react-redux/accessing-store'],
     },
     {
       type: 'category',
@@ -45,6 +42,7 @@ const sidebars: SidebarsConfig = {
         'api/connect',
         'using-react-redux/connect-mapstate',
         'using-react-redux/connect-mapdispatch',
+        'using-react-redux/usage-with-typescript',
         'tutorials/connect',
       ],
     },

@@ -112,7 +112,7 @@ const siteConfig: Config = {
           position: 'right',
         },
         {
-          to: 'using-react-redux/usage-with-typescript',
+          to: 'using-react-redux/accessing-store',
           label: 'Using React Redux',
           position: 'right',
         },
@@ -148,7 +148,7 @@ const siteConfig: Config = {
             },
             {
               label: 'Using React Redux',
-              to: 'using-react-redux/usage-with-typescript',
+              to: 'using-react-redux/accessing-store',
             },
             {
               label: 'API Reference',
