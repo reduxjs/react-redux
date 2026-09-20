@@ -8,12 +8,9 @@ description: 'Introduction > Getting Started: First steps with React Redux'
 
 &nbsp;
 
-import LiteYouTubeEmbed from 'react-lite-youtube-embed';
-import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
-
 # Getting Started with React Redux
 
-[React Redux](https://github.com/reduxjs/react-redux) is the official [React](https://react.dev/) UI bindings layer for [Redux](https://redux.js.org/). It lets your React components read data from a Redux store, and dispatch actions to the store to update state.
+[React Redux](https://github.com/reduxjs/react-redux) is the official [React](https://react.dev/) UI bindings layer for [Redux](/). It lets your React components read data from a Redux store, and dispatch actions to the store to update state.
 
 ## Installation
 
@@ -52,7 +49,7 @@ npm install react-redux
 yarn add react-redux
 ```
 
-You'll also need to [install Redux](https://redux.js.org/introduction/installation) and [set up a Redux store](https://redux.js.org/recipes/configuring-your-store/) in your app.
+You'll also need to [install Redux Toolkit](/toolkit/introduction/getting-started#installation) and [set up a Redux store](/usage/configuring-your-store) in your app.
 
 React-Redux v8 is written in TypeScript, so all types are automatically included.
 
@@ -129,22 +126,7 @@ export function Counter() {
 
 ## Learning React Redux
 
-### Learn Modern Redux Livestream
-
-Redux maintainer Mark Erikson appeared on the "Learn with Jason" show to explain how we recommend using Redux today. The show includes a live-coded example app that shows how to use Redux Toolkit and React-Redux hooks with TypeScript, as well as the new RTK Query data fetching APIs.
-
-See [the "Learn Modern Redux" show notes page](https://www.learnwithjason.dev/let-s-learn-modern-redux) for a transcript and links to the example app source.
-
-<LiteYouTubeEmbed 
-    id="9zySeP5vH9c"
-    title="Learn Modern Redux - Redux Toolkit, React-Redux Hooks, and RTK Query"
-/>
-
-## Help and Discussion
-
-The **[#redux channel](https://discord.gg/0ZcbPKXt5bZ6au5t)** of the **[Reactiflux Discord community](https://www.reactiflux.com)** is our official resource for all questions related to learning and using Redux. Reactiflux is a great place to hang out, ask questions, and learn - come join us!
-
-You can also ask questions on [Stack Overflow](https://stackoverflow.com) using the **[#redux tag](https://stackoverflow.com/questions/tagged/redux)**.
+To learn how to use React Redux, start with the [**Redux Quick Start**](/tutorials/quick-start), then work through the [**Redux Essentials tutorial**](/tutorials/essentials/part-1-overview-concepts). The [**Tutorials Index**](/tutorials/index) lists all of the tutorials and video resources, and the [**Getting Started with Redux**](/introduction/getting-started) page has links for help and discussion.
 
 ## Docs Translations
 
