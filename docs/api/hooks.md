@@ -224,7 +224,7 @@ export const App = () => {
 }
 ```
 
-However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that selector's memoization behavior is properly configured (see [here](https://reselect.js.org/faq/#can-i-share-a-selector-across-multiple-component-instances) for details).
+However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that selector's memoization behavior is properly configured (see [here](/reselect/FAQ#can-i-share-a-selector-across-multiple-component-instances) for details).
 
 ### Development mode checks
 
