@@ -10,7 +10,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 
-const distDir = path.resolve(import.meta.dirname, 'dist', 'assets')
+const distDir = path.resolve(import.meta.dirname, '..', 'dist', 'assets')
 
 // Identifiers that exist only in the signals implementation. The build runs
 // unminified, so function and class names survive into the output.
