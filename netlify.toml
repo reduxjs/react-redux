@@ -1,22 +1,46 @@
+# The React-Redux docs are published as part of the combined Redux docs site
+# (https://redux.js.org/react-redux). Deploy previews clone the core `redux`
+# repo and build that site with this checkout's `docs/` folder in place of the
+# published React-Redux docs, so a docs PR here previews the pages as they
+# will appear on redux.js.org.
+
 [build]
-  base    = "website"
-  publish = "website/build"
-  command = "pnpm install --frozen-lockfile && pnpm build && cp _redirects ./build"
-  ignore  = "git diff --quiet HEAD^ HEAD -- ../docs/ .  ../netlify.toml"
+  base    = ""
+  publish = ".combined/redux/website/build"
+  # Fetch into an existing directory (rather than `git clone`) so the cache
+  # plugin can restore Docusaurus's node_modules/.cache into it first.
+  command = """
+    mkdir -p .combined/redux && cd .combined/redux &&
+    git init -q && (git remote add origin https://github.com/reduxjs/redux.git 2>/dev/null || true) &&
+    git fetch -q --depth 1 origin combined-docs-prototype && git checkout -q -f FETCH_HEAD &&
+    cd docs && pnpm install --frozen-lockfile &&
+    cd ../website && pnpm install --frozen-lockfile &&
+    DOCS_SOURCE_REACT_REDUX="$(cd ../../.. && pwd)" pnpm fetch-docs --force &&
+    pnpm build && cp _redirects ./build
+  """
+  # Skip the build when nothing under docs/ or this file changed.
+  ignore  = "[ \"$CACHED_COMMIT_REF\" = \"$COMMIT_REF\" ] && exit 1; git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- docs/ netlify.toml"
 
 [build.environment]
 # pnpm 11 requires Node 22.13 or newer.
 NODE_VERSION = "22"
 NODE_OPTIONS = "--max_old_space_size=4096"
+# Netlify detects pnpm from the lockfile; Corepack reads the version from
+# `packageManager` in package.json.
+NETLIFY_USE_PNPM = "true"
+# Branches in the other library repos that carry the combined-site cleanup.
+# Switch back to "master" once those PRs merge.
+DOCS_REF_REDUX_TOOLKIT = "combined-docs"
+DOCS_REF_RESELECT = "combined-docs"
 
+# Once the combined site is live, production deploys of react-redux.js.org
+# should only publish redirects to redux.js.org. Uncomment to enable.
+# [context.production]
+#   publish = "redirect-only"
+#   command = "mkdir -p redirect-only && printf '/*  https://redux.js.org/react-redux/:splat  301\\n' > redirect-only/_redirects"
+#   ignore  = "exit 1"
 
 [[plugins]]
   package = "netlify-plugin-cache"
   [plugins.inputs]
-    paths = [
-      "node_modules/.cache",
-      "website/node_modules/.cache",
-      ".pnpm-store",
-      "website/.pnpm-store"
-    ]
-
+    paths = [".combined/redux/website/node_modules/.cache"]
