@@ -5,7 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@11.23.0",
   "scripts": {
-    "build": "vite build && node check-tree-shaking.mjs"
+    "build": "vite build && node scripts/check-tree-shaking.mjs",
+    "measure": "node scripts/measure-size.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
