@@ -45,14 +45,15 @@ const variants = [
   },
 ]
 
-const results = []
-for (const variant of variants) {
+const reactExternals = ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime']
+
+async function measure(variant, { externalizeReactRedux }) {
   // Entries must live inside the project so bare imports resolve to its
   // node_modules.
   const work = path.join(here, '.size', variant.name)
   await mkdir(work, { recursive: true })
   await writeFile(path.join(work, 'main.tsx'), variant.source)
-  const outDir = path.join(work, 'dist')
+  const outDir = path.join(work, externalizeReactRedux ? 'dist-without' : 'dist-with')
 
   await build({
     root: here,
@@ -66,12 +67,9 @@ for (const variant of variants) {
       minify: true,
       rollupOptions: {
         input: path.join(work, 'main.tsx'),
-        external: [
-          'react',
-          'react-dom',
-          'react-dom/client',
-          'react/jsx-runtime',
-        ],
+        external: externalizeReactRedux
+          ? [...reactExternals, /^react-redux(\/|$)/]
+          : reactExternals,
       },
     },
   })
@@ -81,10 +79,24 @@ for (const variant of variants) {
   const code = (
     await Promise.all(files.map((f) => readFile(path.join(assets, f))))
   ).join('')
+  return { min: Buffer.byteLength(code), gz: gzipSync(code).byteLength }
+}
+
+// The app code and `redux` are identical whether or not react-redux is
+// bundled, so the difference between the two builds is the react-redux cost
+// alone, including its own dependencies (use-sync-external-store,
+// alien-signals). Doing the subtraction on the gzipped totals is the closest
+// available approximation of the gzipped cost.
+const results = []
+for (const variant of variants) {
+  const withRR = await measure(variant, { externalizeReactRedux: false })
+  const withoutRR = await measure(variant, { externalizeReactRedux: true })
   results.push({
     variant: variant.name,
-    'min (bytes)': Buffer.byteLength(code),
-    'min+gz (bytes)': gzipSync(code).byteLength,
+    'react-redux min': withRR.min - withoutRR.min,
+    'react-redux min+gz': withRR.gz - withoutRR.gz,
+    'app total min': withRR.min,
+    'app total min+gz': withRR.gz,
   })
 }
 
