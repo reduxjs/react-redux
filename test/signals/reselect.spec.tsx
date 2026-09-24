@@ -410,3 +410,321 @@ describe('layered memoized selectors', () => {
     expect(getByTestId('todo-2').textContent).toBe('review code')
   })
 })
+
+describe('args-memoization cache hits', () => {
+  // Reselect memoizes the whole selector on its arguments (argsMemoize)
+  // before it even runs the input selectors. If two hook evaluations hand
+  // it the same state argument, the second is an args-cache hit: no input
+  // selector runs, no state property is read, and a tracking hook would
+  // record nothing. Every test here dispatches several times so that a
+  // hook that tracked correctly once and then went deaf still fails.
+  const selectSummary = () =>
+    createSelector([(s: RootState) => s.counter.value], (value) => ({
+      doubled: value * 2,
+    }))
+
+  const incrementTimes = (store: ReturnType<typeof makeStore>, n: number) => {
+    for (let i = 0; i < n; i++) {
+      rtl.act(() => {
+        store.dispatch({ type: 'increment' })
+      })
+    }
+  }
+
+  it('a selector shared by two components keeps updating both', () => {
+    const store = makeStore()
+    const selectDoubled = selectSummary()
+    let rendersA = 0
+    let rendersB = 0
+
+    function A() {
+      rendersA++
+      return <div data-testid="a">{useSelector(selectDoubled).doubled}</div>
+    }
+    function B() {
+      rendersB++
+      return <div data-testid="b">{useSelector(selectDoubled).doubled}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <A />
+        <B />
+      </Provider>,
+    )
+
+    for (const expected of ['2', '4', '6']) {
+      incrementTimes(store, 1)
+      expect(getByTestId('a').textContent).toBe(expected)
+      expect(getByTestId('b').textContent).toBe(expected)
+    }
+    expect(rendersA).toBe(4)
+    expect(rendersB).toBe(4)
+  })
+
+  it('a component mounted after the selector is already cached still updates', () => {
+    const store = makeStore()
+    const selectDoubled = selectSummary()
+
+    function A() {
+      return <div data-testid="a">{useSelector(selectDoubled).doubled}</div>
+    }
+    function B() {
+      return <div data-testid="b">{useSelector(selectDoubled).doubled}</div>
+    }
+    function App({ showB }: { showB: boolean }) {
+      return (
+        <Provider store={store}>
+          <A />
+          {showB && <B />}
+        </Provider>
+      )
+    }
+
+    const { getByTestId, rerender } = rtl.render(<App showB={false} />)
+    incrementTimes(store, 1)
+    expect(getByTestId('a').textContent).toBe('2')
+
+    // A has already evaluated selectDoubled against the current state.
+    rerender(<App showB />)
+    expect(getByTestId('b').textContent).toBe('2')
+
+    for (const expected of ['4', '6', '8']) {
+      incrementTimes(store, 1)
+      expect(getByTestId('a').textContent).toBe(expected)
+      expect(getByTestId('b').textContent).toBe(expected)
+    }
+  })
+
+  it('an inline wrapper around a memoized selector keeps updating', () => {
+    // The inline arrow is a new function every render, so after each
+    // dispatch the hook re-evaluates against the SAME state a second time.
+    const store = makeStore()
+    const selectDoubled = selectSummary()
+
+    function A() {
+      const doubled = useSelector((s: RootState) => selectDoubled(s).doubled)
+      return <div data-testid="a">{doubled}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <A />
+      </Provider>,
+    )
+    for (const expected of ['2', '4', '6']) {
+      incrementTimes(store, 1)
+      expect(getByTestId('a').textContent).toBe(expected)
+    }
+  })
+
+  it('a parametrized (state, arg) memoized selector keeps updating', () => {
+    const store = makeStore()
+    let resultRuns = 0
+    const selectScaled = createSelector(
+      [
+        (s: RootState) => s.counter.value,
+        (_s: RootState, factor: number) => factor,
+      ],
+      (value, factor) => {
+        resultRuns++
+        return { scaled: value * factor }
+      },
+    )
+
+    function Scaled({ factor }: { factor: number }) {
+      const scaled = useSelector(
+        (s: RootState) => selectScaled(s, factor).scaled,
+      )
+      return <div data-testid={`x${factor}`}>{scaled}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <Scaled factor={2} />
+        <Scaled factor={3} />
+      </Provider>,
+    )
+    expect(getByTestId('x2').textContent).toBe('0')
+    expect(getByTestId('x3').textContent).toBe('0')
+
+    for (const value of [1, 2, 3]) {
+      incrementTimes(store, 1)
+      expect(getByTestId('x2').textContent).toBe(String(value * 2))
+      expect(getByTestId('x3').textContent).toBe(String(value * 3))
+    }
+    // The result function is memoized on the input VALUES, so it runs
+    // once per (value, factor) pair regardless of how many times the
+    // wrapper selector was evaluated.
+    expect(resultRuns).toBe(8)
+  })
+
+  it('nested memoized input selectors keep updating', () => {
+    const store = makeStore()
+    const selectIncompleteCount = createSelector(
+      [(s: RootState) => s.todos],
+      (todos) => todos.filter((t) => !t.completed).length,
+    )
+    const selectCounterValue = createSelector(
+      [(s: RootState) => s.counter],
+      (counter) => counter.value,
+    )
+    const selectReport = createSelector(
+      [selectIncompleteCount, selectCounterValue],
+      (incomplete, value) => ({
+        label: `${incomplete} open / ${value} clicks`,
+      }),
+    )
+
+    function Report() {
+      return <div data-testid="report">{useSelector(selectReport).label}</div>
+    }
+    function Mirror() {
+      return <div data-testid="mirror">{useSelector(selectReport).label}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <Report />
+        <Mirror />
+      </Provider>,
+    )
+    expect(getByTestId('report').textContent).toBe('1 open / 0 clicks')
+
+    incrementTimes(store, 2)
+    expect(getByTestId('report').textContent).toBe('1 open / 2 clicks')
+    expect(getByTestId('mirror').textContent).toBe('1 open / 2 clicks')
+
+    rtl.act(() => {
+      store.dispatch({ type: 'toggle', id: 2 })
+    })
+    expect(getByTestId('report').textContent).toBe('2 open / 2 clicks')
+    expect(getByTestId('mirror').textContent).toBe('2 open / 2 clicks')
+
+    incrementTimes(store, 1)
+    expect(getByTestId('report').textContent).toBe('2 open / 3 clicks')
+    expect(getByTestId('mirror').textContent).toBe('2 open / 3 clicks')
+  })
+
+  it('lruMemoize for both memoize and argsMemoize keeps updating', () => {
+    const store = makeStore()
+    const selectDoubled = createSelector(
+      [(s: RootState) => s.counter.value],
+      (value) => ({ doubled: value * 2 }),
+      {
+        memoize: lruMemoize,
+        argsMemoize: lruMemoize,
+        devModeChecks: { identityFunctionCheck: 'never' },
+      },
+    )
+
+    function A() {
+      const doubled = useSelector((s: RootState) => selectDoubled(s).doubled)
+      return <div data-testid="a">{doubled}</div>
+    }
+    function B() {
+      return <div data-testid="b">{useSelector(selectDoubled).doubled}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <A />
+        <B />
+      </Provider>,
+    )
+    for (const expected of ['2', '4', '6']) {
+      incrementTimes(store, 1)
+      expect(getByTestId('a').textContent).toBe(expected)
+      expect(getByTestId('b').textContent).toBe(expected)
+    }
+  })
+
+  it('a selector memoized on a slice, not the root, stays correct and skips unrelated slices', () => {
+    // Here the cache key is `s.todos`, which the hook reads before calling
+    // the memoized helper, so that read is tracked even when the helper
+    // itself short-circuits.
+    const store = makeStore()
+    let resultRuns = 0
+    const selectTexts = createSelector([(todos: Todo[]) => todos], (todos) => {
+      resultRuns++
+      return todos.map((t) => t.text).join(',')
+    })
+
+    let renders = 0
+    function Texts() {
+      renders++
+      const texts = useSelector((s: RootState) => selectTexts(s.todos))
+      return <div data-testid="texts">{texts}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <Texts />
+      </Provider>,
+    )
+    expect(getByTestId('texts').textContent).toBe('write tests,review code')
+    expect(renders).toBe(1)
+    expect(resultRuns).toBe(1)
+
+    incrementTimes(store, 2)
+    expect(renders).toBe(1)
+    expect(resultRuns).toBe(1)
+
+    for (const [id, text] of [
+      [1, 'ship it'],
+      [2, 'merge it'],
+    ] as const) {
+      rtl.act(() => {
+        store.dispatch({ type: 'editText', id, text })
+      })
+    }
+    expect(getByTestId('texts').textContent).toBe('ship it,merge it')
+    expect(renders).toBe(3)
+    expect(resultRuns).toBe(3)
+  })
+
+  it('calling the same memoized selector with raw state outside React does not break the hook', () => {
+    const store = makeStore()
+    const selectDoubled = selectSummary()
+
+    function A() {
+      return <div data-testid="a">{useSelector(selectDoubled).doubled}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <A />
+      </Provider>,
+    )
+
+    for (const expected of ['2', '4', '6']) {
+      incrementTimes(store, 1)
+      // A thunk or listener reading through the same selector with the
+      // raw state populates a separate cache entry.
+      expect(selectDoubled(store.getState()).doubled).toBe(Number(expected))
+      expect(getByTestId('a').textContent).toBe(expected)
+    }
+  })
+
+  it('documented limitation: a cache that never reads state cannot be tracked', () => {
+    // Same result in both implementations — stock useSelector returns the
+    // stale cached object too. Pinned so the behavior is deliberate.
+    const store = makeStore()
+    let cached: { doubled: number } | undefined
+    const selectOnce = (s: RootState) => {
+      if (cached === undefined) cached = { doubled: s.counter.value * 2 }
+      return cached
+    }
+
+    function A() {
+      return <div data-testid="a">{useSelector(selectOnce).doubled}</div>
+    }
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <A />
+      </Provider>,
+    )
+    incrementTimes(store, 2)
+    expect(getByTestId('a').textContent).toBe('0')
+  })
+})

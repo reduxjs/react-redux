@@ -455,4 +455,99 @@ describe('edge cases: React integration', () => {
       expect(html).toContain('all')
     })
   })
+
+  describe('conditional reads', () => {
+    // Dependencies are rebuilt from scratch on every evaluation, so a
+    // branch that was not read the first time still becomes a dependency
+    // as soon as the selector starts reading it.
+    it('tracks the branch that is read after a toggle flips', () => {
+      let selectorRuns = 0
+      let renders = 0
+      const selectByFilter = (s: TestState) => {
+        selectorRuns++
+        return s.filter === 'all'
+          ? s.counters.counter1.value
+          : s.counters.counter2.value
+      }
+      function Value() {
+        renders++
+        const value = useSignalSelector(selectByFilter)
+        return <div data-testid="value">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Value />
+        </SignalProvider>,
+      )
+      expect(getByTestId('value').textContent).toBe('0')
+      expect(renders).toBe(1)
+
+      // counter2 is not read yet: no evaluation, no render.
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter2'))
+      })
+      expect(getByTestId('value').textContent).toBe('0')
+      expect(renders).toBe(1)
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+      })
+      expect(getByTestId('value').textContent).toBe('43')
+      expect(renders).toBe(2)
+
+      // Now counter2 IS a dependency and counter1 no longer is.
+      const runsBefore = selectorRuns
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter2'))
+      })
+      expect(getByTestId('value').textContent).toBe('44')
+      expect(renders).toBe(3)
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+      expect(getByTestId('value').textContent).toBe('44')
+      expect(renders).toBe(3)
+      expect(selectorRuns).toBe(runsBefore + 1)
+    })
+
+    it('drops a dependency that an early return stops reading', () => {
+      let selectorRuns = 0
+      function Value() {
+        const value = useSignalSelector((s: TestState) => {
+          selectorRuns++
+          if (s.settings.theme === 'light') return 'light mode'
+          return `${s.settings.theme}/${s.settings.fontSize}`
+        })
+        return <div data-testid="value">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Value />
+        </SignalProvider>,
+      )
+      expect(getByTestId('value').textContent).toBe('dark/12')
+
+      rtl.act(() => {
+        store.dispatch(settingsSlice.actions.setFontSize(14))
+      })
+      expect(getByTestId('value').textContent).toBe('dark/14')
+
+      rtl.act(() => {
+        store.dispatch(settingsSlice.actions.setTheme('light'))
+      })
+      expect(getByTestId('value').textContent).toBe('light mode')
+
+      // fontSize is no longer read past the early return, so changing it
+      // must not evaluate the selector at all.
+      const runsBefore = selectorRuns
+      rtl.act(() => {
+        store.dispatch(settingsSlice.actions.setFontSize(16))
+      })
+      expect(getByTestId('value').textContent).toBe('light mode')
+      expect(selectorRuns).toBe(runsBefore)
+    })
+  })
 })
