@@ -31,6 +31,28 @@ function isIndexProp(prop: string): boolean {
   return c >= 48 && c <= 57
 }
 
+// Dev-mode check: how many consecutive memoized re-reads of one primitive
+// path within a single evaluation trigger the "hoist this read" warning.
+const REPEATED_READ_WARN_THRESHOLD = 100
+
+const repeatedReadWarnings = new WeakMap<PathSignalRegistry, Set<string>>()
+
+function warnRepeatedRead(registry: PathSignalRegistry, pathKey: string) {
+  let warned = repeatedReadWarnings.get(registry)
+  if (!warned) {
+    warned = new Set()
+    repeatedReadWarnings.set(registry, warned)
+  }
+  if (warned.has(pathKey)) return
+  warned.add(pathKey)
+  console.warn(
+    `[react-redux] useSignalSelector: a selector read '${pathKey}' ` +
+      `${REPEATED_READ_WARN_THRESHOLD}+ times in a single evaluation. ` +
+      'Reads through the tracked state proxy cost more than plain property ' +
+      'reads — hoist the value into a local before looping.',
+  )
+}
+
 /**
  * Maps proxy objects to their path keys.
  * Used by useSignalSelector to detect when a selector returns a proxy (object)
@@ -256,10 +278,27 @@ export function createTrackingProxy<T extends object>(
   // that cache every time. Result functions stay memoized because their
   // inputs are child proxies, which ARE cached by target identity.
   const isRoot = parentPath === ''
-  if (!isRoot) {
+  if (isRoot) {
+    registry.evalEpoch++
+  } else {
     const cached = cache.get(target)
     if (cached) return cached as T
   }
+
+  // Last-read memo for primitive leaves. Within one evaluation a repeated
+  // read of the same prop is idempotent: state is immutable so the value
+  // cannot change, the signal dependency is already linked, and the leaf
+  // tracker already marked this object as traversed. Selectors that loop
+  // over a collection while comparing against one proxied field
+  // (`items.filter(i => i.ownerId === user.id)`) hit this path once per
+  // element, so skipping the path-key/registry/signal lookups matters.
+  // The memo is scoped by registry.evalEpoch, not by tracker identity:
+  // useSignalSelector reuses one tracker across evaluations, and a stale
+  // hit on a later evaluation would silently drop the dependency.
+  let lastEpoch = -1
+  let lastProp: string | undefined
+  let lastValue: unknown
+  let repeatCount = 0
 
   // Use an unfrozen shell as the proxy target to avoid ES Proxy invariant
   // violations with frozen objects. The shell copies the target's prototype
@@ -292,6 +331,15 @@ export function createTrackingProxy<T extends object>(
     get(_obj, prop, _receiver) {
       // Symbols: read from actual target (iterator protocol, toStringTag, etc.)
       if (typeof prop === 'symbol') return Reflect.get(target, prop)
+
+      if (prop === lastProp && registry.evalEpoch === lastEpoch) {
+        if (process.env.NODE_ENV !== 'production') {
+          if (++repeatCount === REPEATED_READ_WARN_THRESHOLD) {
+            warnRepeatedRead(registry, getPathKey(prop))
+          }
+        }
+        return lastValue
+      }
 
       const value = (target as Record<string, unknown>)[prop]
       const leafTracker = registry.leafTrackerHolder.current
@@ -406,7 +454,11 @@ export function createTrackingProxy<T extends object>(
       // covered by diff's added-key handling firing the leaf path.
       registry.getOrCreate(pathKey, value).get()
 
-      // Return the actual value
+      lastEpoch = registry.evalEpoch
+      lastProp = prop as string
+      lastValue = value
+      repeatCount = 0
+
       return value
     },
 
