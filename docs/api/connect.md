@@ -10,9 +10,15 @@ description: 'API > connect: a Higher-Order Component to interact with Redux'
 
 # `connect()`
 
-:::tip
+:::warning Deprecated
 
-`connect` still works and is supported in React-Redux 8.x. However, [**we recommend using the hooks API as the default**](./hooks.md).
+`connect` is marked as deprecated as of React-Redux 9.3.0. It still works, and we do not intend to remove it, but [**we recommend using the hooks API instead**](./hooks.md). See [Migrating to Modern Redux: Modernizing React Components](/usage/migrating-to-modern-redux#modernizing-react-components-with-react-redux) for how to convert `connect` usage to hooks.
+
+The `@deprecated` marker only adds a strikethrough in your editor. If you want to keep using `connect` without that, import the `legacy_connect` alias instead:
+
+```js
+import { legacy_connect as connect } from 'react-redux'
+```
 
 :::
 
@@ -161,7 +167,7 @@ For more details on recommended usage, please refer to [our guide on using `mapD
 
 #### Object Shorthand Form
 
-`mapDispatchToProps` may be an object where each field is an [action creator](https://redux.js.org/glossary#action-creator).
+`mapDispatchToProps` may be an object where each field is an [action creator](/understanding/thinking-in-redux/glossary#action-creator).
 
 ```js
 import { addTodo, deleteTodo, toggleTodo } from './actionCreators'

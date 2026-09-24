@@ -1,144 +1,22 @@
 ---
 id: usage-with-typescript
-title: Usage with TypeScript
+title: Typing connect with TypeScript
 hide_title: true
-sidebar_label: Usage with TypeScript
-description: 'Usage > TypeScript: how to correctly type React Redux APIs'
+sidebar_label: 'Connect: Usage with TypeScript'
+description: 'Usage > TypeScript: how to type the legacy connect API'
 ---
 
 &nbsp;
 
-# Usage with TypeScript
+# Typing `connect` with TypeScript
 
-As of React-Redux v8, React-Redux is fully written in TypeScript, and the types are included in the published package. The types also export some helpers to make it easier to write typesafe interfaces between your Redux store and your React components.
+:::warning Deprecated
 
-:::info
-
-The recently updated `@types/react@18` major version has changed component definitions to remove having `children` as a prop by default. This causes errors if you have multiple copies of `@types/react` in your project. To fix this, tell your package manager to resolve `@types/react` to a single version. Details:
-
-https://github.com/facebook/react/issues/24304#issuecomment-1094565891
+`connect` is marked as deprecated as of React-Redux 9.3.0. It still works, and we do not intend to remove it, but [**we recommend using the hooks API instead**](../api/hooks.md). The hooks are also much simpler to type. For the standard TypeScript setup with `RootState`, `AppDispatch`, and pre-typed `useAppSelector` / `useAppDispatch` hooks, see [**Usage with TypeScript**](/usage/usage-with-typescript) in the Redux docs.
 
 :::
 
-## Standard Redux Toolkit Project Setup with TypeScript
-
-We assume that a typical Redux project is using Redux Toolkit and React Redux together.
-
-[Redux Toolkit](https://redux-toolkit.js.org) (RTK) is the standard approach for writing modern Redux logic. RTK is already written in TypeScript, and its API is designed to provide a good experience for TypeScript usage.
-
-The [Redux+TS template for Vite](https://github.com/reduxjs/redux-templates/tree/master/packages/vite-template-redux) comes with a working example of these patterns already configured.
-
-### Define Root State and Dispatch Types
-
-Using [configureStore](https://redux-toolkit.js.org/api/configureStore) should not need any additional typings. You will, however, want to extract the `RootState` type and the `Dispatch` type so that they can be referenced as needed. Inferring these types from the store itself means that they correctly update as you add more state slices or modify middleware settings.
-
-Since those are types, it's safe to export them directly from your store setup file such as `app/store.ts` and import them directly into other files.
-
-```ts title="app/store.ts"
-import { configureStore } from '@reduxjs/toolkit'
-// ...
-
-const store = configureStore({
-  reducer: {
-    posts: postsReducer,
-    comments: commentsReducer,
-    users: usersReducer,
-  },
-})
-
-// highlight-start
-// Infer the `RootState` and `AppDispatch` types from the store itself
-export type RootState = ReturnType<typeof store.getState>
-// Inferred type: {posts: PostsState, comments: CommentsState, users: UsersState}
-export type AppDispatch = typeof store.dispatch
-// highlight-end
-```
-
-### Define Typed Hooks
-
-While it's possible to import the `RootState` and `AppDispatch` types into each component, it's better to **create pre-typed versions of the `useDispatch` and `useSelector` hooks for usage in your application**. This is important for a couple reasons:
-
-- For `useSelector`, it saves you the need to type `(state: RootState)` every time
-- For `useDispatch`, the default `Dispatch` type does not know about thunks or other middleware. In order to correctly dispatch thunks, you need to use the specific customized `AppDispatch` type from the store that includes the thunk middleware types, and use that with `useDispatch`. Adding a pre-typed `useDispatch` hook keeps you from forgetting to import `AppDispatch` where it's needed.
-
-Since these are actual variables, not types, it's important to define them in a separate file such as `app/hooks.ts`, not the store setup file. This allows you to import them into any component file that needs to use the hooks, and avoids potential circular import dependency issues.
-
-#### `.withTypes()`
-
-Previously, the approach for "pre-typing" hooks with your app setting was a little varied. The result would look something like the snippet below:
-
-```ts title="app/hooks.ts"
-import type { TypedUseSelectorHook } from 'react-redux'
-import { useDispatch, useSelector, useStore } from 'react-redux'
-import type { AppDispatch, AppStore, RootState } from './store'
-
-// highlight-start
-// Use throughout your app instead of plain `useDispatch` and `useSelector`
-export const useAppDispatch: () => AppDispatch = useDispatch
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
-export const useAppStore: () => AppStore = useStore
-// highlight-end
-```
-
-React Redux v9.1.0 adds a new `.withTypes` method to each of these hooks, analogous to the [`.withTypes`](https://redux-toolkit.js.org/usage/usage-with-typescript#defining-a-pre-typed-createasyncthunk) method found on Redux Toolkit's `createAsyncThunk`.
-
-The setup now becomes:
-
-```ts title="app/hooks.ts"
-import { useDispatch, useSelector, useStore } from 'react-redux'
-import type { AppDispatch, AppStore, RootState } from './store'
-
-// highlight-start
-// Use throughout your app instead of plain `useDispatch` and `useSelector`
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
-export const useAppSelector = useSelector.withTypes<RootState>()
-export const useAppStore = useStore.withTypes<AppStore>()
-// highlight-end
-```
-
-## Typing Hooks Manually
-
-We recommend using the pre-typed `useAppSelector` and `useAppDispatch` hooks shown above. If you prefer not to use those, here is how to type the hooks by themselves.
-
-### Typing the `useSelector` hook
-
-When writing selector functions for use with `useSelector`, you should explicitly define the type of the `state` parameter. TS should be able to then infer the return type of the selector, which will be reused as the return type of the `useSelector` hook:
-
-```ts
-interface RootState {
-  isOn: boolean
-}
-
-// TS infers type: (state: RootState) => boolean
-const selectIsOn = (state: RootState) => state.isOn
-
-// TS infers `isOn` is boolean
-const isOn = useSelector(selectIsOn)
-```
-
-This can also be done inline as well:
-
-```ts
-const isOn = useSelector((state: RootState) => state.isOn)
-```
-
-### Typing the `useDispatch` hook
-
-By default, the return value of `useDispatch` is the standard `Dispatch` type defined by the Redux core types, so no declarations are needed:
-
-```ts
-const dispatch = useDispatch()
-```
-
-If you have a customized version of the `Dispatch` type, you may use that type explicitly:
-
-```ts
-// store.ts
-export type AppDispatch = typeof store.dispatch
-
-// MyComponent.tsx
-const dispatch: AppDispatch = useDispatch()
-```
+React-Redux is written in TypeScript, and the types are included in the published package. This page covers the patterns for typing the `connect` higher-order component.
 
 ## Typing the `connect` higher order component
 
@@ -271,15 +149,12 @@ However, inferring the type of `mapDispatch` this way will break if it is define
 
 ## Recommendations
 
-The hooks API is generally simpler to use with static types. **If you're looking for the easiest solution for using static types with React-Redux, use the hooks API.**
-
 If you're using `connect`, **we recommend using the `ConnectedProps<T>` approach for inferring the props from Redux**, as that requires the fewest explicit type declarations.
+
+If you're able to migrate, the hooks API is simpler to type. See [Migrating to Modern Redux: Modernizing React Components](/usage/migrating-to-modern-redux#modernizing-react-components-with-react-redux) for how to convert `connect` usage to hooks.
 
 ## Resources
 
-For additional information, see these additional resources:
-
-- [Redux docs: Usage with TypeScript](https://redux.js.org/recipes/usage-with-typescript): Examples of how to use Redux Toolkit, the Redux core, and React Redux with TypeScript
-- [Redux Toolkit docs: TypeScript Quick start](https://redux-toolkit.js.org/tutorials/typescript): shows how to use RTK and the React-Redux hooks API with TypeScript
-- [React+TypeScript Cheatsheet](https://github.com/typescript-cheatsheets/react-typescript-cheatsheet): a comprehensive guide to using React with TypeScript
-- [React + Redux in TypeScript Guide](https://github.com/piotrwitek/react-redux-typescript-guide): extensive information on patterns for using React and Redux with TypeScript
+- [Redux docs: Usage with TypeScript](/usage/usage-with-typescript): the standard TypeScript setup for Redux Toolkit and the React-Redux hooks
+- [Redux docs: Quick Start](/tutorials/quick-start): shows how to use RTK and the React-Redux hooks API with TypeScript
+- [React+TypeScript Cheatsheet](https://github.com/typescript-cheatsheets/react): a comprehensive guide to using React with TypeScript
