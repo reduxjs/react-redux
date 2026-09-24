@@ -95,6 +95,11 @@ export interface PathSignalRegistry {
    *  building its own. */
   rootPathKeyCache: Map<string, string>
 
+  /** Incremented each time a root tracking proxy is created, i.e. once
+   *  per selector evaluation. Proxies use it to scope their last-read
+   *  memo to the current evaluation. */
+  evalEpoch: number
+
   /** Holder for the leaf tracker of the evaluation currently running.
    *  Proxies read this at trap time instead of closing over a tracker,
    *  so cached proxies record into whichever evaluation is active. */
@@ -587,6 +592,7 @@ export function createPathSignalRegistry(
     proxyCache: proxyWeakMap,
 
     rootPathKeyCache: new Map(),
+    evalEpoch: 0,
 
     leafTrackerHolder: { current: undefined },
 

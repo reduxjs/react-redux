@@ -868,6 +868,186 @@ describe('unwrap', () => {
   })
 })
 
+// ─── Repeated-read memo ───
+// Within one evaluation, re-reading the same primitive prop on the same
+// proxy returns the memoized value without touching the registry. The memo
+// must NOT survive into the next evaluation, or the dependency would be
+// silently dropped when alien-signals re-records deps.
+
+describe('repeated-read memo', () => {
+  function mountComputed<T>(registry: PathSignalRegistry, body: () => T) {
+    const scope = alienEngine.createScope()
+    let evals = 0
+    const c = scope.run(() =>
+      alienEngine.computed(() => {
+        evals++
+        return body()
+      }),
+    )
+    return { c, scope, getEvals: () => evals }
+  }
+
+  it('serves repeated reads of a primitive from the memo without extra registry lookups', () => {
+    const state = Object.freeze({ user: Object.freeze({ id: 7 }) })
+    const registry = makeRegistry()
+    const getOrCreate = vi.spyOn(registry, 'getOrCreate')
+    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+
+    const user = proxy.user
+    const before = getOrCreate.mock.calls.length
+    for (let i = 0; i < 10; i++) {
+      expect(user.id).toBe(7)
+    }
+    // One lookup for the first read, none for the nine memo hits
+    expect(getOrCreate.mock.calls.length).toBe(before + 1)
+  })
+
+  it('re-links the dependency on the next evaluation even when the read is repeated', () => {
+    let state = { user: { id: 7 }, other: 0 }
+    const registry = makeRegistry()
+    const { c, scope, getEvals } = mountComputed(registry, () => {
+      const proxy = createTrackingProxy(
+        state,
+        '',
+        registry,
+        registry.proxyCache,
+      )
+      // Read `user.id` twice: the second read hits the memo in this evaluation
+      return proxy.user.id + proxy.user.id + proxy.other
+    })
+
+    expect(c.get()).toBe(14)
+    expect(getEvals()).toBe(1)
+
+    // Change only `other`: the computed re-runs and reuses the same `user`
+    // child proxy (cached by target identity). alien-signals re-records
+    // deps on every run, so if the memo outlived the first evaluation the
+    // `user.id` read would be served without touching its signal and the
+    // dependency would be dropped here.
+    let next = { ...state, other: 1 }
+    reconcileState(state, next, registry, alienEngine)
+    state = next
+    expect(c.get()).toBe(15)
+    expect(getEvals()).toBe(2)
+
+    // A `user.id` change must still be observed
+    next = { ...state, user: { id: 8 } }
+    reconcileState(state, next, registry, alienEngine)
+    state = next
+    expect(c.get()).toBe(17)
+    expect(getEvals()).toBe(3)
+
+    scope.stop()
+  })
+
+  it('does not leak a memoized read across two computeds sharing a cached child proxy', () => {
+    let state = { user: { id: 7, name: 'a' } }
+    const registry = makeRegistry()
+    const a = mountComputed(registry, () => {
+      const proxy = createTrackingProxy(
+        state,
+        '',
+        registry,
+        registry.proxyCache,
+      )
+      return proxy.user.id
+    })
+    const b = mountComputed(registry, () => {
+      const proxy = createTrackingProxy(
+        state,
+        '',
+        registry,
+        registry.proxyCache,
+      )
+      // Same cached `user` proxy, same prop, different evaluation: B must
+      // register its own dependency rather than reuse A's memo hit
+      return proxy.user.id
+    })
+
+    expect(a.c.get()).toBe(7)
+    expect(b.c.get()).toBe(7)
+
+    const next = { user: { id: 8, name: 'a' } }
+    reconcileState(state, next, registry, alienEngine)
+    state = next
+
+    expect(a.c.get()).toBe(8)
+    expect(b.c.get()).toBe(8)
+    expect(a.getEvals()).toBe(2)
+    expect(b.getEvals()).toBe(2)
+
+    a.scope.stop()
+    b.scope.stop()
+  })
+
+  it('warns once per path in dev when a primitive is re-read 100+ times in one evaluation', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const state = Object.freeze({
+        post: Object.freeze({ id: 3 }),
+        comments: Object.freeze(
+          Array.from({ length: 150 }, (_, i) =>
+            Object.freeze({ postId: i % 5 }),
+          ),
+        ),
+      })
+      const registry = makeRegistry()
+      const proxy = createTrackingProxy(
+        state,
+        '',
+        registry,
+        registry.proxyCache,
+      )
+
+      // Loop shape from a Reselect result function: `post` is a proxied
+      // input, `comments` is raw
+      const post = proxy.post
+      const count = state.comments.filter((c) => c.postId === post.id).length
+      expect(count).toBe(30)
+
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(warn.mock.calls[0][0]).toMatch(/read 'post\.id' 100\+ times/)
+
+      // Same path again in a fresh evaluation: no second warning
+      const proxy2 = createTrackingProxy(
+        state,
+        '',
+        registry,
+        registry.proxyCache,
+      )
+      const post2 = proxy2.post
+      state.comments.filter((c) => c.postId === post2.id)
+      expect(warn).toHaveBeenCalledTimes(1)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('does not warn for reads below the threshold or for alternating props', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const state = Object.freeze({ user: Object.freeze({ id: 1, role: 'x' }) })
+      const registry = makeRegistry()
+      const proxy = createTrackingProxy(
+        state,
+        '',
+        registry,
+        registry.proxyCache,
+      )
+      const user = proxy.user
+
+      for (let i = 0; i < 99; i++) user.id
+      for (let i = 0; i < 200; i++) {
+        user.id
+        user.role
+      }
+      expect(warn).not.toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
+  })
+})
+
 // ─── Array method dependency tracking ───
 // These tests verify which signals are registered when using array methods
 // through the tracking proxy, and whether state changes trigger re-evaluation.
