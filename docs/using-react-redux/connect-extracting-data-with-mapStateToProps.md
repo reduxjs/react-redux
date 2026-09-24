@@ -234,4 +234,3 @@ function mapStateToProps(...args) {
 
 - [Why Is My Component Re-Rendering Too Often?](/faq/react-redux#why-is-my-component-re-rendering-too-often)
 - [Why isn't my component re-rendering, or my mapStateToProps running](/faq/react-redux#why-isnt-my-component-re-rendering)
-- [How can I speed up my mapStateToProps?](/faq/react-redux#why-is-my-component-re-rendering-too-often)
