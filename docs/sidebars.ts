@@ -3,6 +3,20 @@
 // library reads this file. It has no imports because it is loaded from a copy of
 // this folder inside the redux repo's website build.
 
+// The subset of Docusaurus's `SidebarsConfig` type that this file uses. The
+// site build validates the full sidebar schema and that every doc id exists.
+type SidebarItem =
+  | string
+  | { type: 'doc'; id: string; label?: string }
+  | { type: 'link'; label: string; href: string }
+  | {
+      type: 'category'
+      label: string
+      collapsed?: boolean
+      collapsible?: boolean
+      items: SidebarItem[]
+    }
+
 const sidebars = {
   docs: [
     {
@@ -61,6 +75,6 @@ const sidebars = {
       ],
     },
   ],
-}
+} satisfies Record<string, SidebarItem[]>
 
 export default sidebars
