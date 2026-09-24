@@ -14,7 +14,9 @@ description: 'Introduction > Getting Started: First steps with React Redux'
 
 ## Installation
 
-React Redux 8.x requires **React 16.8.3 or later** / **React Native 0.59 or later**, in order to make use of React Hooks.
+React Redux 9.x requires **React 18 or later** / **React Native 0.69 or later**. It works with Redux 5 and Redux Toolkit 2.
+
+If your app is still on React 16.8 or 17, use React Redux 8.x, which requires **React 16.8.3 or later** / **React Native 0.59 or later**.
 
 ### Create a React Redux App
 
