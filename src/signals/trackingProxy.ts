@@ -182,7 +182,9 @@ export function unwrap<T>(value: T): T {
  * Child proxies are cached in `registry.proxyCache`, keyed by target
  * identity. The cache persists across evaluations and dispatches, so an
  * unchanged subtree yields the same proxy object every time — selector
- * results built from those proxies stay referentially equal.
+ * results built from those proxies stay referentially equal. The root
+ * proxy is the exception: it is created fresh on every call so that
+ * caches keyed on the state argument cannot skip the selector body.
  * @param target - The frozen state object to wrap
  * @param parentPath - Dot-separated path to this object in the state tree
  * @param registry - Signal registry for dependency tracking
@@ -207,9 +209,18 @@ export function createTrackingProxy<T extends object>(
     registry.leafTrackerHolder.current = leafTracker
   }
 
-  // Check proxy cache — reuse proxy if we've already wrapped this exact object
-  const cached = cache.get(target)
-  if (cached) return cached as T
+  // The root proxy is never cached: every evaluation gets a fresh one.
+  // Memoized selectors (Reselect's argsMemoize, WeakMap caches keyed on
+  // the state argument) short-circuit when handed an argument they have
+  // seen before, and a short-circuited call reads no state properties, so
+  // the evaluation would record no dependencies. A fresh root defeats
+  // that cache every time. Result functions stay memoized because their
+  // inputs are child proxies, which ARE cached by target identity.
+  const isRoot = parentPath === ''
+  if (!isRoot) {
+    const cached = cache.get(target)
+    if (cached) return cached as T
+  }
 
   // Use an unfrozen shell as the proxy target to avoid ES Proxy invariant
   // violations with frozen objects. The shell copies the target's prototype
@@ -425,7 +436,9 @@ export function createTrackingProxy<T extends object>(
   }) as T
 
   // Cache by target identity — unchanged Immer subtrees reuse same proxy
-  cache.set(target, proxy)
+  if (!isRoot) {
+    cache.set(target, proxy)
+  }
   proxyPathMap.set(proxy as object, parentPath)
   proxyTargetMap.set(proxy as object, target)
 

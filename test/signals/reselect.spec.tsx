@@ -2,15 +2,17 @@
  * Reselect interop. Runs against both implementations via the
  * `react-redux` alias in vitest.config.mts.
  *
- * The interesting interaction is in signals mode: `weakMapMemoize`
- * (Reselect 5's default) caches on the state argument's identity, and
- * the signals implementation passes a tracking proxy as that argument.
- * The proxy for a given state object is cached and reused, so when the
- * hook re-runs a memoized selector with an unchanged state, Reselect
- * short-circuits WITHOUT touching any state properties. Dependency
- * tracking must survive those cache-hit runs — a hook must never end up
- * with an empty dependency set just because one of its evaluations was
- * a memoization hit.
+ * The interesting interaction is in signals mode. Reselect memoizes a
+ * selector on its arguments (`argsMemoize`) before running any input
+ * selector, and the signals implementation passes a tracking proxy as
+ * the state argument. If two evaluations were handed the same proxy, the
+ * second would be an args-cache hit that reads no state properties, and
+ * the hook would record no dependencies. The implementation therefore
+ * hands every evaluation a fresh root proxy, so the args layer always
+ * misses, while child proxies stay cached by target identity so the
+ * result layer still memoizes on unchanged inputs. The tests here pin
+ * both halves: hooks keep updating, and result functions do not rerun
+ * for unrelated changes.
  */
 import { configureStore } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
@@ -60,7 +62,10 @@ const makeStore = () =>
       },
       counter: (state: { value: number } = { value: 0 }, action: any) =>
         action.type === 'increment' ? { value: state.value + 1 } : state,
-      filter: (state = { showCompleted: true }, action: any) =>
+      filter: (
+        state: { showCompleted: boolean } = { showCompleted: true },
+        action: any,
+      ) =>
         action.type === 'setFilter' ? { showCompleted: action.payload } : state,
     },
   })
