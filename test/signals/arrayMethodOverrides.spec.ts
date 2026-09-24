@@ -38,14 +38,14 @@ describe('Array method overrides on tracking proxy', () => {
     })
 
   describe('find()', () => {
-    test('returns found item as proxy', () => {
+    test('returns the raw found item with an identity dependency', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy, registry } = setup(state)
       const found = proxy.items.find((item) => item.id === 3)
-      expect(found).toBeDefined()
-      expect(found!.value).toBe(30)
-      // Verify it's a proxy (has a path)
-      expect(getProxyPath(found)).toBeDefined()
+      expect(found).toBe(state.items[2])
+      expect(getProxyPath(found)).toBeUndefined()
+      expect(registry.has('items.{id:3}')).toBe(true)
+      expect(registry.has('items.{id:2}')).toBe(false)
     })
 
     test('returns undefined when not found', () => {
@@ -132,7 +132,7 @@ describe('Array method overrides on tracking proxy', () => {
   })
 
   describe('findLast()', () => {
-    test('returns last matching item as proxy', () => {
+    test('returns the raw last matching item with an identity dependency', () => {
       const state = deepFreeze({
         items: [
           { id: 1, type: 'A' },
@@ -140,11 +140,11 @@ describe('Array method overrides on tracking proxy', () => {
           { id: 3, type: 'A' },
         ],
       })
-      const { proxy } = setup(state)
+      const { proxy, registry } = setup(state)
       const found = proxy.items.findLast((item) => item.type === 'A')
-      expect(found).toBeDefined()
-      expect(found!.id).toBe(3)
-      expect(getProxyPath(found)).toBeDefined()
+      expect(found).toBe(state.items[2])
+      expect(registry.has('items.{id:3}')).toBe(true)
+      expect(registry.has('items.{id:1}')).toBe(false)
     })
 
     test('returns undefined when not found', () => {
@@ -228,18 +228,13 @@ describe('Array method overrides on tracking proxy', () => {
   })
 
   describe('filter()', () => {
-    test('returns filtered items as proxies', () => {
+    test('returns the raw matching items', () => {
       const state = createTestData()
       const { proxy } = setup(state)
       const filtered = proxy.items.filter((item) => item.value > 25)
-      expect(filtered).toHaveLength(3)
-      expect(filtered[0].id).toBe(3)
-      expect(filtered[1].id).toBe(4)
-      expect(filtered[2].id).toBe(5)
-      // Each result should be a proxy
-      for (const item of filtered) {
-        expect(getProxyPath(item)).toBeDefined()
-      }
+      expect(filtered).toEqual([state.items[2], state.items[3], state.items[4]])
+      expect(filtered[0]).toBe(state.items[2])
+      expect(getProxyPath(filtered[0])).toBeUndefined()
     })
 
     test('callback receives scan recorder, not tracking proxies', () => {
@@ -254,17 +249,16 @@ describe('Array method overrides on tracking proxy', () => {
       expect(unwrapped).toEqual([...state.items])
     })
 
-    test('only registers signals for matching elements', () => {
+    test('registers identity signals for matching elements only', () => {
       const state = createTestData()
       const { proxy, registry } = setup(state)
       const filtered = proxy.items.filter((item) => item.id === 3)
-      // Access a property on the result
-      const _val = filtered[0].value
-
-      // Should have signal for the matching item, not others
-      expect(registry.has('items.{id:3}.value')).toBe(true)
-      expect(registry.has('items.{id:1}.value')).toBe(false)
-      expect(registry.has('items.{id:2}.value')).toBe(false)
+      // Reads on the raw result are not tracked; the element identity is
+      expect(filtered[0].value).toBe(30)
+      expect(registry.has('items.{id:3}')).toBe(true)
+      expect(registry.has('items.{id:3}.value')).toBe(false)
+      expect(registry.has('items.{id:1}')).toBe(false)
+      expect(registry.has('items.{id:2}')).toBe(false)
     })
 
     test('filtered items give access to nested properties', () => {
@@ -305,26 +299,21 @@ describe('Array method overrides on tracking proxy', () => {
   })
 
   describe('slice()', () => {
-    test('returns sliced items as proxies', () => {
+    test('returns the raw sliced items', () => {
       const state = createTestData()
       const { proxy } = setup(state)
       const sliced = proxy.items.slice(1, 3)
-      expect(sliced).toHaveLength(2)
-      expect(sliced[0].id).toBe(2)
-      expect(sliced[1].id).toBe(3)
-      for (const item of sliced) {
-        expect(getProxyPath(item)).toBeDefined()
-      }
+      expect(sliced).toEqual([state.items[1], state.items[2]])
+      expect(sliced[0]).toBe(state.items[1])
+      expect(getProxyPath(sliced[0])).toBeUndefined()
     })
 
-    test('slice with no arguments returns all as proxies', () => {
+    test('slice with no arguments returns a raw copy of all items', () => {
       const state = createTestData()
       const { proxy } = setup(state)
       const sliced = proxy.items.slice()
-      expect(sliced).toHaveLength(5)
-      for (const item of sliced) {
-        expect(getProxyPath(item)).toBeDefined()
-      }
+      expect(sliced).toEqual([...state.items])
+      expect(sliced).not.toBe(state.items)
     })
 
     test('slice with negative indices', () => {
@@ -352,14 +341,14 @@ describe('Array method overrides on tracking proxy', () => {
       expect(sliced).toHaveLength(5)
     })
 
-    test('only registers signals for sliced elements', () => {
+    test('registers identity signals for sliced elements only', () => {
       const state = createTestData()
       const { proxy, registry } = setup(state)
-      const sliced = proxy.items.slice(2, 3) // just item at index 2 (id: 3)
-      const _val = sliced[0].value
+      proxy.items.slice(2, 3) // just item at index 2 (id: 3)
 
-      expect(registry.has('items.{id:3}.value')).toBe(true)
-      expect(registry.has('items.{id:1}.value')).toBe(false)
+      expect(registry.has('items.{id:3}')).toBe(true)
+      expect(registry.has('items.{id:1}')).toBe(false)
+      expect(registry.has('items.{id:2}')).toBe(false)
     })
   })
 
@@ -569,17 +558,88 @@ describe('Array method overrides on tracking proxy', () => {
     })
   })
 
-  describe('Non-overridden methods (pass-through)', () => {
-    test('map() callbacks receive proxied values', () => {
+  describe('map()', () => {
+    test('primitive results register a column signal, not element signals', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
-      const mapped = proxy.items.map((item) => {
-        // map is NOT overridden — callback should receive proxy
-        return item.value * 2
-      })
+      const { proxy, registry } = setup(state)
+      const mapped = proxy.items.map((item) => item.value * 2)
       expect(mapped).toEqual([20, 40, 60, 80, 100])
+      expect(registry.has('items.{*}.value')).toBe(true)
+      expect(registry.has('items.{id:1}.value')).toBe(false)
+      expect(registry.has('items.{id:1}')).toBe(false)
     })
 
+    test('identity mapping returns raw elements with identity dependencies', () => {
+      const state = createTestData()
+      const { proxy, registry } = setup(state)
+      const mapped = proxy.items.map((item) => item)
+      expect(mapped).toEqual([...state.items])
+      expect(mapped[0]).toBe(state.items[0])
+      for (let id = 1; id <= 5; id++) {
+        expect(registry.has(`items.{id:${id}}`)).toBe(true)
+      }
+    })
+
+    test('tracking proxies returned from elsewhere come back raw with identity dependencies', () => {
+      const state = deepFreeze({
+        ids: [2, 1],
+        entities: {
+          1: { id: 1, name: 'one' },
+          2: { id: 2, name: 'two' },
+        } as Record<number, { id: number; name: string }>,
+      })
+      const { proxy, registry } = setup(state)
+      const all = proxy.ids.map((id) => proxy.entities[id])
+      expect(all).toEqual([state.entities[2], state.entities[1]])
+      expect(all[0]).toBe(state.entities[2])
+      expect(getProxyPath(all[0])).toBeUndefined()
+      expect(registry.has('entities.2')).toBe(true)
+      expect(registry.has('entities.1')).toBe(true)
+      // Primitive ids fall back to the coarse array signal
+      expect(registry.has('ids')).toBe(true)
+    })
+
+    test('fresh objects that embed the element get the raw element, not the recorder', () => {
+      const state = createTestData()
+      const { proxy, registry } = setup(state)
+      const calls: number[] = []
+      const mapped = proxy.items.map((item, i) => {
+        calls.push(i)
+        return { item, doubled: item.value * 2 }
+      })
+      expect(mapped.map((m) => m.item)).toEqual([...state.items])
+      expect(mapped[0].item).toBe(state.items[0])
+      expect(mapped[4].item).toBe(state.items[4])
+      expect(mapped.map((m) => m.doubled)).toEqual([20, 40, 60, 80, 100])
+      // The first element is scanned twice (recorder, then raw); the rest once
+      expect(calls).toEqual([0, 0, 1, 2, 3, 4])
+      // Embedded elements force the coarse array dependency
+      expect(registry.has('items')).toBe(true)
+    })
+
+    test('nested object reads fall back to the coarse array signal', () => {
+      const state = createTestData()
+      const { proxy, registry } = setup(state)
+      const counts = proxy.items.map((item) => item.nested.count)
+      expect(counts).toEqual([1, 2, 3, 4, 5])
+      expect(registry.has('items')).toBe(true)
+      expect(registry.has('items.{*}.nested')).toBe(false)
+    })
+
+    test('callback receives correct index and array arguments', () => {
+      const state = createTestData()
+      const { proxy } = setup(state)
+      const seen: number[] = []
+      proxy.items.map((_item, index, arr) => {
+        seen.push(index)
+        expect(arr).toBe(state.items)
+        return index
+      })
+      expect(seen).toEqual([0, 1, 2, 3, 4])
+    })
+  })
+
+  describe('Non-overridden methods (pass-through)', () => {
     test('forEach() callbacks receive proxied values', () => {
       const state = createTestData()
       const { proxy } = setup(state)
@@ -609,44 +669,37 @@ describe('Array method overrides on tracking proxy', () => {
   })
 
   describe('Signal tracking precision', () => {
-    test('find() registers signals only for the result element', () => {
+    test('find() registers the column read by the callback plus the result identity', () => {
       const state = createTestData()
       const { proxy, registry } = setup(state)
 
       // Simulate what a selector does: find + read properties
       const item = proxy.items.find((i) => i.id === 3)!
-      const _label = item.value
-      const _nested = item.nested.count
+      expect(item.value).toBe(30)
+      expect(item.nested.count).toBe(3)
 
-      // The found item (id:3) should have signals
-      expect(registry.has('items.{id:3}.value')).toBe(true)
-      expect(registry.has('items.{id:3}.nested.count')).toBe(true)
-
-      // Other items should NOT have signals
-      expect(registry.has('items.{id:1}.value')).toBe(false)
-      expect(registry.has('items.{id:2}.nested.count')).toBe(false)
-      expect(registry.has('items.{id:4}.value')).toBe(false)
-      expect(registry.has('items.{id:5}.value')).toBe(false)
+      expect(registry.debugPaths().sort()).toEqual(
+        ['items.{*}.id', 'items.{id:3}', 'items.@@insertOrReorder'].sort(),
+      )
     })
 
-    test('filter() registers signals only for matching elements', () => {
+    test('filter() registers the column read by the callback plus matching identities', () => {
       const state = createTestData()
       const { proxy, registry } = setup(state)
 
       const highValue = proxy.items.filter((i) => i.value > 30)
-      // Read properties to register
-      for (const item of highValue) {
-        const _v = item.value
-      }
+      expect(highValue.map((i) => i.value)).toEqual([40, 50])
 
-      // Items 4 and 5 (value > 30) should have signals
-      expect(registry.has('items.{id:4}.value')).toBe(true)
-      expect(registry.has('items.{id:5}.value')).toBe(true)
-
-      // Items 1, 2, 3 should NOT
-      expect(registry.has('items.{id:1}.value')).toBe(false)
-      expect(registry.has('items.{id:2}.value')).toBe(false)
-      expect(registry.has('items.{id:3}.value')).toBe(false)
+      expect(registry.debugPaths().sort()).toEqual(
+        [
+          'items.{*}.value',
+          'items.{id:4}',
+          'items.{id:5}',
+          'items.@@append',
+          'items.@@insertOrReorder',
+          'items.@@remove',
+        ].sort(),
+      )
     })
 
     test('primitive-returning methods register no element signals', () => {
@@ -683,18 +736,17 @@ describe('Array method overrides on tracking proxy', () => {
 
       // selectById pattern
       const found = proxy.find((i) => i.id === 42)!
-      const _value = found.value
-      const _label = found.label
+      expect(found.value).toBe(420)
+      expect(found.label).toBe('Item 42')
 
-      // Only 1 entity's signals should be registered
-      expect(registry.has('items.{id:42}.value')).toBe(true)
-      expect(registry.has('items.{id:42}.label')).toBe(true)
-
-      // Spot-check other items are NOT registered
-      expect(registry.has('items.{id:0}.value')).toBe(false)
-      expect(registry.has('items.{id:41}.value')).toBe(false)
-      expect(registry.has('items.{id:43}.value')).toBe(false)
-      expect(registry.has('items.{id:99}.value')).toBe(false)
+      // One column signal for the scan, one identity signal for the match,
+      // and nothing for the other 99 entities
+      expect(registry.has('items.{*}.id')).toBe(true)
+      expect(registry.has('items.{id:42}')).toBe(true)
+      expect(registry.has('items.{id:42}.value')).toBe(false)
+      expect(registry.has('items.{id:41}')).toBe(false)
+      expect(registry.has('items.{id:43}')).toBe(false)
+      expect(registry.size()).toBe(3)
     })
   })
 

@@ -14,7 +14,12 @@
  * both halves: hooks keep updating, and result functions do not rerun
  * for unrelated changes.
  */
-import { configureStore } from '@reduxjs/toolkit'
+import {
+  configureStore,
+  createEntityAdapter,
+  createSlice,
+} from '@reduxjs/toolkit'
+import { getProxyPath } from '@internal/signals/trackingProxy'
 import * as rtl from '@testing-library/react'
 import React from 'react'
 import { Provider, shallowEqual, useSelector } from 'react-redux'
@@ -826,5 +831,140 @@ describe('args-memoization cache hits', () => {
     )
     incrementTimes(store, 2)
     expect(getByTestId('a').textContent).toBe('0')
+  })
+})
+
+describe('entity adapter selectors feeding result functions', () => {
+  // The derived-selectors benchmark shape: `selectAll` (ids.map(id =>
+  // entities[id])) feeds result functions that filter the whole array.
+  // In signals mode the arrays must reach the result function as raw
+  // objects, or every element read becomes a proxy trap plus a signal
+  // registration, per component, per dispatch.
+  interface Post {
+    id: number
+    title: string
+    score: number
+  }
+  interface Comment {
+    id: number
+    postId: number
+  }
+
+  const postsAdapter = createEntityAdapter<Post>()
+  const commentsAdapter = createEntityAdapter<Comment>()
+
+  const postsSlice = createSlice({
+    name: 'posts',
+    initialState: postsAdapter.getInitialState(undefined, [
+      { id: 1, title: 'one', score: 10 },
+      { id: 2, title: 'two', score: 20 },
+      { id: 3, title: 'three', score: 30 },
+    ]),
+    reducers: { updateScore: postsAdapter.updateOne },
+  })
+  const commentsSlice = createSlice({
+    name: 'comments',
+    initialState: commentsAdapter.getInitialState(undefined, [
+      { id: 1, postId: 1 },
+      { id: 2, postId: 1 },
+      { id: 3, postId: 2 },
+    ]),
+    reducers: { addComment: commentsAdapter.addOne },
+  })
+
+  const makeEntityStore = () =>
+    configureStore({
+      reducer: { posts: postsSlice.reducer, comments: commentsSlice.reducer },
+    })
+  type EntityState = ReturnType<ReturnType<typeof makeEntityStore>['getState']>
+
+  const { selectById: selectPostById } = postsAdapter.getSelectors(
+    (s: EntityState) => s.posts,
+  )
+  const { selectAll: selectAllComments } = commentsAdapter.getSelectors(
+    (s: EntityState) => s.comments,
+  )
+
+  it('result functions receive raw arrays and every consumer keeps updating', () => {
+    const store = makeEntityStore()
+    let resultRuns = 0
+    let sawProxy = false
+    const selectPostWithComments = createSelector(
+      [
+        (s: EntityState, postId: number) => selectPostById(s, postId),
+        selectAllComments,
+      ],
+      (post, comments) => {
+        resultRuns++
+        if (
+          getProxyPath(comments) !== undefined ||
+          comments.some((c) => getProxyPath(c) !== undefined)
+        ) {
+          sawProxy = true
+        }
+        return {
+          ...post,
+          commentCount: comments.filter((c) => c.postId === post.id).length,
+        }
+      },
+    )
+
+    const renders: Record<number, number> = { 1: 0, 2: 0, 3: 0 }
+    function PostCard({ postId }: { postId: number }) {
+      renders[postId]++
+      const data = useSelector((s: EntityState) =>
+        selectPostWithComments(s, postId),
+      )
+      return (
+        <div data-testid={`post-${postId}`}>
+          {data.title}:{data.score}:{data.commentCount}
+        </div>
+      )
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <PostCard postId={1} />
+        <PostCard postId={2} />
+        <PostCard postId={3} />
+      </Provider>,
+    )
+    expect(getByTestId('post-1').textContent).toBe('one:10:2')
+    expect(getByTestId('post-2').textContent).toBe('two:20:1')
+    expect(getByTestId('post-3').textContent).toBe('three:30:0')
+    expect(sawProxy).toBe(false)
+    expect(renders).toEqual({ 1: 1, 2: 1, 3: 1 })
+    resultRuns = 0
+
+    // Every post's result function depends on the comments array, so all
+    // three recompute and, because each returns a fresh object, all three
+    // re-render (same as stock).
+    rtl.act(() => {
+      store.dispatch(commentsSlice.actions.addComment({ id: 4, postId: 3 }))
+    })
+    expect(getByTestId('post-3').textContent).toBe('three:30:1')
+    expect(resultRuns).toBe(3)
+    expect(renders).toEqual({ 1: 2, 2: 2, 3: 2 })
+    expect(sawProxy).toBe(false)
+    resultRuns = 0
+
+    // A score change replaces one post entity: one recompute, one render.
+    rtl.act(() => {
+      store.dispatch(
+        postsSlice.actions.updateScore({ id: 2, changes: { score: 25 } }),
+      )
+    })
+    expect(getByTestId('post-2').textContent).toBe('two:25:1')
+    expect(resultRuns).toBe(1)
+    expect(renders).toEqual({ 1: 2, 2: 3, 3: 2 })
+    resultRuns = 0
+
+    rtl.act(() => {
+      store.dispatch(commentsSlice.actions.addComment({ id: 5, postId: 2 }))
+    })
+    expect(getByTestId('post-2').textContent).toBe('two:25:2')
+    expect(resultRuns).toBe(3)
+    expect(renders).toEqual({ 1: 3, 2: 4, 3: 3 })
+    expect(sawProxy).toBe(false)
   })
 })
