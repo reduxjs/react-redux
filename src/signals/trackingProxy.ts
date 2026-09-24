@@ -236,7 +236,10 @@ export function createTrackingProxy<T extends object>(
   // Property keys are encoded so reserved path characters in state keys
   // (dots in RTKQ cache keys, literal '@@keys', etc.) can't collide with
   // other paths or meta segments. The cache amortizes the encoding.
-  const pathKeyCache = new Map<string, string>()
+  // Root proxies are not reused, so they share the registry's cache.
+  const pathKeyCache = isRoot
+    ? registry.rootPathKeyCache
+    : new Map<string, string>()
   function getPathKey(prop: string): string {
     let key = pathKeyCache.get(prop)
     if (key === undefined) {

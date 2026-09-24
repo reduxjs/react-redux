@@ -90,6 +90,11 @@ export interface PathSignalRegistry {
   /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
   proxyCache: ProxyCache
 
+  /** Encoded path keys for top-level state properties. Root proxies are
+   *  created fresh per evaluation, so they share this instead of each
+   *  building its own. */
+  rootPathKeyCache: Map<string, string>
+
   /** Holder for the leaf tracker of the evaluation currently running.
    *  Proxies read this at trap time instead of closing over a tracker,
    *  so cached proxies record into whichever evaluation is active. */
@@ -580,6 +585,8 @@ export function createPathSignalRegistry(
     segmentIndex: createSegmentIndex(),
 
     proxyCache: proxyWeakMap,
+
+    rootPathKeyCache: new Map(),
 
     leafTrackerHolder: { current: undefined },
 
