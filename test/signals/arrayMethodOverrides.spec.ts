@@ -580,7 +580,7 @@ describe('Array method overrides on tracking proxy', () => {
       }
     })
 
-    test('tracking proxies returned from elsewhere come back raw with identity dependencies', () => {
+    test('tracking proxies returned from elsewhere come back raw with a dependency on their container', () => {
       const state = deepFreeze({
         ids: [2, 1],
         entities: {
@@ -593,8 +593,11 @@ describe('Array method overrides on tracking proxy', () => {
       expect(all).toEqual([state.entities[2], state.entities[1]])
       expect(all[0]).toBe(state.entities[2])
       expect(getProxyPath(all[0])).toBeUndefined()
-      expect(registry.has('entities.2')).toBe(true)
-      expect(registry.has('entities.1')).toBe(true)
+      // Mapping the collection depends on the container as a whole, not on
+      // each element: the container is replaced whenever any element is.
+      expect(registry.has('entities')).toBe(true)
+      expect(registry.has('entities.2')).toBe(false)
+      expect(registry.has('entities.1')).toBe(false)
       // Primitive ids fall back to the coarse array signal
       expect(registry.has('ids')).toBe(true)
     })
