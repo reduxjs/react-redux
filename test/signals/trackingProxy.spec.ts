@@ -859,15 +859,12 @@ describe('unwrap', () => {
       (item: { id: number; name: string }) => unwrap(item) === rawItem,
     )
 
-    expect(found).toBeDefined()
-    // find() returns a proxied result (lazy signal registration)
-    expect(found).not.toBe(state.items[1])
-    expect(unwrap(found)).toBe(state.items[1])
-
-    // Accessing properties on the found proxy registers signals
-    const name = (found as { name: string }).name
-    expect(name).toBe('b')
-    expect(registry.has('items.{id:2}.name')).toBe(true)
+    // find() returns the raw element with an identity dependency; reads on
+    // it are not tracked individually
+    expect(found).toBe(state.items[1])
+    expect(found!.name).toBe('b')
+    expect(registry.has('items.{id:2}')).toBe(true)
+    expect(registry.has('items.{id:2}.name')).toBe(false)
   })
 })
 

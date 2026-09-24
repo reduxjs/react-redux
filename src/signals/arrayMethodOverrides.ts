@@ -1,17 +1,35 @@
 import { throwStateMutationError } from './mutationError'
 import type { PathSignalRegistry, StructureKind } from './pathSignalRegistry'
-import { registerRecordingHolder, unwrap } from './trackingProxy'
+import {
+  getElementPathKey,
+  getProxyPath,
+  getProxyTarget,
+  registerRecordingHolder,
+  unwrap,
+} from './trackingProxy'
 
 /**
  * Non-mutating array methods that we override on the tracking proxy.
  *
  * The key optimization: callbacks scan elements WITHOUT per-element proxy
- * creation or per-element signal registration. Only the RESULTS get proxied —
- * so fine-grained signal dependencies are established only for the elements
- * the selector actually uses.
+ * creation or per-element signal registration, and elements that leave
+ * the array through a method (find, filter, slice, map's `x => x`) leave
+ * as RAW objects with one identity dependency each on the element's path.
  *
  * Example: `state.items.find(i => i.id === 42)` scans 1000 items (fast),
- * then returns a proxy for the one match (registers signals for that element only).
+ * then returns the raw match and depends on `items.{id:42}`.
+ *
+ * **Why raw elements:** state is immutable, so any change inside an
+ * element replaces the element and fires its identity signal. Tracking
+ * individual fields of an element after it has left the array would be
+ * more precise but costs a proxy trap plus a signal registration per
+ * read — and elements handed to downstream code (Reselect result
+ * functions, `.filter` on the returned array) are typically read
+ * wholesale, thousands of reads per evaluation. The identity dependency
+ * can over-run the selector (a change to a field it didn't read), never
+ * miss an update; the result equality check keeps over-runs from
+ * becoming renders. Direct index access (`items[0].name`) still returns
+ * a tracking proxy and keeps field-level precision.
  *
  * **Dependency tracking for scans:**
  * - Callback methods (find, filter, some, every, findIndex, ...) pass a
@@ -30,13 +48,16 @@ import { registerRecordingHolder, unwrap } from './trackingProxy'
  *   join, concat, slice, ...) always register the coarse array signal.
  *
  * Categories:
- * - Subset operations (find, findLast, filter, slice): return proxied elements
+ * - Subset operations (find, findLast, filter, slice): return raw elements
+ *   with identity dependencies
+ * - map: scans through the recorder; results that are elements (own or
+ *   from another tracked object) come back raw with identity dependencies
  * - Primitive-returning (findIndex, indexOf, some, every, includes, etc.): return as-is
  * - Transform operations (concat, flat): return raw values (new structures, not subsets)
- * - Pass-through (map, forEach, reduce, flatMap): NOT overridden — callbacks need tracking
+ * - Pass-through (forEach, reduce, flatMap): NOT overridden — callbacks need tracking
  */
 
-type SubsetMethod = 'find' | 'findLast' | 'filter' | 'slice'
+type SubsetMethod = 'find' | 'findLast' | 'filter' | 'slice' | 'map'
 type PrimitiveMethod =
   | 'findIndex'
   | 'findLastIndex'
@@ -59,6 +80,7 @@ const CALLBACK_METHODS = new Set<OverriddenMethod>([
   'find',
   'findLast',
   'filter',
+  'map',
   'findIndex',
   'findLastIndex',
   'some',
@@ -66,11 +88,12 @@ const CALLBACK_METHODS = new Set<OverriddenMethod>([
 ])
 
 const OVERRIDDEN_METHODS = new Set<string>([
-  // Subset — return proxied results
+  // Subset — return raw elements with identity dependencies
   'find',
   'findLast',
   'filter',
   'slice',
+  'map',
   // Primitive-returning
   'findIndex',
   'findLastIndex',
@@ -237,6 +260,10 @@ const STRUCTURE_DEPS: Record<
     matched: ['append', 'insertOrReorder', 'remove'],
     missed: ['append', 'insertOrReorder', 'remove'],
   },
+  map: {
+    matched: ['append', 'insertOrReorder', 'remove'],
+    missed: ['append', 'insertOrReorder', 'remove'],
+  },
   some: {
     matched: ['remove'],
     missed: ['append', 'insertOrReorder'],
@@ -287,12 +314,58 @@ function finalizeScanDeps(
 }
 
 /**
+ * Hand an element of this array to the caller: the raw value, plus an
+ * identity dependency on the element's path when it is an object.
+ * @param registry - Signal registry for dependency tracking
+ * @param parentPath - Path to the array in the state tree
+ * @param target - The raw frozen array
+ * @param index - Index of the element to emit
+ * @returns The raw element
+ */
+function emitElement(
+  registry: PathSignalRegistry,
+  parentPath: string,
+  target: readonly unknown[],
+  index: number,
+): unknown {
+  const value = target[index]
+  if (value !== null && typeof value === 'object') {
+    registry
+      .getOrCreate(getElementPathKey(registry, parentPath, index, value), value)
+      .get()
+  }
+  return value
+}
+
+/**
+ * Normalize a value returned from a `map` callback. A tracking proxy from
+ * elsewhere in the state tree (`ids.map(id => entities[id])`) comes back
+ * raw with an identity dependency on its path, so the caller's downstream
+ * reads run on plain objects. Anything else is returned unchanged.
+ * @param registry - Signal registry for dependency tracking
+ * @param value - The callback's return value
+ * @returns The value to place in the mapped array
+ */
+function emitMappedValue(
+  registry: PathSignalRegistry,
+  value: unknown,
+): unknown {
+  if (value === null || typeof value !== 'object') return value
+  const raw = getProxyTarget(value)
+  if (raw === undefined) return value
+  const path = getProxyPath(value)
+  if (path !== undefined && path !== '') {
+    registry.getOrCreate(path, raw).get()
+  }
+  return raw
+}
+
+/**
  * Create an interceptor for an array method that operates on the raw frozen
- * array, bypassing per-element proxy creation. Only results that the caller
- * will actually use get wrapped in tracking proxies.
+ * array, bypassing per-element proxy creation. Elements that leave the
+ * array come back raw with identity dependencies (see module comment).
  *
  * @param target - The raw frozen array
- * @param proxy - The tracking proxy wrapping this array (used to return proxied elements)
  * @param method - The method name being intercepted
  * @param registry - Signal registry for dependency tracking
  * @param parentPath - Path to this array in the state tree
@@ -300,7 +373,6 @@ function finalizeScanDeps(
  */
 export function createArrayMethodInterceptor(
   target: readonly unknown[],
-  proxy: object,
   method: string,
   registry: PathSignalRegistry,
   parentPath: string,
@@ -315,7 +387,7 @@ export function createArrayMethodInterceptor(
         value: unknown,
         index: number,
         array: readonly unknown[],
-      ) => boolean
+      ) => unknown
       const recorder = createScanRecorder()
 
       let result: unknown
@@ -325,12 +397,43 @@ export function createArrayMethodInterceptor(
         const matches: unknown[] = []
         for (let i = 0; i < target.length; i++) {
           if (callback(presentElement(recorder, target[i]), i, target)) {
-            // Access through proxy to register signals for matching elements
-            matches.push((proxy as Record<string, unknown>)[i])
+            matches.push(emitElement(registry, parentPath, target, i))
           }
         }
         result = matches
         matched = matches.length > 0
+      } else if (m === 'map') {
+        const mapped: unknown[] = []
+        // The recorder proxy is reused across elements, so a callback
+        // that embeds its element in a fresh object (`x => ({ item: x })`)
+        // would capture a recorder pointing at whichever element is
+        // scanned last. Once a callback returns a fresh object, redo that
+        // element and scan the rest with raw elements under the coarse
+        // array dependency.
+        let rawMode = false
+        for (let i = 0; i < target.length; i++) {
+          const element = target[i]
+          if (!rawMode) {
+            const out = callback(presentElement(recorder, element), i, target)
+            if (out === recorder.proxy) {
+              mapped[i] = emitElement(registry, parentPath, target, i)
+              continue
+            }
+            if (
+              out === null ||
+              typeof out !== 'object' ||
+              getProxyTarget(out) !== undefined
+            ) {
+              mapped[i] = emitMappedValue(registry, out)
+              continue
+            }
+            rawMode = true
+            recorder.fallback = true
+          }
+          mapped[i] = emitMappedValue(registry, callback(element, i, target))
+        }
+        result = mapped
+        matched = true
       } else if (FIND_METHODS.has(m)) {
         const isForward = m === 'find'
         const step = isForward ? 1 : -1
@@ -338,8 +441,7 @@ export function createArrayMethodInterceptor(
         result = undefined
         for (let i = start; i >= 0 && i < target.length; i += step) {
           if (callback(presentElement(recorder, target[i]), i, target)) {
-            // Return proxied element — registers signals for just this one
-            result = (proxy as Record<string, unknown>)[i]
+            result = emitElement(registry, parentPath, target, i)
             break
           }
         }
@@ -376,7 +478,7 @@ export function createArrayMethodInterceptor(
       const end = normalizeSliceIndex(rawEnd, target.length)
       const result: unknown[] = []
       for (let i = start; i < end; i++) {
-        result.push((proxy as Record<string, unknown>)[i])
+        result.push(emitElement(registry, parentPath, target, i))
       }
       return result
     }

@@ -168,6 +168,45 @@ export function unwrap<T>(value: T): T {
 }
 
 /**
+ * Path key for an object element of a tracked array: the identity path
+ * (`items.{id:42}`) when the array has a detectable key field, otherwise
+ * the index path (`items.3`). Detects and records the array's key field
+ * on first use.
+ * @param registry - Signal registry holding per-array metadata
+ * @param arrayPath - Path of the containing array
+ * @param index - The element's index (number or canonical index string)
+ * @param element - The raw element object
+ * @returns The element's path key
+ */
+export function getElementPathKey(
+  registry: PathSignalRegistry,
+  arrayPath: string,
+  index: number | string,
+  element: object,
+): string {
+  if (!Array.isArray(element)) {
+    let meta = registry.getArrayMeta(arrayPath)
+    if (!meta) {
+      const keyField = findKeyField(element)
+      if (keyField) {
+        meta = { keyField, entityMap: new Map() }
+        registry.setArrayMeta(arrayPath, meta)
+      }
+    }
+    if (meta) {
+      const kv = getKeyValue(element, meta.keyField)
+      if (kv !== undefined) {
+        return buildIdentityPath(arrayPath, meta.keyField, kv)
+      }
+    }
+  }
+  return joinPath(
+    arrayPath,
+    typeof index === 'number' ? index : encodePathSegment(index),
+  )
+}
+
+/**
  * Creates a read-only tracking proxy that wraps frozen Redux state.
  *
  * On property access, the proxy:
@@ -269,7 +308,6 @@ export function createTrackingProxy<T extends object>(
           }
           return createArrayMethodInterceptor(
             target,
-            proxy,
             prop as string,
             registry,
             parentPath,
@@ -306,28 +344,10 @@ export function createTrackingProxy<T extends object>(
       let pathKey = getPathKey(prop as string)
 
       if (isObjectOrArray(value)) {
-        // For array element access: check if parent array has identity-based tracking.
-        // If so, use the identity path (items.{id:42}) instead of index path (items.0).
-        if (
-          Array.isArray(target) &&
-          !Array.isArray(value) &&
-          !isNaN(Number(prop))
-        ) {
-          let meta = registry.getArrayMeta(parentPath)
-          if (!meta) {
-            // First time accessing this array's elements — try to detect key field
-            const keyField = findKeyField(value)
-            if (keyField) {
-              meta = { keyField, entityMap: new Map() }
-              registry.setArrayMeta(parentPath, meta)
-            }
-          }
-          if (meta) {
-            const kv = getKeyValue(value, meta.keyField)
-            if (kv !== undefined) {
-              pathKey = buildIdentityPath(parentPath, meta.keyField, kv)
-            }
-          }
+        // Array elements use the identity path (items.{id:42}) when the
+        // array has a key field, so signals survive reorders.
+        if (Array.isArray(target) && isIndexProp(prop as string)) {
+          pathKey = getElementPathKey(registry, parentPath, prop, value)
         }
 
         // Non-plain objects (Date, Map, Set, class instances): return the
