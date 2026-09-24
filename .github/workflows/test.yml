@@ -213,8 +213,12 @@ jobs:
         run: pnpm install
 
       # Note: We currently expect "FalseCJS" failures for Node16 + `moduleResolution: "node16",
+      # `--profile node16` drops the node10 resolution check. The subpath
+      # entry points (`alternate-renderers`, `signals`) only resolve through
+      # the `exports` map, which node10 does not read, and we do not support
+      # Node 10 style resolution for them.
       - name: Run are-the-types-wrong
-        run: pnpm exec attw ./package.tgz --format table --ignore-rules false-cjs --exclude-entrypoints alternate-renderers
+        run: pnpm exec attw ./package.tgz --format table --ignore-rules false-cjs --profile node16
 
   test-published-artifact:
     name: Test Published Artifact ${{ matrix.example }}
@@ -330,7 +334,7 @@ jobs:
       fail-fast: false
       matrix:
         node: ['24.x']
-        example: ['rr-rsc-context']
+        example: ['rr-rsc-context', 'rr-tree-shaking']
     defaults:
       run:
         working-directory: ./examples/publish-ci/${{ matrix.example }}

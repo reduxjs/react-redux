@@ -16,9 +16,11 @@ batch((fn: () => void))
 
 _added in v7.0.0_
 
-:::info
+:::caution Deprecated
 
 **If you're using React 18, you do not need to use the `batch` API**. React 18 automatically batches _all_ state updates, no matter where they're queued.
+
+`batch` is now a no-op that immediately runs the callback, and **will be removed in the next major version of React Redux**.
 
 :::
 
