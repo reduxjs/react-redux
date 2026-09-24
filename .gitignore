@@ -9,8 +9,6 @@ redux-toolkit/
 .vscode/
 
 .cache/
-# `website/` is still a Yarn project.
-website/.yarn/
 .pnp.*
 *.tgz
 
@@ -20,11 +18,6 @@ yalc.sig
 
 lib/core/metadata.js
 lib/core/MetadataBlog.js
-
-website/translated_docs
-website/build/
-website/node_modules
-website/i18n/*
 
 tsconfig.vitest-temp.json
 
