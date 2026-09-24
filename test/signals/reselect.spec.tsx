@@ -15,7 +15,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import React from 'react'
-import { Provider, useSelector } from 'react-redux'
+import { Provider, shallowEqual, useSelector } from 'react-redux'
 import { createSelector, lruMemoize, weakMapMemoize } from 'reselect'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -637,6 +637,101 @@ describe('args-memoization cache hits', () => {
       expect(getByTestId('a').textContent).toBe(expected)
       expect(getByTestId('b').textContent).toBe(expected)
     }
+  })
+
+  it.each([
+    ['weakMapMemoize', 'lruMemoize', weakMapMemoize, lruMemoize],
+    ['lruMemoize', 'weakMapMemoize', lruMemoize, weakMapMemoize],
+  ] as const)(
+    'memoize: %s with argsMemoize: %s keeps updating',
+    (_m, _a, memoize, argsMemoize) => {
+      const store = makeStore()
+      let resultRuns = 0
+      const selectDoubled = createSelector(
+        [(s: RootState) => s.counter.value],
+        (value) => {
+          resultRuns++
+          return { doubled: value * 2 }
+        },
+        {
+          memoize,
+          argsMemoize,
+          devModeChecks: { identityFunctionCheck: 'never' },
+        },
+      )
+
+      function A() {
+        const doubled = useSelector((s: RootState) => selectDoubled(s).doubled)
+        return <div data-testid="a">{doubled}</div>
+      }
+      function B() {
+        return <div data-testid="b">{useSelector(selectDoubled).doubled}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <Provider store={store}>
+          <A />
+          <B />
+        </Provider>,
+      )
+      for (const expected of ['2', '4', '6']) {
+        incrementTimes(store, 1)
+        expect(getByTestId('a').textContent).toBe(expected)
+        expect(getByTestId('b').textContent).toBe(expected)
+      }
+      // The result layer keys on the input value, so it runs once per
+      // distinct counter value no matter which args layer sits above it.
+      expect(resultRuns).toBe(4)
+    },
+  )
+
+  it('lruMemoize args with shallowEqual keeps updating, at the cost of coarse tracking', () => {
+    // shallowEqual has to enumerate the root and read every top-level
+    // slice to compare two state arguments, so the hook depends on all of
+    // them. It re-evaluates on every dispatch but only re-renders when the
+    // derived value changes.
+    const store = makeStore()
+    let resultRuns = 0
+    const selectDoubled = createSelector(
+      [(s: RootState) => s.counter.value],
+      (value) => {
+        resultRuns++
+        return { doubled: value * 2 }
+      },
+      {
+        memoize: lruMemoize,
+        argsMemoize: lruMemoize,
+        argsMemoizeOptions: { equalityCheck: shallowEqual },
+        devModeChecks: { identityFunctionCheck: 'never' },
+      },
+    )
+
+    let renders = 0
+    function A() {
+      renders++
+      return <div data-testid="a">{useSelector(selectDoubled).doubled}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <A />
+      </Provider>,
+    )
+    expect(renders).toBe(1)
+
+    for (const expected of ['2', '4', '6']) {
+      incrementTimes(store, 1)
+      expect(getByTestId('a').textContent).toBe(expected)
+    }
+    expect(renders).toBe(4)
+    expect(resultRuns).toBe(4)
+
+    rtl.act(() => {
+      store.dispatch({ type: 'toggle', id: 1 })
+    })
+    expect(getByTestId('a').textContent).toBe('6')
+    expect(renders).toBe(4)
+    expect(resultRuns).toBe(4)
   })
 
   it('a selector memoized on a slice, not the root, stays correct and skips unrelated slices', () => {
