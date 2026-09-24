@@ -340,8 +340,19 @@ function emitElement(
 /**
  * Normalize a value returned from a `map` callback. A tracking proxy from
  * elsewhere in the state tree (`ids.map(id => entities[id])`) comes back
- * raw with an identity dependency on its path, so the caller's downstream
- * reads run on plain objects. Anything else is returned unchanged.
+ * raw so the caller's downstream reads run on plain objects. Anything else
+ * is returned unchanged.
+ *
+ * The dependency goes on the proxy's parent container, not the element.
+ * Mapping a collection reads the whole container, and under immutability
+ * any element change replaces the container too, so the container version
+ * fires in exactly the cases a per-element dependency would. Per-element
+ * dependencies were strictly worse: when several hooks share a memoized
+ * collection selector, only the hook that hits the Reselect cache miss
+ * reads the elements, and the next time it re-runs on a cache hit it reads
+ * none of them — alien-signals then drops every element dependency, the
+ * registry releases every element signal, and the next collection change
+ * recreates them all.
  * @param registry - Signal registry for dependency tracking
  * @param value - The callback's return value
  * @returns The value to place in the mapped array
@@ -355,7 +366,14 @@ function emitMappedValue(
   if (raw === undefined) return value
   const path = getProxyPath(value)
   if (path !== undefined && path !== '') {
-    registry.getOrCreate(path, raw).get()
+    const dot = path.lastIndexOf('.')
+    // Object-valued signals hold version counters, so the seed value only
+    // needs to be an object; the raw element stands in for the container.
+    registry.getOrCreate(dot === -1 ? path : path.substring(0, dot), raw).get()
+    // The get trap recorded this element as a leaf-object candidate. The
+    // container dependency covers it, so keep the leaf tracker from adding
+    // a per-element identity signal on top.
+    registry.leafTrackerHolder.current?.traversedPaths.add(path)
   }
   return raw
 }
