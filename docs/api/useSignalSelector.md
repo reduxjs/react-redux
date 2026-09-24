@@ -141,15 +141,26 @@ const selected = useSignalSelector((state) => {
 
 See [`unwrap`](./unwrap.md) for details. Comparisons between two values both read from `state` in the same selector run work correctly without unwrapping.
 
+Elements _returned_ from array methods (`state.items.find(...)`, `state.items.filter(...)`, `state.items.map(x => x)`) are raw state objects, not proxies, so they compare correctly against outside references. Only the values you read directly off `state` and inside array method callbacks are proxied.
+
 **Proxies never escape the selector.** The hook unwraps the selector's return value before handing it to React, so your components, effects, equality functions, and dispatched actions always see plain Redux state. `console.log` of a selector result shows plain data. For the same reason, avoid _storing_ a state object read during one selector run in an external variable for use later - the same rule as holding onto an Immer draft. Use `unwrap()` first if you need to do this.
 
 ##### Memoized (Reselect) selectors
 
-Memoized selectors created with Reselect's `createSelector` work with `useSignalSelector`, following the same rules as with [`useSelector`](./useSelector.md#using-memoizing-selectors). Unchanged parts of the state keep stable proxy identities across selector runs, so Reselect's input comparisons behave the way they do with raw state: changed inputs produce cache misses and recalculation, unchanged inputs return the cached result. Cached result values are unwrapped the same way as direct returns.
+Memoized selectors created with Reselect's `createSelector` work with `useSignalSelector`, following the same rules as with [`useSelector`](./useSelector.md#using-memoizing-selectors), including selectors shared between many components and selectors that take extra arguments. Cached result values are unwrapped the same way as direct returns.
+
+There is one difference in _how much_ memoization you get. Dependency tracking only works when the selector actually reads from the state proxy, so the hook hands each tracked run a fresh root proxy. Reselect's argument-level cache (`argsMemoize`, keyed on the `state` argument) therefore misses on every tracked run, and the **input selectors run every time**. The **result function still memoizes**: nested state objects keep stable identities across runs, so when the inputs have not changed, the cached result is returned without recomputing. In practice this means a memoized selector costs a little more per tracked run than under `useSelector`, and runs far less often.
+
+Two consequences follow from this:
+
+- Selectors that cache _without_ reading state on a cache hit (a hand-rolled `let cached` guard, for example) cannot be tracked and will not update. The same selector is also stale under `useSelector`, just less visibly.
+- Inside a result function, the inputs are proxies. Reading one field of a proxied input repeatedly in a loop (`comments.filter(c => c.postId === post.id)`) costs a proxy trap per iteration. Repeated reads of the same field within one run are memoized, so this is usually cheap, but hoisting the value into a local (`const postId = post.id`) is cheaper still. In development, a selector that re-reads the same field 100+ times in one run logs a warning pointing at the path.
 
 ##### Coarse-grained fallback for broad selectors
 
 Selectors that enumerate the root state's keys (`Object.keys(state)`, spreading `{...state}`) or otherwise read the root without narrowing to specific fields cannot be tracked at a useful granularity. They still work correctly, but re-evaluate more often and set up their tracking eagerly, costing more at mount. Narrow selectors are both the best practice and the fast path.
+
+Enumerating or spreading a _nested_ object (`{...state.user}`, `Object.keys(state.entities)`) is tracked precisely: the selector depends on the object's set of keys plus each field the spread copies.
 
 ##### Aliased state objects
 
@@ -166,8 +177,8 @@ When the [selector stability check](./useSelector.md#selector-result-stability) 
 #### Performance characteristics
 
 - **Tracked evaluation costs roughly 3-4x an untracked run.** The payoff is the dispatches where the selector does not run at all. Apps where most dispatches are irrelevant to most components come out well ahead; apps where every dispatch touches state that every component reads gain nothing and pay the diff cost inside each dispatch.
-- **Iteration helpers are optimized for depth-1 reads.** Array scans like `find`, `filter`, `some`, `every`, `includes`, and `slice` are tracked at the whole-array level with per-column optimization: a callback reading `item.done` depends on that one column rather than every field of every element. Reads two levels deep inside a scan callback (`item.meta.done`), and methods like `map`, `forEach`, and `reduce`, fall back to depending on the array as a whole - still correct, just coarser.
-- **Conditional selectors accumulate both branches.** A selector like `state.mode === 'a' ? state.a.x : state.b.y` re-records dependencies each run, but a component that alternates between branches will track whichever paths it has read while mounted. This widens the update surface slightly; it never causes missed updates.
+- **Array methods track elements by identity, and scan callbacks by column.** `find`, `findLast`, `filter`, `slice`, and `map` return _raw_ elements, each with a dependency on that element's identity: replacing the element (which any immutable update to it does) re-runs the selector, but the individual fields you read off a returned element are not tracked separately. Scan callbacks (`find(item => item.done)`, `some`, `every`, `findIndex`, and so on) depend on the one column they read rather than every field of every element. Reads two levels deep inside a callback (`item.meta.done`), and methods that are not overridden (`forEach`, `reduce`, `flatMap`), fall back to depending on the array as a whole - still correct, just coarser. Direct index access (`state.items[0].name`) keeps full field-level precision.
+- **Conditional selectors track only the branch they took.** Dependencies are re-recorded from scratch on every run, so a selector like `state.mode === 'a' ? state.a.x : state.b.y` depends on `mode` and on whichever of `a.x` or `b.y` it read most recently. Switching branches drops the old branch's paths.
 
 ### Migrating an app with a bundler alias
 
