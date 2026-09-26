@@ -695,68 +695,90 @@ describe('React', () => {
           expect(renderedItems[0]).toBe(renderedItems[1])
         })
 
-        it('should have linear or better unsubscribe time, not quadratic', () => {
-          const reducer = (state: { n: number } = { n: 0 }, action: any) =>
-            action.type === 'INC' ? { n: state.n + 1 } : state
-          const store = createStore(reducer)
-          const increment = () => ({ type: 'INC' })
+        it(
+          'should have linear or better unsubscribe time, not quadratic',
+          // Six mounts of 10K components dominate the runtime and slow down
+          // several-fold when the suite runs in parallel; the unmount ratio
+          // below is what's actually asserted.
+          { timeout: 30_000 },
+          () => {
+            const reducer = (state: { n: number } = { n: 0 }, action: any) =>
+              action.type === 'INC' ? { n: state.n + 1 } : state
 
-          const numChildren = 100000
+            // Neither child returns DOM: the point is the cost of
+            // unsubscribing, and tearing down thousands of JSDOM nodes
+            // would swamp it.
+            function SubscribedChild() {
+              useSelector((s: number) => s)
+              return null
+            }
+            function PlainChild() {
+              return null
+            }
 
-          function App() {
-            useSelector((s: { n: number }) => s.n)
-            const dispatch = useDispatch()
+            // Mount `numChildren` children, then unmount them all in one
+            // commit and return how long that commit took.
+            function measureUnmount(
+              numChildren: number,
+              Child: () => null,
+            ): number {
+              const store = createStore(reducer)
 
-            const [children, setChildren] = useState(numChildren)
+              function App() {
+                useSelector((s: { n: number }) => s.n)
+                const [children, setChildren] = useState(numChildren)
+                return (
+                  <div>
+                    <button onClick={() => setChildren(0)}>
+                      Toggle Children
+                    </button>
+                    {[...Array(children).keys()].map((i) => (
+                      <Child key={i} />
+                    ))}
+                  </div>
+                )
+              }
 
-            const toggleChildren = () =>
-              setChildren((c) => (c ? 0 : numChildren))
+              const { getByText, unmount } = rtl.render(
+                <ProviderMock store={store}>
+                  <App />
+                </ProviderMock>,
+              )
+              const button = getByText('Toggle Children')
 
-            return (
-              <div>
-                <button onClick={toggleChildren}>Toggle Children</button>
-                <button onClick={() => dispatch(increment())}>Increment</button>
-                {[...Array(children).keys()].map((i) => (
-                  <Child key={i} />
-                ))}
-              </div>
-            )
-          }
+              const timeBefore = performance.now()
+              rtl.act(() => {
+                rtl.fireEvent.click(button)
+              })
+              const elapsed = performance.now() - timeBefore
 
-          function Child() {
-            useSelector((s: number) => s)
-            // Deliberately do not return any DOM here - we want to isolate the cost of
-            // unsubscribing, and tearing down thousands of JSDOM nodes is expensive and irrelevant
-            return null
-          }
+              unmount()
+              return elapsed
+            }
 
-          const { getByText } = rtl.render(
-            <ProviderMock store={store}>
-              <App />
-            </ProviderMock>,
-          )
+            // Unsubscribing used to cost O(N) per component (array scan in
+            // Subscription), so unmounting N subscribed children was
+            // quadratic. An absolute time budget can't detect that reliably:
+            // it depends on the machine and on how many other test workers
+            // are competing for the CPU. So compare against a baseline
+            // instead: the same commit tearing down the same number of
+            // children that never subscribed. That cancels React's own
+            // teardown cost and any CPU contention, leaving the cost the
+            // subscriptions add. Measured at 10K children: linear
+            // unsubscribe is ~3x the baseline, the old quadratic behavior
+            // ~40x. Min of three runs filters GC pauses and cold-JIT noise.
+            const N = 10_000
+            const minOf = (fn: () => number) => {
+              let best = Infinity
+              for (let i = 0; i < 3; i++) best = Math.min(best, fn())
+              return best
+            }
+            const plain = minOf(() => measureUnmount(N, PlainChild))
+            const subscribed = minOf(() => measureUnmount(N, SubscribedChild))
 
-          const timeBefore = Date.now()
-
-          const button = getByText('Toggle Children')
-          rtl.act(() => {
-            rtl.fireEvent.click(button)
-          })
-
-          const timeAfter = Date.now()
-          const elapsedTime = timeAfter - timeBefore
-
-          // Seeing an unexpected variation in elapsed time between React 18 and React 17 + the compat entry point.
-          // With 18, I see around 75ms with correct implementation on my machine, with 100K items.
-          // With 17 + compat, the same correct impl takes about 4200-5000ms.
-          // With the quadratic behavior, this is at least 13000ms (or worse!) under 18, and 22000ms+ with 17.
-          // The 13000ms time for 18 stays the same if I use the shim, so it must be a 17 vs 18 difference somehow,
-          // although I can't imagine why, and if I remove the `useSelector` calls both tests drop to ~50ms.
-          // So, we'll modify our expectations here depending on whether this is an 18 or 17 compat test,
-          // and give some buffer time to allow for variations in test machines.
-          const expectedMaxUnmountTime = IS_REACT_18 || IS_REACT_19 ? 500 : 7000
-          expect(elapsedTime).toBeLessThan(expectedMaxUnmountTime)
-        })
+            expect(subscribed / plain).toBeLessThan(10)
+          },
+        )
 
         it('keeps working when used inside a Suspense', async () => {
           let result: number | undefined
