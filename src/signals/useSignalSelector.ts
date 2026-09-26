@@ -128,7 +128,9 @@ const useSignalSelectorImpl = <S, R>(
     let ungateable = false
     // State ref that probeSegments/currentResult were probed against.
     let probedState: unknown = null
-    // Freshness cache for unbuilt getSnapshot recomputes.
+    // State ref that currentResult was last computed against. getSnapshot
+    // compares it to store.getState() to catch dispatches whose listener
+    // notification hasn't arrived yet.
     let lastSnapshotState: unknown = null
     // Freshness cache for getServerSnapshot, keyed on the serverState ref.
     let lastServerState: unknown = null
@@ -309,6 +311,7 @@ const useSignalSelectorImpl = <S, R>(
       pendingError = null
       try {
         const state = store.getState() as S & object
+        lastSnapshotState = state
 
         leafTracker.accessedObjects = new Map()
         leafTracker.traversedPaths = new Set()
@@ -529,6 +532,24 @@ const useSignalSelectorImpl = <S, R>(
           throw pendingError
         }
       }
+
+      // The store moved but its listeners haven't been notified yet
+      // (deferred notification, e.g. RTK's autoBatchEnhancer), so the
+      // signal effect hasn't refreshed currentResult. A render landing
+      // in that gap must still see current state, the same way stock
+      // useSelector reads store.getState() directly. Recompute against
+      // RAW state — no proxies, no dependency changes. When the
+      // notification arrives the effect re-evaluates, finds the value
+      // equal, and stays quiet.
+      const state = store.getState()
+      if (state !== lastSnapshotState) {
+        lastSnapshotState = state
+        const fresh = selectorRef.current(state as S)
+        if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
+          currentResult = fresh
+          hasResult = true
+        }
+      }
       return currentResult
     }
 
@@ -636,9 +657,20 @@ const useSignalSelectorImpl = <S, R>(
     bridge.setSelector(selector)
   }
 
+  // React only re-checks the snapshot after commit when getSnapshot's
+  // identity changed. Stock useSelector gets that for free from
+  // useSyncExternalStoreWithSelector, which derives a new getSnapshot per
+  // selector identity; a store change made in a layout effect is then
+  // rendered synchronously instead of waiting for the store listener.
+  // Hand React a wrapper keyed on the selector so the two match.
+  const getSnapshot = useMemo(
+    () => () => bridge.getSnapshot(),
+    [bridge, selector],
+  )
+
   const selectedState = useSyncExternalStore(
     bridge.subscribe,
-    bridge.getSnapshot,
+    getSnapshot,
     bridge.getServerSnapshot,
   )
 
