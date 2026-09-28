@@ -54,6 +54,10 @@ To perform linting with `oxlint`, run the following:
 pnpm lint
 ```
 
+### Docs
+
+The docs in `docs/` are published on the combined Redux docs site at https://redux.js.org/react-redux. See [`docs/README.md`](docs/README.md) for how the docs are organized and how to preview changes.
+
 ### New Features
 
 Please open an issue with a proposal for a new feature or refactoring before starting on the work. We don't want you to waste your efforts on a pull request that we won't want to accept.

@@ -13,7 +13,6 @@
     "**/lib/**",
     "**/coverage/**",
     "**/node_modules/**",
-    "website/**",
     "examples/**"
   ],
   "rules": {

@@ -80,7 +80,7 @@ To access the custom context via the hooks API, you can create custom hooks via 
 
 ## Multiple Stores
 
-[Redux was designed to use a single store](https://redux.js.org/api/store#a-note-for-flux-users).
+[Redux was designed to use a single store](/faq/store-setup#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself).
 However, if you are in an unavoidable position of needing to use multiple stores, as of v6 you may do so by providing (multiple) custom contexts.
 This also provides a natural isolation of the stores as they live in separate context instances.
 
