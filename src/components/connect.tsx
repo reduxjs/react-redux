@@ -43,6 +43,18 @@ import type {
 } from './Context'
 import { ReactReduxContext } from './Context'
 
+// Accepts the same values as `MapStateToPropsParam`, but as a single function
+// type whose return is `TStateProps | MapStateToProps<...>`. Inference prefers
+// the non-naked `MapStateToProps` member, so a factory infers `TStateProps` from
+// its inner function on every compiler, independent of union member order.
+type MapStateToPropsParamForMergeProps<TStateProps, TOwnProps, State> =
+  | ((
+      state: State,
+      ownProps: TOwnProps,
+    ) => TStateProps | MapStateToProps<TStateProps, TOwnProps, State>)
+  | null
+  | undefined
+
 // Define some constant arrays just to avoid re-creating these
 const EMPTY_ARRAY: [unknown, number] = [null, 0]
 const NO_SUBSCRIPTION_ARRAY = [null, null]
@@ -293,7 +305,7 @@ export interface Connect<DefaultState = unknown> {
   // and new (native, TS 7 / `tsgo`) compilers order union members differently,
   // inferring `TStateProps` / `TDispatchProps` incorrectly on one of them.
   // Listing the factory overload first makes the resolution order explicit and
-  // compiler-independent. The `mergeProps` overloads keep the unions on purpose
+  // compiler-independent. The `mergeProps` overloads can't be split this way
   // (see the note on those overloads below).
   // See https://github.com/reduxjs/react-redux/issues/2244
   (): InferableComponentEnhancer<DispatchProp>
@@ -417,9 +429,9 @@ export interface Connect<DefaultState = unknown> {
     mergeProps: MergeProps<undefined, DispatchProp, TOwnProps, TMergedProps>,
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
 
-  // `mergeProps` overloads keep the union parameters (see the note on the final
-  // `mergeProps` overload below) - splitting off a factory overload would
-  // collapse the inferred props to `{}`.
+  // `mergeProps` overloads don't split off a factory overload (see the note on
+  // the final `mergeProps` overload below) - doing so would collapse the
+  // inferred props to `{}`.
 
   /** mapState and mergeProps */
   <
@@ -429,7 +441,11 @@ export interface Connect<DefaultState = unknown> {
     TMergedProps = {},
     State = DefaultState,
   >(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+    mapStateToProps: MapStateToPropsParamForMergeProps<
+      TStateProps,
+      TOwnProps,
+      State
+    >,
     mapDispatchToProps: null | undefined,
     mergeProps: MergeProps<TStateProps, DispatchProp, TOwnProps, TMergedProps>,
   ): InferableComponentEnhancerWithProps<TMergedProps, TOwnProps>
@@ -562,14 +578,16 @@ export interface Connect<DefaultState = unknown> {
     TOwnProps
   >
 
-  // NOTE: the `mergeProps` overloads keep the union parameters rather than the
-  // factory/plain split used above. `mergeProps` receives `stateProps` and
+  // NOTE: the `mergeProps` overloads accept both map forms in one overload
+  // rather than the factory/plain split used above. `mergeProps` receives `stateProps` and
   // `dispatchProps` as contextually-typed (non-inferring) parameters, so
   // `TStateProps` / `TDispatchProps` can only be inferred from `mapStateToProps`
   // / `mapDispatchToProps`. With a dedicated factory overload listed first a
   // plain map function gets captured by it and the inferred props collapse to
-  // `{}`. The union keeps both forms as inference candidates in a single
-  // overload, which is the original (and correct) behavior for these signatures.
+  // `{}`, because the contextually-typed `mergeProps` parameters keep the types
+  // from the failed overload attempt. `mapStateToProps` uses
+  // `MapStateToPropsParamForMergeProps` instead of the `MapStateToPropsParam`
+  // union so that a factory infers the same `TStateProps` on every compiler.
 
   /** mapState, mapDispatch, mergeProps, and options */
   <
@@ -579,7 +597,11 @@ export interface Connect<DefaultState = unknown> {
     TMergedProps = {},
     State = DefaultState,
   >(
-    mapStateToProps: MapStateToPropsParam<TStateProps, TOwnProps, State>,
+    mapStateToProps: MapStateToPropsParamForMergeProps<
+      TStateProps,
+      TOwnProps,
+      State
+    >,
     mapDispatchToProps: MapDispatchToPropsParam<TDispatchProps, TOwnProps>,
     mergeProps: MergeProps<
       TStateProps,
