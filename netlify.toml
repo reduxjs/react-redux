@@ -28,10 +28,6 @@ NODE_OPTIONS = "--max_old_space_size=4096"
 # Netlify detects pnpm from the lockfile; Corepack reads the version from
 # `packageManager` in package.json.
 NETLIFY_USE_PNPM = "true"
-# Branches in the other library repos that carry the combined-site cleanup.
-# Switch back to "master" once those PRs merge.
-DOCS_REF_REDUX_TOOLKIT = "combined-docs"
-DOCS_REF_RESELECT = "combined-docs"
 
 # Production deploys of react-redux.js.org only publish redirects to
 # redux.js.org.
