@@ -5,6 +5,18 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['test/setup.ts'],
     globals: true,
+    server: {
+      deps: {
+        // RTK's `query/react` entry imports `react-redux` at runtime.
+        // Externalized deps are loaded by Node, which never applies the
+        // alias below: the import fails (this repo IS react-redux, so it
+        // isn't installed), and any copy Node did find would be a second
+        // module instance with its own context, ignoring TEST_IMPL.
+        // Inlining runs RTK through Vite so it shares the aliased instance
+        // the tests use.
+        inline: [/@reduxjs\/toolkit/],
+      },
+    },
     alias: {
       // Which implementation the shared spec files run against.
       // TEST_DIST=1     -> the built package
