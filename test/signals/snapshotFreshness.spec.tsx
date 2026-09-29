@@ -20,10 +20,11 @@ afterEach(() => {
 interface State {
   value: number
   other: string
+  item: { label: string }
 }
 
 const reducer = (
-  state: State = { value: 0, other: 'x' },
+  state: State = { value: 0, other: 'x', item: { label: 'a' } },
   action: { type: string },
 ): State => {
   switch (action.type) {
@@ -200,5 +201,51 @@ describe('snapshot freshness between dispatch and notification', () => {
     const before = seen.length
     await flushNotifications()
     expect(seen.length).toBe(before)
+  })
+
+  it('a value kept from an earlier evaluation reaches the component raw', async () => {
+    const store = makeStore()
+    const seen: Array<State['item'] | undefined> = []
+    let forceParent: () => void = () => {}
+
+    // Holds on to an object from a previous run and returns it later,
+    // like RTK Query's `lastResult`. A value captured during a tracked
+    // evaluation is a proxy.
+    let kept: State['item'] | undefined
+    const selectKept = (s: State) => {
+      if (s.value < 2) kept = s.item
+      return kept
+    }
+
+    function Child() {
+      const item = useSelector(selectKept)
+      seen.push(item)
+      return null
+    }
+    function Parent() {
+      const [, setN] = React.useState(0)
+      forceParent = () => setN((n) => n + 1)
+      return <Child />
+    }
+
+    rtl.render(
+      <Provider store={store}>
+        <Parent />
+      </Provider>,
+    )
+    await warmUp(store)
+
+    rtl.act(() => {
+      store.dispatch({ type: 'inc' })
+    })
+    rtl.act(() => {
+      forceParent()
+    })
+    await flushNotifications()
+
+    const raw = store.getState().item
+    for (const item of seen) {
+      expect(item).toBe(raw)
+    }
   })
 })

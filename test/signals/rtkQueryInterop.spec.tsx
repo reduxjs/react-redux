@@ -493,6 +493,139 @@ describe('RTK Query with reactHooksModule({ hooks: { useSelector } })', () => {
     })
   })
 
+  // While a new arg loads, RTKQ feeds the previous default result back into
+  // its selector as `lastResult` and keeps showing that result's `data`.
+  // With selectFromResult, that previous default result is captured inside
+  // the selector run, so under signals its `data` is the tracking proxy
+  // from an earlier evaluation. These check it never reaches the component
+  // and that behavior matches stock.
+  describe('arg change with selectFromResult', () => {
+    const seen: Array<Post | undefined> = []
+    const pickPost = ({
+      data,
+      isFetching,
+    }: {
+      data?: Post
+      isFetching: boolean
+    }) => ({ post: data, isFetching })
+
+    function Picker({ id, stable }: { id: number; stable: boolean }) {
+      countRender('picker')
+      const { post, isFetching } = api.endpoints.getPost.useQuery(id, {
+        selectFromResult: stable
+          ? pickPost
+          : ({ data, isFetching }) => ({ post: data, isFetching }),
+      })
+      seen.push(post)
+      return (
+        <div data-testid="picker">
+          {post?.title ?? ''}
+          {isFetching ? ' (fetching)' : ''}
+        </div>
+      )
+    }
+
+    // mount, pending, fulfilled | new arg, its pending | fulfilled, back to 1
+    const PICKER_RENDERS = { before: 3, whileLoading: 5, final: 7 }
+
+    const rawPost = (id: number) =>
+      api.endpoints.getPost.select(id)(store.getState()).data
+
+    beforeEach(() => {
+      seen.length = 0
+    })
+
+    describe.each([
+      ['inline', false],
+      ['stable', true],
+    ])('%s selector', (_name, stable) => {
+      it('keeps the previous raw data while the new arg loads, then switches', async () => {
+        const { rerender } = rtl.render(
+          <Root>
+            <Picker id={1} stable={stable} />
+          </Root>,
+        )
+        await settle()
+        expect(rtl.screen.getByTestId('picker').textContent).toBe('first')
+        const post1 = rawPost(1)
+        expect(seen.at(-1)).toBe(post1)
+        const before = renders.picker
+
+        server.pause()
+        rerender(
+          <Root>
+            <Picker id={2} stable={stable} />
+          </Root>,
+        )
+        await settle()
+        expect(rtl.screen.getByTestId('picker').textContent).toBe(
+          'first (fetching)',
+        )
+        expect(seen.at(-1)).toBe(post1)
+        expect(unwrap(seen.at(-1))).toBe(seen.at(-1))
+        const whileLoading = renders.picker
+
+        server.resume()
+        await settle()
+        expect(rtl.screen.getByTestId('picker').textContent).toBe('second')
+        expect(seen.at(-1)).toBe(rawPost(2))
+        expect(unwrap(seen.at(-1))).toBe(seen.at(-1))
+        expect(renders.picker).toBe(whileLoading + 1)
+
+        // Back to the cached arg: immediate, no request, raw data
+        rerender(
+          <Root>
+            <Picker id={1} stable={stable} />
+          </Root>,
+        )
+        await settle()
+        expect(rtl.screen.getByTestId('picker').textContent).toBe('first')
+        expect(seen.at(-1)).toBe(post1)
+        expect(server.requests).toHaveLength(2)
+        expect({ before, whileLoading, final: renders.picker }).toEqual(
+          PICKER_RENDERS,
+        )
+      })
+
+      it('ignores patches to the previous entry while the new arg loads', async () => {
+        const { rerender } = rtl.render(
+          <Root>
+            <Picker id={1} stable={stable} />
+          </Root>,
+        )
+        await settle()
+        server.pause()
+        rerender(
+          <Root>
+            <Picker id={2} stable={stable} />
+          </Root>,
+        )
+        await settle()
+        const post1 = seen.at(-1)
+        const whileLoading = renders.picker
+
+        // The shown data is the previous result object, not a live read of
+        // entry 1, so patching entry 1 changes nothing on screen.
+        await dispatchAndSettle(() =>
+          store.dispatch(
+            api.util.updateQueryData('getPost', 1, (draft) => {
+              draft.title = 'patched'
+            }),
+          ),
+        )
+        expect(rtl.screen.getByTestId('picker').textContent).toBe(
+          'first (fetching)',
+        )
+        expect(seen.at(-1)).toBe(post1)
+        expect(renders.picker).toBe(whileLoading)
+
+        server.resume()
+        await settle()
+        expect(rtl.screen.getByTestId('picker').textContent).toBe('second')
+      })
+    })
+  })
+
   it('runs a mutation, invalidates, and refetches the dependent query', async () => {
     let trigger: ((arg: { id: number; title: string }) => unknown) | null = null
     function Editor() {

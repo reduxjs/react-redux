@@ -491,14 +491,14 @@ const useSignalSelectorImpl = <S, R>(
       if (!built) {
         // Deferred: no effect is watching yet. Serve fresh values for
         // dispatches in the render→subscribe gap (and wildcard waits)
-        // by recomputing against RAW state — no proxies, no signals,
-        // no untracking needed. Cached per state ref; equalityFn
-        // preserves the previous result's identity for equal-but-new
-        // references. A throw propagates into render — stock parity.
+        // by recomputing against RAW state, with no signals. Cached per
+        // state ref; equalityFn preserves the previous result's identity
+        // for equal-but-new references. A throw propagates into render —
+        // stock parity.
         const state = store.getState()
         if (state !== lastSnapshotState) {
           lastSnapshotState = state
-          const fresh = selectorRef.current(state as S)
+          const fresh = untrackResult(selectorRef.current(state as S))
           if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
             currentResult = fresh
             hasResult = true
@@ -528,13 +528,19 @@ const useSignalSelectorImpl = <S, R>(
       // signal effect hasn't refreshed currentResult. A render landing
       // in that gap must still see current state, the same way stock
       // useSelector reads store.getState() directly. Recompute against
-      // RAW state — no proxies, no dependency changes. When the
-      // notification arrives the effect re-evaluates, finds the value
-      // equal, and stays quiet.
+      // RAW state with no dependency changes. When the notification
+      // arrives the effect re-evaluates, finds the value equal, and
+      // stays quiet.
+      //
+      // Raw state does not guarantee a proxy-free result: a selector can
+      // close over values captured during an earlier tracked evaluation
+      // (RTK Query's `lastValue` ref holds the previous default result,
+      // whose `data` is a tracking proxy when `selectFromResult` is
+      // used) and return them. Untrack here as on the tracked path.
       const state = store.getState()
       if (state !== lastSnapshotState) {
         lastSnapshotState = state
-        const fresh = selectorRef.current(state as S)
+        const fresh = untrackResult(selectorRef.current(state as S))
         if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
           currentResult = fresh
           hasResult = true
