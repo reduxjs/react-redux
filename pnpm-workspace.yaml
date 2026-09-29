@@ -22,3 +22,6 @@ autoInstallPeers: false
 # is `allowBuilds` (a map); pnpm 10's `onlyBuiltDependencies` list is ignored.
 allowBuilds:
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - '@reduxjs/toolkit@2.13.0'
