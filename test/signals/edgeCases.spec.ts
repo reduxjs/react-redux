@@ -14,15 +14,13 @@ import { describe, it, expect } from 'vitest'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import {
+  createLeafTracker,
   createTrackingProxy,
-  type LeafObjectTracker,
 } from '../../src/signals/trackingProxy'
 import { reconcileState } from '../../src/signals/diff'
 import { buildIdentityPath } from '../../src/signals/arrayKeys'
 
-function createTracker(): LeafObjectTracker {
-  return { accessedObjects: new Map(), traversedPaths: new Set() }
-}
+const createTracker = createLeafTracker
 
 describe('edge cases: non-plain objects in state', () => {
   // Non-plain objects (Date, Map, Set, class instances) are opaque leaves:

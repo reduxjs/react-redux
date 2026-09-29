@@ -4,10 +4,11 @@ import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import {
+  createLeafTracker,
   createTrackingProxy,
+  finalizeDependencies,
   getProxyPath,
 } from '../../src/signals/trackingProxy'
-import type { LeafObjectTracker } from '../../src/signals/trackingProxy'
 import { reconcileState } from '../../src/signals/diff'
 
 // Regression guard for dependency churn with memoized collection selectors.
@@ -119,10 +120,7 @@ function mountHook<R>(
   scope.run(() => {
     const computed = alienEngine.computed(() => {
       evals++
-      const leafTracker: LeafObjectTracker = {
-        accessedObjects: new Map(),
-        traversedPaths: new Set(),
-      }
+      const leafTracker = createLeafTracker()
       const proxy = createTrackingProxy(
         getState(),
         '',
@@ -133,11 +131,7 @@ function mountHook<R>(
       const result = selector(proxy as State)
       const proxyPath = getProxyPath(result)
       if (proxyPath !== undefined) registry.getOrCreate(proxyPath, result).get()
-      for (const [objPath, rawValue] of leafTracker.accessedObjects) {
-        if (!leafTracker.traversedPaths.has(objPath) && objPath !== '') {
-          registry.getOrCreate(objPath, rawValue).get()
-        }
-      }
+      finalizeDependencies(leafTracker, registry)
       return result
     })
     alienEngine.effect(() => {

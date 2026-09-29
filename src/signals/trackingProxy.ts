@@ -102,6 +102,122 @@ export interface LeafObjectTracker {
   accessedObjects: Map<string, object>
   /** Paths that had children accessed (i.e., were traversed, not leaves) */
   traversedPaths: Set<string>
+  /** Plain objects whose keys were enumerated this evaluation, with the
+   *  dependency reads deferred until `finalizeDependencies` decides
+   *  whether they collapse onto the object's own version signal. */
+  enumerated: Map<string, EnumerationRecord>
+}
+
+/**
+ * Deferred reads for one enumerated object. A spread (`{...obj}`),
+ * `Object.keys(obj).map(k => obj[k])`, `Object.values`, `Object.entries`,
+ * `shallowEqual`, and `JSON.stringify` all call `ownKeys` and then read
+ * every own key. Reading every own value of an immutably updated object
+ * depends on exactly the same thing as the object's identity, so once the
+ * evaluation ends and the reads are known to be complete, one version
+ * signal on the object replaces a signal per key plus the keys-meta
+ * signal. An incomplete enumeration (`Object.keys(obj).length`, or
+ * enumerating and reading a subset) replays the deferred reads instead.
+ */
+export interface EnumerationRecord {
+  target: object
+  keysRead: Set<string>
+  leaves: Array<[pathKey: string, value: unknown]>
+  objects: Array<[pathKey: string, value: object]>
+}
+
+/**
+ * Create an empty tracker for one selector evaluation.
+ * @returns A fresh LeafObjectTracker
+ */
+export function createLeafTracker(): LeafObjectTracker {
+  return {
+    accessedObjects: new Map(),
+    traversedPaths: new Set(),
+    enumerated: new Map(),
+  }
+}
+
+/**
+ * Register the dependencies an evaluation deferred: collapse or replay
+ * each enumerated object, then read version signals for leaf objects
+ * (read but never traversed — identity-only usage). Must run inside the
+ * same reactive computation that ran the selector, after it returned.
+ * @param tracker - The tracker installed for the evaluation
+ * @param registry - Signal registry for dependency tracking
+ * @returns void
+ */
+export function finalizeDependencies(
+  tracker: LeafObjectTracker,
+  registry: PathSignalRegistry,
+): void {
+  // Pass 1: decide which enumerations are complete. A collapsed object's
+  // version signal fires on any change beneath it, so every deferred read
+  // under a collapsed ancestor is redundant and gets skipped in pass 2
+  // (JSON.stringify collapses each nested object; only the outermost
+  // needs a signal). Records are checked against ancestors, not order,
+  // because a child can be enumerated before its parent.
+  const collapsed: string[] = []
+  for (const [objPath, record] of tracker.enumerated) {
+    tracker.traversedPaths.add(objPath)
+    if (isCompleteEnumeration(record)) {
+      collapsed.push(objPath)
+    }
+  }
+  const underCollapsed = (path: string): boolean => {
+    for (let i = 0; i < collapsed.length; i++) {
+      const c = collapsed[i]
+      if (
+        path.length > c.length &&
+        path.startsWith(c) &&
+        path[c.length] === '.'
+      ) {
+        return true
+      }
+    }
+    return false
+  }
+
+  // Pass 2: read one version signal per collapsed object; replay the
+  // deferred reads for incomplete enumerations.
+  for (const [objPath, record] of tracker.enumerated) {
+    if (underCollapsed(objPath)) continue
+    if (isCompleteEnumeration(record)) {
+      registry.getOrCreate(objPath, record.target).get()
+      continue
+    }
+    registry
+      .getOrCreate(keysMetaPath(objPath), Object.keys(record.target))
+      .get()
+    for (let i = 0; i < record.leaves.length; i++) {
+      const [pathKey, value] = record.leaves[i]
+      registry.getOrCreate(pathKey, value).get()
+    }
+    for (let i = 0; i < record.objects.length; i++) {
+      const [pathKey, value] = record.objects[i]
+      registry.ensurePrefix(pathKey)
+      tracker.accessedObjects.set(pathKey, value)
+    }
+  }
+
+  // Skip the root: its version signal is never fired by diff.
+  for (const [objPath, rawValue] of tracker.accessedObjects) {
+    if (
+      objPath !== '' &&
+      !tracker.traversedPaths.has(objPath) &&
+      !underCollapsed(objPath)
+    ) {
+      registry.getOrCreate(objPath, rawValue).get()
+    }
+  }
+}
+
+function isCompleteEnumeration(record: EnumerationRecord): boolean {
+  const ownKeys = Object.keys(record.target)
+  for (let i = 0; i < ownKeys.length; i++) {
+    if (!record.keysRead.has(ownKeys[i])) return false
+  }
+  return true
 }
 
 /**
@@ -300,6 +416,15 @@ export function createTrackingProxy<T extends object>(
   let lastValue: unknown
   let repeatCount = 0
 
+  // The enumeration record for this object is created by this proxy's own
+  // ownKeys trap, so the get trap can find it with an epoch compare instead
+  // of a Map lookup per read. Element scans over non-enumerated objects are
+  // the hot path and must not pay for the lookup.
+  let enumEpoch = -1
+  let enumRecord: EnumerationRecord | undefined
+  const currentEnumeration = () =>
+    enumEpoch === registry.evalEpoch ? enumRecord : undefined
+
   // Use an unfrozen shell as the proxy target to avoid ES Proxy invariant
   // violations with frozen objects. The shell copies the target's prototype
   // so that Array.isArray, instanceof, etc. work correctly.
@@ -333,6 +458,10 @@ export function createTrackingProxy<T extends object>(
       if (typeof prop === 'symbol') return Reflect.get(target, prop)
 
       if (prop === lastProp && registry.evalEpoch === lastEpoch) {
+        // A repeat read still counts toward a complete enumeration (a
+        // field read directly and then again via a spread). The first
+        // read already registered whatever dependency it needed.
+        currentEnumeration()?.keysRead.add(prop)
         if (process.env.NODE_ENV !== 'production') {
           if (++repeatCount === REPEATED_READ_WARN_THRESHOLD) {
             warnRepeatedRead(registry, getPathKey(prop))
@@ -407,19 +536,12 @@ export function createTrackingProxy<T extends object>(
         if (!Array.isArray(value) && !isPlainObject(value as object)) {
           if (leafTracker) {
             leafTracker.traversedPaths.add(parentPath)
+            // Counts toward a complete enumeration; the reference read
+            // stays immediate and is simply redundant if it collapses.
+            currentEnumeration()?.keysRead.add(prop as string)
           }
           registry.getOrCreate(pathKey, value).get()
           return value
-        }
-
-        // Register in prefix index (for hasPrefix/diff tracking) but DON'T
-        // create a signal. This avoids allocating signals for intermediate
-        // objects that are only traversed, not read as terminal values.
-        registry.ensurePrefix(pathKey)
-
-        // Mark parent as traversed (it has children being accessed)
-        if (leafTracker) {
-          leafTracker.traversedPaths.add(parentPath)
         }
 
         // Return cached child proxy (createTrackingProxy checks cache internally).
@@ -432,16 +554,48 @@ export function createTrackingProxy<T extends object>(
           cache,
         )
 
-        // Track this object access — may be a leaf (identity-only usage)
+        // Enumeration in progress on this object: defer the prefix and
+        // leaf-object bookkeeping to finalizeDependencies.
+        const enumeration = currentEnumeration()
+        if (enumeration !== undefined) {
+          if (!enumeration.keysRead.has(prop as string)) {
+            enumeration.keysRead.add(prop as string)
+            enumeration.objects.push([pathKey, value as object])
+          }
+          return childProxy
+        }
+
+        // Register in prefix index (for hasPrefix/diff tracking) but DON'T
+        // create a signal. This avoids allocating signals for intermediate
+        // objects that are only traversed, not read as terminal values.
+        registry.ensurePrefix(pathKey)
+
         if (leafTracker) {
+          // Mark parent as traversed (it has children being accessed)
+          leafTracker.traversedPaths.add(parentPath)
+          // Track this object access — may be a leaf (identity-only usage)
           leafTracker.accessedObjects.set(pathKey, value as object)
         }
 
         return childProxy
       }
 
-      // Mark parent as traversed (it has children being accessed)
       if (leafTracker) {
+        // Enumeration in progress on this object: defer the leaf read to
+        // finalizeDependencies.
+        const enumeration = currentEnumeration()
+        if (enumeration !== undefined) {
+          if (!enumeration.keysRead.has(prop as string)) {
+            enumeration.keysRead.add(prop as string)
+            enumeration.leaves.push([pathKey, value])
+          }
+          lastEpoch = registry.evalEpoch
+          lastProp = prop as string
+          lastValue = value
+          repeatCount = 0
+          return value
+        }
+        // Mark parent as traversed (it has children being accessed)
         leafTracker.traversedPaths.add(parentPath)
       }
 
@@ -462,11 +616,27 @@ export function createTrackingProxy<T extends object>(
       return value
     },
 
-    // Track when selectors iterate keys (Object.keys, for...in, .map, .filter, etc.)
+    // Track when selectors iterate keys (Object.keys, for...in, spread, etc.)
     ownKeys(_obj) {
-      registry
-        .getOrCreate(keysMetaPath(parentPath), Reflect.ownKeys(target))
-        .get()
+      const leafTracker = registry.leafTrackerHolder.current
+      // Plain non-root objects defer: if every own key gets read before
+      // the evaluation ends, one version signal on the object covers the
+      // keys and all the values. Arrays already collapse primitive element
+      // reads onto the array's version signal, and the root's version
+      // signal is never fired by diff, so both keep the immediate read.
+      if (leafTracker && !isRoot && !Array.isArray(target)) {
+        let record = leafTracker.enumerated.get(parentPath)
+        if (record === undefined) {
+          record = { target, keysRead: new Set(), leaves: [], objects: [] }
+          leafTracker.enumerated.set(parentPath, record)
+        }
+        enumRecord = record
+        enumEpoch = registry.evalEpoch
+      } else {
+        registry
+          .getOrCreate(keysMetaPath(parentPath), Reflect.ownKeys(target))
+          .get()
+      }
       return Reflect.ownKeys(target)
     },
 
