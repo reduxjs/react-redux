@@ -12,9 +12,10 @@ import {
   useSignalContext,
 } from './context'
 import {
+  createLeafTracker,
   createTrackingProxy,
+  finalizeDependencies,
   getProxyPath,
-  type LeafObjectTracker,
 } from './trackingProxy'
 import { computed, effect, signal } from './reactiveSystem'
 import { untrackResult } from './untrack'
@@ -142,10 +143,7 @@ const useSignalSelectorImpl = <S, R>(
     // The holder object is stable; its containers are swapped for fresh
     // ones at the start of each evaluation (a computed never re-enters
     // its own evaluation, so this is safe).
-    const leafTracker: LeafObjectTracker = {
-      accessedObjects: new Map(),
-      traversedPaths: new Set(),
-    }
+    const leafTracker = createLeafTracker()
 
     // Bumped when the component re-renders with a different selector
     // function (e.g., an inline selector closing over changed props).
@@ -315,6 +313,7 @@ const useSignalSelectorImpl = <S, R>(
 
         leafTracker.accessedObjects = new Map()
         leafTracker.traversedPaths = new Set()
+        leafTracker.enumerated = new Map()
 
         const proxy = createTrackingProxy(
           state,
@@ -336,19 +335,10 @@ const useSignalSelectorImpl = <S, R>(
           registry.getOrCreate(proxyPath, result).get()
         }
 
-        // Read version signals for leaf objects — objects that were accessed
-        // but never had their properties read. These are used for identity
-        // comparison (===) and need their ref-change signals tracked.
-        for (const [objPath, rawValue] of leafTracker.accessedObjects) {
-          if (!leafTracker.traversedPaths.has(objPath)) {
-            // This object was read but never traversed — it's a leaf.
-            // Read its version signal to track identity changes.
-            // Skip root path since root changes every dispatch.
-            if (objPath !== '') {
-              registry.getOrCreate(objPath, rawValue).get()
-            }
-          }
-        }
+        // Deferred reads: collapse complete enumerations onto object
+        // version signals, then track identity for leaf objects (read
+        // but never traversed, e.g. used only for `===`).
+        finalizeDependencies(leafTracker, registry)
 
         // Strip tracking proxies before the result crosses into React.
         // Must run AFTER the dependency reads above (they need the proxies

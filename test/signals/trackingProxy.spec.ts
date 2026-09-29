@@ -1,13 +1,14 @@
 import { describe, it, expect, vi } from 'vitest'
 import {
+  createLeafTracker,
   createTrackingProxy,
+  finalizeDependencies,
   getProxyPath,
   unwrap,
 } from '../../src/signals/trackingProxy'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { reconcileState } from '../../src/signals/diff'
 import { alienEngine } from '../../src/signals/engine'
-import type { LeafObjectTracker } from '../../src/signals/trackingProxy'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 
 function makeRegistry(): PathSignalRegistry {
@@ -1109,10 +1110,7 @@ describe('array method dependency tracking', () => {
         callCount++
         const state = getState()
 
-        const leafTracker: LeafObjectTracker = {
-          accessedObjects: new Map(),
-          traversedPaths: new Set(),
-        }
+        const leafTracker = createLeafTracker()
 
         const proxy = createTrackingProxy(
           state,
@@ -1129,14 +1127,8 @@ describe('array method dependency tracking', () => {
           registry.getOrCreate(proxyPath, result).get()
         }
 
-        // Leaf object tracking (same as useSignalSelector)
-        for (const [objPath, rawValue] of leafTracker.accessedObjects) {
-          if (!leafTracker.traversedPaths.has(objPath)) {
-            if (objPath !== '') {
-              registry.getOrCreate(objPath, rawValue).get()
-            }
-          }
-        }
+        // Deferred enumeration + leaf object tracking (same as useSignalSelector)
+        finalizeDependencies(leafTracker, registry)
 
         return result
       }),
