@@ -2660,13 +2660,14 @@ describe('React', () => {
         expect(tester.getByTestId('a')).toHaveTextContent('42')
       })
 
-      it('should not override ref property when not asked to.', async () => {
+      it('should not override a ref prop when forwardRef is not enabled', () => {
         type RootStateType = {}
         const store = createStore(() => ({}))
         type RefReceiverPropsType = {}
-        const RefReceiver = React.forwardRef<HTMLSpanElement, RefReceiverPropsType>(
-          (props: RefReceiverPropsType, ref) => <span ref={ref} />
-        );
+        const RefReceiver = React.forwardRef<
+          HTMLSpanElement,
+          RefReceiverPropsType
+        >((props: RefReceiverPropsType, ref) => <span ref={ref} />)
         type RefReceiverNoDispatchType = null
         const decorator = connect<
           RefReceiverPropsType,
@@ -2674,16 +2675,16 @@ describe('React', () => {
           RefReceiverPropsType,
           RootStateType
         >(null, null, null, {
-          forwardRef: IS_REACT_18
+          forwardRef: IS_REACT_18,
         })
         const DecoratedRefReceiver = decorator(RefReceiver)
         const testRef = React.createRef<HTMLSpanElement>()
         rtl.render(
           <ProviderMock store={store}>
             <DecoratedRefReceiver ref={testRef} />
-          </ProviderMock>
+          </ProviderMock>,
         )
-        expect(testRef.current).toBeInstanceOf(HTMLSpanElement);
+        expect(testRef.current).toBeInstanceOf(HTMLSpanElement)
       })
     })
 
