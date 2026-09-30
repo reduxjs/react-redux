@@ -48,7 +48,7 @@ export function wrapMapToPropsConstant(
 // therefore not reporting its length accurately..
 // TODO Can this get pulled out so that we can subscribe directly to the store if we don't need ownProps?
 function getDependsOnOwnProps(mapToProps: MapToProps) {
-  return mapToProps.dependsOnOwnProps
+  return mapToProps.dependsOnOwnProps != null
     ? Boolean(mapToProps.dependsOnOwnProps)
     : mapToProps.length !== 1
 }
