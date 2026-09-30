@@ -10,6 +10,12 @@ description: 'Usage > mapDispatch: options for dispatching actions with connect'
 
 # Connect: Dispatching Actions with `mapDispatchToProps`
 
+:::warning Deprecated
+
+`connect` is marked as deprecated as of React-Redux 9.3.0. It still works, and we do not intend to remove it, but [**we recommend using the `useDispatch` hook instead**](../api/hooks.md#usedispatch). See [Migrating to Modern Redux: Modernizing React Components](/usage/migrating-to-modern-redux#modernizing-react-components-with-react-redux) for how to convert `connect` usage to hooks.
+
+:::
+
 As the second argument passed in to `connect`, `mapDispatchToProps` is used for dispatching actions to the store.
 
 `dispatch` is a function of the Redux store. You call `store.dispatch` to dispatch an action.
@@ -222,7 +228,7 @@ function Counter({ count, increment, decrement, reset }) {
 
 Wrapping these functions by hand is tedious, so Redux provides a function to simplify that.
 
-> `bindActionCreators` turns an object whose values are [action creators](https://redux.js.org/glossary#action-creator), into an object with the same keys, but with every action creator wrapped into a [`dispatch`](https://redux.js.org/api/store#dispatch) call so they may be invoked directly. See [Redux Docs on `bindActionCreators`](https://redux.js.org/api/bindactioncreators)
+> `bindActionCreators` turns an object whose values are [action creators](/understanding/thinking-in-redux/glossary#action-creator), into an object with the same keys, but with every action creator wrapped into a [`dispatch`](/api/store#dispatchaction) call so they may be invoked directly. See [Redux Docs on `bindActionCreators`](/api/bindactioncreators)
 
 `bindActionCreators` accepts two parameters:
 
@@ -397,7 +403,7 @@ connect(null, mapDispatchToProps)(MyComponent)
 
 ### Can I call `store.dispatch`?
 
-It's an anti-pattern to interact with the store directly in a React component, whether it's an explicit import of the store or accessing it via context (see the [Redux FAQ entry on store setup](https://redux.js.org/faq/storesetup#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself) for more details). Let React Redux’s `connect` handle the access to the store, and use the `dispatch` it passes to the props to dispatch actions.
+It's an anti-pattern to interact with the store directly in a React component, whether it's an explicit import of the store or accessing it via context (see the [Redux FAQ entry on store setup](/faq/store-setup#can-or-should-i-create-multiple-stores-can-i-import-my-store-directly-and-use-it-in-components-myself) for more details). Let React Redux’s `connect` handle the access to the store, and use the `dispatch` it passes to the props to dispatch actions.
 
 ## Links and References
 
@@ -407,7 +413,7 @@ It's an anti-pattern to interact with the store directly in a React component, w
 
 **Related Docs**
 
-- [Redux Doc on `bindActionCreators`](https://redux.js.org/api/bindactioncreators)
+- [Redux Doc on `bindActionCreators`](/api/bindactioncreators)
 
 **Q&A**
 
@@ -415,4 +421,4 @@ It's an anti-pattern to interact with the store directly in a React component, w
 - [`this.props.dispatch` is `undefined` if using `mapDispatchToProps`](https://github.com/reduxjs/react-redux/issues/255)
 - [Do not call `store.dispatch`, call `this.props.dispatch` injected by `connect` instead](https://github.com/reduxjs/redux/issues/916)
 - [Can I `mapDispatchToProps` without `mapStateToProps` in Redux?](https://stackoverflow.com/questions/47657365/can-i-mapdispatchtoprops-without-mapstatetoprops-in-redux)
-- [Redux Doc FAQ: React Redux](https://redux.js.org/faq/reactredux)
+- [Redux Doc FAQ: React Redux](/faq/react-redux)

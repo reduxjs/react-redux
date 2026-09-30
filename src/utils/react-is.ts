@@ -84,6 +84,8 @@ function typeOf(object: any): symbol | undefined {
         return $$typeof
     }
   }
+
+  return undefined
 }
 
 export function isContextConsumer(object: any): object is ReactElement {

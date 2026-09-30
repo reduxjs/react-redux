@@ -5,9 +5,11 @@ declare const store: Store<{ foo: string }>
 
 describe('type tests', () => {
   test('Provider', () => {
-    expectTypeOf(Provider)
-      .parameter(0)
-      .not.toMatchTypeOf({ store, serverState: 'oops', children: 'foo' })
+    expectTypeOf(Provider).parameter(0).not.toExtend<{
+      store: typeof store
+      serverState: string
+      children: string
+    }>()
 
     const App = () => {
       return (
