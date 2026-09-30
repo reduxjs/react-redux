@@ -2238,8 +2238,12 @@ describe('React', () => {
 
       it.for(['development', 'production'] as const)(
         'should use a custom context prop in %s',
-        (nodeEnv) => {
+        (nodeEnv, { onTestFinished }) => {
           vi.stubEnv('NODE_ENV', nodeEnv)
+          onTestFinished(() => {
+            vi.unstubAllEnvs()
+          })
+
           class Container extends Component {
             render() {
               return <Passthrough />
@@ -2273,7 +2277,6 @@ describe('React', () => {
           )
 
           expect(actualState).toEqual(expectedState)
-          vi.unstubAllEnvs()
         },
       )
 
