@@ -57,6 +57,21 @@ export interface ProviderProps<
 function Provider<A extends Action<string> = UnknownAction, S = unknown>(
   providerProps: ProviderProps<A, S>,
 ) {
+  if (process.env.NODE_ENV !== 'production') {
+    // The React Server Components build of React has no effect hooks
+    if (typeof useIsomorphicLayoutEffect !== 'function') {
+      throw new Error(
+        'The React Redux `<Provider>` component requires React hooks that are ' +
+          'not available in a React Server Component. This usually means you are ' +
+          'rendering `<Provider>` in a Server Component. Add the `"use client"` ' +
+          'directive to the top of the file that renders `<Provider>` (or a ' +
+          'parent that ends up rendering it) so it is treated as a Client ' +
+          'Component. See https://react.dev/reference/rsc/use-client for more ' +
+          'information.',
+      )
+    }
+  }
+
   const { children, context, serverState, store } = providerProps
 
   const contextValue = React.useMemo(() => {
