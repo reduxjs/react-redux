@@ -9,5 +9,5 @@
     "rootDir": "."
   },
   "include": ["."],
-  "exclude": ["dist*", "examples", "website"]
+  "exclude": ["dist*", "examples", "docs"]
 }

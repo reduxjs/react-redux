@@ -1,0 +1,29 @@
+name: Rebuild docs site
+# The React Redux docs are published on the combined site at
+# https://redux.js.org/react-redux, which is built from the reduxjs/redux repo.
+# That Netlify site only rebuilds on its own commits, so docs changes here ask
+# it to rebuild through a build hook.
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the redux.js.org build hook
+        env:
+          # Build hook URL of the redux.js.org Netlify site
+          BUILD_HOOK: ${{ secrets.REDUX_DOCS_BUILD_HOOK }}
+        run: |
+          if [ -z "$BUILD_HOOK" ]; then
+            echo "REDUX_DOCS_BUILD_HOOK is not set, skipping."
+            exit 0
+          fi
+          curl --fail --silent --show-error -X POST -d '{}' \
+            "$BUILD_HOOK?trigger_title=react-redux+docs+${GITHUB_SHA::7}"

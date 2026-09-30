@@ -1,0 +1,32 @@
+name: Publish Package to npmjs
+on:
+  # keeping it purely manual for now as to not accidentally trigger a release
+  #release:
+  #  types: [published]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
+        with:
+          # This job installs below with --frozen-lockfile, after setup-node has
+          # configured the cache.
+          install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: npm publish --access public --provenance

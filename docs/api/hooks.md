@@ -70,7 +70,7 @@ Allows you to extract data from the Redux store state for use in this component,
 
 The selector function should be [pure](https://en.wikipedia.org/wiki/Pure_function) since it is potentially executed multiple times and at arbitrary points in time.
 
-See [Using Redux: Deriving Data with Selectors](https://redux.js.org/usage/deriving-data-selectors) in the Redux docs for more details on writing and using selector functions.
+See [Using Redux: Deriving Data with Selectors](/usage/deriving-data-selectors) in the Redux docs for more details on writing and using selector functions.
 
 :::
 
@@ -224,7 +224,7 @@ export const App = () => {
 }
 ```
 
-However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that selector's memoization behavior is properly configured (see [here](https://reselect.js.org/faq/#can-i-share-a-selector-across-multiple-component-instances) for details).
+However, when the selector is used in multiple component instances and depends on the component's props, you need to ensure that selector's memoization behavior is properly configured (see [here](/reselect/FAQ#can-i-share-a-selector-across-multiple-component-instances) for details).
 
 ### Development mode checks
 
@@ -553,7 +553,7 @@ much conceptual overhead and syntactic complexity.
 
 You should probably prefer to call the [`useDispatch`](#usedispatch) hook in your components to retrieve a reference to `dispatch`,
 and manually call `dispatch(someActionCreator())` in callbacks and effects as needed. You may also use the Redux
-[`bindActionCreators`](https://redux.js.org/api/bindactioncreators) function in your own code to bind action creators,
+[`bindActionCreators`](/api/bindactioncreators) function in your own code to bind action creators,
 or "manually" bind them like `const boundAddTodo = (text) => dispatch(addTodo(text))`.
 
 However, if you'd like to still use this hook yourself, here's a copy-pastable version that supports passing in action
@@ -590,4 +590,4 @@ export function useShallowEqualSelector(selector) {
 
 ### Additional considerations when using hooks
 
-There are some architectural trade offs to take into consideration when deciding whether to use hooks or not. Mark Erikson summarizes these nicely in his two blog posts [Thoughts on React Hooks, Redux, and Separation of Concerns](https://blog.isquaredsoftware.com/2019/07/blogged-answers-thoughts-on-hooks/) and [Hooks, HOCs, and Tradeoffs](https://blog.isquaredsoftware.com/2019/09/presentation-hooks-hocs-tradeoffs/).
+There are some architectural trade-offs to take into consideration when deciding whether to use hooks or not. Mark Erikson summarizes these nicely in his two blog posts [Thoughts on React Hooks, Redux, and Separation of Concerns](https://blog.isquaredsoftware.com/2019/07/blogged-answers-thoughts-on-hooks/) and [Hooks, HOCs, and Tradeoffs](https://blog.isquaredsoftware.com/2019/09/presentation-hooks-hocs-tradeoffs/).

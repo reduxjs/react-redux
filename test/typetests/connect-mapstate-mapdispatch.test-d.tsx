@@ -1,6 +1,10 @@
 import React from 'react'
 import type { ActionCreator, Dispatch } from 'redux'
-import type { MapDispatchToProps, ReactReduxContextValue } from 'react-redux'
+import type {
+  MapDispatchToProps,
+  MapStateToPropsParam,
+  ReactReduxContextValue,
+} from 'react-redux'
 import { connect } from 'react-redux'
 
 // Test cases written in a way to isolate types and variables and verify the
@@ -387,6 +391,211 @@ describe('type tests', () => {
     )(TestComponent)
 
     const verify = <Test foo="bar" />
+  })
+
+  test('map state factory with mergeProps and options', () => {
+    interface OwnProps {
+      foo: string
+    }
+    interface StateProps {
+      bar: number
+    }
+
+    class TestComponent extends React.Component<OwnProps & StateProps> {}
+
+    const mapStateToPropsFactory = () => () => ({
+      bar: 1,
+    })
+
+    const mapDispatchToProps = () => ({
+      onClick: () => {},
+    })
+
+    const mergeProps = (
+      stateProps: StateProps,
+      dispatchProps: unknown,
+      ownProps: OwnProps,
+    ) => ({ ...stateProps, ...ownProps })
+
+    // `stateProps` is deliberately not annotated here, so the type of the
+    // state props has to come from inferring the factory form.
+    const WithMergeProps = connect(
+      mapStateToPropsFactory,
+      null,
+      (stateProps, dispatchProps, ownProps: OwnProps) => ({
+        ...ownProps,
+        bar: stateProps.bar,
+      }),
+    )(TestComponent)
+    const verifyMergeProps = <WithMergeProps foo="bar" />
+
+    const WithOptions = connect(
+      mapStateToPropsFactory,
+      null,
+      null,
+      {},
+    )(TestComponent)
+    const verifyOptions = <WithOptions foo="bar" />
+
+    const WithDispatchAndOptions = connect(
+      mapStateToPropsFactory,
+      mapDispatchToProps,
+      null,
+      {},
+    )(TestComponent)
+    const verifyDispatchAndOptions = <WithDispatchAndOptions foo="bar" />
+
+    const WithEverything = connect(
+      mapStateToPropsFactory,
+      mapDispatchToProps,
+      mergeProps,
+      {},
+    )(TestComponent)
+    const verifyEverything = <WithEverything foo="bar" />
+  })
+
+  test('unannotated mergeProps infers props from every map form', () => {
+    interface OwnProps {
+      foo: string
+    }
+    interface StateProps {
+      bar: number
+    }
+    interface DispatchProps {
+      onClick: () => void
+    }
+
+    class TestComponent extends React.Component<
+      OwnProps & StateProps & Partial<DispatchProps>
+    > {}
+
+    const mapStateToProps = (_: unknown) => ({ bar: 1 })
+    const mapStateToPropsFactory = () => (_: unknown) => ({ bar: 1 })
+    const mapDispatchToProps = () => ({ onClick: () => {} })
+    const mapDispatchToPropsFactory = () => () => ({ onClick: () => {} })
+
+    const PlainState = connect(
+      mapStateToProps,
+      null,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<StateProps>()
+        return { ...ownProps, bar: stateProps.bar }
+      },
+    )(TestComponent)
+    const verifyPlainState = <PlainState foo="bar" />
+
+    const FactoryState = connect(
+      mapStateToPropsFactory,
+      null,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<StateProps>()
+        return { ...ownProps, bar: stateProps.bar }
+      },
+    )(TestComponent)
+    const verifyFactoryState = <FactoryState foo="bar" />
+
+    const PlainStatePlainDispatch = connect(
+      mapStateToProps,
+      mapDispatchToProps,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<StateProps>()
+        expectTypeOf(dispatchProps).toEqualTypeOf<DispatchProps>()
+        return { ...ownProps, ...stateProps, ...dispatchProps }
+      },
+    )(TestComponent)
+    const verifyPlainStatePlainDispatch = <PlainStatePlainDispatch foo="bar" />
+
+    const PlainStateFactoryDispatch = connect(
+      mapStateToProps,
+      mapDispatchToPropsFactory,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<StateProps>()
+        expectTypeOf(dispatchProps).toEqualTypeOf<DispatchProps>()
+        return { ...ownProps, ...stateProps, ...dispatchProps }
+      },
+    )(TestComponent)
+    const verifyPlainStateFactoryDispatch = (
+      <PlainStateFactoryDispatch foo="bar" />
+    )
+
+    const NullStateFactoryDispatch = connect(
+      null,
+      mapDispatchToPropsFactory,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(dispatchProps).toEqualTypeOf<DispatchProps>()
+        return { ...ownProps, bar: 1, ...dispatchProps }
+      },
+    )(TestComponent)
+    const verifyNullStateFactoryDispatch = (
+      <NullStateFactoryDispatch foo="bar" />
+    )
+
+    const FactoryStateObjectDispatch = connect(
+      mapStateToPropsFactory,
+      { onClick: () => ({ type: 'click' }) },
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<StateProps>()
+        return { ...ownProps, ...stateProps, onClick: dispatchProps.onClick }
+      },
+      {},
+    )(TestComponent)
+    const verifyFactoryStateObjectDispatch = (
+      <FactoryStateObjectDispatch foo="bar" />
+    )
+
+    const FactoryStateFactoryDispatch = connect(
+      mapStateToPropsFactory,
+      mapDispatchToPropsFactory,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<StateProps>()
+        expectTypeOf(dispatchProps).toEqualTypeOf<DispatchProps>()
+        return { ...ownProps, ...stateProps, ...dispatchProps }
+      },
+    )(TestComponent)
+    const verifyFactoryStateFactoryDispatch = (
+      <FactoryStateFactoryDispatch foo="bar" />
+    )
+
+    const InlinePlainState = connect(
+      (state) => ({ bar: 1, state }),
+      { onClick: () => ({ type: 'click' }) },
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<{
+          bar: number
+          state: unknown
+        }>()
+        return { ...ownProps, bar: stateProps.bar }
+      },
+    )(TestComponent)
+    const verifyInlinePlainState = <InlinePlainState foo="bar" />
+
+    const InlineFactoryState = connect(
+      () => (state) => ({ bar: 1, state }),
+      null,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<{
+          bar: number
+          state: unknown
+        }>()
+        return { ...ownProps, bar: stateProps.bar }
+      },
+    )(TestComponent)
+    const verifyInlineFactoryState = <InlineFactoryState foo="bar" />
+
+    const mapStateToPropsParam: MapStateToPropsParam<
+      StateProps,
+      OwnProps,
+      unknown
+    > = mapStateToPropsFactory
+    const ParamState = connect(
+      mapStateToPropsParam,
+      mapDispatchToProps,
+      (stateProps, dispatchProps, ownProps: OwnProps) => {
+        expectTypeOf(stateProps).toEqualTypeOf<StateProps>()
+        return { ...ownProps, ...stateProps, ...dispatchProps }
+      },
+    )(TestComponent)
+    const verifyParamState = <ParamState foo="bar" />
   })
 
   test('map state and dispatch and merge', () => {

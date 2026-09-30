@@ -174,7 +174,7 @@ describe('New v8 serverState behavior', () => {
       expect(consoleErrorSpy).toHaveBeenCalledOnce()
 
       expect(errorArg.message).toMatch(
-        /Hydration failed because the server rendered HTML didn't match the client/,
+        /Hydration failed because the server rendered (HTML|text) didn't match the client/,
       )
     } else if (IS_REACT_18) {
       expect(consoleErrorSpy).toHaveBeenCalledTimes(8)

@@ -220,6 +220,77 @@ describe('React', () => {
         expect(tester.getByTestId('string')).toHaveTextContent('ab')
       })
 
+      it('should log errors thrown in mapStateToProps to console.error in development (#1942)', () => {
+        vi.stubEnv('NODE_ENV', 'development')
+
+        const store: Store = createStore(stringBuilder)
+
+        // Throw on the first call only. The subscription-update path catches
+        // and logs the error; the subsequent re-render then succeeds, so the
+        // error does not propagate up to the test runner.
+        let shouldThrow = false
+        const mapState = (state: string) => {
+          if (shouldThrow) {
+            shouldThrow = false
+            throw new Error('mapStateToProps failed')
+          }
+          return { value: state }
+        }
+
+        class Container extends Component<{ value: string }> {
+          render() {
+            return <Passthrough {...this.props} />
+          }
+        }
+        const ConnectedContainer = connect(mapState)(Container)
+
+        const consoleSpy = vi
+          .spyOn(console, 'error')
+          .mockImplementation(() => {})
+
+        rtl.render(
+          <ProviderMock store={store}>
+            <ConnectedContainer />
+          </ProviderMock>,
+        )
+
+        const callsBeforeDispatch = consoleSpy.mock.calls.length
+
+        shouldThrow = true
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'a' })
+        })
+
+        const newCalls = consoleSpy.mock.calls.slice(callsBeforeDispatch)
+        const loggedAnError = newCalls.some((args) =>
+          args.some(
+            (arg) =>
+              arg instanceof Error && arg.message === 'mapStateToProps failed',
+          ),
+        )
+        expect(loggedAnError).toBe(true)
+
+        // The logged message should name the offending component so the
+        // developer can tell which `connect()`-ed component threw.
+        const namedTheComponent = newCalls.some((args) =>
+          args.some(
+            (arg) =>
+              typeof arg === 'string' && arg.includes('Connect(Container)'),
+          ),
+        )
+        expect(namedTheComponent).toBe(true)
+
+        // Dispatch again so the subscription path runs a successful update,
+        // which clears `lastThrownError` and prevents the unmount-time rethrow.
+        rtl.act(() => {
+          store.dispatch({ type: 'APPEND', body: 'b' })
+        })
+
+        consoleSpy.mockRestore()
+
+        vi.unstubAllEnvs()
+      })
+
       it("should retain the store's context", () => {
         const store = new ContextBoundStore(stringBuilder)
 

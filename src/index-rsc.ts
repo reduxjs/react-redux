@@ -23,6 +23,7 @@ export {
   throwNotSupportedError as Provider,
   throwNotSupportedError as batch,
   throwNotSupportedError as connect,
+  throwNotSupportedError as legacy_connect,
   throwNotSupportedError as createDispatchHook,
   throwNotSupportedError as createSelectorHook,
   throwNotSupportedError as createStoreHook,
