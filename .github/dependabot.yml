@@ -12,4 +12,3 @@ updates:
       semver-patch-days: 3
     exclude-paths:
       - "examples/**"
-      - "website/**"

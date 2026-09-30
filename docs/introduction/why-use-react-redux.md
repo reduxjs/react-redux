@@ -22,8 +22,8 @@ To understand why you should use React Redux, it may help to understand what a "
 
 If you have questions about whether you should use Redux in general, please see these articles for discussion of when and why you might want to use Redux, and how it's intended to be used:
 
-- [Redux docs: Motivation](https://redux.js.org/introduction/motivation)
-- [Redux docs: FAQ - When should I use Redux?](https://redux.js.org/faq/general#when-should-i-use-redux)
+- [Redux docs: Motivation](/understanding/thinking-in-redux/motivation)
+- [Redux docs: FAQ - When should I use Redux?](/faq/general#when-should-i-use-redux)
 - [You Might Not Need Redux](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367)
 - [Idiomatic Redux: The Tao of Redux, Part 1 - Implementation and Intent](https://blog.isquaredsoftware.com/2017/05/idiomatic-redux-tao-of-redux-part-1/)
 
@@ -56,7 +56,7 @@ For a deeper look at how React Redux works internally and how it handles the sto
 
 ### It is the Official Redux UI Bindings for React
 
-While Redux can be used with any UI layer, it was originally designed and intended for use with React. There are [UI binding layers for many other frameworks](https://redux.js.org/introduction/ecosystem#library-integration-and-bindings), but React Redux is maintained directly by the Redux team.
+While Redux can be used with any UI layer, it was originally designed and intended for use with React. There are UI binding layers for other frameworks as well, including the official [Angular Redux](https://github.com/reduxjs/angular-redux) and [Vue Redux](https://github.com/reduxjs/vue-redux) bindings, but React Redux is the most widely used and is maintained directly by the Redux team.
 
 As the official Redux binding for React, React Redux is kept up-to-date with any API changes from either library, to ensure that your React components behave as expected. Its intended usage adopts the design principles of React - writing declarative components.
 

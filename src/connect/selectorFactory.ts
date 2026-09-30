@@ -167,8 +167,12 @@ interface WrappedMapDispatchToProps<TDispatchProps, TOwnProps> {
   readonly dependsOnOwnProps: boolean
 }
 
-export interface InitOptions<TStateProps, TOwnProps, TMergedProps, State>
-  extends PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
+export interface InitOptions<
+  TStateProps,
+  TOwnProps,
+  TMergedProps,
+  State,
+> extends PureSelectorFactoryComparisonOptions<TStateProps, TOwnProps, State> {
   readonly shouldHandleStateChanges: boolean
   readonly displayName: string
   readonly wrappedComponentName: string
