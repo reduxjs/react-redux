@@ -256,7 +256,7 @@ let anElement: ReactElement<TestProp>
 class NonComponent {}
 
 // this doesn't compile
-expectTypeOf(connect()).parameter(0).not.toMatchTypeOf(NonComponent)
+expectTypeOf(connect()).parameter(0).not.toExtend<typeof NonComponent>()
 
 // stateless functions
 interface HelloMessageProps {
@@ -351,10 +351,9 @@ describe('type tests', () => {
       mapStateToPropsWithoutOwnProps,
     )(OwnPropsComponent)
 
-    expectTypeOf(React.createElement).parameters.not.toMatchTypeOf([
-      ConnectedWithoutOwnProps,
-      { anything: 'goes!' },
-    ] as const)
+    expectTypeOf(React.createElement).parameters.not.toExtend<
+      readonly [typeof ConnectedWithoutOwnProps, { anything: 'goes!' }]
+    >()
 
     // This compiles, as expected.
     /**
