@@ -58,11 +58,7 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>(
   providerProps: ProviderProps<A, S>,
 ) {
   if (process.env.NODE_ENV !== 'production') {
-    // React Server Components do not provide the effect hooks that `<Provider>`
-    // relies on, so `useIsomorphicLayoutEffect` (which resolves to
-    // `useLayoutEffect`/`useEffect`) is `undefined` in that environment. Detect
-    // this before any hook runs and throw an actionable error, instead of the
-    // cryptic "X is not a function" that would otherwise surface.
+    // The React Server Components build of React has no effect hooks
     if (typeof useIsomorphicLayoutEffect !== 'function') {
       throw new Error(
         'The React Redux `<Provider>` component requires React hooks that are ' +
