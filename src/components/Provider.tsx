@@ -80,7 +80,7 @@ function Provider<A extends Action<string> = UnknownAction, S = unknown>(
     const baseContextValue = {
       store,
       subscription,
-      getServerState: serverState ? () => serverState : undefined,
+      getServerState: serverState != null ? () => serverState : undefined,
     }
 
     if (process.env.NODE_ENV === 'production') {
