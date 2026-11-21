@@ -350,7 +350,7 @@ function emitMappedValue(
     // The get trap recorded this element as a leaf-object candidate. The
     // container dependency covers it, so keep the leaf tracker from adding
     // a per-element identity signal on top.
-    registry.leafTrackerHolder.current?.traversedPaths.add(path)
+    registry.evaluation.tracker?.traversedPaths.add(path)
   }
   return raw
 }

@@ -1053,8 +1053,9 @@ describe('array method dependency tracking', () => {
         const state = getState()
 
         const leafTracker = createLeafTracker()
+        registry.evaluation.tracker = leafTracker
 
-        const proxy = createTrackingProxy(state, '', registry, leafTracker)
+        const proxy = createTrackingProxy(state, '', registry)
         const result = selector(proxy as S)
 
         // Terminal object dependency (same as useSignalSelector)
@@ -1065,6 +1066,7 @@ describe('array method dependency tracking', () => {
 
         // Deferred enumeration + leaf object tracking (same as useSignalSelector)
         finalizeDependencies(leafTracker, registry)
+        registry.evaluation.tracker = null
 
         return result
       }),

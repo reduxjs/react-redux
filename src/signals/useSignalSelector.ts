@@ -302,12 +302,16 @@ const useSignalSelectorImpl = <S, R>(
       // pendingError reflects the LAST evaluation: a successful re-run
       // clears an earlier error.
       pendingError = null
+      // Restored rather than cleared so a nested evaluation hands the
+      // tracker back to the one it interrupted.
+      const outerTracker = registry.evaluation.tracker
       try {
         const state = store.getState() as S & object
         lastSnapshotState = state
 
         const leafTracker = createLeafTracker()
-        const proxy = createTrackingProxy(state, '', registry, leafTracker)
+        registry.evaluation.tracker = leafTracker
+        const proxy = createTrackingProxy(state, '', registry)
         const result = selectorRef.current(proxy as S)
 
         if (process.env.NODE_ENV !== 'production') {
@@ -346,6 +350,8 @@ const useSignalSelectorImpl = <S, R>(
         // stock useSelector under React's useSyncExternalStore).
         pendingError = e
         return SELECTOR_THREW as R
+      } finally {
+        registry.evaluation.tracker = outerTracker
       }
     })
 

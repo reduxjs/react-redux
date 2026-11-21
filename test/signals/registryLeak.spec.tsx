@@ -1,7 +1,7 @@
 /**
  * What the path signal registry holds onto across mount/unmount churn.
  *
- * `proxyCache` is a WeakMap, so its contents cannot be observed from a
+ * `evaluation.proxyCache` is a WeakMap, so its contents cannot be observed from a
  * test. Everything else is counted by `registry.debugStats()`.
  *
  * Imports come from source modules rather than `src/index`, so these

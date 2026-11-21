@@ -171,7 +171,7 @@ describe('edge cases: React integration', () => {
       expect(getByTestId('identity').textContent).toBe('changed')
     })
 
-    // The active leafTracker lives in registry.leafTrackerHolder and is
+    // The active leaf tracker lives in registry.evaluation.tracker and is
     // swapped in per evaluation, so component B's identity-only reads land
     // in B's own tracker even when component A's earlier traversal already
     // populated the proxy cache.

@@ -25,6 +25,41 @@ export interface RegistryStats {
   segmentSubs: number
 }
 
+export interface EvaluationState {
+  /** Leaf tracker of the selector evaluation running right now, or null
+   *  between evaluations. Proxies read it at trap time instead of closing
+   *  over a tracker, so cached proxies record into the active evaluation,
+   *  and reads through a proxy kept past its evaluation record nothing. */
+  tracker: LeafObjectTracker | null
+
+  /** Incremented each time a root tracking proxy is created, i.e. once
+   *  per selector evaluation. Proxies use it to scope their last-read
+   *  memo to the current evaluation. */
+  epoch: number
+
+  /**
+   * Tracking proxies keyed by target identity, reused across evaluations.
+   * Immer's structural sharing keeps unchanged subtrees at the same
+   * reference across snapshots, so their proxies can be reused.
+   *
+   * KNOWN TRADEOFF: an object aliased at two paths (e.g.
+   * `state.selected = state.items[0]`) reuses the proxy created for
+   * whichever path was read first, so child reads through the second path
+   * register signals under the first path. Per-path proxies would fix the
+   * attribution but break identity comparison (`state.selected ===
+   * state.items[0]` must hold, and two proxies are never `===`). The alias
+   * path itself still gets a version-signal dependency via the leaf-object
+   * tracker, so replacing the aliased object re-runs the selector — the
+   * misattribution can cause excess re-runs, never missed ones.
+   */
+  proxyCache: WeakMap<object, object>
+
+  /** Encoded path keys for top-level state properties. Root proxies are
+   *  created fresh per evaluation, so they share this instead of each
+   *  building its own. */
+  rootPathKeyCache: Map<string, string>
+}
+
 /** Bookkeeping for one array path. Exists while any of its fields is
  *  set; flush and prune drop the whole record with the path. */
 export interface ArrayRecord {
@@ -98,37 +133,8 @@ export interface PathSignalRegistry {
    *  reconcileState reports each dispatch. */
   segmentIndex: SegmentIndex
 
-  /**
-   * Tracking proxies keyed by target identity, reused across evaluations.
-   * Immer's structural sharing keeps unchanged subtrees at the same
-   * reference across snapshots, so their proxies can be reused.
-   *
-   * KNOWN TRADEOFF: an object aliased at two paths (e.g.
-   * `state.selected = state.items[0]`) reuses the proxy created for
-   * whichever path was read first, so child reads through the second path
-   * register signals under the first path. Per-path proxies would fix the
-   * attribution but break identity comparison (`state.selected ===
-   * state.items[0]` must hold, and two proxies are never `===`). The alias
-   * path itself still gets a version-signal dependency via the leaf-object
-   * tracker, so replacing the aliased object re-runs the selector — the
-   * misattribution can cause excess re-runs, never missed ones.
-   */
-  proxyCache: WeakMap<object, object>
-
-  /** Encoded path keys for top-level state properties. Root proxies are
-   *  created fresh per evaluation, so they share this instead of each
-   *  building its own. */
-  rootPathKeyCache: Map<string, string>
-
-  /** Incremented each time a root tracking proxy is created, i.e. once
-   *  per selector evaluation. Proxies use it to scope their last-read
-   *  memo to the current evaluation. */
-  evalEpoch: number
-
-  /** Holder for the leaf tracker of the evaluation currently running.
-   *  Proxies read this at trap time instead of closing over a tracker,
-   *  so cached proxies record into whichever evaluation is active. */
-  leafTrackerHolder: { current: LeafObjectTracker | undefined }
+  /** State the tracking proxies share across selector evaluations. */
+  evaluation: EvaluationState
 
   /** Key field for the array at `arrayPath`. Detected from `sample` (an
    *  element) and stored on first success; later calls return the stored
@@ -562,12 +568,12 @@ export function createPathSignalRegistry(
 
     segmentIndex: createSegmentIndex(),
 
-    proxyCache: new WeakMap(),
-
-    rootPathKeyCache: new Map(),
-    evalEpoch: 0,
-
-    leafTrackerHolder: { current: undefined },
+    evaluation: {
+      tracker: null,
+      epoch: 0,
+      proxyCache: new WeakMap(),
+      rootPathKeyCache: new Map(),
+    },
 
     keyFieldFor(arrayPath: string, sample: unknown): string | undefined {
       const rec = arrays.get(arrayPath)

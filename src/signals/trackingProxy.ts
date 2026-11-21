@@ -187,34 +187,28 @@ function isCompleteEnumeration(record: EnumerationRecord): boolean {
  * Because the shell is extensible, `Object.isFrozen(proxy)` returns false
  * even when the state is frozen; `unwrap` it to check the state itself.
  *
- * Child proxies are cached in `registry.proxyCache`, keyed by target
- * identity. The cache persists across evaluations and dispatches, so an
- * unchanged subtree yields the same proxy object every time — selector
- * results built from those proxies stay referentially equal. The root
- * proxy is the exception: it is created fresh on every call so that
+ * Child proxies are cached in `registry.evaluation.proxyCache`, keyed by
+ * target identity. The cache persists across evaluations and dispatches,
+ * so an unchanged subtree yields the same proxy object every time —
+ * selector results built from those proxies stay referentially equal. The
+ * root proxy is the exception: it is created fresh on every call so that
  * caches keyed on the state argument cannot skip the selector body.
+ *
+ * Leaf-object and enumeration bookkeeping goes to
+ * `registry.evaluation.tracker`, which the caller sets for the duration
+ * of one evaluation.
  * @param target - The frozen state object to wrap
  * @param parentPath - Dot-separated path to this object in the state tree
  * @param registry - Signal registry for dependency tracking
- * @param leafTracker - Optional tracker for detecting leaf object accesses.
- *   When provided, it becomes the ACTIVE tracker for the registry: all
- *   proxy traps (including those of previously cached proxies) record
- *   into it until another evaluation installs a different tracker.
  * @returns A tracking proxy wrapping the target
  */
 export function createTrackingProxy<T extends object>(
   target: T,
   parentPath: string,
   registry: PathSignalRegistry,
-  leafTracker?: LeafObjectTracker,
 ): T {
-  const cache = registry.proxyCache
-  // Install the tracker for this evaluation. Traps read the holder at
-  // access time instead of closing over a tracker, so proxies cached by
-  // an earlier evaluation record into the current evaluation's tracker.
-  if (leafTracker !== undefined) {
-    registry.leafTrackerHolder.current = leafTracker
-  }
+  const evaluation = registry.evaluation
+  const cache = evaluation.proxyCache
 
   // The root proxy is never cached: every evaluation gets a fresh one.
   // Memoized selectors (Reselect's argsMemoize, WeakMap caches keyed on
@@ -225,7 +219,7 @@ export function createTrackingProxy<T extends object>(
   // inputs are child proxies, which ARE cached by target identity.
   const isRoot = parentPath === ''
   if (isRoot) {
-    registry.evalEpoch++
+    evaluation.epoch++
   } else {
     const cached = cache.get(target)
     if (cached) return cached as T
@@ -238,7 +232,7 @@ export function createTrackingProxy<T extends object>(
   // over a collection while comparing against one proxied field
   // (`items.filter(i => i.ownerId === user.id)`) hit this path once per
   // element, so skipping the path-key/registry/signal lookups matters.
-  // The memo is scoped by registry.evalEpoch: cached proxies outlive the
+  // The memo is scoped by the evaluation epoch: cached proxies outlive the
   // evaluation that created them, and a stale hit on a later evaluation
   // would silently drop the dependency.
   let lastEpoch = -1
@@ -253,7 +247,7 @@ export function createTrackingProxy<T extends object>(
   let enumEpoch = -1
   let enumRecord: EnumerationRecord | undefined
   const currentEnumeration = () =>
-    enumEpoch === registry.evalEpoch ? enumRecord : undefined
+    enumEpoch === evaluation.epoch ? enumRecord : undefined
 
   // Use an unfrozen shell as the proxy target to avoid ES Proxy invariant
   // violations with frozen objects. The shell copies the target's prototype
@@ -271,7 +265,7 @@ export function createTrackingProxy<T extends object>(
   // other paths or meta segments. The cache amortizes the encoding.
   // Root proxies are not reused, so they share the registry's cache.
   const pathKeyCache = isRoot
-    ? registry.rootPathKeyCache
+    ? evaluation.rootPathKeyCache
     : new Map<string, string>()
   function getPathKey(prop: string): string {
     let key = pathKeyCache.get(prop)
@@ -287,7 +281,7 @@ export function createTrackingProxy<T extends object>(
       // Symbols: read from actual target (iterator protocol, toStringTag, etc.)
       if (typeof prop === 'symbol') return Reflect.get(target, prop)
 
-      if (prop === lastProp && registry.evalEpoch === lastEpoch) {
+      if (prop === lastProp && evaluation.epoch === lastEpoch) {
         // A repeat read still counts toward a complete enumeration (a
         // field read directly and then again via a spread). The first
         // read already registered whatever dependency it needed.
@@ -301,7 +295,7 @@ export function createTrackingProxy<T extends object>(
       }
 
       const value = (target as Record<string, unknown>)[prop]
-      const leafTracker = registry.leafTrackerHolder.current
+      const leafTracker = evaluation.tracker
 
       // Functions: intercept array methods to avoid per-element proxy creation
       if (typeof value === 'function') {
@@ -375,8 +369,6 @@ export function createTrackingProxy<T extends object>(
         }
 
         // Return cached child proxy (createTrackingProxy checks cache internally).
-        // No tracker argument: the trap already reads the registry's
-        // active-tracker holder, which this evaluation installed.
         const childProxy = createTrackingProxy(
           value as object,
           pathKey,
@@ -418,7 +410,7 @@ export function createTrackingProxy<T extends object>(
             enumeration.keysRead.add(prop as string)
             enumeration.leaves.push([pathKey, value])
           }
-          lastEpoch = registry.evalEpoch
+          lastEpoch = evaluation.epoch
           lastProp = prop as string
           lastValue = value
           repeatCount = 0
@@ -437,7 +429,7 @@ export function createTrackingProxy<T extends object>(
       // covered by diff's added-key handling firing the leaf path.
       registry.getOrCreate(pathKey, value).get()
 
-      lastEpoch = registry.evalEpoch
+      lastEpoch = evaluation.epoch
       lastProp = prop as string
       lastValue = value
       repeatCount = 0
@@ -447,7 +439,7 @@ export function createTrackingProxy<T extends object>(
 
     // Track when selectors iterate keys (Object.keys, for...in, spread, etc.)
     ownKeys(_obj) {
-      const leafTracker = registry.leafTrackerHolder.current
+      const leafTracker = evaluation.tracker
       // Plain non-root objects defer: if every own key gets read before
       // the evaluation ends, one version signal on the object covers the
       // keys and all the values. Arrays already collapse primitive element
@@ -460,7 +452,7 @@ export function createTrackingProxy<T extends object>(
           leafTracker.enumerated.set(parentPath, record)
         }
         enumRecord = record
-        enumEpoch = registry.evalEpoch
+        enumEpoch = evaluation.epoch
       } else {
         registry.getOrCreate(keysMetaPath(parentPath), KEYS_SEED).get()
       }

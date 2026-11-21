@@ -371,7 +371,8 @@ describe('edge cases: aliased references (same object at two paths)', () => {
 
     const registry = createPathSignalRegistry(alienEngine)
     const tracker = createTracker()
-    const proxy = createTrackingProxy(state, '', registry, tracker)
+    registry.evaluation.tracker = tracker
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.items[0].name).toBe('a')
     expect(proxy.selected.name).toBe('a')
@@ -382,9 +383,9 @@ describe('edge cases: aliased references (same object at two paths)', () => {
 })
 
 describe('edge cases: leafTracker capture through the shared proxy cache', () => {
-  // The active leafTracker lives in registry.leafTrackerHolder and is
-  // swapped in at the start of each evaluation, so cached proxies created
-  // by an earlier evaluation record into the CURRENT evaluation's tracker.
+  // The active leaf tracker lives in registry.evaluation.tracker and is
+  // swapped in for each evaluation, so cached proxies created by an
+  // earlier evaluation record into the CURRENT evaluation's tracker.
 
   it('a second evaluation records leaf accesses into its own tracker', () => {
     const state = { settings: { theme: 'dark' } }
@@ -392,12 +393,14 @@ describe('edge cases: leafTracker capture through the shared proxy cache', () =>
 
     // Evaluation A creates and caches all the proxies
     const trackerA = createTracker()
-    const proxyA = createTrackingProxy(state, '', registry, trackerA)
+    registry.evaluation.tracker = trackerA
+    const proxyA = createTrackingProxy(state, '', registry)
     expect(proxyA.settings.theme).toBe('dark')
 
-    // Evaluation B gets cache hits — every trap still records into trackerA
+    // Evaluation B gets cache hits on proxies evaluation A created
     const trackerB = createTracker()
-    const proxyB = createTrackingProxy(state, '', registry, trackerB)
+    registry.evaluation.tracker = trackerB
+    const proxyB = createTrackingProxy(state, '', registry)
     // Leaf (identity-only) access by evaluation B
     void proxyB.settings
 
