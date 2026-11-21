@@ -788,6 +788,114 @@ describe('args-memoization cache hits', () => {
     expect(resultRuns).toBe(3)
   })
 
+  it('a selector memoized on a slice and shared by several components keeps updating all of them', () => {
+    // The second component to evaluate gets a cache hit: its selector
+    // run reads `s.todos` and nothing inside it.
+    const store = makeStore()
+    let resultRuns = 0
+    const selectOpen = createSelector([(todos: Todo[]) => todos], (todos) => {
+      resultRuns++
+      return todos.filter((t) => !t.completed)
+    })
+    const renders = [0, 0, 0]
+
+    function Open({ n }: { n: number }) {
+      renders[n]++
+      const open = useSelector((s: RootState) => selectOpen(s.todos))
+      return (
+        <div data-testid={`open-${n}`}>{open.map((t) => t.text).join(',')}</div>
+      )
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <Open n={0} />
+        <Open n={1} />
+        <Open n={2} />
+      </Provider>,
+    )
+    const texts = () =>
+      [0, 1, 2].map((n) => getByTestId(`open-${n}`).textContent)
+    expect(texts()).toEqual(['write tests', 'write tests', 'write tests'])
+
+    incrementTimes(store, 2)
+    expect(renders).toEqual([1, 1, 1])
+
+    rtl.act(() => {
+      store.dispatch({ type: 'toggle', id: 2 })
+    })
+    expect(texts()).toEqual([
+      'write tests,review code',
+      'write tests,review code',
+      'write tests,review code',
+    ])
+    rtl.act(() => {
+      store.dispatch({ type: 'editText', id: 1, text: 'ship it' })
+    })
+    rtl.act(() => {
+      store.dispatch({ type: 'add', id: 3, text: 'release' })
+    })
+    expect(texts()).toEqual([
+      'ship it,review code,release',
+      'ship it,review code,release',
+      'ship it,review code,release',
+    ])
+    expect(renders).toEqual([4, 4, 4])
+    expect(resultRuns).toBe(4)
+  })
+
+  it('a hand-written WeakMap memo keyed on a slice and shared by several components keeps updating all of them', () => {
+    const store = makeStore()
+    const cache = new WeakMap<Todo[], Todo[]>()
+    const selectOpen = (s: RootState) => {
+      let open = cache.get(s.todos)
+      if (open === undefined) {
+        open = s.todos.filter((t) => !t.completed)
+        cache.set(s.todos, open)
+      }
+      return open
+    }
+    const seen: Todo[][][] = [[], []]
+
+    function Open({ n }: { n: number }) {
+      const open = useSelector(selectOpen)
+      seen[n].push(open)
+      return (
+        <div data-testid={`open-${n}`}>{open.map((t) => t.text).join(',')}</div>
+      )
+    }
+
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <Open n={0} />
+        <Open n={1} />
+      </Provider>,
+    )
+    const texts = () => [0, 1].map((n) => getByTestId(`open-${n}`).textContent)
+    expect(texts()).toEqual(['write tests', 'write tests'])
+
+    incrementTimes(store, 2)
+    expect(seen.map((s) => s.length)).toEqual([1, 1])
+
+    for (const action of [
+      { type: 'toggle', id: 2 },
+      { type: 'editText', id: 1, text: 'ship it' },
+      { type: 'toggle', id: 1 },
+    ]) {
+      rtl.act(() => {
+        store.dispatch(action)
+      })
+    }
+    expect(texts()).toEqual(['review code', 'review code'])
+    expect(seen.map((s) => s.length)).toEqual([4, 4])
+
+    // Components receive raw state objects, never tracking proxies.
+    const raw = store.getState().todos[1]
+    expect(seen[0].at(-1)![0]).toBe(raw)
+    expect(seen[1].at(-1)![0]).toBe(raw)
+    expect(getProxyPath(seen[0].at(-1)![0])).toBeUndefined()
+  })
+
   it('calling the same memoized selector with raw state outside React does not break the hook', () => {
     const store = makeStore()
     const selectDoubled = selectSummary()
