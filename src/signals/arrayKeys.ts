@@ -18,17 +18,9 @@ const KEY_CANDIDATES = ['id', 'key', '_id', '__id'] as const
  * @returns The key field name, or undefined if none found
  */
 export function findKeyField(obj: unknown): string | undefined {
-  if (obj === null || typeof obj !== 'object' || Array.isArray(obj))
-    return undefined
   for (let i = 0; i < KEY_CANDIDATES.length; i++) {
     const candidate = KEY_CANDIDATES[i]
-    if (candidate in (obj as Record<string, unknown>)) {
-      const value = (obj as Record<string, unknown>)[candidate]
-      // Key must be a primitive that can be used in a path string
-      if (typeof value === 'string' || typeof value === 'number') {
-        return candidate
-      }
-    }
+    if (getKeyValue(obj, candidate) !== undefined) return candidate
   }
   return undefined
 }
@@ -98,7 +90,7 @@ export function joinPath(parentPath: string, segment: string | number): string {
  * @returns The meta path key
  */
 export function keysMetaPath(parentPath: string): string {
-  return parentPath ? parentPath + '.@@keys' : '@@keys'
+  return joinPath(parentPath, '@@keys')
 }
 
 /**
@@ -146,13 +138,13 @@ export function buildIdentityPath(
   keyField: string,
   keyValue: string | number,
 ): string {
-  const segment = `{${keyField}:${encodeKeyValue(keyValue)}}`
-  return arrayPath ? `${arrayPath}.${segment}` : segment
+  return joinPath(arrayPath, `{${keyField}:${encodeKeyValue(keyValue)}}`)
 }
 
 /**
  * Extract a key value from an array element.
- * Returns undefined if element is not an object or key field is missing.
+ * Returns undefined if element is not an object or the key is missing or
+ * not a string or number (it must fit in a path string).
  * @param element - The array element to extract the key from
  * @param keyField - The identity key field name
  * @returns The key value, or undefined if not extractable
