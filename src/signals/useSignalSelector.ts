@@ -75,11 +75,10 @@ const useSignalSelectorImpl = <S, R>(
   const reduxContext = useBoundSignalContext<S>()
   const { store, registry } = reduxContext
 
-  // Track latest selector/equalityFn via refs. Updated during render
-  // (idempotent ref writes, same approach as React's
-  // useSyncExternalStoreWithSelector) so a selector closing over changed
-  // props is applied in THIS render, not a layout effect later.
-  const selectorRef = useRef(selector)
+  // Track the latest equalityFn via a ref. Updated during render
+  // (idempotent ref write, same approach as React's
+  // useSyncExternalStoreWithSelector). The selector itself lives in the
+  // bridge; see setSelector.
   const equalityFnRef = useRef(equalityFn)
   equalityFnRef.current = equalityFn
 
@@ -94,6 +93,10 @@ const useSignalSelectorImpl = <S, R>(
 
   // Create the signal bridge once (stable across renders)
   const bridge = useMemo(() => {
+    // Each bridge owns its selector, seeded from the render that created
+    // it. A bridge built for a new store (or StrictMode's extra useMemo
+    // call) never runs a selector that another bridge was handed.
+    let currentSelector = selector
     let currentResult: R
     // Whether currentResult has ever been seeded. User equality
     // functions must never be called with the unseeded value — stock
@@ -171,7 +174,7 @@ const useSignalSelectorImpl = <S, R>(
     }
 
     const setSelector = (nextSelector: (state: S) => R): void => {
-      selectorRef.current = nextSelector
+      currentSelector = nextSelector
 
       if (built) {
         // Recompute in place: this runs during render, and getSnapshot
@@ -243,7 +246,7 @@ const useSignalSelectorImpl = <S, R>(
         // Re-running the selector against the same proxy registers the
         // same dependencies (idempotent) and returns proxy-consistent
         // values, so === / shallowEqual comparisons behave correctly.
-        const toCompare = selectorRef.current(proxy)
+        const toCompare = currentSelector(proxy)
         if (!equalityFnRef.current(selected, toCompare)) {
           let stack: string | undefined = undefined
           try {
@@ -253,7 +256,7 @@ const useSignalSelectorImpl = <S, R>(
           }
           console.warn(
             'Selector ' +
-              (selectorRef.current.name || 'unknown') +
+              (currentSelector.name || 'unknown') +
               ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
               '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
             // `state` is the RAW store state, not the proxy the selector
@@ -278,7 +281,7 @@ const useSignalSelectorImpl = <S, R>(
           }
           console.warn(
             'Selector ' +
-              (selectorRef.current.name || 'unknown') +
+              (currentSelector.name || 'unknown') +
               ' returned the root state when called. With useSignalSelector this component will NEVER re-render, because signal dependencies are only created for the specific paths a selector reads — and this selector read none.' +
               '\nSelect the smallest values your component needs instead of the entire state object.',
             { stack },
@@ -312,7 +315,7 @@ const useSignalSelectorImpl = <S, R>(
         const leafTracker = createLeafTracker()
         registry.evaluation.tracker = leafTracker
         const proxy = createTrackingProxy(state, '', registry)
-        const result = selectorRef.current(proxy as S)
+        const result = currentSelector(proxy as S)
 
         if (process.env.NODE_ENV !== 'production') {
           runDevModeChecks(result, proxy as S, state as S)
@@ -406,7 +409,7 @@ const useSignalSelectorImpl = <S, R>(
     // swap, stock parity.
     const probe = (state: S & object): void => {
       const { proxy, record } = createProbeProxy(state)
-      const value = selectorRef.current(proxy as S)
+      const value = currentSelector(proxy as S)
       if (process.env.NODE_ENV !== 'production') {
         runDevModeChecks(value, proxy as S, state as S)
       }
@@ -459,10 +462,6 @@ const useSignalSelectorImpl = <S, R>(
     // computed and permanently anchor path signals in the registry.
     // Until subscribe builds the deep tier, getSnapshot serves values by
     // running the raw selector (see the unbuilt branch below).
-    // A new bridge (first mount or a store swap) must seed with this
-    // render's selector. On a swap the ref still holds the previous
-    // render's selector, which was written for the old store's state.
-    selectorRef.current = selector
     const initialState = store.getState()
     if (isPlainObject(initialState)) {
       probe(initialState as S & object)
@@ -512,7 +511,7 @@ const useSignalSelectorImpl = <S, R>(
       const state = store.getState()
       if (state !== lastSnapshotState) {
         lastSnapshotState = state
-        adopt(untrackResult(selectorRef.current(state as S)))
+        adopt(untrackResult(currentSelector(state as S)))
       }
       return currentResult
     }
@@ -600,20 +599,24 @@ const useSignalSelectorImpl = <S, R>(
         const state = getServerState()
         if (state !== lastServerState) {
           lastServerState = state
-          serverResult = untrackResult(selectorRef.current(state as S))
+          serverResult = untrackResult(currentSelector(state as S))
         }
         return serverResult as R
       },
 
+      getSelector: (): ((state: S) => R) => currentSelector,
+
       setSelector,
     }
+    // The selector is deliberately not a dependency: a new selector
+    // reaches an existing bridge through setSelector below.
   }, [store, registry])
 
   // Render-phase selector swap: if this render brought a different
   // selector function (inline selector closing over changed props),
   // re-evaluate now so getSnapshot returns the new closure's value in
   // this same render.
-  if (selectorRef.current !== selector) {
+  if (bridge.getSelector() !== selector) {
     bridge.setSelector(selector)
   }
 

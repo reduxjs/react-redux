@@ -25,7 +25,8 @@ export function SignalProvider<
   // The signal graph and the diff baseline are keyed to the store:
   // swapping the `store` prop starts over with a fresh registry, the
   // same way stock Provider rebuilds its Subscription. `prevState` is
-  // mutable — onStateChange advances it after each diff.
+  // mutable — onStateChange advances it after each diff, and the
+  // subscribe effect compares it to catch a dispatch before subscribing.
   const signalState = React.useMemo(
     () => ({
       registry: createPathSignalRegistry(alienEngine),
@@ -59,8 +60,6 @@ export function SignalProvider<
     }
   }, [store, serverState, registry])
 
-  const previousState = React.useMemo(() => store.getState(), [store])
-
   // Standard Provider subscription logic (from components/Provider.tsx)
   // + signal diff on each dispatch
   useIsomorphicLayoutEffect(() => {
@@ -90,14 +89,16 @@ export function SignalProvider<
     }
     subscription.trySubscribe()
 
-    if (previousState !== store.getState()) {
+    // A dispatch between render and this effect: prevState is still the
+    // render-time state, because onStateChange wasn't attached yet.
+    if (signalState.prevState !== store.getState()) {
       subscription.notifyNestedSubs()
     }
     return () => {
       subscription.tryUnsubscribe()
       subscription.onStateChange = undefined
     }
-  }, [contextValue, previousState])
+  }, [contextValue, signalState])
 
   const Context = (context ||
     ReactReduxContext) as Context<ReactReduxContextValue<S, A> | null>
