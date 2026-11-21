@@ -163,7 +163,7 @@ describe('untrackResult unit behavior', () => {
     Object.freeze(state.list[0])
     Object.freeze(state.list)
     Object.freeze(state)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
     return { state, proxy }
   }
 
@@ -255,12 +255,7 @@ describe('untrackResult with derived arrays', () => {
     Object.freeze(rows)
     Object.freeze(state.extra)
     Object.freeze(state)
-    const proxy = createTrackingProxy(
-      state,
-      '',
-      registry,
-      registry.proxyCache,
-    ) as typeof state
+    const proxy = createTrackingProxy(state, '', registry) as typeof state
     return { state, proxy }
   }
 

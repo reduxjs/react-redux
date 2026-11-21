@@ -121,13 +121,7 @@ function mountHook<R>(
     const computed = alienEngine.computed(() => {
       evals++
       const leafTracker = createLeafTracker()
-      const proxy = createTrackingProxy(
-        getState(),
-        '',
-        registry,
-        registry.proxyCache,
-        leafTracker,
-      )
+      const proxy = createTrackingProxy(getState(), '', registry, leafTracker)
       const result = selector(proxy as State)
       const proxyPath = getProxyPath(result)
       if (proxyPath !== undefined) registry.getOrCreate(proxyPath, result).get()

@@ -12,7 +12,7 @@ import {
 // Helper: create a registry with signals pre-populated by running a selector through a tracking proxy
 function setupRegistry(state: object, selectorFn: (s: any) => void) {
   const registry = createPathSignalRegistry(alienEngine)
-  const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+  const proxy = createTrackingProxy(state, '', registry)
   selectorFn(proxy)
   return registry
 }
@@ -234,7 +234,7 @@ describe('identity-based array tracking: proxy', () => {
       items: [{ id: 1, name: 'Alice' }],
     })
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     // Before access — no meta
     expect(registry.getArrayMeta('items')).toBeUndefined()
@@ -256,7 +256,7 @@ describe('identity-based array tracking: proxy', () => {
       ],
     })
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     ;(proxy as any).items[0].name
     const meta1 = registry.getArrayMeta('items')

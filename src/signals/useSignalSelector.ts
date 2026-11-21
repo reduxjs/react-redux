@@ -306,13 +306,7 @@ const useSignalSelectorImpl = <S, R>(
         lastSnapshotState = state
 
         const leafTracker = createLeafTracker()
-        const proxy = createTrackingProxy(
-          state,
-          '',
-          registry,
-          registry.proxyCache,
-          leafTracker,
-        )
+        const proxy = createTrackingProxy(state, '', registry, leafTracker)
         const result = selectorRef.current(proxy as S)
 
         if (process.env.NODE_ENV !== 'production') {

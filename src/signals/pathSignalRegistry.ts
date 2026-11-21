@@ -3,7 +3,7 @@ import type { ArrayMeta } from './arrayKeys'
 import { createSegmentIndex } from './coarseSegments'
 import type { SegmentIndex } from './coarseSegments'
 import { isObjectOrArray } from './objects'
-import type { LeafObjectTracker, ProxyCache } from './trackingProxy'
+import type { LeafObjectTracker } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
 /**
@@ -88,8 +88,22 @@ export interface PathSignalRegistry {
    *  reconcileState reports each dispatch. */
   segmentIndex: SegmentIndex
 
-  /** Proxy cache for reusing proxies across evaluations (keyed by object identity). */
-  proxyCache: ProxyCache
+  /**
+   * Tracking proxies keyed by target identity, reused across evaluations.
+   * Immer's structural sharing keeps unchanged subtrees at the same
+   * reference across snapshots, so their proxies can be reused.
+   *
+   * KNOWN TRADEOFF: an object aliased at two paths (e.g.
+   * `state.selected = state.items[0]`) reuses the proxy created for
+   * whichever path was read first, so child reads through the second path
+   * register signals under the first path. Per-path proxies would fix the
+   * attribution but break identity comparison (`state.selected ===
+   * state.items[0]` must hold, and two proxies are never `===`). The alias
+   * path itself still gets a version-signal dependency via the leaf-object
+   * tracker, so replacing the aliased object re-runs the selector — the
+   * misattribution can cause excess re-runs, never missed ones.
+   */
+  proxyCache: WeakMap<object, object>
 
   /** Encoded path keys for top-level state properties. Root proxies are
    *  created fresh per evaluation, so they share this instead of each
@@ -233,7 +247,6 @@ export function createPathSignalRegistry(
   const childIndex = new Map<string, Set<string>>()
   // Proxy cache: keyed by target object identity.
   // Reuses proxies for unchanged Immer subtrees across state snapshots.
-  const proxyWeakMap: ProxyCache = new WeakMap()
   // Per-array metadata for identity-based tracking.
   // Maps array path → ArrayMeta (keyField + entityMap).
   const arrayMetas = new Map<string, ArrayMeta>()
@@ -586,7 +599,7 @@ export function createPathSignalRegistry(
 
     segmentIndex: createSegmentIndex(),
 
-    proxyCache: proxyWeakMap,
+    proxyCache: new WeakMap(),
 
     rootPathKeyCache: new Map(),
     evalEpoch: 0,

@@ -213,24 +213,6 @@ function isCompleteEnumeration(record: EnumerationRecord): boolean {
 }
 
 /**
- * Type for the proxy cache. Exported so the registry can own one.
- * Caches proxies by their target object identity.
- * Since Immer uses structural sharing, unchanged subtrees keep the same
- * object reference across state snapshots — so we can reuse their proxies.
- *
- * KNOWN TRADEOFF: an object aliased at two paths (e.g.
- * `state.selected = state.items[0]`) reuses the proxy created for
- * whichever path was read first, so child reads through the second path
- * register signals under the first path. Per-path proxies would fix the
- * attribution but break identity comparison (`state.selected ===
- * state.items[0]` must hold, and two proxies are never `===`). The alias
- * path itself still gets a version-signal dependency via the leaf-object
- * tracker, so replacing the aliased object re-runs the selector — the
- * misattribution can cause excess re-runs, never missed ones.
- */
-export type ProxyCache = WeakMap<object, object>
-
-/**
  * Get the path key associated with a tracking proxy, or undefined if not a proxy.
  * @param value - The value to check
  * @returns The path string, or undefined if not a tracking proxy
@@ -379,7 +361,6 @@ export function getElementPathKey(
  * @param target - The frozen state object to wrap
  * @param parentPath - Dot-separated path to this object in the state tree
  * @param registry - Signal registry for dependency tracking
- * @param cache - Proxy cache for deduplication
  * @param leafTracker - Optional tracker for detecting leaf object accesses.
  *   When provided, it becomes the ACTIVE tracker for the registry: all
  *   proxy traps (including those of previously cached proxies) record
@@ -390,9 +371,9 @@ export function createTrackingProxy<T extends object>(
   target: T,
   parentPath: string,
   registry: PathSignalRegistry,
-  cache: ProxyCache,
   leafTracker?: LeafObjectTracker,
 ): T {
+  const cache = registry.proxyCache
   // Install the tracker for this evaluation. Traps read the holder at
   // access time instead of closing over a tracker, so proxies cached by
   // an earlier evaluation record into the current evaluation's tracker.
@@ -422,9 +403,9 @@ export function createTrackingProxy<T extends object>(
   // over a collection while comparing against one proxied field
   // (`items.filter(i => i.ownerId === user.id)`) hit this path once per
   // element, so skipping the path-key/registry/signal lookups matters.
-  // The memo is scoped by registry.evalEpoch, not by tracker identity:
-  // useSignalSelector reuses one tracker across evaluations, and a stale
-  // hit on a later evaluation would silently drop the dependency.
+  // The memo is scoped by registry.evalEpoch: cached proxies outlive the
+  // evaluation that created them, and a stale hit on a later evaluation
+  // would silently drop the dependency.
   let lastEpoch = -1
   let lastProp: string | undefined
   let lastValue: unknown
@@ -565,7 +546,6 @@ export function createTrackingProxy<T extends object>(
           value as object,
           pathKey,
           registry,
-          cache,
         )
 
         // Enumeration in progress on this object: defer the prefix and

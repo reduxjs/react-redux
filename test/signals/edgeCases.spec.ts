@@ -31,7 +31,7 @@ describe('edge cases: non-plain objects in state', () => {
     const createdAt = new Date(2020, 0, 1)
     const state = { createdAt }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.createdAt.getTime()).toBe(createdAt.getTime())
   })
@@ -39,7 +39,7 @@ describe('edge cases: non-plain objects in state', () => {
   it('supports calling Map methods on a state Map', () => {
     const state = { lookup: new Map([['a', 1]]) }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.lookup.get('a')).toBe(1)
   })
@@ -47,7 +47,7 @@ describe('edge cases: non-plain objects in state', () => {
   it('supports calling Set methods on a state Set', () => {
     const state = { tags: new Set(['x']) }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.tags.has('x')).toBe(true)
   })
@@ -55,7 +55,7 @@ describe('edge cases: non-plain objects in state', () => {
   it('instanceof checks work through the proxy (getPrototypeOf trap)', () => {
     const state = { createdAt: new Date(2020, 0, 1) }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.createdAt instanceof Date).toBe(true)
   })
@@ -63,7 +63,7 @@ describe('edge cases: non-plain objects in state', () => {
   it('reads Map.size through the proxy (getter invoked on the real target)', () => {
     const state = { lookup: new Map([['a', 1]]) }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.lookup.size).toBe(1)
   })
@@ -77,7 +77,7 @@ describe('edge cases: non-plain objects in state', () => {
     const next = { user: new User('Bob') }
 
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(prev, '', registry)
 
     // The instance comes back raw — no proxy shell, no child signals.
     expect(proxy.user).toBe(alice)
@@ -91,7 +91,7 @@ describe('edge cases: non-plain objects in state', () => {
     let runs = 0
     const computed = alienEngine.computed(() => {
       runs++
-      const p = createTrackingProxy(next, '', registry, registry.proxyCache)
+      const p = createTrackingProxy(next, '', registry)
       return p.user.name
     })
     expect(computed.get()).toBe('Bob')
@@ -127,7 +127,7 @@ describe('edge cases: identity key values', () => {
     // percent-escaped: "users.{id:a%40b%2Ecom}.name".
     const state = { users: [{ id: 'a@b.com', name: 'Alice' }] }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.users[0].name).toBe('Alice')
     expect(registry.hasPrefix('users.{id:a@b')).toBe(false)
@@ -140,7 +140,7 @@ describe('edge cases: identity key values', () => {
     expect(identityPath).toBe('users.{id:a%40b%2Ecom}')
 
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.users[0].name).toBe('Alice')
     expect(registry.has(`${identityPath}.name`)).toBe(true)
 
@@ -164,13 +164,13 @@ describe('edge cases: object keys with reserved path characters', () => {
     let dottedRuns = 0
     const dotted = alienEngine.computed(() => {
       dottedRuns++
-      const p = createTrackingProxy(current, '', registry, registry.proxyCache)
+      const p = createTrackingProxy(current, '', registry)
       return p['a.b']
     })
     let nestedRuns = 0
     const nested = alienEngine.computed(() => {
       nestedRuns++
-      const p = createTrackingProxy(current, '', registry, registry.proxyCache)
+      const p = createTrackingProxy(current, '', registry)
       return p.a.b
     })
     expect(dotted.get()).toBe(1)
@@ -207,12 +207,7 @@ describe('edge cases: object keys with reserved path characters', () => {
     let runs = 0
     const computed = alienEngine.computed(() => {
       runs++
-      const p = createTrackingProxy(
-        runs === 1 ? prev : next,
-        '',
-        registry,
-        registry.proxyCache,
-      )
+      const p = createTrackingProxy(runs === 1 ? prev : next, '', registry)
       return p.queries[key].status
     })
     expect(computed.get()).toBe('pending')
@@ -225,7 +220,7 @@ describe('edge cases: object keys with reserved path characters', () => {
   it('a state key literally named "@@keys" does not collide with the keys meta signal', () => {
     const prev = { obj: { '@@keys': 'v1', x: 1 } }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(prev, '', registry)
 
     expect(proxy.obj['@@keys']).toBe('v1')
     // The literal key's signal lives at the encoded path.
@@ -242,7 +237,7 @@ describe('edge cases: object keys with reserved path characters', () => {
     let literalRuns = 0
     const literal = alienEngine.computed(() => {
       literalRuns++
-      const p = createTrackingProxy(current, '', registry, registry.proxyCache)
+      const p = createTrackingProxy(current, '', registry)
       return p.obj['@@keys']
     })
     expect(literal.get()).toBe('v1')
@@ -260,7 +255,7 @@ describe('edge cases: object keys with reserved path characters', () => {
       lookup: { '{id:1}': 'literal' },
     }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.items[0].name).toBe('real')
     expect(proxy.lookup['{id:1}']).toBe('literal')
@@ -271,7 +266,7 @@ describe('edge cases: object keys with reserved path characters', () => {
   it('column signals encode scanned property names', () => {
     const state = { rows: [{ id: 1, 'a.b': 'x' }] }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     const found = proxy.rows.find((r) => r['a.b'] === 'x')
     expect(found).toBeDefined()
@@ -291,7 +286,7 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
     const next = { items: [shared, { id: 9, text: 'ninth' }] }
 
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.items[0].text).toBe('first')
     expect(proxy.items[1].text).toBe('second')
     expect(registry.has('items.{id:2}.text')).toBe(true)
@@ -308,7 +303,7 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
     const next = { items: [{ id: 42, text: 'draft' }] }
 
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.items[0].text).toBe('draft')
     expect(registry.has('items.{id:temp-1}.text')).toBe(true)
 
@@ -325,7 +320,7 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
     const next = { items: [shared, { id: 9, text: 'ninth' }] }
 
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.items[1].text).toBe('second')
 
     const removeSig = registry.trackStructure('items', 'remove')
@@ -353,7 +348,7 @@ describe('edge cases: aliased references (same object at two paths)', () => {
     const state = { items: [item], selected: item }
 
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     // Traverse via items first — item's proxy is cached with path "items.{id:1}"
     expect(proxy.items[0].name).toBe('a')
@@ -376,13 +371,7 @@ describe('edge cases: aliased references (same object at two paths)', () => {
 
     const registry = createPathSignalRegistry(alienEngine)
     const tracker = createTracker()
-    const proxy = createTrackingProxy(
-      state,
-      '',
-      registry,
-      registry.proxyCache,
-      tracker,
-    )
+    const proxy = createTrackingProxy(state, '', registry, tracker)
 
     expect(proxy.items[0].name).toBe('a')
     expect(proxy.selected.name).toBe('a')
@@ -403,24 +392,12 @@ describe('edge cases: leafTracker capture through the shared proxy cache', () =>
 
     // Evaluation A creates and caches all the proxies
     const trackerA = createTracker()
-    const proxyA = createTrackingProxy(
-      state,
-      '',
-      registry,
-      registry.proxyCache,
-      trackerA,
-    )
+    const proxyA = createTrackingProxy(state, '', registry, trackerA)
     expect(proxyA.settings.theme).toBe('dark')
 
     // Evaluation B gets cache hits — every trap still records into trackerA
     const trackerB = createTracker()
-    const proxyB = createTrackingProxy(
-      state,
-      '',
-      registry,
-      registry.proxyCache,
-      trackerB,
-    )
+    const proxyB = createTrackingProxy(state, '', registry, trackerB)
     // Leaf (identity-only) access by evaluation B
     void proxyB.settings
 
@@ -432,7 +409,7 @@ describe('edge cases: registry lifecycle', () => {
   it('prune clears array identity metadata (entityMap retention)', () => {
     const state = { items: [{ id: 1, v: 1 }] }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     // Element access detects the key field and creates ArrayMeta
     expect(proxy.items[0].v).toBe(1)
@@ -456,7 +433,7 @@ describe('edge cases: NaN leaf values', () => {
     const next = { metrics: { ratio: NaN, count: 2 } }
 
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(prev, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(prev, '', registry)
 
     let runs = 0
     const c = alienEngine.computed(() => {
@@ -479,7 +456,7 @@ describe('edge cases: common selector patterns (smoke)', () => {
       settings: { theme: 'dark', flags: { beta: true }, list: [1, 2, 3] },
     }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(JSON.stringify(proxy.settings)).toBe(JSON.stringify(state.settings))
   })
@@ -487,7 +464,7 @@ describe('edge cases: common selector patterns (smoke)', () => {
   it('Object.values / Object.entries work through the proxy', () => {
     const state = { counts: { a: 1, b: 2 } }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(Object.values(proxy.counts)).toEqual([1, 2])
     expect(Object.entries(proxy.counts)).toEqual([
@@ -499,7 +476,7 @@ describe('edge cases: common selector patterns (smoke)', () => {
   it('destructuring a proxied object reads tracked values', () => {
     const state = { settings: { theme: 'dark', fontSize: 12 } }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     const { theme, fontSize } = proxy.settings
     expect(theme).toBe('dark')
@@ -511,7 +488,7 @@ describe('edge cases: common selector patterns (smoke)', () => {
   it('reading a missing index of a primitive array subscribes coarsely and returns undefined', () => {
     const state = { ids: [1, 2, 3] }
     const registry = createPathSignalRegistry(alienEngine)
-    const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+    const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.ids[5]).toBeUndefined()
     // Coarse array signal, not a per-index signal

@@ -8,7 +8,7 @@ import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 // Helper: create a registry with signals pre-populated by running a selector through a tracking proxy
 function setupRegistry(state: object, selectorFn: (s: any) => void) {
   const registry = createPathSignalRegistry(alienEngine)
-  const proxy = createTrackingProxy(state, '', registry, registry.proxyCache)
+  const proxy = createTrackingProxy(state, '', registry)
   selectorFn(proxy)
   return registry
 }
@@ -384,12 +384,7 @@ describe('diffAndUpdateSignals', () => {
 
       const registry = createPathSignalRegistry(alienEngine)
       // Manually track some paths
-      const proxy = createTrackingProxy(
-        { items: prev },
-        '',
-        registry,
-        registry.proxyCache,
-      )
+      const proxy = createTrackingProxy({ items: prev }, '', registry)
       proxy.items.length // triggers @@keys and items tracking
 
       const keysSig = registry.getOrCreate('items.@@keys', prev.length)

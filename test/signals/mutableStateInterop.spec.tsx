@@ -344,7 +344,7 @@ describe('selectors that mutate state', () => {
       items: [3, 1, 2],
       user: { name: 'alice' },
     }
-    return createTrackingProxy(state, '', registry, registry.proxyCache)
+    return createTrackingProxy(state, '', registry)
   }
 
   it('calling .sort() on a state array throws a TypeError', () => {

@@ -3,9 +3,9 @@ import { alienEngine } from '@internal/signals/engine'
 import { createPathSignalRegistry } from '@internal/signals/pathSignalRegistry'
 import {
   createTrackingProxy,
-  type ProxyCache,
+  getProxyPath,
+  unwrap,
 } from '@internal/signals/trackingProxy'
-import { getProxyPath, unwrap } from '@internal/signals/trackingProxy'
 
 function deepFreeze<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj
@@ -18,9 +18,8 @@ function deepFreeze<T>(obj: T): T {
 
 function setup<T extends object>(state: T) {
   const registry = createPathSignalRegistry(alienEngine)
-  const cache: ProxyCache = new WeakMap()
-  const proxy = createTrackingProxy(state, '', registry, cache)
-  return { registry, cache, proxy }
+  const proxy = createTrackingProxy(state, '', registry)
+  return { registry, proxy }
 }
 
 describe('Array method overrides on tracking proxy', () => {
@@ -781,8 +780,7 @@ describe('Array method overrides on tracking proxy', () => {
       )
       const state = deepFreeze(items)
       const registry = createPathSignalRegistry(alienEngine)
-      const cache: ProxyCache = new WeakMap()
-      const proxy = createTrackingProxy(state, 'items', registry, cache)
+      const proxy = createTrackingProxy(state, 'items', registry)
 
       // selectById pattern
       const found = proxy.find((i) => i.id === 42)!
