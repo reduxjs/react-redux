@@ -183,10 +183,6 @@ function createWriteGuard<T extends object>(target: T): T {
       return Object.getPrototypeOf(target)
     },
 
-    isExtensible(_obj) {
-      return Object.isExtensible(target)
-    },
-
     set(_obj, prop) {
       throwStateMutationError('set', String(prop))
     },
@@ -272,10 +268,6 @@ export function createProbeProxy<T extends object>(
 
     getPrototypeOf(_obj) {
       return Object.getPrototypeOf(state)
-    },
-
-    isExtensible(_obj) {
-      return Object.isExtensible(state)
     },
 
     set(_obj, prop) {

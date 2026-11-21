@@ -375,6 +375,8 @@ export function getElementPathKey(
  * that mirrors the real state's structure. This avoids the ES Proxy invariant
  * that forbids returning different values for non-configurable properties.
  * The proxy reads actual values from the real frozen state object.
+ * Because the shell is extensible, `Object.isFrozen(proxy)` returns false
+ * even when the state is frozen; `unwrap` it to check the state itself.
  *
  * Child proxies are cached in `registry.proxyCache`, keyed by target
  * identity. The cache persists across evaluations and dispatches, so an
@@ -677,11 +679,6 @@ export function createTrackingProxy<T extends object>(
     // Report the real target's prototype
     getPrototypeOf(_obj) {
       return Object.getPrototypeOf(target)
-    },
-
-    // Report the real target's extensibility
-    isExtensible(_obj) {
-      return Object.isExtensible(target)
     },
 
     // Prevent mutation

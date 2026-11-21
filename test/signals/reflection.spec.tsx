@@ -102,3 +102,44 @@ describe('key enumeration on state arrays', () => {
     }
   }
 })
+
+describe('frozen and extensible checks on state proxies', () => {
+  const checks: Array<[string, (v: object) => boolean]> = [
+    ['Object.isFrozen', Object.isFrozen],
+    ['Object.isSealed', Object.isSealed],
+    ['Object.isExtensible', Object.isExtensible],
+  ]
+
+  for (const [name, check] of checks) {
+    it(`${name} does not throw on root or nested proxies in either tier`, () => {
+      const store = makeStore()
+      expect(Object.isFrozen(store.getState().data)).toBe(true)
+
+      const seen = renderSelector(store, (s) => [
+        typeof check(s),
+        typeof check(s.data),
+        typeof check(s.data.obj),
+        typeof check(s.data.list),
+        s.data.tick,
+      ])
+      expect(seen.current).toEqual([
+        'boolean',
+        'boolean',
+        'boolean',
+        'boolean',
+        0,
+      ])
+
+      rtl.act(() => {
+        store.dispatch(slice.actions.tick())
+      })
+      expect(seen.current).toEqual([
+        'boolean',
+        'boolean',
+        'boolean',
+        'boolean',
+        1,
+      ])
+    })
+  }
+})
