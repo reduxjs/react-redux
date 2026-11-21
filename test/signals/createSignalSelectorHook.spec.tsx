@@ -8,9 +8,10 @@ import * as rtl from '@testing-library/react'
 import { createContext } from 'react'
 import { describe, expect, it, afterEach } from 'vitest'
 import type { ReactReduxContextValue } from '../../src/components/Context'
-// Import the stock Provider directly from source — the package root
-// currently carries the bench override (Provider = SignalProvider).
+// Import the stock Provider directly from source — under TEST_IMPL=signals
+// the bare `react-redux` specifier resolves Provider to SignalProvider.
 import Provider from '../../src/components/Provider'
+import * as mainEntry from '../../src/index'
 import {
   createSignalSelectorHook,
   SignalProvider,
@@ -55,6 +56,10 @@ afterEach(() => {
 })
 
 describe('createSignalSelectorHook', () => {
+  it('is exported from the main entry', () => {
+    expect(mainEntry.createSignalSelectorHook).toBe(createSignalSelectorHook)
+  })
+
   it('reads from the store provided through the custom context', () => {
     const { store } = makeStore(7)
 

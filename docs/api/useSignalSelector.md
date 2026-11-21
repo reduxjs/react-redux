@@ -194,7 +194,7 @@ When the [selector stability check](./useSelector.md#selector-result-stability) 
 
 ### Migrating an app with a bundler alias
 
-The `react-redux/signals` entry point re-exports the entire `react-redux` API, with `useSelector` aliased to `useSignalSelector` and `Provider` aliased to `SignalProvider`. This makes trying signals across a whole app a one-line bundler config change instead of a search-and-replace:
+The `react-redux/signals` entry point re-exports the entire `react-redux` API, with `useSelector` aliased to `useSignalSelector`, `createSelectorHook` aliased to `createSignalSelectorHook`, and `Provider` aliased to `SignalProvider`. This makes trying signals across a whole app a one-line bundler config change instead of a search-and-replace:
 
 ```js title="vite.config.js"
 export default defineConfig({
@@ -206,9 +206,27 @@ export default defineConfig({
 })
 ```
 
-The explicit names (`useSignalSelector`, `SignalProvider`, `unwrap`) are also exported from both entry points, so code written against either style keeps working.
+The explicit names (`useSignalSelector`, `createSignalSelectorHook`, `SignalProvider`, `unwrap`) are also exported from both entry points, so code written against either style keeps working.
 
 Before flipping the alias for a whole app, audit for the patterns listed above - particularly selectors returning the root state, identity comparisons against captured references inside selectors, and in-place reads of `Map`/`Set`/class-instance state.
+
+### Custom context
+
+`createSignalSelectorHook(context)` returns a `useSignalSelector` bound to a custom context, the same way `createSelectorHook` does for `useSelector`. The context must be supplied by a `<SignalProvider context={MyContext}>`; the hook throws if it finds a plain `Provider` value without the signal registry.
+
+```ts
+import { createContext } from 'react'
+import {
+  createSignalSelectorHook,
+  SignalProvider,
+  type ReactReduxContextValue,
+} from 'react-redux'
+
+const MyContext = createContext<ReactReduxContextValue | null>(null)
+export const useMySelector = createSignalSelectorHook(MyContext)
+
+// <SignalProvider store={store} context={MyContext}>
+```
 
 ### TypeScript
 
