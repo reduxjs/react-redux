@@ -1,5 +1,4 @@
-import { encodePathSegment } from './arrayKeys'
-import type { ArrayMeta } from './arrayKeys'
+import { encodePathSegment, findKeyField } from './arrayKeys'
 import { createSegmentIndex } from './coarseSegments'
 import type { SegmentIndex } from './coarseSegments'
 import { isObjectOrArray } from './objects'
@@ -20,10 +19,21 @@ export interface RegistryStats {
   prefixCounts: number
   prefixOnlyPaths: number
   childIndex: number
-  arrayMetas: number
-  columnsByArray: number
-  structuresByArray: number
+  arrays: number
+  columns: number
+  structures: number
   segmentSubs: number
+}
+
+/** Bookkeeping for one array path. Exists while any of its fields is
+ *  set; flush and prune drop the whole record with the path. */
+export interface ArrayRecord {
+  /** Property that identifies elements, once detected. */
+  keyField?: string
+  /** Column signal path → raw element property it watches. */
+  columns?: Map<string, string>
+  /** Structure signal path → the change kind it watches. */
+  structures?: Map<string, StructureKind>
 }
 
 export interface PathSignalRegistry {
@@ -120,22 +130,22 @@ export interface PathSignalRegistry {
    *  so cached proxies record into whichever evaluation is active. */
   leafTrackerHolder: { current: LeafObjectTracker | undefined }
 
-  /** Get array metadata for identity-based tracking at a given path. */
-  getArrayMeta(arrayPath: string): ArrayMeta | undefined
+  /** Key field for the array at `arrayPath`. Detected from `sample` (an
+   *  element) and stored on first success; later calls return the stored
+   *  field without looking at `sample`. */
+  keyFieldFor(arrayPath: string, sample: unknown): string | undefined
 
-  /** Set/update array metadata for identity-based tracking. */
-  setArrayMeta(arrayPath: string, meta: ArrayMeta): void
+  /** The array's record, if it has a key field or tracked signals. */
+  getArrayRecord(arrayPath: string): ArrayRecord | undefined
 
   /** Register a column signal for an array: a dependency on property `prop`
    *  of ANY element of the array at `arrayPath`. Fired by diff when any
    *  element's value for that property changes (or membership changes). */
   trackColumn(arrayPath: string, prop: string): ReactiveSignal<unknown>
 
-  /** Get the set of tracked column properties for an array path. */
-  getTrackedColumns(arrayPath: string): Set<string> | undefined
-
-  /** Fire the column signal for (arrayPath, prop), if one exists. */
-  bumpColumn(arrayPath: string, prop: string): void
+  /** Fire the column signal at `columnPath` (a key of
+   *  `ArrayRecord.columns`), if it still exists. */
+  bumpColumn(columnPath: string): void
 
   /** Register a structural signal for an array: a dependency on a specific
    *  kind of membership/order change (append, insertOrReorder, remove).
@@ -144,9 +154,6 @@ export interface PathSignalRegistry {
     arrayPath: string,
     kind: StructureKind,
   ): ReactiveSignal<unknown>
-
-  /** Get the set of tracked structure kinds for an array path. */
-  getTrackedStructures(arrayPath: string): Set<StructureKind> | undefined
 
   /** Fire the structural signal for (arrayPath, kind), if one exists. */
   bumpStructure(arrayPath: string, kind: StructureKind): void
@@ -162,9 +169,8 @@ export interface PathSignalRegistry {
  */
 function buildColumnPath(arrayPath: string, prop: string): string {
   // prop comes from user state (a scanned element property name), so it
-  // is encoded like any other path segment. Both trackColumn (proxy
-  // side) and bumpColumn (diff side) route through here, so the two
-  // sides always agree.
+  // is encoded like any other path segment. The diff side bumps the path
+  // stored in the array record, so it never re-encodes.
   return arrayPath + '.{*}.' + encodePathSegment(prop)
 }
 
@@ -244,17 +250,42 @@ export function createPathSignalRegistry(
   // Parent→children index: maps each path to its direct children.
   // Enables O(subtree) prune instead of O(total signals) linear scan.
   const childIndex = new Map<string, Set<string>>()
-  // Proxy cache: keyed by target object identity.
-  // Reuses proxies for unchanged Immer subtrees across state snapshots.
-  // Per-array metadata for identity-based tracking.
-  // Maps array path → ArrayMeta (the identity key field).
-  const arrayMetas = new Map<string, ArrayMeta>()
-  // Tracked column properties per array path.
-  // Lets diffArray know which element properties to shallow-compare.
-  const columnsByArray = new Map<string, Set<string>>()
-  // Tracked structural change kinds per array path.
-  // Lets diffArray know whether structural classification is needed.
-  const structuresByArray = new Map<string, Set<StructureKind>>()
+  // Per-array key field and tracked column/structure signals. diffArray
+  // reads these to pick identity or index diffing and to decide which
+  // element properties to shallow-compare.
+  const arrays = new Map<string, ArrayRecord>()
+
+  // Drop a column or structure signal's entry from its array's record.
+  // Column paths are `<array>.{*}.<prop>`, structure paths are
+  // `<array>.@@<kind>`; any other path misses both lookups.
+  function forgetArraySignal(pathKey: string): void {
+    const dot = pathKey.lastIndexOf('.')
+    if (dot === -1) return
+    let arrayPath = pathKey.substring(0, dot)
+    const isColumn = arrayPath.endsWith('.{*}')
+    if (isColumn) arrayPath = arrayPath.substring(0, arrayPath.length - 4)
+    const rec = arrays.get(arrayPath)
+    if (rec === undefined) return
+    if (isColumn) {
+      if (rec.columns?.delete(pathKey) && rec.columns.size === 0) {
+        rec.columns = undefined
+      }
+    } else if (rec.structures?.delete(pathKey) && rec.structures.size === 0) {
+      rec.structures = undefined
+    }
+    if (!rec.keyField && !rec.columns && !rec.structures) {
+      arrays.delete(arrayPath)
+    }
+  }
+
+  function recordFor(arrayPath: string): ArrayRecord {
+    let rec = arrays.get(arrayPath)
+    if (rec === undefined) {
+      rec = {}
+      arrays.set(arrayPath, rec)
+    }
+    return rec
+  }
 
   // Register a path in the parent→children index.
   // Only links to immediate parent: "a.b.c" → childIndex["a.b"].add("a.b.c")
@@ -301,46 +332,16 @@ export function createPathSignalRegistry(
   }
 
   /**
-   * Apply the prefix accounting and structural unlinking owed by every
-   * released path, in one pass.
+   * Apply the prefix decrements and child-index unlinking owed by every
+   * released path in one deepest-first pass, so a subtree unmounting
+   * visits each shared ancestor once instead of once per release. Each
+   * path's owed count is the sum from its released descendants and is
+   * passed up to its parent after it is applied.
    *
-   * Doing this per-release is quadratic in two separate ways. A list of
-   * 100 items unmounting under `todos` walks `todos` and the root 100
-   * times over, and each dead prefix-only ancestor found on the way up
-   * kicks off its own full ancestor walk to decrement counts. Both
-   * collapse if the released paths are processed together.
-   *
-   * The pass works deepest-first over every path touched. Each path
-   * carries a count of how many decrements it is owed, merged from all
-   * of its released descendants, and passes that total to its parent
-   * once applied. Depth ordering guarantees a path is only reached
-   * after every one of its children has contributed, so each unique
-   * ancestor is visited exactly once regardless of how many releases
-   * pointed at it.
-   *
-   * Two kinds of ancestor get structurally removed here. Prefix-only
-   * paths, registered by `ensurePrefix`, never get a signal, so
-   * `unwatched` can never fire for them; without this they would keep
-   * `hasPrefix` true forever and the diff would keep descending into an
-   * empty subtree, which is the exact cost this whole mechanism exists
-   * to remove. A prefix-only path contributes 1 to its own count plus 1
-   * per signal at or below it, so a remaining count of 1 or less means
-   * only that self-registration is left and the path is dead; clearing
-   * it adds one more decrement to everything above. Link-only paths are
-   * ones whose own signal was released while descendants were still
-   * alive, so the release deliberately left them attached; once the
-   * last child goes they can finally be unlinked.
-   *
-   * A path still holding children, or still holding a live signal, is
-   * left alone. No early exit is needed for that: a live path keeps its
-   * entry in its parent's child set, so every ancestor above it fails
-   * the `childIndex.has` test on its own.
-   *
-   * Touches only `prefixCounts`, `prefixOnlyPaths`, `childIndex` and
-   * `arrayMetas` - never a signal - so it is safe to run from anywhere, including
-   * mid-`unlink`.
-   *
-   * @returns Nothing.
+   * Childless paths are removed along the way: prefix-only paths (from
+   * `ensurePrefix`, which never get a signal and so never get released)
+   * once only their own registration is left, and paths whose signal is
+   * gone. Never touches a signal, so it is safe to run mid-`unlink`.
    */
   function flushReleases(): void {
     // How many prefix-count decrements each touched path still owes.
@@ -387,7 +388,7 @@ export function createPathSignalRegistry(
               prefixOnlyPaths.delete(path)
               prefixCounts.delete(path)
               detachFromParent(path)
-              arrayMetas.delete(path)
+              arrays.delete(path)
               count += 1
             }
           } else if (!signals.has(path)) {
@@ -395,9 +396,9 @@ export function createPathSignalRegistry(
             // last child has now gone. A path resurrected by
             // `getOrCreate` before this flush ran is live again and
             // correctly falls through untouched. Nothing is tracked at
-            // or below it any more, so its array key metadata goes too.
+            // or below it any more, so its array record goes too.
             detachFromParent(path)
-            arrayMetas.delete(path)
+            arrays.delete(path)
           }
         }
 
@@ -460,10 +461,7 @@ export function createPathSignalRegistry(
       const stack: string[] = [pathKey]
       while (stack.length > 0) {
         const key = stack.pop()!
-        // Drop column/structure/identity tracking for any array at or below the pruned path
-        columnsByArray.delete(key)
-        structuresByArray.delete(key)
-        arrayMetas.delete(key)
+        arrays.delete(key)
         // Push children onto stack before deleting
         const children = childIndex.get(key)
         if (children) {
@@ -484,6 +482,7 @@ export function createPathSignalRegistry(
           // selector against real state.
           sig.set(PRUNED)
           signals.delete(key)
+          if (arrays.size !== 0) forgetArraySignal(key)
           decrementPrefixes(prefixCounts, key)
         } else if (prefixOnlyPaths.has(key)) {
           prefixOnlyPaths.delete(key)
@@ -500,39 +499,9 @@ export function createPathSignalRegistry(
 
       signals.delete(pathKey)
 
-      // A column signal lives at `<arrayPath>.{*}.<prop>`, so releasing
-      // it has to drop `prop` from the array's tracked column set as
-      // well, or diffArray keeps shallow-comparing a column nobody
-      // reads. Same shape of problem for structure signals.
-      const columnMark = pathKey.lastIndexOf('.{*}.')
-      if (columnMark !== -1) {
-        const arrayPath = pathKey.substring(0, columnMark)
-        const cols = columnsByArray.get(arrayPath)
-        if (cols !== undefined) {
-          // The set holds raw props while the path holds encoded ones,
-          // and there is no decoder. Encoding each candidate is fine —
-          // a tracked column set is a handful of entries, and encoding
-          // returns the input unchanged for the common case.
-          const encodedProp = pathKey.substring(columnMark + 5)
-          for (const prop of cols) {
-            if (encodePathSegment(prop) === encodedProp) {
-              cols.delete(prop)
-              break
-            }
-          }
-          if (cols.size === 0) columnsByArray.delete(arrayPath)
-        }
-      } else {
-        const structureMark = pathKey.lastIndexOf('.@@')
-        if (structureMark !== -1) {
-          const arrayPath = pathKey.substring(0, structureMark)
-          const kinds = structuresByArray.get(arrayPath)
-          if (kinds !== undefined) {
-            kinds.delete(pathKey.substring(structureMark + 3) as StructureKind)
-            if (kinds.size === 0) structuresByArray.delete(arrayPath)
-          }
-        }
-      }
+      // Otherwise diffArray keeps shallow-comparing a column, or
+      // classifying changes for a structure kind, that nobody reads.
+      if (arrays.size !== 0) forgetArraySignal(pathKey)
 
       // Prefix accounting and structural unlinking are deferred to the
       // next `flushReleases`, which merges this path's ancestor walk
@@ -573,14 +542,20 @@ export function createPathSignalRegistry(
 
     debugStats(): RegistryStats {
       if (pendingReleases.size !== 0) flushReleases()
+      let columns = 0
+      let structures = 0
+      for (const rec of arrays.values()) {
+        columns += rec.columns?.size ?? 0
+        structures += rec.structures?.size ?? 0
+      }
       return {
         signals: signals.size,
         prefixCounts: prefixCounts.size,
         prefixOnlyPaths: prefixOnlyPaths.size,
         childIndex: childIndex.size,
-        arrayMetas: arrayMetas.size,
-        columnsByArray: columnsByArray.size,
-        structuresByArray: structuresByArray.size,
+        arrays: arrays.size,
+        columns,
+        structures,
         segmentSubs: registry.segmentIndex.size(),
       }
     },
@@ -594,33 +569,36 @@ export function createPathSignalRegistry(
 
     leafTrackerHolder: { current: undefined },
 
-    getArrayMeta(arrayPath: string): ArrayMeta | undefined {
-      return arrayMetas.get(arrayPath)
+    keyFieldFor(arrayPath: string, sample: unknown): string | undefined {
+      const rec = arrays.get(arrayPath)
+      if (rec?.keyField !== undefined) return rec.keyField
+      const keyField = findKeyField(sample)
+      if (keyField !== undefined) {
+        if (rec !== undefined) rec.keyField = keyField
+        else arrays.set(arrayPath, { keyField })
+      }
+      return keyField
     },
 
-    setArrayMeta(arrayPath: string, meta: ArrayMeta): void {
-      arrayMetas.set(arrayPath, meta)
+    getArrayRecord(arrayPath: string): ArrayRecord | undefined {
+      return arrays.get(arrayPath)
     },
 
     trackColumn(arrayPath: string, prop: string): ReactiveSignal<unknown> {
-      let cols = columnsByArray.get(arrayPath)
-      if (!cols) {
-        cols = new Set()
-        columnsByArray.set(arrayPath, cols)
-      }
-      cols.add(prop)
       // Register the intermediate `{*}` segment so prune(arrayPath)
       // reaches column signals through the child index.
       registry.ensurePrefix(arrayPath + '.{*}')
-      return registry.getOrCreate(buildColumnPath(arrayPath, prop), 0)
+      const columnPath = buildColumnPath(arrayPath, prop)
+      const sig = registry.getOrCreate(columnPath, 0)
+      // After getOrCreate: its flush of pending releases can delete the
+      // record, and a record created before that would be lost.
+      const rec = recordFor(arrayPath)
+      ;(rec.columns ??= new Map()).set(columnPath, prop)
+      return sig
     },
 
-    getTrackedColumns(arrayPath: string): Set<string> | undefined {
-      return columnsByArray.get(arrayPath)
-    },
-
-    bumpColumn(arrayPath: string, prop: string): void {
-      const sig = signals.get(buildColumnPath(arrayPath, prop))
+    bumpColumn(columnPath: string): void {
+      const sig = signals.get(columnPath)
       if (sig) bumpVersion(sig)
     },
 
@@ -628,17 +606,11 @@ export function createPathSignalRegistry(
       arrayPath: string,
       kind: StructureKind,
     ): ReactiveSignal<unknown> {
-      let kinds = structuresByArray.get(arrayPath)
-      if (!kinds) {
-        kinds = new Set()
-        structuresByArray.set(arrayPath, kinds)
-      }
-      kinds.add(kind)
-      return registry.getOrCreate(buildStructurePath(arrayPath, kind), 0)
-    },
-
-    getTrackedStructures(arrayPath: string): Set<StructureKind> | undefined {
-      return structuresByArray.get(arrayPath)
+      const structurePath = buildStructurePath(arrayPath, kind)
+      const sig = registry.getOrCreate(structurePath, 0)
+      const rec = recordFor(arrayPath)
+      ;(rec.structures ??= new Map()).set(structurePath, kind)
+      return sig
     },
 
     bumpStructure(arrayPath: string, kind: StructureKind): void {

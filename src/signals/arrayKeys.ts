@@ -25,15 +25,6 @@ export function findKeyField(obj: unknown): string | undefined {
   return undefined
 }
 
-/**
- * Per-array metadata for identity-based tracking.
- * Stored in the registry, keyed by the array's parent path.
- */
-export interface ArrayMeta {
-  /** The property name used as the identity key (e.g., 'id') */
-  keyField: string
-}
-
 // Characters that corrupt path bookkeeping if they appear in a path
 // segment (an object key or an identity key value):
 // '.' breaks the ancestor walks (lastIndexOf('.')), '{'/'}' can collide

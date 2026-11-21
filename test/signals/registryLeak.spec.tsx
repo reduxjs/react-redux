@@ -176,9 +176,9 @@ const EMPTY_STATS: RegistryStats = {
   prefixCounts: 0,
   prefixOnlyPaths: 0,
   childIndex: 0,
-  arrayMetas: 0,
-  columnsByArray: 0,
-  structuresByArray: 0,
+  arrays: 0,
+  columns: 0,
+  structures: 0,
   segmentSubs: 0,
 }
 
@@ -527,8 +527,8 @@ describe('array metadata', () => {
       })
       if (cycle === 0) {
         const promoted = registry.debugStats()
-        expect(promoted.arrayMetas).toBeGreaterThan(0)
-        expect(promoted.columnsByArray).toBeGreaterThan(0)
+        expect(promoted.arrays).toBeGreaterThan(0)
+        expect(promoted.columns).toBeGreaterThan(0)
       }
       unmount()
       seen.push(registry.debugStats())
@@ -537,9 +537,9 @@ describe('array metadata', () => {
     for (const snapshot of seen) {
       expect(snapshot.signals).toBeLessThanOrEqual(seen[0].signals)
       expect(snapshot.prefixCounts).toBeLessThanOrEqual(seen[0].prefixCounts)
-      expect(snapshot.arrayMetas).toBe(seen[0].arrayMetas)
-      expect(snapshot.columnsByArray).toBe(seen[0].columnsByArray)
-      expect(snapshot.structuresByArray).toBe(seen[0].structuresByArray)
+      expect(snapshot.arrays).toBe(seen[0].arrays)
+      expect(snapshot.columns).toBe(seen[0].columns)
+      expect(snapshot.structures).toBe(seen[0].structures)
       expect(snapshot.segmentSubs).toBe(0)
     }
     expect(seen[seen.length - 1]).toEqual(seen[1])

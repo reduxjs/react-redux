@@ -9,10 +9,22 @@ const EMPTY_STATS: RegistryStats = {
   prefixCounts: 0,
   prefixOnlyPaths: 0,
   childIndex: 0,
-  arrayMetas: 0,
-  columnsByArray: 0,
-  structuresByArray: 0,
+  arrays: 0,
+  columns: 0,
+  structures: 0,
   segmentSubs: 0,
+}
+
+type Registry = ReturnType<typeof createPathSignalRegistry>
+
+function trackedColumns(registry: Registry, arrayPath: string) {
+  const cols = registry.getArrayRecord(arrayPath)?.columns
+  return cols && new Set(cols.values())
+}
+
+function trackedStructures(registry: Registry, arrayPath: string) {
+  const structs = registry.getArrayRecord(arrayPath)?.structures
+  return structs && new Set(structs.values())
 }
 
 // Subscribe an effect to a signal; stopping the scope drops the last
@@ -421,16 +433,24 @@ describe('PathSignalRegistry', () => {
   })
 
   describe('array metadata', () => {
-    it('setArrayMeta / getArrayMeta round-trips and prune clears it', () => {
+    it('keyFieldFor detects the key field once and prune clears it', () => {
       const registry = createRegistry()
-      const meta = { keyField: 'id' }
-      registry.setArrayMeta('todos', meta)
-      expect(registry.getArrayMeta('todos')).toBe(meta)
-      expect(registry.getArrayMeta('other')).toBeUndefined()
+      expect(registry.keyFieldFor('todos', { id: 1 })).toBe('id')
+      // Stored: a later sample with a different shape does not change it.
+      expect(registry.keyFieldFor('todos', { key: 'a' })).toBe('id')
+      expect(registry.keyFieldFor('other', undefined)).toBeUndefined()
+      expect(registry.getArrayRecord('other')).toBeUndefined()
 
       registry.getOrCreate('todos', [])
       registry.prune('todos')
-      expect(registry.getArrayMeta('todos')).toBeUndefined()
+      expect(registry.getArrayRecord('todos')).toBeUndefined()
+      expect(registry.keyFieldFor('todos', undefined)).toBeUndefined()
+    })
+
+    it('keyFieldFor stores nothing when the sample has no key field', () => {
+      const registry = createRegistry()
+      expect(registry.keyFieldFor('todos', { text: 'a' })).toBeUndefined()
+      expect(registry.debugStats()).toEqual(EMPTY_STATS)
     })
   })
 
@@ -440,21 +460,22 @@ describe('PathSignalRegistry', () => {
       const sig1 = registry.trackColumn('todos', 'text')
       const sig2 = registry.trackColumn('todos', 'text')
       expect(sig1).toBe(sig2)
-      expect(registry.getTrackedColumns('todos')).toEqual(new Set(['text']))
-      expect(registry.getTrackedColumns('other')).toBeUndefined()
+      expect(trackedColumns(registry, 'todos')).toEqual(new Set(['text']))
+      expect(trackedColumns(registry, 'other')).toBeUndefined()
     })
 
     it('bumpColumn increments the column signal version', () => {
       const registry = createRegistry()
       const sig = registry.trackColumn('todos', 'text')
       expect(sig.get()).toBe(0)
-      registry.bumpColumn('todos', 'text')
+      const [path] = registry.getArrayRecord('todos')!.columns!.keys()
+      registry.bumpColumn(path)
       expect(sig.get()).toBe(1)
     })
 
     it('bumpColumn for an untracked column is a no-op', () => {
       const registry = createRegistry()
-      registry.bumpColumn('todos', 'text')
+      registry.bumpColumn('todos.{*}.text')
       expect(registry.size()).toBe(0)
     })
 
@@ -462,13 +483,13 @@ describe('PathSignalRegistry', () => {
       const registry = createRegistry()
       const sig = registry.trackColumn('todos', 'text')
       const scope = watch(sig)
-      expect(registry.getTrackedColumns('todos')).toEqual(new Set(['text']))
+      expect(trackedColumns(registry, 'todos')).toEqual(new Set(['text']))
 
       scope.stop()
 
       // Without this cleanup diffArray would keep shallow-comparing a
       // column nobody reads.
-      expect(registry.getTrackedColumns('todos')).toBeUndefined()
+      expect(trackedColumns(registry, 'todos')).toBeUndefined()
       expect(registry.debugStats()).toEqual(EMPTY_STATS)
     })
 
@@ -477,23 +498,45 @@ describe('PathSignalRegistry', () => {
       const textSig = registry.trackColumn('todos', 'text')
       registry.trackColumn('todos', 'done')
       const scope = watch(textSig)
+      expect(registry.debugStats().columns).toBe(2)
 
       scope.stop()
 
-      expect(registry.getTrackedColumns('todos')).toEqual(new Set(['done']))
+      expect(trackedColumns(registry, 'todos')).toEqual(new Set(['done']))
+      expect(registry.debugStats()).toMatchObject({
+        arrays: 1,
+        columns: 1,
+        structures: 0,
+      })
     })
 
-    it('release matches encoded column paths back to raw props', () => {
+    it('releases a column whose prop is percent-encoded in the path', () => {
       const registry = createRegistry()
       // A prop containing '.' gets percent-encoded in the path key but
-      // stays raw in the tracked set; release has to bridge the two.
+      // stays raw in the tracked map; diff bumps the stored path.
       const sig = registry.trackColumn('todos', 'a.b')
       const scope = watch(sig)
-      expect(registry.getTrackedColumns('todos')).toEqual(new Set(['a.b']))
+      expect(trackedColumns(registry, 'todos')).toEqual(new Set(['a.b']))
+      const [path] = registry.getArrayRecord('todos')!.columns!.keys()
+      registry.bumpColumn(path)
+      expect(sig.get()).toBe(1)
 
       scope.stop()
 
-      expect(registry.getTrackedColumns('todos')).toBeUndefined()
+      expect(trackedColumns(registry, 'todos')).toBeUndefined()
+      expect(registry.debugStats()).toEqual(EMPTY_STATS)
+    })
+
+    it('a column prop named like a structure kind stays a column', () => {
+      const registry = createRegistry()
+      const colSig = registry.trackColumn('todos', '@@append')
+      registry.trackStructure('todos', 'append')
+      const scope = watch(colSig)
+
+      scope.stop()
+
+      expect(trackedColumns(registry, 'todos')).toBeUndefined()
+      expect(trackedStructures(registry, 'todos')).toEqual(new Set(['append']))
     })
 
     it('prune(arrayPath) removes column signals and tracking', () => {
@@ -503,8 +546,19 @@ describe('PathSignalRegistry', () => {
 
       registry.prune('todos')
 
-      expect(registry.getTrackedColumns('todos')).toBeUndefined()
+      expect(trackedColumns(registry, 'todos')).toBeUndefined()
       expect(registry.debugStats()).toEqual(EMPTY_STATS)
+    })
+
+    it('pruneChildren drops column tracking along with the column signals', () => {
+      const registry = createRegistry()
+      registry.getOrCreate('todos', [])
+      registry.trackColumn('todos', 'text')
+
+      registry.pruneChildren('todos')
+
+      expect(trackedColumns(registry, 'todos')).toBeUndefined()
+      expect(registry.debugStats().columns).toBe(0)
     })
   })
 
@@ -514,9 +568,7 @@ describe('PathSignalRegistry', () => {
       const sig1 = registry.trackStructure('todos', 'append')
       const sig2 = registry.trackStructure('todos', 'append')
       expect(sig1).toBe(sig2)
-      expect(registry.getTrackedStructures('todos')).toEqual(
-        new Set(['append']),
-      )
+      expect(trackedStructures(registry, 'todos')).toEqual(new Set(['append']))
     })
 
     it('bumpStructure fires only the matching kind', () => {
@@ -544,9 +596,12 @@ describe('PathSignalRegistry', () => {
 
       scope.stop()
 
-      expect(registry.getTrackedStructures('todos')).toEqual(
-        new Set(['remove']),
-      )
+      expect(trackedStructures(registry, 'todos')).toEqual(new Set(['remove']))
+      expect(registry.debugStats()).toMatchObject({
+        arrays: 1,
+        columns: 0,
+        structures: 1,
+      })
     })
 
     it('releasing the last structural signal clears the array entry', () => {
@@ -556,7 +611,7 @@ describe('PathSignalRegistry', () => {
 
       scope.stop()
 
-      expect(registry.getTrackedStructures('todos')).toBeUndefined()
+      expect(trackedStructures(registry, 'todos')).toBeUndefined()
       expect(registry.debugStats()).toEqual(EMPTY_STATS)
     })
   })
@@ -566,22 +621,24 @@ describe('PathSignalRegistry', () => {
       const registry = createRegistry()
       registry.getOrCreate('a.b', 1)
       registry.ensurePrefix('c')
-      registry.setArrayMeta('todos', { keyField: 'id' })
+      registry.keyFieldFor('todos', { id: 1 })
       registry.trackColumn('todos', 'text')
+      registry.trackColumn('todos', 'done')
       registry.trackStructure('todos', 'append')
 
       expect(registry.debugStats()).toEqual({
-        // a.b + column signal + structure signal
-        signals: 3,
-        // a, a.b, c, todos, todos.{*}, todos.{*}.text, todos.@@append
-        prefixCounts: 7,
+        // a.b + two column signals + structure signal
+        signals: 4,
+        // a, a.b, c, todos, todos.{*}, todos.{*}.text, todos.{*}.done,
+        // todos.@@append
+        prefixCounts: 8,
         // c and todos.{*}
         prefixOnlyPaths: 2,
-        // a→a.b, todos→(children), todos.{*}→(column)
+        // a→a.b, todos→(children), todos.{*}→(columns)
         childIndex: 3,
-        arrayMetas: 1,
-        columnsByArray: 1,
-        structuresByArray: 1,
+        arrays: 1,
+        columns: 2,
+        structures: 1,
         segmentSubs: 0,
       })
     })

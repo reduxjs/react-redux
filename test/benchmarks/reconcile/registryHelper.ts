@@ -5,11 +5,7 @@
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { SignalEngine } from '../../../src/signals/types'
-import {
-  findKeyField,
-  buildIdentityPath,
-  getKeyValue,
-} from '../../../src/signals/arrayKeys'
+import { buildIdentityPath, getKeyValue } from '../../../src/signals/arrayKeys'
 
 /**
  * Walk an object and register all leaf paths as tracked signals.
@@ -95,13 +91,9 @@ export function registerEntityArrayPaths(
   registry.getOrCreate(`${arrayPath}.@@keys`, arr.length)
   registry.getOrCreate(`${arrayPath}.length`, arr.length)
 
-  // Detect key field on first element (same as proxy does)
-  const keyField = arr.length > 0 ? findKeyField(arr[0]) : undefined
-
-  if (keyField) {
-    // Set up ArrayMeta so diff uses identity-based matching
-    registry.setArrayMeta(arrayPath, { keyField })
-  }
+  // Detect and store the key field (same as the proxy does) so diff uses
+  // identity-based matching
+  const keyField = registry.keyFieldFor(arrayPath, arr[0])
 
   for (let i = 0; i < arr.length; i++) {
     const item = arr[i]

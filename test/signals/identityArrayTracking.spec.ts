@@ -229,26 +229,23 @@ describe('identity-based array tracking: proxy', () => {
     expect(registry.has('tags.1')).toBe(false)
   })
 
-  it('creates ArrayMeta on first element access', () => {
+  it('detects the key field on first element access', () => {
     const state = deepFreeze({
       items: [{ id: 1, name: 'Alice' }],
     })
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry)
 
-    // Before access — no meta
-    expect(registry.getArrayMeta('items')).toBeUndefined()
+    // Before access — no record
+    expect(registry.getArrayRecord('items')).toBeUndefined()
 
     // Access an element
     ;(proxy as any).items[0].name
 
-    // Now meta should exist
-    const meta = registry.getArrayMeta('items')
-    expect(meta).toBeDefined()
-    expect(meta!.keyField).toBe('id')
+    expect(registry.getArrayRecord('items')?.keyField).toBe('id')
   })
 
-  it('reuses ArrayMeta on subsequent accesses', () => {
+  it('reuses the array record on subsequent accesses', () => {
     const state = deepFreeze({
       items: [
         { id: 1, name: 'Alice' },
@@ -259,13 +256,14 @@ describe('identity-based array tracking: proxy', () => {
     const proxy = createTrackingProxy(state, '', registry)
 
     ;(proxy as any).items[0].name
-    const meta1 = registry.getArrayMeta('items')
+    const record1 = registry.getArrayRecord('items')
 
     ;(proxy as any).items[1].name
-    const meta2 = registry.getArrayMeta('items')
+    const record2 = registry.getArrayRecord('items')
 
-    // Same meta object — not recreated
-    expect(meta1).toBe(meta2)
+    // Same record object — not recreated
+    expect(record1).toBeDefined()
+    expect(record1).toBe(record2)
   })
 
   it('handles nested arrays with identity paths', () => {

@@ -223,9 +223,9 @@ describe('array column and structure tracking after the array signal is released
 
     const stats = captured!.debugStats()
     expect(stats.signals).toBe(0)
-    expect(stats.arrayMetas).toBe(0)
-    expect(stats.columnsByArray).toBe(0)
-    expect(stats.structuresByArray).toBe(0)
+    expect(stats.arrays).toBe(0)
+    expect(stats.columns).toBe(0)
+    expect(stats.structures).toBe(0)
     expect(stats.childIndex).toBe(0)
 
     unmount()

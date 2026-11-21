@@ -1,7 +1,6 @@
 import {
   buildIdentityPath,
   encodePathSegment,
-  findKeyField,
   getKeyValue,
   joinPath,
   keysMetaPath,
@@ -117,17 +116,9 @@ function diffArray(
     registry.update(joinPath(parentPath, 'length'), next.length)
   }
 
-  let meta = registry.getArrayMeta(parentPath)
-  if (!meta && next.length > 0) {
-    const keyField = findKeyField(next[0])
-    if (keyField) {
-      meta = { keyField }
-      registry.setArrayMeta(parentPath, meta)
-    }
-  }
-
-  if (meta) {
-    diffArrayByKey(prev, next, parentPath, registry, meta.keyField)
+  const keyField = registry.keyFieldFor(parentPath, next[0])
+  if (keyField !== undefined) {
+    diffArrayByKey(prev, next, parentPath, registry, keyField)
   } else {
     diffArrayByIndex(prev, next, parentPath, registry)
   }
@@ -139,18 +130,16 @@ function diffArray(
  * remaining columns (can't shallow-compare — err toward firing).
  * @param prevItem - Previous element value
  * @param nextItem - Next element value
- * @param parentPath - Path to the containing array
  * @param registry - Signal registry to update
- * @param cols - Tracked column property names for this array
- * @param fired - Set of already-fired columns (dedup across elements)
+ * @param cols - Tracked columns for this array: column path → property
+ * @param fired - Column paths already fired (dedup across elements)
  * @returns void
  */
 function bumpColumnsForElement(
   prevItem: unknown,
   nextItem: unknown,
-  parentPath: string,
   registry: PathSignalRegistry,
-  cols: Set<string>,
+  cols: Map<string, string>,
   fired: Set<string>,
 ): void {
   if (
@@ -159,43 +148,24 @@ function bumpColumnsForElement(
     typeof prevItem === 'object' &&
     typeof nextItem === 'object'
   ) {
-    for (const prop of cols) {
-      if (fired.has(prop)) continue
+    for (const [path, prop] of cols) {
+      if (fired.has(path)) continue
       if (
         (prevItem as Record<string, unknown>)[prop] !==
         (nextItem as Record<string, unknown>)[prop]
       ) {
-        registry.bumpColumn(parentPath, prop)
-        fired.add(prop)
+        registry.bumpColumn(path)
+        fired.add(path)
       }
     }
   } else {
     // Non-object element changed — can't shallow-compare, fire everything
-    for (const prop of cols) {
-      if (!fired.has(prop)) {
-        registry.bumpColumn(parentPath, prop)
-        fired.add(prop)
+    for (const path of cols.keys()) {
+      if (!fired.has(path)) {
+        registry.bumpColumn(path)
+        fired.add(path)
       }
     }
-  }
-}
-
-/**
- * Fire every tracked column signal for an array. Used when elements
- * can't be aligned between prev and next (unkeyed length changes).
- * @param parentPath - Path to the array
- * @param registry - Signal registry to update
- * @param cols - Tracked column property names, if any
- * @returns void
- */
-function bumpAllColumns(
-  parentPath: string,
-  registry: PathSignalRegistry,
-  cols: Set<string> | undefined,
-): void {
-  if (!cols) return
-  for (const prop of cols) {
-    registry.bumpColumn(parentPath, prop)
   }
 }
 
@@ -276,9 +246,10 @@ function diffArrayByKey(
   registry: PathSignalRegistry,
   keyField: string,
 ): void {
-  const cols = registry.getTrackedColumns(parentPath)
-  const fired = cols && cols.size > 0 ? new Set<string>() : null
-  const structs = registry.getTrackedStructures(parentPath)
+  const rec = registry.getArrayRecord(parentPath)
+  const cols = rec?.columns
+  const fired = cols ? new Set<string>() : null
+  const structs = rec?.structures
 
   // Fast path: same-length arrays with no key shifts.
   // Only touch changed elements. Pure value changes — no structural bumps needed.
@@ -300,14 +271,7 @@ function diffArrayByKey(
         diffAndUpdateSignals(prev[i], next[i], identityPath, registry)
       }
       if (fired && cols) {
-        bumpColumnsForElement(
-          prev[i],
-          next[i],
-          parentPath,
-          registry,
-          cols,
-          fired,
-        )
+        bumpColumnsForElement(prev[i], next[i], registry, cols, fired)
       }
     }
     if (usedFastPath) {
@@ -405,14 +369,7 @@ function diffArrayByKey(
           diffAndUpdateSignals(prevItem, nextItem, childPath, registry)
         }
         if (fired && cols) {
-          bumpColumnsForElement(
-            prevItem,
-            nextItem,
-            parentPath,
-            registry,
-            cols,
-            fired,
-          )
+          bumpColumnsForElement(prevItem, nextItem, registry, cols, fired)
         }
       }
       continue
@@ -455,14 +412,7 @@ function diffArrayByKey(
         diffAndUpdateSignals(prevItem, nextItem, identityPath, registry)
       }
       if (fired && cols) {
-        bumpColumnsForElement(
-          prevItem,
-          nextItem,
-          parentPath,
-          registry,
-          cols,
-          fired,
-        )
+        bumpColumnsForElement(prevItem, nextItem, registry, cols, fired)
       }
     } else {
       if (registry.hasPrefix(identityPath)) {
@@ -511,20 +461,22 @@ function diffArrayByIndex(
   parentPath: string,
   registry: PathSignalRegistry,
 ): void {
-  const cols = registry.getTrackedColumns(parentPath)
-  const fired = cols && cols.size > 0 ? new Set<string>() : null
+  const rec = registry.getArrayRecord(parentPath)
+  const cols = rec?.columns
+  const fired = cols ? new Set<string>() : null
 
   if (prev.length !== next.length) {
     // Unkeyed length change: elements can't be aligned between prev and
     // next, so we can't classify the change — fire all structural kinds
     // and all columns (err toward firing).
-    const structs = registry.getTrackedStructures(parentPath)
-    if (structs) {
+    if (rec?.structures) {
       registry.bumpStructure(parentPath, 'append')
       registry.bumpStructure(parentPath, 'insertOrReorder')
       registry.bumpStructure(parentPath, 'remove')
     }
-    bumpAllColumns(parentPath, registry, cols)
+    if (cols) {
+      for (const path of cols.keys()) registry.bumpColumn(path)
+    }
   }
 
   const minLen = Math.min(prev.length, next.length)
@@ -537,14 +489,7 @@ function diffArrayByIndex(
       // Same-length: aligned compare per changed index covers value
       // changes AND swaps (both indexes show ref mismatches).
       if (fired && cols && prev.length === next.length) {
-        bumpColumnsForElement(
-          prev[i],
-          next[i],
-          parentPath,
-          registry,
-          cols,
-          fired,
-        )
+        bumpColumnsForElement(prev[i], next[i], registry, cols, fired)
       }
     }
   }

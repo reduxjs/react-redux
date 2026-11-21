@@ -411,14 +411,14 @@ describe('edge cases: registry lifecycle', () => {
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry)
 
-    // Element access detects the key field and creates ArrayMeta
+    // Element access detects the key field and stores it on the array record
     expect(proxy.items[0].v).toBe(1)
-    expect(registry.getArrayMeta('items')).toBeDefined()
+    expect(registry.getArrayRecord('items')?.keyField).toBe('id')
 
     registry.prune('items')
 
     // After a reset action prunes the slice, its metadata is released too.
-    expect(registry.getArrayMeta('items')).toBeUndefined()
+    expect(registry.getArrayRecord('items')).toBeUndefined()
   })
 })
 

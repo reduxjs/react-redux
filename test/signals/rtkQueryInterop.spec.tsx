@@ -176,9 +176,9 @@ const EMPTY_STATS: RegistryStats = {
   prefixCounts: 0,
   prefixOnlyPaths: 0,
   childIndex: 0,
-  arrayMetas: 0,
-  columnsByArray: 0,
-  structuresByArray: 0,
+  arrays: 0,
+  columns: 0,
+  structures: 0,
   segmentSubs: 0,
 }
 
@@ -842,7 +842,7 @@ describe('RTK Query with reactHooksModule({ hooks: { useSelector } })', () => {
 
       const after = registry.debugStats()
       // Array metadata is retained by design (see registryLeak.spec.tsx)
-      expect({ ...after, arrayMetas: 0 }).toEqual(EMPTY_STATS)
+      expect({ ...after, arrays: 0 }).toEqual(EMPTY_STATS)
     },
   )
 

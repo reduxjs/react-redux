@@ -104,9 +104,9 @@ const EMPTY_STATS: RegistryStats = {
   prefixCounts: 0,
   prefixOnlyPaths: 0,
   childIndex: 0,
-  arrayMetas: 0,
-  columnsByArray: 0,
-  structuresByArray: 0,
+  arrays: 0,
+  columns: 0,
+  structures: 0,
   segmentSubs: 0,
 }
 

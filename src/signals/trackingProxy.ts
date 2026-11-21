@@ -1,7 +1,6 @@
 import {
   buildIdentityPath,
   encodePathSegment,
-  findKeyField,
   getKeyValue,
   joinPath,
   KEYS_SEED,
@@ -316,18 +315,11 @@ export function getElementPathKey(
   element: object,
 ): string {
   if (!Array.isArray(element)) {
-    let meta = registry.getArrayMeta(arrayPath)
-    if (!meta) {
-      const keyField = findKeyField(element)
-      if (keyField) {
-        meta = { keyField }
-        registry.setArrayMeta(arrayPath, meta)
-      }
-    }
-    if (meta) {
-      const kv = getKeyValue(element, meta.keyField)
+    const keyField = registry.keyFieldFor(arrayPath, element)
+    if (keyField !== undefined) {
+      const kv = getKeyValue(element, keyField)
       if (kv !== undefined) {
-        return buildIdentityPath(arrayPath, meta.keyField, kv)
+        return buildIdentityPath(arrayPath, keyField, kv)
       }
     }
   }
