@@ -327,8 +327,8 @@ export function createPathSignalRegistry(
    * entry in its parent's child set, so every ancestor above it fails
    * the `childIndex.has` test on its own.
    *
-   * Touches only `prefixCounts`, `prefixOnlyPaths` and `childIndex` -
-   * never a signal - so it is safe to run from anywhere, including
+   * Touches only `prefixCounts`, `prefixOnlyPaths`, `childIndex` and
+   * `arrayMetas` - never a signal - so it is safe to run from anywhere, including
    * mid-`unlink`.
    *
    * @returns Nothing.
@@ -378,14 +378,17 @@ export function createPathSignalRegistry(
               prefixOnlyPaths.delete(path)
               prefixCounts.delete(path)
               detachFromParent(path)
+              arrayMetas.delete(path)
               count += 1
             }
           } else if (!signals.has(path)) {
             // Either a path just released, or a link-only node whose
             // last child has now gone. A path resurrected by
             // `getOrCreate` before this flush ran is live again and
-            // correctly falls through untouched.
+            // correctly falls through untouched. Nothing is tracked at
+            // or below it any more, so its array key metadata goes too.
             detachFromParent(path)
+            arrayMetas.delete(path)
           }
         }
 
@@ -498,9 +501,6 @@ export function createPathSignalRegistry(
       if (signals.get(pathKey) !== node) return
 
       signals.delete(pathKey)
-      columnsByArray.delete(pathKey)
-      structuresByArray.delete(pathKey)
-      arrayMetas.delete(pathKey)
 
       // A column signal lives at `<arrayPath>.{*}.<prop>`, so releasing
       // it has to drop `prop` from the array's tracked column set as
