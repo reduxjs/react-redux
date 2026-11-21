@@ -59,26 +59,8 @@ import {
  * - Pass-through (forEach, reduce, flatMap): NOT overridden — callbacks need tracking
  */
 
-type SubsetMethod = 'find' | 'findLast' | 'filter' | 'slice' | 'map'
-type PrimitiveMethod =
-  | 'findIndex'
-  | 'findLastIndex'
-  | 'some'
-  | 'every'
-  | 'indexOf'
-  | 'lastIndexOf'
-  | 'includes'
-  | 'join'
-  | 'toString'
-  | 'toLocaleString'
-type TransformMethod = 'concat' | 'flat'
-
-type OverriddenMethod = SubsetMethod | PrimitiveMethod | TransformMethod
-
-const FIND_METHODS = new Set<OverriddenMethod>(['find', 'findLast'])
-
 /** Methods whose element dependencies come from what the callback reads. */
-const CALLBACK_METHODS = new Set<OverriddenMethod>([
+const CALLBACK_METHOD_LIST = [
   'find',
   'findLast',
   'filter',
@@ -87,30 +69,33 @@ const CALLBACK_METHODS = new Set<OverriddenMethod>([
   'findLastIndex',
   'some',
   'every',
-])
+] as const
 
-const OVERRIDDEN_METHODS = new Set<string>([
-  // Subset — return raw elements with identity dependencies
-  'find',
-  'findLast',
-  'filter',
+const OTHER_METHOD_LIST = [
   'slice',
-  'map',
-  // Primitive-returning
-  'findIndex',
-  'findLastIndex',
-  'some',
-  'every',
   'indexOf',
   'lastIndexOf',
   'includes',
   'join',
   'toString',
   'toLocaleString',
-  // Transform — return raw values
   'concat',
   'flat',
+] as const
+
+type CallbackMethod = (typeof CALLBACK_METHOD_LIST)[number]
+type OverriddenMethod = CallbackMethod | (typeof OTHER_METHOD_LIST)[number]
+
+const CALLBACK_METHODS = new Set<string>(CALLBACK_METHOD_LIST)
+const OVERRIDDEN_METHODS = new Set<string>([
+  ...CALLBACK_METHOD_LIST,
+  ...OTHER_METHOD_LIST,
 ])
+const FIND_METHODS = new Set<OverriddenMethod>(['find', 'findLast'])
+
+function isCallbackMethod(method: string): method is CallbackMethod {
+  return CALLBACK_METHODS.has(method)
+}
 
 /**
  * Check if a property name is an overridden array method.
@@ -232,7 +217,7 @@ function presentElement(recorder: ScanRecorder, value: unknown): unknown {
  * Errors in this table must err toward including a kind (over-firing).
  */
 const STRUCTURE_DEPS: Record<
-  string,
+  CallbackMethod,
   { matched: readonly StructureKind[]; missed: readonly StructureKind[] }
 > = {
   find: {
@@ -289,7 +274,7 @@ function finalizeScanDeps(
   registry: PathSignalRegistry,
   parentPath: string,
   target: readonly unknown[],
-  method: OverriddenMethod,
+  method: CallbackMethod,
   matched: boolean,
 ): void {
   if (recorder.fallback || recorder.recorded.size === 0) {
@@ -300,11 +285,8 @@ function finalizeScanDeps(
     registry.trackColumn(parentPath, prop).get()
   }
   const kinds = STRUCTURE_DEPS[method]
-  if (kinds) {
-    const wanted = matched ? kinds.matched : kinds.missed
-    for (const kind of wanted) {
-      registry.trackStructure(parentPath, kind).get()
-    }
+  for (const kind of matched ? kinds.matched : kinds.missed) {
+    registry.trackStructure(parentPath, kind).get()
   }
 }
 
@@ -395,7 +377,7 @@ export function createArrayMethodInterceptor(
 
     // --- Callback-driven scans: record property reads, register column signals ---
 
-    if (CALLBACK_METHODS.has(m)) {
+    if (isCallbackMethod(m)) {
       const userCallback = args[0] as (
         value: unknown,
         index: number,

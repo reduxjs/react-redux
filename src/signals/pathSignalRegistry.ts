@@ -491,18 +491,7 @@ export function createPathSignalRegistry(
           decrementPrefixes(prefixCounts, key)
         }
       }
-      // Remove this path from its parent's child set
-      const dotIdx = pathKey.lastIndexOf('.')
-      if (dotIdx !== -1) {
-        const parent = pathKey.substring(0, dotIdx)
-        const parentChildren = childIndex.get(parent)
-        if (parentChildren) {
-          parentChildren.delete(pathKey)
-          if (parentChildren.size === 0) {
-            childIndex.delete(parent)
-          }
-        }
-      }
+      detachFromParent(pathKey)
     },
 
     release(pathKey: PathKey, node: ReactiveSignal<unknown>): void {

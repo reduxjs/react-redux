@@ -4,6 +4,7 @@ import {
   findKeyField,
   getKeyValue,
   joinPath,
+  KEYS_SEED,
   keysMetaPath,
 } from './arrayKeys'
 import {
@@ -149,16 +150,15 @@ export function finalizeDependencies(
   // (JSON.stringify collapses each nested object; only the outermost
   // needs a signal). Records are checked against ancestors, not order,
   // because a child can be enumerated before its parent.
-  const collapsed: string[] = []
+  const collapsed = new Set<string>()
   for (const [objPath, record] of tracker.enumerated) {
     tracker.traversedPaths.add(objPath)
     if (isCompleteEnumeration(record)) {
-      collapsed.push(objPath)
+      collapsed.add(objPath)
     }
   }
   const underCollapsed = (path: string): boolean => {
-    for (let i = 0; i < collapsed.length; i++) {
-      const c = collapsed[i]
+    for (const c of collapsed) {
       if (
         path.length > c.length &&
         path.startsWith(c) &&
@@ -174,13 +174,11 @@ export function finalizeDependencies(
   // deferred reads for incomplete enumerations.
   for (const [objPath, record] of tracker.enumerated) {
     if (underCollapsed(objPath)) continue
-    if (isCompleteEnumeration(record)) {
+    if (collapsed.has(objPath)) {
       registry.getOrCreate(objPath, record.target).get()
       continue
     }
-    registry
-      .getOrCreate(keysMetaPath(objPath), Object.keys(record.target))
-      .get()
+    registry.getOrCreate(keysMetaPath(objPath), KEYS_SEED).get()
     for (let i = 0; i < record.leaves.length; i++) {
       const [pathKey, value] = record.leaves[i]
       registry.getOrCreate(pathKey, value).get()
@@ -627,9 +625,7 @@ export function createTrackingProxy<T extends object>(
         enumRecord = record
         enumEpoch = registry.evalEpoch
       } else {
-        registry
-          .getOrCreate(keysMetaPath(parentPath), Reflect.ownKeys(target))
-          .get()
+        registry.getOrCreate(keysMetaPath(parentPath), KEYS_SEED).get()
       }
       return Reflect.ownKeys(target)
     },

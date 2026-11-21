@@ -79,7 +79,7 @@ export function SignalProvider<
       // deep graph and current result are ready when React reads its
       // snapshot. collect() returns a snapshot array — subscribers
       // unregister themselves from the index inside onCoarseHit.
-      if (prev !== next && registry.segmentIndex.size() > 0) {
+      if (prev !== next) {
         const hits = registry.segmentIndex.collect(changedRootKeys)
         for (let i = 0; i < hits.length; i++) {
           hits[i].onCoarseHit()

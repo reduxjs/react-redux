@@ -114,7 +114,7 @@ function diffArray(
   }
 
   if (prev.length !== next.length) {
-    registry.update(keysMetaPath(parentPath), next.length)
+    registry.update(keysMetaPath(parentPath), next)
     registry.update(joinPath(parentPath, 'length'), next.length)
   }
 

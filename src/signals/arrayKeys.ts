@@ -102,6 +102,13 @@ export function keysMetaPath(parentPath: string): string {
 }
 
 /**
+ * Initial value of an `@@keys` signal. The signal is a version counter:
+ * diff bumps it whenever the key set (or an array's length) changes,
+ * and nothing reads the value itself.
+ */
+export const KEYS_SEED = 0
+
+/**
  * Render a key value as a path segment fragment.
  *
  * Two invariants:
