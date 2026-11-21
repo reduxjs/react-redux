@@ -1,5 +1,5 @@
 import { throwStateMutationError } from './mutationError'
-import { registerProxyTarget } from './trackingProxy'
+import { registerProxyTarget, shellDescriptor } from './trackingProxy'
 
 /**
  * A deferred (not-yet-built) useSignalSelector subscriber, registered in
@@ -176,10 +176,7 @@ function createWriteGuard<T extends object>(target: T): T {
     },
 
     getOwnPropertyDescriptor(_obj, prop) {
-      const desc = Object.getOwnPropertyDescriptor(target, prop)
-      // Frozen state props are non-configurable; the shell doesn't have
-      // them, so report configurable to satisfy proxy invariants.
-      return desc ? { ...desc, configurable: true } : desc
+      return shellDescriptor(target, prop)
     },
 
     getPrototypeOf(_obj) {
@@ -270,10 +267,7 @@ export function createProbeProxy<T extends object>(
     // value — record it as a segment read, like get/has.
     getOwnPropertyDescriptor(_obj, prop) {
       if (typeof prop !== 'symbol') record.segments.add(prop)
-      const desc = Object.getOwnPropertyDescriptor(state, prop)
-      // The shell target doesn't have the state's props; report them
-      // configurable to satisfy proxy invariants (matters for frozen state).
-      return desc ? { ...desc, configurable: true } : desc
+      return shellDescriptor(state, prop)
     },
 
     getPrototypeOf(_obj) {

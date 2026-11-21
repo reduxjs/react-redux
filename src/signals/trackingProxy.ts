@@ -275,6 +275,26 @@ export function registerProxyTarget(proxy: object, target: object): void {
 }
 
 /**
+ * Descriptor for a proxy whose target is an unfrozen shell standing in for
+ * frozen state. Frozen state props are non-configurable, and the shell
+ * doesn't have them, so they are reported configurable. An array shell
+ * does have its own non-configurable `length`, which the proxy may not
+ * report as configurable; it is reported writable instead, which matches
+ * the shell's own `length` and allows a different value.
+ */
+export function shellDescriptor(
+  target: object,
+  prop: PropertyKey,
+): PropertyDescriptor | undefined {
+  const desc = Object.getOwnPropertyDescriptor(target, prop)
+  if (desc === undefined) return desc
+  if (prop === 'length' && Array.isArray(target)) {
+    return { ...desc, writable: true }
+  }
+  return { ...desc, configurable: true }
+}
+
+/**
  * Get the raw target object from a tracking proxy, or the value itself if not a proxy.
  *
  * Use this when you need identity comparison between values that may be
@@ -650,15 +670,8 @@ export function createTrackingProxy<T extends object>(
       return Reflect.has(target, prop)
     },
 
-    // Delegate to real target for property descriptors
     getOwnPropertyDescriptor(_obj, prop) {
-      const desc = Object.getOwnPropertyDescriptor(target, prop)
-      if (desc) {
-        // Mark as configurable so the proxy can return different values
-        // (our proxy may return child proxies for object properties)
-        return { ...desc, configurable: true }
-      }
-      return desc
+      return shellDescriptor(target, prop)
     },
 
     // Report the real target's prototype
