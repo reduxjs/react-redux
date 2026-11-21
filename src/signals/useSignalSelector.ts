@@ -19,6 +19,7 @@ import {
 } from './trackingProxy'
 import { computed, effect, signal } from './reactiveSystem'
 import { untrackResult } from './untrack'
+import { isPlainObject } from './objects'
 
 const { useRef, useMemo, useSyncExternalStore, useDebugValue } = React
 
@@ -29,15 +30,6 @@ const refEquality: EqualityFn<any> = Object.is
 // keeps propagating to the effect — returning the previous result would
 // cut off propagation and React would never be notified of the error.
 const SELECTOR_THREW = Symbol('selector threw') as unknown
-
-// Only plain-object roots can be probed by the coarse tier: method calls
-// through a proxy over a Map/Set/class-instance root would run with the
-// proxy as `this` and break internal-slot access.
-function isPlainObjectState(v: unknown): v is object {
-  if (v === null || typeof v !== 'object') return false
-  const proto = Object.getPrototypeOf(v)
-  return proto === Object.prototype || proto === null
-}
 
 /**
  * A React hook that selects state from a Redux store using signal-based
@@ -197,7 +189,7 @@ const useSignalSelectorImpl = <S, R>(
       // — `s => flag ? s.a : s.b` left registered under {a} alone would
       // silently miss every change to b.
       const state = store.getState()
-      if (isPlainObjectState(state)) {
+      if (isPlainObject(state)) {
         // A probe throw propagates into this render (stock parity for
         // selector swaps); the old registration stays until a working
         // closure lands.
@@ -484,10 +476,12 @@ const useSignalSelectorImpl = <S, R>(
     // render's selector, which was written for the old store's state.
     selectorRef.current = selector
     const initialState = store.getState()
-    if (isPlainObjectState(initialState)) {
+    if (isPlainObject(initialState)) {
       probe(initialState as S & object)
     } else {
-      // Non-plain root: can't probe it. getSnapshot's unbuilt path runs
+      // Non-plain root: can't probe it (methods called through a proxy
+      // over a Map, Set or class instance would run with the proxy as
+      // `this` and lose internal-slot access). getSnapshot's unbuilt path runs
       // the raw selector during render (throw-on-mount parity);
       // subscribe() builds the deep tier on commit.
       ungateable = true
@@ -565,7 +559,7 @@ const useSignalSelectorImpl = <S, R>(
           // value reflect the state we're subscribing against.
           const state = store.getState()
           if (state !== probedState) {
-            if (isPlainObjectState(state)) {
+            if (isPlainObject(state)) {
               try {
                 probe(state as S & object)
               } catch {

@@ -9,12 +9,7 @@ import {
 import type { ArrayMeta } from './arrayKeys'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 import type { SignalEngine } from './types'
-
-function isPlainObject(v: unknown): v is Record<string, unknown> {
-  if (v === null || typeof v !== 'object') return false
-  const proto = Object.getPrototypeOf(v)
-  return proto === Object.prototype || proto === null
-}
+import { isPlainObject } from './objects'
 
 /**
  * Diff a plain object: recurse into changed properties.

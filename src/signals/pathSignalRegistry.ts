@@ -2,6 +2,7 @@ import { encodePathSegment } from './arrayKeys'
 import type { ArrayMeta } from './arrayKeys'
 import { createSegmentIndex } from './coarseSegments'
 import type { SegmentIndex } from './coarseSegments'
+import { isObjectOrArray } from './objects'
 import type { LeafObjectTracker, ProxyCache } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
@@ -171,10 +172,6 @@ function buildStructurePath(arrayPath: string, kind: StructureKind): string {
 function bumpVersion(sig: ReactiveSignal<unknown>): void {
   const current = sig.get()
   sig.set(typeof current === 'number' ? current + 1 : 0)
-}
-
-function isObjectOrArray(v: unknown): v is object {
-  return v !== null && typeof v === 'object'
 }
 
 // Unique value written into a signal as it is pruned, guaranteed to be

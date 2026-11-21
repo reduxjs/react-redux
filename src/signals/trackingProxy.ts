@@ -12,15 +12,7 @@ import {
 } from './arrayMethodOverrides'
 import { throwStateMutationError } from './mutationError'
 import type { PathSignalRegistry } from './pathSignalRegistry'
-
-function isObjectOrArray(v: unknown): v is object {
-  return v !== null && typeof v === 'object'
-}
-
-function isPlainObject(v: object): boolean {
-  const proto = Object.getPrototypeOf(v)
-  return proto === Object.prototype || proto === null
-}
+import { isObjectOrArray, isPlainObject } from './objects'
 
 // Fast check for array-index-like property names ('0', '42', ...).
 // Canonical array index strings always start with a digit; named array
@@ -555,7 +547,7 @@ export function createTrackingProxy<T extends object>(
         // ("this is not a Date object"), and the diff can't recurse into
         // them anyway. Reading the version signal here means a ref swap
         // at this path re-runs the selector.
-        if (!Array.isArray(value) && !isPlainObject(value as object)) {
+        if (!Array.isArray(value) && !isPlainObject(value)) {
           if (leafTracker) {
             leafTracker.traversedPaths.add(parentPath)
             // Counts toward a complete enumeration; the reference read

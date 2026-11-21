@@ -1,5 +1,6 @@
 import { throwStateMutationError } from './mutationError'
 import { registerProxyTarget, shellDescriptor } from './trackingProxy'
+import { isPlainObject } from './objects'
 
 /**
  * A deferred (not-yet-built) useSignalSelector subscriber, registered in
@@ -119,10 +120,7 @@ export interface ProbeRecord {
 }
 
 function isGuardable(value: unknown): value is object {
-  if (value === null || typeof value !== 'object') return false
-  if (Array.isArray(value)) return true
-  const proto = Object.getPrototypeOf(value)
-  return proto === Object.prototype || proto === null
+  return Array.isArray(value) || isPlainObject(value)
 }
 
 // Guards are cached by target identity so a probe run wraps each object
