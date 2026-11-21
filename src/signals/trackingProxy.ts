@@ -634,6 +634,15 @@ export function createTrackingProxy<T extends object>(
     // Track has() checks for conditional property access (e.g., 'key' in obj)
     has(_obj, prop) {
       if (typeof prop === 'symbol') return Reflect.has(target, prop)
+      // An index check on an array depends on the array's length. Keyed
+      // arrays track elements at identity paths, so the diff never fires
+      // their index paths.
+      if (Array.isArray(target) && isIndexProp(prop)) {
+        registry
+          .getOrCreate(joinPath(parentPath, 'length'), target.length)
+          .get()
+        return Reflect.has(target, prop)
+      }
       const pathKey = getPathKey(prop as string)
       registry
         .getOrCreate(pathKey, (target as Record<string, unknown>)[prop])
