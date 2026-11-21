@@ -190,9 +190,8 @@ function bumpVersion(sig: ReactiveSignal<unknown>): void {
 
 // Unique value written into a signal as it is pruned, guaranteed to be
 // `!==` its current value so the signal always fires. Setting the same
-// primitive back (the old behavior) silently no-ops for strings/booleans
-// under alien-signals' `!==` equality, leaving dependent computeds
-// permanently stale after an entity removal.
+// primitive back would no-op under the signal's `!==` equality, leaving
+// dependent computeds permanently stale after an entity removal.
 const PRUNED = Symbol('pruned')
 
 // Increment prefix counters for all ancestor paths of a given pathKey.

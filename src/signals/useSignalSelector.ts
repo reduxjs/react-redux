@@ -33,8 +33,9 @@ const SELECTOR_THREW = Symbol('selector threw') as unknown
 
 /**
  * A React hook that selects state from a Redux store using signal-based
- * dependency tracking. Only re-renders when the selected value actually
- * changes, with O(k) selectivity where k = number of affected selectors.
+ * dependency tracking. A store update re-runs only the selectors that read
+ * a changed path, and the component re-renders only when the selected
+ * value changes.
  *
  * Must be used within a <SignalProvider>.
  * @param selector - Function that extracts a value from the store state
@@ -659,7 +660,7 @@ export interface UseSignalSelector<StateType = unknown> {
  *
  * The context must be provided by a `<SignalProvider context={...}>` —
  * the returned hook validates that the context value carries the signal
- * registry and engine.
+ * registry.
  *
  * @param context - Context passed to your `<SignalProvider>`.
  * @returns A `useSignalSelector` hook bound to the given context.

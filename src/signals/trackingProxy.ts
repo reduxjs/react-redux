@@ -278,11 +278,12 @@ export function shellDescriptor(
  *
  * const selector = (state) => {
  *   const current = unwrap(state.current)
- *   return state.items.find(item => item === current)
+ *   return state.items.find(item => unwrap(item) === current)
  * }
  * ```
  *
- * Safe to call on non-proxy values — returns them unchanged.
+ * `unwrap` itself registers no dependency. Safe to call on non-proxy
+ * values — returns them unchanged.
  *
  * @param value - The value to unwrap (proxy or raw)
  * @returns The raw target object, or the original value if not a tracking proxy

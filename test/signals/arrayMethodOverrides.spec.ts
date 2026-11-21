@@ -851,7 +851,7 @@ describe('Array method overrides on tracking proxy', () => {
       const { proxy } = setup(state)
       // filter then find — both should work with overrides
       const highValue = proxy.items.filter((i) => i.value > 20)
-      // highValue is a plain array of proxied items (not a tracking proxy itself)
+      // highValue is a plain array of raw items (not a tracking proxy itself)
       // so .find on it will use normal Array.prototype.find
       const found = highValue.find((i) => i.id === 4)
       expect(found).toBeDefined()

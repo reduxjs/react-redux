@@ -25,9 +25,8 @@ import type {
  * implementation.
  *
  * `signal` and `computed` return the graph nodes directly. The nodes
- * implement `get`/`set` themselves, so unlike the previous wrapper over
- * `alien-signals`' bound-function API there is no per-signal wrapper
- * object or closure pair to allocate — which matters because one node
+ * implement `get`/`set` themselves, so there is no per-signal wrapper
+ * object or closure pair to allocate. That matters because one node
  * exists per tracked state path.
  */
 export const alienEngine: SignalEngine = {
