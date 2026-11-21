@@ -122,6 +122,71 @@ describe('snapshot freshness between dispatch and notification', () => {
     expect(seen.at(-1)).toBe(2)
   })
 
+  // Before its first store change, the signal hook is still waiting in
+  // the coarse tier and has no deep tracking to refresh it.
+  it('a hook that has not re-rendered from a store change yet reads the current state in the gap', async () => {
+    const store = makeStore()
+    const seen: number[] = []
+    let forceParent: () => void = () => {}
+
+    function Child() {
+      const value = useSelector(selectValue)
+      seen.push(value)
+      return <div data-testid="value">{value}</div>
+    }
+    function Parent() {
+      const [, setN] = React.useState(0)
+      forceParent = () => setN((n) => n + 1)
+      return <Child />
+    }
+
+    rtl.render(
+      <Provider store={store}>
+        <Parent />
+      </Provider>,
+    )
+    expect(rtl.screen.getByTestId('value').textContent).toBe('0')
+
+    rtl.act(() => {
+      store.dispatch({ type: 'inc' })
+    })
+    rtl.act(() => {
+      forceParent()
+    })
+    expect(rtl.screen.getByTestId('value').textContent).toBe('1')
+
+    await flushNotifications()
+    expect(rtl.screen.getByTestId('value').textContent).toBe('1')
+    expect(seen.at(-1)).toBe(1)
+  })
+
+  it('a hook that has not re-rendered from a store change yet sees a layout-effect dispatch after commit', () => {
+    const store = makeStore()
+    const seen: number[] = []
+
+    function Comp({ fire }: { fire: boolean }) {
+      const value = useSelector((s: State) => s.value)
+      seen.push(value)
+      React.useLayoutEffect(() => {
+        if (fire) store.dispatch({ type: 'inc' })
+      }, [fire])
+      return null
+    }
+
+    const { rerender } = rtl.render(
+      <Provider store={store}>
+        <Comp fire={false} />
+      </Provider>,
+    )
+    rerender(
+      <Provider store={store}>
+        <Comp fire />
+      </Provider>,
+    )
+    expect(store.getState().value).toBe(1)
+    expect(seen.at(-1)).toBe(1)
+  })
+
   it('stock and signal hooks in one tree never disagree within a render pass', async () => {
     const store = makeStore()
     const passes: Array<{ parent: number; child: number }> = []
