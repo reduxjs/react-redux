@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import type { CoarseSub } from '../../src/signals/coarseSegments'
-import {
-  createProbeProxy,
-  createSegmentIndex,
-} from '../../src/signals/coarseSegments'
+import type { CoarseSub } from '../../src/signals/segmentIndex'
+import { createSegmentIndex } from '../../src/signals/segmentIndex'
+import { createProbeProxy } from '../../src/signals/probeProxy'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { reconcileState } from '../../src/signals/diff'
-import { unwrap } from '../../src/signals/trackingProxy'
+import { unwrap } from '../../src/signals/proxyIdentity'
 
 function makeSub(segments: Set<string> | null): CoarseSub & { hits: number } {
   const sub: CoarseSub & { hits: number } = {

@@ -3,9 +3,8 @@ import {
   createLeafTracker,
   createTrackingProxy,
   finalizeDependencies,
-  getProxyPath,
-  unwrap,
 } from '../../src/signals/trackingProxy'
+import { getProxyPath, unwrap } from '../../src/signals/proxyIdentity'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { reconcileState } from '../../src/signals/diff'
 import { alienEngine } from '../../src/signals/engine'

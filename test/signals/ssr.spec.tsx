@@ -18,7 +18,7 @@ import { useSelector } from '../../src/hooks/useSelector'
 import { useSignalContext } from '../../src/signals/context'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { SignalProvider } from '../../src/signals/SignalProvider'
-import { unwrap } from '../../src/signals/trackingProxy'
+import { unwrap } from '../../src/signals/proxyIdentity'
 import { useSignalSelector } from '../../src/signals/useSignalSelector'
 
 interface Todo {

@@ -22,7 +22,7 @@ import {
 } from '@reduxjs/toolkit/query/react'
 import { Provider, useSelector } from 'react-redux'
 import { useDispatch, useStore } from '../../src/index'
-import { unwrap } from '../../src/signals/trackingProxy'
+import { unwrap } from '../../src/signals/proxyIdentity'
 import { useSignalContext } from '../../src/signals/context'
 import type {
   PathSignalRegistry,

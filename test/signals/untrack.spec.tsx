@@ -15,10 +15,8 @@ import { SignalProvider } from '../../src/signals/SignalProvider'
 import { useSignalSelector } from '../../src/signals/useSignalSelector'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
-import {
-  createTrackingProxy,
-  getProxyPath,
-} from '../../src/signals/trackingProxy'
+import { createTrackingProxy } from '../../src/signals/trackingProxy'
+import { getProxyPath } from '../../src/signals/proxyIdentity'
 import { untrackResult } from '../../src/signals/untrack'
 
 const isTrackingProxy = (v: unknown) =>

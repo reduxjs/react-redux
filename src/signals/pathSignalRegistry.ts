@@ -1,6 +1,6 @@
 import { encodePathSegment, findKeyField } from './arrayKeys'
-import { createSegmentIndex } from './coarseSegments'
-import type { SegmentIndex } from './coarseSegments'
+import { createSegmentIndex } from './segmentIndex'
+import type { SegmentIndex } from './segmentIndex'
 import { isObjectOrArray } from './objects'
 import type { LeafObjectTracker } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'

@@ -19,7 +19,7 @@ import {
   createEntityAdapter,
   createSlice,
 } from '@reduxjs/toolkit'
-import { getProxyPath } from '@internal/signals/trackingProxy'
+import { getProxyPath } from '@internal/signals/proxyIdentity'
 import * as rtl from '@testing-library/react'
 import React from 'react'
 import { Provider, shallowEqual, useSelector } from 'react-redux'

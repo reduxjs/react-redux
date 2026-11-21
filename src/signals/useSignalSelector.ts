@@ -3,8 +3,8 @@ import { React } from '../utils/react'
 import type { DevModeChecks, UseSelectorOptions } from '../hooks/useSelector'
 import type { ReactReduxContextValue } from '../components/Context'
 import type { EqualityFn } from '../types'
-import { createProbeProxy } from './coarseSegments'
-import type { CoarseSub } from './coarseSegments'
+import { createProbeProxy } from './probeProxy'
+import type { CoarseSub } from './segmentIndex'
 import type { SignalContextValue } from './context'
 import {
   createSignalContextHook,
@@ -15,8 +15,8 @@ import {
   createLeafTracker,
   createTrackingProxy,
   finalizeDependencies,
-  getProxyPath,
 } from './trackingProxy'
+import { getProxyPath } from './proxyIdentity'
 import { computed, effect, signal } from './reactiveSystem'
 import { untrackResult } from './untrack'
 import { isPlainObject } from './objects'

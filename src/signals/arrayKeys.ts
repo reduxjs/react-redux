@@ -7,6 +7,8 @@
  * reorders, insertions, and removals.
  */
 
+import type { PathSignalRegistry } from './pathSignalRegistry'
+
 /** Candidate key field names, checked in priority order. */
 const KEY_CANDIDATES = ['id', 'key', '_id', '__id'] as const
 
@@ -151,4 +153,36 @@ export function getKeyValue(
     return value
   }
   return undefined
+}
+
+/**
+ * Path key for an object element of a tracked array: the identity path
+ * (`items.{id:42}`) when the array has a detectable key field, otherwise
+ * the index path (`items.3`). Detects and records the array's key field
+ * on first use.
+ * @param registry - Signal registry holding per-array metadata
+ * @param arrayPath - Path of the containing array
+ * @param index - The element's index (number or canonical index string)
+ * @param element - The raw element object
+ * @returns The element's path key
+ */
+export function getElementPathKey(
+  registry: PathSignalRegistry,
+  arrayPath: string,
+  index: number | string,
+  element: object,
+): string {
+  if (!Array.isArray(element)) {
+    const keyField = registry.keyFieldFor(arrayPath, element)
+    if (keyField !== undefined) {
+      const kv = getKeyValue(element, keyField)
+      if (kv !== undefined) {
+        return buildIdentityPath(arrayPath, keyField, kv)
+      }
+    }
+  }
+  return joinPath(
+    arrayPath,
+    typeof index === 'number' ? index : encodePathSegment(index),
+  )
 }

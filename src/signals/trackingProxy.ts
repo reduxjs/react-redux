@@ -1,7 +1,6 @@
 import {
-  buildIdentityPath,
   encodePathSegment,
-  getKeyValue,
+  getElementPathKey,
   joinPath,
   KEYS_SEED,
   keysMetaPath,
@@ -13,6 +12,7 @@ import {
 import { throwStateMutationError } from './mutationError'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 import { isObjectOrArray, isPlainObject } from './objects'
+import { registerTrackingProxy, shellDescriptor } from './proxyIdentity'
 
 // Fast check for array-index-like property names ('0', '42', ...).
 // Canonical array index strings always start with a digit; named array
@@ -43,42 +43,6 @@ function warnRepeatedRead(registry: PathSignalRegistry, pathKey: string) {
       'Reads through the tracked state proxy cost more than plain property ' +
       'reads — hoist the value into a local before looping.',
   )
-}
-
-/**
- * Maps proxy objects to their path keys.
- * Used by useSignalSelector to detect when a selector returns a proxy (object)
- * and explicitly establish a dependency on that object's signal.
- */
-const proxyPathMap = new WeakMap<object, string>()
-
-/**
- * Maps tracking proxies back to their raw target objects.
- * Used to unwrap proxy arguments in array methods like includes/indexOf
- * where identity comparison needs to work against raw array elements.
- */
-const proxyTargetMap = new WeakMap<object, object>()
-
-/**
- * Maps scan-recorder proxies (used by array method callbacks) to their
- * mutable holders. A recorder proxy is reused across all elements of a
- * scan, reading from `holder.current`. unwrap() consults this map so
- * identity comparisons inside callbacks can be unwrapped correctly.
- */
-const recordingHolders = new WeakMap<object, { current: unknown }>()
-
-/**
- * Register a scan-recorder proxy so unwrap() can resolve it to the
- * element currently being scanned.
- * @param proxy - The recorder proxy passed to array method callbacks
- * @param holder - Mutable holder whose `current` is the raw element
- * @returns void
- */
-export function registerRecordingHolder(
-  proxy: object,
-  holder: { current: unknown },
-): void {
-  recordingHolders.set(proxy, holder)
 }
 
 /**
@@ -207,126 +171,6 @@ function isCompleteEnumeration(record: EnumerationRecord): boolean {
     if (!record.keysRead.has(ownKeys[i])) return false
   }
   return true
-}
-
-/**
- * Get the path key associated with a tracking proxy, or undefined if not a proxy.
- * @param value - The value to check
- * @returns The path string, or undefined if not a tracking proxy
- */
-export function getProxyPath(value: unknown): string | undefined {
-  if (value !== null && typeof value === 'object') {
-    return proxyPathMap.get(value)
-  }
-  return undefined
-}
-
-/**
- * Get the raw target of a tracking proxy, or undefined if the value is
- * not a tracking proxy. Unlike unwrap(), this distinguishes "was a
- * proxy" from "was already raw", which the result-untracking walk needs
- * (proxies mark subtree boundaries: everything below a target is raw).
- * @param value - The value to check
- * @returns The raw target, or undefined if not a tracking proxy
- */
-export function getProxyTarget(value: object): object | undefined {
-  return proxyTargetMap.get(value)
-}
-
-/**
- * Register a proxy→target mapping for a proxy created outside this
- * module (the coarse-tier probe proxy). Makes `unwrap` and
- * `untrackResult` treat it like any tracking proxy.
- * @param proxy - The proxy object
- * @param target - The raw object it wraps
- * @returns void
- */
-export function registerProxyTarget(proxy: object, target: object): void {
-  proxyTargetMap.set(proxy, target)
-}
-
-/**
- * Descriptor for a proxy whose target is an unfrozen shell standing in for
- * frozen state. Frozen state props are non-configurable, and the shell
- * doesn't have them, so they are reported configurable. An array shell
- * does have its own non-configurable `length`, which the proxy may not
- * report as configurable; it is reported writable instead, which matches
- * the shell's own `length` and allows a different value.
- */
-export function shellDescriptor(
-  target: object,
-  prop: PropertyKey,
-): PropertyDescriptor | undefined {
-  const desc = Object.getOwnPropertyDescriptor(target, prop)
-  if (desc === undefined) return desc
-  if (prop === 'length' && Array.isArray(target)) {
-    return { ...desc, writable: true }
-  }
-  return { ...desc, configurable: true }
-}
-
-/**
- * Get the raw target object from a tracking proxy, or the value itself if not a proxy.
- *
- * Use this when you need identity comparison between values that may be
- * tracking proxies. Since `proxy === rawObject` is always `false` in JS,
- * unwrapping both sides allows correct identity checks:
- *
- * ```ts
- * import { unwrap } from 'react-redux/signals'
- *
- * const selector = (state) => {
- *   const current = unwrap(state.current)
- *   return state.items.find(item => unwrap(item) === current)
- * }
- * ```
- *
- * `unwrap` itself registers no dependency. Safe to call on non-proxy
- * values — returns them unchanged.
- *
- * @param value - The value to unwrap (proxy or raw)
- * @returns The raw target object, or the original value if not a tracking proxy
- */
-export function unwrap<T>(value: T): T {
-  if (value !== null && typeof value === 'object') {
-    const target = proxyTargetMap.get(value as object)
-    if (target !== undefined) return target as T
-    const holder = recordingHolders.get(value as object)
-    if (holder !== undefined) return holder.current as T
-  }
-  return value
-}
-
-/**
- * Path key for an object element of a tracked array: the identity path
- * (`items.{id:42}`) when the array has a detectable key field, otherwise
- * the index path (`items.3`). Detects and records the array's key field
- * on first use.
- * @param registry - Signal registry holding per-array metadata
- * @param arrayPath - Path of the containing array
- * @param index - The element's index (number or canonical index string)
- * @param element - The raw element object
- * @returns The element's path key
- */
-export function getElementPathKey(
-  registry: PathSignalRegistry,
-  arrayPath: string,
-  index: number | string,
-  element: object,
-): string {
-  if (!Array.isArray(element)) {
-    const keyField = registry.keyFieldFor(arrayPath, element)
-    if (keyField !== undefined) {
-      const kv = getKeyValue(element, keyField)
-      if (kv !== undefined) {
-        return buildIdentityPath(arrayPath, keyField, kv)
-      }
-    }
-  }
-  return joinPath(
-    arrayPath,
-    typeof index === 'number' ? index : encodePathSegment(index),
-  )
 }
 
 /**
@@ -664,8 +508,7 @@ export function createTrackingProxy<T extends object>(
   if (!isRoot) {
     cache.set(target, proxy)
   }
-  proxyPathMap.set(proxy as object, parentPath)
-  proxyTargetMap.set(proxy as object, target)
+  registerTrackingProxy(proxy as object, target, parentPath)
 
   return proxy
 }

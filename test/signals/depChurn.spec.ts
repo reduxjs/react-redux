@@ -7,8 +7,8 @@ import {
   createLeafTracker,
   createTrackingProxy,
   finalizeDependencies,
-  getProxyPath,
 } from '../../src/signals/trackingProxy'
+import { getProxyPath } from '../../src/signals/proxyIdentity'
 import { reconcileState } from '../../src/signals/diff'
 
 // Regression guard for dependency churn with memoized collection selectors.

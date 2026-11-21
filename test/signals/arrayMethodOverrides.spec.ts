@@ -1,11 +1,8 @@
 import { describe, test, expect, vi } from 'vitest'
 import { alienEngine } from '@internal/signals/engine'
 import { createPathSignalRegistry } from '@internal/signals/pathSignalRegistry'
-import {
-  createTrackingProxy,
-  getProxyPath,
-  unwrap,
-} from '@internal/signals/trackingProxy'
+import { createTrackingProxy } from '@internal/signals/trackingProxy'
+import { getProxyPath, unwrap } from '@internal/signals/proxyIdentity'
 
 function deepFreeze<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj

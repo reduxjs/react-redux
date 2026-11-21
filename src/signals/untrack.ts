@@ -1,4 +1,4 @@
-import { getProxyTarget } from './trackingProxy'
+import { getProxyTarget } from './proxyIdentity'
 
 /**
  * Strip tracking proxies from a selector result so components, effects,

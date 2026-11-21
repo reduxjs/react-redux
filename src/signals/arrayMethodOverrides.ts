@@ -1,12 +1,12 @@
 import { throwStateMutationError } from './mutationError'
 import type { PathSignalRegistry, StructureKind } from './pathSignalRegistry'
+import { getElementPathKey } from './arrayKeys'
 import {
-  getElementPathKey,
   getProxyPath,
   getProxyTarget,
   registerRecordingHolder,
   unwrap,
-} from './trackingProxy'
+} from './proxyIdentity'
 
 /**
  * Non-mutating array methods that we override on the tracking proxy.

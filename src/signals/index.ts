@@ -15,6 +15,7 @@ export type { PathKey, ReactiveSignal, ReactiveComputed } from './types'
 export { createPathSignalRegistry } from './pathSignalRegistry'
 export type { PathSignalRegistry } from './pathSignalRegistry'
 
-export { createTrackingProxy, unwrap } from './trackingProxy'
+export { createTrackingProxy } from './trackingProxy'
+export { unwrap } from './proxyIdentity'
 
 export { diffAndUpdateSignals, reconcileState } from './diff'

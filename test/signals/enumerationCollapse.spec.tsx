@@ -10,8 +10,8 @@ import {
   createLeafTracker,
   createTrackingProxy,
   finalizeDependencies,
-  getProxyPath,
 } from '../../src/signals/trackingProxy'
+import { getProxyPath } from '../../src/signals/proxyIdentity'
 import { reconcileState } from '../../src/signals/diff'
 import { keysMetaPath } from '../../src/signals/arrayKeys'
 import { useSignalContext } from '../../src/signals/context'
