@@ -32,11 +32,6 @@ export function findKeyField(obj: unknown): string | undefined {
 export interface ArrayMeta {
   /** The property name used as the identity key (e.g., 'id') */
   keyField: string
-  /**
-   * Map from key value → previous array element reference.
-   * Used by diff to match elements across prev/next arrays by identity.
-   */
-  entityMap: Map<string | number, unknown>
 }
 
 // Characters that corrupt path bookkeeping if they appear in a path

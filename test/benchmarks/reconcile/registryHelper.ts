@@ -100,7 +100,7 @@ export function registerEntityArrayPaths(
 
   if (keyField) {
     // Set up ArrayMeta so diff uses identity-based matching
-    registry.setArrayMeta(arrayPath, { keyField, entityMap: new Map() })
+    registry.setArrayMeta(arrayPath, { keyField })
   }
 
   for (let i = 0; i < arr.length; i++) {

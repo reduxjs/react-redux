@@ -621,8 +621,8 @@ describe('identity-based array tracking: diff', () => {
     })
   })
 
-  describe('entityMap lifecycle', () => {
-    it('populates entityMap from prev on first diff', () => {
+  describe('consecutive diffs', () => {
+    it('matches moved elements by key on the first diff after proxy access', () => {
       const prev = deepFreeze({
         items: [
           { id: 1, name: 'Alice' },
@@ -631,8 +631,8 @@ describe('identity-based array tracking: diff', () => {
       })
       const next = deepFreeze({
         items: [
-          { id: 1, name: 'Alice' },
           { id: 2, name: 'Bobby' },
+          { id: 1, name: 'Alice' },
         ],
       })
 
@@ -640,21 +640,16 @@ describe('identity-based array tracking: diff', () => {
         s.items[0].name
         s.items[1].name
       })
-
-      // Meta exists (created by proxy) but entityMap is empty
-      const meta = registry.getArrayMeta('items')
-      expect(meta).toBeDefined()
-      expect(meta!.entityMap.size).toBe(0)
+      const alice = registry.getOrCreate('items.{id:1}.name', 'Alice')
+      const bob = registry.getOrCreate('items.{id:2}.name', 'Bob')
 
       diffAndUpdateSignals(prev, next, '', registry)
 
-      // After diff, entityMap is populated with next array's entities
-      expect(meta!.entityMap.size).toBe(2)
-      expect(meta!.entityMap.get(1)).toBe(next.items[0])
-      expect(meta!.entityMap.get(2)).toBe(next.items[1])
+      expect(alice.get()).toBe('Alice')
+      expect(bob.get()).toBe('Bobby')
     })
 
-    it('updates entityMap after each diff', () => {
+    it('matches against the latest state after append, update and removal', () => {
       const state1 = deepFreeze({
         items: [
           { id: 1, name: 'Alice' },
@@ -677,16 +672,14 @@ describe('identity-based array tracking: diff', () => {
         s.items[1].name
       })
 
-      // First diff
       diffAndUpdateSignals(state1, state2, '', registry)
-      const meta = registry.getArrayMeta('items')!
-      expect(meta.entityMap.size).toBe(3)
+      expect(registry.getOrCreate('items.{id:2}.name', 'Bobby').get()).toBe(
+        'Bobby',
+      )
 
-      // Second diff
       diffAndUpdateSignals(state2, state3, '', registry)
-      expect(meta.entityMap.size).toBe(1)
-      expect(meta.entityMap.has(2)).toBe(false)
-      expect(meta.entityMap.has(3)).toBe(false)
+      expect(registry.has('items.{id:1}.name')).toBe(true)
+      expect(registry.has('items.{id:2}.name')).toBe(false)
     })
   })
 

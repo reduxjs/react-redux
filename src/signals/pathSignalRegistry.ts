@@ -247,7 +247,7 @@ export function createPathSignalRegistry(
   // Proxy cache: keyed by target object identity.
   // Reuses proxies for unchanged Immer subtrees across state snapshots.
   // Per-array metadata for identity-based tracking.
-  // Maps array path → ArrayMeta (keyField + entityMap).
+  // Maps array path → ArrayMeta (the identity key field).
   const arrayMetas = new Map<string, ArrayMeta>()
   // Tracked column properties per array path.
   // Lets diffArray know which element properties to shallow-compare.

@@ -320,7 +320,7 @@ export function getElementPathKey(
     if (!meta) {
       const keyField = findKeyField(element)
       if (keyField) {
-        meta = { keyField, entityMap: new Map() }
+        meta = { keyField }
         registry.setArrayMeta(arrayPath, meta)
       }
     }

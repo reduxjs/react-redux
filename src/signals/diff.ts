@@ -6,7 +6,6 @@ import {
   joinPath,
   keysMetaPath,
 } from './arrayKeys'
-import type { ArrayMeta } from './arrayKeys'
 import type { PathSignalRegistry } from './pathSignalRegistry'
 import type { SignalEngine } from './types'
 import { isPlainObject } from './objects'
@@ -119,28 +118,16 @@ function diffArray(
   }
 
   let meta = registry.getArrayMeta(parentPath)
-  if (meta) {
-    if (meta.entityMap.size === 0 && prev.length > 0) {
-      for (let i = 0; i < prev.length; i++) {
-        const kv = getKeyValue(prev[i], meta.keyField)
-        if (kv !== undefined) meta.entityMap.set(kv, prev[i])
-      }
-    }
-  } else if (next.length > 0) {
+  if (!meta && next.length > 0) {
     const keyField = findKeyField(next[0])
     if (keyField) {
-      const entityMap = new Map<string | number, unknown>()
-      for (let i = 0; i < prev.length; i++) {
-        const kv = getKeyValue(prev[i], keyField)
-        if (kv !== undefined) entityMap.set(kv, prev[i])
-      }
-      meta = { keyField, entityMap }
+      meta = { keyField }
       registry.setArrayMeta(parentPath, meta)
     }
   }
 
   if (meta) {
-    diffArrayByKey(prev, next, parentPath, registry, meta)
+    diffArrayByKey(prev, next, parentPath, registry, meta.keyField)
   } else {
     diffArrayByIndex(prev, next, parentPath, registry)
   }
@@ -279,7 +266,7 @@ export function diffAndUpdateSignals(
  * @param next - Next array state
  * @param parentPath - Dot-separated path to this array in the state tree
  * @param registry - Signal registry to update
- * @param meta - Array identity metadata (key field and entity map)
+ * @param keyField - Property that identifies elements
  * @returns void
  */
 function diffArrayByKey(
@@ -287,17 +274,14 @@ function diffArrayByKey(
   next: unknown[],
   parentPath: string,
   registry: PathSignalRegistry,
-  meta: ArrayMeta,
+  keyField: string,
 ): void {
-  const { keyField, entityMap: prevEntityMap } = meta
-
   const cols = registry.getTrackedColumns(parentPath)
   const fired = cols && cols.size > 0 ? new Set<string>() : null
   const structs = registry.getTrackedStructures(parentPath)
 
   // Fast path: same-length arrays with no key shifts.
-  // Only touch changed elements. Update entityMap incrementally instead of rebuilding.
-  // Pure value changes — no structural bumps needed.
+  // Only touch changed elements. Pure value changes — no structural bumps needed.
   if (prev.length === next.length) {
     let usedFastPath = true
     for (let i = 0; i < next.length; i++) {
@@ -311,7 +295,6 @@ function diffArrayByKey(
         break
       }
 
-      // Same key, different content — diff and update entityMap entry
       const identityPath = buildIdentityPath(parentPath, keyField, nextKv)
       if (registry.hasPrefix(identityPath)) {
         diffAndUpdateSignals(prev[i], next[i], identityPath, registry)
@@ -326,17 +309,11 @@ function diffArrayByKey(
           fired,
         )
       }
-      prevEntityMap.set(nextKv, next[i])
     }
     if (usedFastPath) {
       return
     }
     // Fast path failed partway — fall through to full identity diff below.
-    // Restore any partially-updated entityMap entries from prev array.
-    for (let i = 0; i < prev.length; i++) {
-      const kv = getKeyValue(prev[i], keyField)
-      if (kv !== undefined) prevEntityMap.set(kv, prev[i])
-    }
   }
 
   // Full identity-based diff: lengths differ or keys shifted positions.
@@ -349,7 +326,6 @@ function diffArrayByKey(
   }
 
   // If we skipped the entire overlap and next is longer, it's a pure append.
-  // No Map needed — just update entityMap for new tail entries.
   // Overlap is identical, so no value changes are possible — membership
   // change is covered by the `append` structural signal alone.
   if (startIdx === minLen && next.length >= prev.length) {
@@ -360,7 +336,6 @@ function diffArrayByKey(
       const nextItem = next[i]
       const kv = getKeyValue(nextItem, keyField)
       if (kv !== undefined) {
-        prevEntityMap.set(kv, nextItem)
         const identityPath = buildIdentityPath(parentPath, keyField, kv)
         if (registry.hasPrefix(identityPath)) {
           diffAndUpdateSignals(undefined, nextItem, identityPath, registry)
@@ -371,7 +346,6 @@ function diffArrayByKey(
   }
 
   // If we skipped the entire overlap and prev is longer, it's a pure truncation.
-  // Prune the removed tail entries from entityMap.
   if (startIdx === minLen && prev.length > next.length) {
     if (structs) {
       registry.bumpStructure(parentPath, 'remove')
@@ -380,7 +354,6 @@ function diffArrayByKey(
       const prevItem = prev[i]
       const kv = getKeyValue(prevItem, keyField)
       if (kv !== undefined) {
-        prevEntityMap.delete(kv)
         const identityPath = buildIdentityPath(parentPath, keyField, kv)
         registry.prune(identityPath)
       }
@@ -388,12 +361,11 @@ function diffArrayByKey(
     return
   }
 
-  // General case: build Map only from startIdx onward.
-  const nextEntityMap = new Map<string | number, unknown>()
-  // Carry over skipped prefix entries from prevEntityMap
-  for (let i = 0; i < startIdx; i++) {
-    const kv = getKeyValue(next[i], keyField)
-    if (kv !== undefined) nextEntityMap.set(kv, next[i])
+  // General case: match next elements to prev elements by key.
+  const prevByKey = new Map<string | number, unknown>()
+  for (let i = 0; i < prev.length; i++) {
+    const kv = getKeyValue(prev[i], keyField)
+    if (kv !== undefined) prevByKey.set(kv, prev[i])
   }
 
   // Track every prev key seen in next so removed entities get pruned.
@@ -446,8 +418,7 @@ function diffArrayByKey(
       continue
     }
 
-    nextEntityMap.set(kv, nextItem)
-    const prevItem = prevEntityMap.get(kv)
+    const prevItem = prevByKey.get(kv)
     const isSurvivor = prevItem !== undefined
 
     if (isSurvivor) {
@@ -500,14 +471,12 @@ function diffArrayByKey(
     }
   }
 
-  for (const [kv] of prevEntityMap) {
+  for (const kv of prevByKey.keys()) {
     if (!seenPrevKeys.has(kv)) {
       const identityPath = buildIdentityPath(parentPath, keyField, kv)
       registry.prune(identityPath)
     }
   }
-
-  meta.entityMap = nextEntityMap
 
   if (structs) {
     // Removals: prev suffix elements not matched by a surviving key.

@@ -423,7 +423,7 @@ describe('PathSignalRegistry', () => {
   describe('array metadata', () => {
     it('setArrayMeta / getArrayMeta round-trips and prune clears it', () => {
       const registry = createRegistry()
-      const meta = { keyField: 'id', entityMap: new Map() }
+      const meta = { keyField: 'id' }
       registry.setArrayMeta('todos', meta)
       expect(registry.getArrayMeta('todos')).toBe(meta)
       expect(registry.getArrayMeta('other')).toBeUndefined()
@@ -566,7 +566,7 @@ describe('PathSignalRegistry', () => {
       const registry = createRegistry()
       registry.getOrCreate('a.b', 1)
       registry.ensurePrefix('c')
-      registry.setArrayMeta('todos', { keyField: 'id', entityMap: new Map() })
+      registry.setArrayMeta('todos', { keyField: 'id' })
       registry.trackColumn('todos', 'text')
       registry.trackStructure('todos', 'append')
 

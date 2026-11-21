@@ -406,7 +406,7 @@ describe('edge cases: leafTracker capture through the shared proxy cache', () =>
 })
 
 describe('edge cases: registry lifecycle', () => {
-  it('prune clears array identity metadata (entityMap retention)', () => {
+  it('prune clears array identity metadata', () => {
     const state = { items: [{ id: 1, v: 1 }] }
     const registry = createPathSignalRegistry(alienEngine)
     const proxy = createTrackingProxy(state, '', registry)
@@ -417,8 +417,7 @@ describe('edge cases: registry lifecycle', () => {
 
     registry.prune('items')
 
-    // The entityMap holds strong refs to old entities — after a reset
-    // action prunes the slice, the metadata should be released too.
+    // After a reset action prunes the slice, its metadata is released too.
     expect(registry.getArrayMeta('items')).toBeUndefined()
   })
 })
