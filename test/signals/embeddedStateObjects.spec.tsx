@@ -8,7 +8,7 @@ import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { SignalProvider, useSignalSelector } from '../../src/signals'
-import { shallowEqual } from '../../src/utils/shallowEqual'
+import shallowEqual from '../../src/utils/shallowEqual'
 import type { EqualityFn } from '../../src/types'
 
 interface User {

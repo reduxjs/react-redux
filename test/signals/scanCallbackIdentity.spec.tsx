@@ -102,7 +102,8 @@ describe('identity comparisons between state values', () => {
     let result: boolean | undefined
     function Comp() {
       result = useSignalSelector(
-        (s) => s.data.current.id > 0 && unwrap(s.data.current) === saved,
+        (s: RootState) =>
+          s.data.current.id > 0 && unwrap(s.data.current) === saved,
       )
       return null
     }
