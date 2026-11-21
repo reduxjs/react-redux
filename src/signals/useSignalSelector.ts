@@ -479,6 +479,10 @@ const useSignalSelectorImpl = <S, R>(
     // computed and permanently anchor path signals in the registry.
     // Until subscribe builds the deep tier, getSnapshot serves values by
     // running the raw selector (see the unbuilt branch below).
+    // A new bridge (first mount or a store swap) must seed with this
+    // render's selector. On a swap the ref still holds the previous
+    // render's selector, which was written for the old store's state.
+    selectorRef.current = selector
     const initialState = store.getState()
     if (isPlainObjectState(initialState)) {
       probe(initialState as S & object)

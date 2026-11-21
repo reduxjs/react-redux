@@ -83,6 +83,40 @@ describe('SignalProvider store prop swap', () => {
     expect(renderCount).toBe(rendersAfterSwap + 1)
   })
 
+  it('runs only the new selector when the store and selector change in the same render', () => {
+    type KeyedState = Record<string, { v: number }>
+    const storeA = configureStore({
+      reducer: (state: KeyedState = { a: { v: 1 } }) => state,
+    })
+    const storeB = configureStore({
+      reducer: (state: KeyedState = { b: { v: 2 } }) => state,
+    })
+
+    const calledWith: string[] = []
+
+    function Value({ k }: { k: string }) {
+      const value = useSignalSelector((s: KeyedState) => {
+        calledWith.push(k)
+        return s[k].v
+      })
+      return <div data-testid="value">{value}</div>
+    }
+
+    const ui = (store: typeof storeA, k: string) => (
+      <SignalProvider store={store}>
+        <Value k={k} />
+      </SignalProvider>
+    )
+
+    const { getByTestId, rerender } = rtl.render(ui(storeA, 'a'))
+    expect(getByTestId('value').textContent).toBe('1')
+
+    calledWith.length = 0
+    rerender(ui(storeB, 'b'))
+    expect(getByTestId('value').textContent).toBe('2')
+    expect(calledWith).not.toContain('a')
+  })
+
   it('selective execution still holds after a swap', () => {
     const storeA = makeStore(0, 'a')
     const storeB = makeStore(0, 'b')
