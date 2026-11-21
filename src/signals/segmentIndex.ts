@@ -37,6 +37,8 @@ export interface SegmentIndex {
    * `onCoarseHit`, so the caller must not iterate live index structures.
    */
   collect(changedRootKeys: readonly string[] | null): readonly CoarseSub[]
+  /** Registered subscriber count. Attached only when
+   *  `process.env.NODE_ENV !== 'production'`; for tests and debugging. */
   size(): number
 }
 
@@ -47,7 +49,7 @@ export function createSegmentIndex(): SegmentIndex {
   const bySegment = new Map<string, Set<CoarseSub>>()
   const wildcards = new Set<CoarseSub>()
 
-  return {
+  const index: Omit<SegmentIndex, 'size'> = {
     register(sub: CoarseSub): void {
       if (all.has(sub)) return
       all.add(sub)
@@ -95,9 +97,11 @@ export function createSegmentIndex(): SegmentIndex {
       }
       return hits.size > 0 ? Array.from(hits) : EMPTY
     },
-
-    size(): number {
-      return all.size
-    },
   }
+
+  if (process.env.NODE_ENV !== 'production') {
+    Object.assign(index, { size: () => all.size })
+  }
+
+  return index as SegmentIndex
 }

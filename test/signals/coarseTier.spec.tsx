@@ -20,7 +20,7 @@ import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import React, { useCallback, useState } from 'react'
 import { legacy_createStore as createStore } from 'redux'
-import type { PathSignalRegistry } from '../../src/signals'
+import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import {
   SignalProvider,
   useSignalContext,

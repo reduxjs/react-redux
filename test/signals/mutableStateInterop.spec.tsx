@@ -24,13 +24,10 @@ import React from 'react'
 import type { Reducer, Store } from 'redux'
 import { legacy_createStore as createStore } from 'redux'
 import { describe, expect, it, vi } from 'vitest'
-import {
-  createPathSignalRegistry,
-  createTrackingProxy,
-  SignalProvider,
-  useSignalSelector,
-} from '../../src/signals'
+import { SignalProvider, useSignalSelector } from '../../src/signals'
 import { alienEngine } from '../../src/signals/engine'
+import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
+import { createTrackingProxy } from '../../src/signals/trackingProxy'
 
 describe('in-place mutation (mutable slices)', () => {
   interface MutState {

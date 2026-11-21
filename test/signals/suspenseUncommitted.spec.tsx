@@ -38,7 +38,7 @@ import * as rtl from '@testing-library/react'
 import React, { StrictMode, Suspense, startTransition, useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { RegistryStats } from '../../src/signals/pathSignalRegistry'
-import type { PathSignalRegistry } from '../../src/signals'
+import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import {
   SignalProvider,
   useSignalContext,

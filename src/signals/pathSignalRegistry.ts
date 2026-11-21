@@ -71,7 +71,24 @@ export interface ArrayRecord {
   structures?: Map<string, StructureKind>
 }
 
-export interface PathSignalRegistry {
+/** Inspection helpers for tests and debugging. Attached only when
+ *  `process.env.NODE_ENV !== 'production'`, so production builds drop
+ *  them; source code must not call them. */
+export interface RegistryDebug {
+  /** Number of active signals. */
+  size(): number
+
+  /** Check if a signal exists for a path (without creating one). */
+  has(pathKey: PathKey): boolean
+
+  /** All registered signal paths, sorted. */
+  debugPaths(): string[]
+
+  /** Entry counts for every internal structure. */
+  debugStats(): RegistryStats
+}
+
+export interface PathSignalRegistry extends RegistryDebug {
   /** Get or create a signal for a path. Object/array values use version counters. */
   getOrCreate(pathKey: PathKey, currentValue: unknown): ReactiveSignal<unknown>
 
@@ -113,20 +130,8 @@ export interface PathSignalRegistry {
    *  evict the live replacement. */
   release(pathKey: PathKey, node: ReactiveSignal<unknown>): void
 
-  /** Number of active signals. */
-  size(): number
-
-  /** Check if a signal exists for a path (without creating one). */
-  has(pathKey: PathKey): boolean
-
   /** Check if any tracked signal exists at or below this path prefix. */
   hasPrefix(prefix: string): boolean
-
-  /** Return all registered signal paths (for testing/debugging). */
-  debugPaths(): string[]
-
-  /** Entry counts for every internal structure (for testing/debugging). */
-  debugStats(): RegistryStats
 
   /** Coarse tier: inverted index of top-level state keys → deferred
    *  subscribers. Driven by SignalProvider with the changed root keys
@@ -414,7 +419,7 @@ export function createPathSignalRegistry(
     }
   }
 
-  const registry: PathSignalRegistry = {
+  const registry: Omit<PathSignalRegistry, keyof RegistryDebug> = {
     getOrCreate(
       pathKey: PathKey,
       currentValue: unknown,
@@ -529,41 +534,9 @@ export function createPathSignalRegistry(
       }
     },
 
-    size(): number {
-      return signals.size
-    },
-
-    has(pathKey: PathKey): boolean {
-      return signals.has(pathKey)
-    },
-
     hasPrefix(prefix: string): boolean {
       if (pendingReleases.size !== 0) flushReleases()
       return (prefixCounts.get(prefix) || 0) > 0
-    },
-
-    debugPaths(): string[] {
-      return Array.from(signals.keys()).sort()
-    },
-
-    debugStats(): RegistryStats {
-      if (pendingReleases.size !== 0) flushReleases()
-      let columns = 0
-      let structures = 0
-      for (const rec of arrays.values()) {
-        columns += rec.columns?.size ?? 0
-        structures += rec.structures?.size ?? 0
-      }
-      return {
-        signals: signals.size,
-        prefixCounts: prefixCounts.size,
-        prefixOnlyPaths: prefixOnlyPaths.size,
-        childIndex: childIndex.size,
-        arrays: arrays.size,
-        columns,
-        structures,
-        segmentSubs: registry.segmentIndex.size(),
-      }
     },
 
     segmentIndex: createSegmentIndex(),
@@ -625,5 +598,34 @@ export function createPathSignalRegistry(
     },
   }
 
-  return registry
+  if (process.env.NODE_ENV !== 'production') {
+    const debug: RegistryDebug = {
+      size: () => signals.size,
+      has: (pathKey) => signals.has(pathKey),
+      debugPaths: () => Array.from(signals.keys()).sort(),
+      debugStats() {
+        if (pendingReleases.size !== 0) flushReleases()
+        let columns = 0
+        let structures = 0
+        for (const rec of arrays.values()) {
+          columns += rec.columns?.size ?? 0
+          structures += rec.structures?.size ?? 0
+        }
+        return {
+          signals: signals.size,
+          prefixCounts: prefixCounts.size,
+          prefixOnlyPaths: prefixOnlyPaths.size,
+          childIndex: childIndex.size,
+          arrays: arrays.size,
+          columns,
+          structures,
+          segmentSubs: registry.segmentIndex.size(),
+        }
+      },
+    }
+    Object.assign(registry, debug)
+  }
+
+  // The debug helpers are absent in production; see RegistryDebug.
+  return registry as PathSignalRegistry
 }
