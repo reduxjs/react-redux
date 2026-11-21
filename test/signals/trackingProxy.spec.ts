@@ -1506,6 +1506,32 @@ describe('array method dependency tracking', () => {
     stop()
   })
 
+  it('slice(1, 2) — SHOULD re-run when a sliced element changes', () => {
+    let state = makeFrozenState([
+      { id: 1, text: 'a', done: false },
+      { id: 2, text: 'b', done: false },
+    ])
+    const registry = makeRegistry()
+
+    const { computed: c, stop } = createSelectorComputed(
+      () => state,
+      (s: TodoState) => s.items.slice(1, 2)[0].text,
+      registry,
+    )
+
+    expect(c.get()).toBe('b')
+
+    const prevState = state
+    state = makeFrozenState([
+      prevState.items[0],
+      { id: 2, text: 'B', done: false },
+    ])
+    reconcileState(prevState, state, registry, alienEngine)
+    expect(c.get()).toBe('B')
+
+    stop()
+  })
+
   // ─── findIndex — predicate, returns primitive ───
 
   it('findIndex(x => x.done) — SHOULD re-run when a different element becomes done', () => {

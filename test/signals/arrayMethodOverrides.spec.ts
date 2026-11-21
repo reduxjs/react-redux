@@ -341,14 +341,61 @@ describe('Array method overrides on tracking proxy', () => {
       expect(sliced).toHaveLength(5)
     })
 
-    test('registers identity signals for sliced elements only', () => {
+    test('depends on the whole array, not on each sliced element', () => {
       const state = createTestData()
       const { proxy, registry } = setup(state)
-      proxy.items.slice(2, 3) // just item at index 2 (id: 3)
+      proxy.items.slice(2, 3)
 
-      expect(registry.has('items.{id:3}')).toBe(true)
-      expect(registry.has('items.{id:1}')).toBe(false)
-      expect(registry.has('items.{id:2}')).toBe(false)
+      expect(registry.has('items')).toBe(true)
+      expect(registry.has('items.{id:3}')).toBe(false)
+    })
+
+    test.each([
+      [[Number.NaN]],
+      [[0, null]],
+      [[1, undefined]],
+      [['1', '3']],
+      [[1.5, 3.7]],
+      [[-Infinity, Infinity]],
+    ])('matches native slice for arguments %j', (args) => {
+      const state = createTestData()
+      const { proxy } = setup(state)
+      const slice = proxy.items.slice as (...a: unknown[]) => unknown[]
+      const nativeSlice = state.items.slice as (...a: unknown[]) => unknown[]
+      expect(slice.apply(proxy.items, args)).toEqual(
+        nativeSlice.apply(state.items, args),
+      )
+    })
+  })
+
+  describe('thisArg', () => {
+    const methods = [
+      'find',
+      'findLast',
+      'findIndex',
+      'findLastIndex',
+      'filter',
+      'map',
+      'some',
+      'every',
+    ] as const
+
+    test.each(methods)('%s() calls the callback with thisArg', (method) => {
+      const state = createTestData()
+      const { proxy } = setup(state)
+      const thisArg = { marker: true }
+      const seen: unknown[] = []
+      const callback = function (this: unknown) {
+        seen.push(this)
+        return false
+      }
+      const fn = proxy.items[method] as (
+        cb: (...a: unknown[]) => unknown,
+        thisArg: unknown,
+      ) => unknown
+      fn.call(proxy.items, callback, thisArg)
+      expect(seen.length).toBeGreaterThan(0)
+      for (const value of seen) expect(value).toBe(thisArg)
     })
   })
 

@@ -13,8 +13,9 @@ import {
  *
  * The key optimization: callbacks scan elements WITHOUT per-element proxy
  * creation or per-element signal registration, and elements that leave
- * the array through a method (find, filter, slice, map's `x => x`) leave
- * as RAW objects with one identity dependency each on the element's path.
+ * the array through a method (find, filter, map's `x => x`) leave as RAW
+ * objects with one identity dependency each on the element's path.
+ * `slice` also returns raw elements, under the coarse array dependency.
  *
  * Example: `state.items.find(i => i.id === 42)` scans 1000 items (fast),
  * then returns the raw match and depends on `items.{id:42}`.
@@ -48,8 +49,9 @@ import {
  *   join, concat, slice, ...) always register the coarse array signal.
  *
  * Categories:
- * - Subset operations (find, findLast, filter, slice): return raw elements
- *   with identity dependencies
+ * - Subset operations (find, findLast, filter): return raw elements with
+ *   identity dependencies; slice returns raw elements under the coarse
+ *   array dependency
  * - map: scans through the recorder; results that are elements (own or
  *   from another tracked object) come back raw with identity dependencies
  * - Primitive-returning (findIndex, indexOf, some, every, includes, etc.): return as-is
@@ -117,13 +119,6 @@ const OVERRIDDEN_METHODS = new Set<string>([
  */
 export function isOverriddenArrayMethod(prop: string): boolean {
   return OVERRIDDEN_METHODS.has(prop)
-}
-
-function normalizeSliceIndex(index: number, length: number): number {
-  if (index < 0) {
-    return Math.max(length + index, 0)
-  }
-  return Math.min(index, length)
 }
 
 /**
@@ -401,11 +396,17 @@ export function createArrayMethodInterceptor(
     // --- Callback-driven scans: record property reads, register column signals ---
 
     if (CALLBACK_METHODS.has(m)) {
-      const callback = args[0] as (
+      const userCallback = args[0] as (
         value: unknown,
         index: number,
         array: readonly unknown[],
       ) => unknown
+      const thisArg = args[1]
+      const callback = (
+        value: unknown,
+        index: number,
+        array: readonly unknown[],
+      ): unknown => userCallback.call(thisArg, value, index, array)
       const recorder = createScanRecorder()
 
       let result: unknown
@@ -488,18 +489,6 @@ export function createArrayMethodInterceptor(
     // right granularity: these methods read element identity or content
     // wholesale (includes/indexOf compare refs, join/concat serialize all).
     registry.getOrCreate(parentPath, target).get()
-
-    if (m === 'slice') {
-      const rawStart = (args[0] as number) ?? 0
-      const rawEnd = (args[1] as number) ?? target.length
-      const start = normalizeSliceIndex(rawStart, target.length)
-      const end = normalizeSliceIndex(rawEnd, target.length)
-      const result: unknown[] = []
-      for (let i = start; i < end; i++) {
-        result.push(emitElement(registry, parentPath, target, i))
-      }
-      return result
-    }
 
     // --- Identity-comparing methods: unwrap proxy arguments ---
 
