@@ -129,13 +129,20 @@ const useSignalSelectorImpl = <S, R>(
     let lastServerState: unknown = null
     let serverResult: R
 
-    // Track leaf object accesses for identity comparison support.
-    // Objects read by the selector but never traversed deeper are
-    // "leaf objects" — their identity matters (e.g., `a === b`).
-    // The holder object is stable; its containers are swapped for fresh
-    // ones at the start of each evaluation (a computed never re-enters
-    // its own evaluation, so this is safe).
-    const leafTracker = createLeafTracker()
+    // Adopt a freshly computed value unless the user's equality function
+    // says it matches the current one. Keeping the PREVIOUS reference for
+    // equal-but-new results (`() => [1, 2, 3]` with a custom equalityFn)
+    // is what makes the equality check stick: React only sees a new value
+    // when the selector's output actually changed. The equality function
+    // is never called before the first value is seeded.
+    const adopt = (value: R): boolean => {
+      if (hasResult && equalityFnRef.current(currentResult, value)) {
+        return false
+      }
+      currentResult = value
+      hasResult = true
+      return true
+    }
 
     // Bumped when the component re-renders with a different selector
     // function (e.g., an inline selector closing over changed props).
@@ -155,13 +162,7 @@ const useSignalSelectorImpl = <S, R>(
         selectorVersionSignal.set(selectorVersionSignal.get() + 1)
         const value = selectorComputed.get()
         if (pendingError === null) {
-          // Apply the equality function before adopting. A selector that
-          // returns a new reference every call (`() => [1, 2, 3]`) paired
-          // with a custom equalityFn must keep the PREVIOUS reference, or
-          // every render hands React a new value and defeats the check.
-          if (!equalityFnRef.current(currentResult, value)) {
-            currentResult = value
-          }
+          adopt(value)
         }
       } finally {
         suppressNotify = false
@@ -291,9 +292,10 @@ const useSignalSelectorImpl = <S, R>(
     // establishes signal dependencies on the paths the selector reads.
     // Intermediate object traversals don't create signal dependencies
     // (avoiding "false sharing" where sibling changes cause re-runs);
-    // only leaf primitive reads create deps automatically. If the
-    // selector returns a proxy (object result), the terminal dependency
-    // is established by explicitly reading that object's signal below.
+    // primitive reads depend on their own paths, and object reads are
+    // settled after the selector returns: objects used only for identity
+    // (`a === b`) and state objects embedded in the result depend on
+    // their own version signals.
     const selectorComputed = computed(() => {
       selectorVersionSignal.get()
       // pendingError reflects the LAST evaluation: a successful re-run
@@ -303,10 +305,7 @@ const useSignalSelectorImpl = <S, R>(
         const state = store.getState() as S & object
         lastSnapshotState = state
 
-        leafTracker.accessedObjects = new Map()
-        leafTracker.traversedPaths = new Set()
-        leafTracker.enumerated = new Map()
-
+        const leafTracker = createLeafTracker()
         const proxy = createTrackingProxy(
           state,
           '',
@@ -389,15 +388,11 @@ const useSignalSelectorImpl = <S, R>(
           // synchronously inside recomputeInPlace, so skipping the check
           // here would adopt the new reference before recomputeInPlace
           // ever gets to reject it.
-          if (!equalityFnRef.current(currentResult, newValue)) {
-            currentResult = newValue
-          }
+          adopt(newValue)
           return
         }
 
-        // Apply user's equality function
-        if (!equalityFnRef.current(currentResult, newValue)) {
-          currentResult = newValue
+        if (adopt(newValue)) {
           notifyReact?.()
         }
       })
@@ -414,16 +409,9 @@ const useSignalSelectorImpl = <S, R>(
       if (process.env.NODE_ENV !== 'production') {
         runDevModeChecks(value, proxy as S, state as S)
       }
-      // Apply the equality function before adopting (except on the very
-      // first probe, when there is no previous result). A re-probe after
-      // a render-phase selector swap must keep the PREVIOUS reference
-      // for equal-but-new results, or the identity handed to React
-      // changes on every swap and defeats the equality check.
-      const fresh = untrackResult(value)
-      if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
-        currentResult = fresh
-        hasResult = true
-      }
+      // A re-probe after a render-phase selector swap keeps the previous
+      // reference for equal-but-new results.
+      adopt(untrackResult(value))
       probeSegments = record.segments
       ungateable = record.segments.size === 0 || record.enumerated
       probedState = state
@@ -452,8 +440,7 @@ const useSignalSelectorImpl = <S, R>(
         notifyReact?.()
         return
       }
-      if (!equalityFnRef.current(currentResult, newValue)) {
-        currentResult = newValue
+      if (adopt(newValue)) {
         notifyReact?.()
       }
     }
@@ -488,26 +475,7 @@ const useSignalSelectorImpl = <S, R>(
     }
 
     const getSnapshot = (): R => {
-      if (!built) {
-        // Deferred: no effect is watching yet. Serve fresh values for
-        // dispatches in the render→subscribe gap (and wildcard waits)
-        // by recomputing against RAW state, with no signals. Cached per
-        // state ref; equalityFn preserves the previous result's identity
-        // for equal-but-new references. A throw propagates into render —
-        // stock parity.
-        const state = store.getState()
-        if (state !== lastSnapshotState) {
-          lastSnapshotState = state
-          const fresh = untrackResult(selectorRef.current(state as S))
-          if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
-            currentResult = fresh
-            hasResult = true
-          }
-        }
-        return currentResult
-      }
-
-      if (pendingError !== null) {
+      if (built && pendingError !== null) {
         // A previous evaluation threw. Retry against current state:
         // the situation may have resolved (entity restored, or this is
         // a fresh render pass after the parent re-rendered). Clear
@@ -523,14 +491,17 @@ const useSignalSelectorImpl = <S, R>(
         }
       }
 
-      // The store moved but its listeners haven't been notified yet
-      // (deferred notification, e.g. RTK's autoBatchEnhancer), so the
-      // signal effect hasn't refreshed currentResult. A render landing
-      // in that gap must still see current state, the same way stock
+      // The store moved but nothing has refreshed currentResult yet: an
+      // unbuilt hook has no effect watching (render→subscribe gap, or a
+      // coarse-tier hook waiting for its Provider notification), and a
+      // built hook's listeners may not have been notified (deferred
+      // notification, e.g. RTK's autoBatchEnhancer). A render landing in
+      // that gap must still see current state, the same way stock
       // useSelector reads store.getState() directly. Recompute against
-      // RAW state with no dependency changes. When the notification
-      // arrives the effect re-evaluates, finds the value equal, and
-      // stays quiet.
+      // RAW state with no dependency changes, cached per state ref. When
+      // the notification arrives the effect re-evaluates, finds the
+      // value equal, and stays quiet. A throw propagates into render —
+      // stock parity.
       //
       // Raw state does not guarantee a proxy-free result: a selector can
       // close over values captured during an earlier tracked evaluation
@@ -540,11 +511,7 @@ const useSignalSelectorImpl = <S, R>(
       const state = store.getState()
       if (state !== lastSnapshotState) {
         lastSnapshotState = state
-        const fresh = untrackResult(selectorRef.current(state as S))
-        if (!hasResult || !equalityFnRef.current(currentResult, fresh)) {
-          currentResult = fresh
-          hasResult = true
-        }
+        adopt(untrackResult(selectorRef.current(state as S)))
       }
       return currentResult
     }
@@ -588,12 +555,8 @@ const useSignalSelectorImpl = <S, R>(
               // extra re-render at subscribe time).
               built = true
               const value = selectorComputed.get()
-              if (
-                pendingError === null &&
-                (!hasResult || !equalityFnRef.current(currentResult, value))
-              ) {
-                currentResult = value
-                hasResult = true
+              if (pendingError === null) {
+                adopt(value)
               }
             } else {
               coarseSub = { segments: probeSegments, onCoarseHit }
@@ -636,7 +599,7 @@ const useSignalSelectorImpl = <S, R>(
         const state = getServerState()
         if (state !== lastServerState) {
           lastServerState = state
-          serverResult = selectorRef.current(state as S)
+          serverResult = untrackResult(selectorRef.current(state as S))
         }
         return serverResult as R
       },
