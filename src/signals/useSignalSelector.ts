@@ -328,23 +328,25 @@ const useSignalSelectorImpl = <S, R>(
           runDevModeChecks(result, proxy as S, state as S)
         }
 
-        // If the selector returned a tracking proxy (object), explicitly
-        // read its signal to establish a reactive dependency on that path.
-        const proxyPath = getProxyPath(result)
-        if (proxyPath !== undefined) {
-          registry.getOrCreate(proxyPath, result).get()
-        }
-
         // Deferred reads: collapse complete enumerations onto object
         // version signals, then track identity for leaf objects (read
         // but never traversed, e.g. used only for `===`).
         finalizeDependencies(leafTracker, registry)
 
         // Strip tracking proxies before the result crosses into React.
-        // Must run AFTER the dependency reads above (they need the proxies
-        // in hand). Everything downstream — equalityFn, getSnapshot,
-        // components, dispatch payloads — sees only raw state.
-        return untrackResult(result)
+        // Everything downstream — equalityFn, getSnapshot, components,
+        // dispatch payloads — sees only raw state. Every state object
+        // that leaves the selector gets an identity dependency, even if
+        // the selector also read fields through it: the component holds
+        // the whole object. The root is skipped when nested inside a
+        // derived result (only a root returned as the whole result reads
+        // the root signal).
+        return untrackResult(result, (p) => {
+          const path = getProxyPath(p)
+          if (path !== undefined && (path !== '' || p === result)) {
+            registry.getOrCreate(path, p).get()
+          }
+        })
       } catch (e) {
         // The selector threw — typically a zombie child whose entity was
         // removed in the same dispatch that will unmount it. The error

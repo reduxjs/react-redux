@@ -12,20 +12,32 @@ import { getProxyTarget } from './trackingProxy'
  * values swapped for raw targets), preserving container identity across
  * evaluations — a memoized (reselect-cached) array keeps its identity,
  * and re-untracking it is an idempotent no-op.
- * @param result - The selector's return value
- * @returns The result with all tracking proxies replaced by raw state
+ *
+ * `onProxy` is called for every proxy that is stripped. The tracked path
+ * uses it to depend on the identity of each state object that leaves the
+ * selector, since the component holds that whole object.
  */
-export function untrackResult<R>(result: R): R {
-  return untrackRecursive(result, null)
+export function untrackResult<R>(
+  result: R,
+  onProxy?: (proxy: object) => void,
+): R {
+  return untrackRecursive(result, null, onProxy)
 }
 
-function untrackRecursive<R>(value: R, seen: WeakSet<object> | null): R {
+function untrackRecursive<R>(
+  value: R,
+  seen: WeakSet<object> | null,
+  onProxy: ((proxy: object) => void) | undefined,
+): R {
   if (value === null || typeof value !== 'object') return value
 
   // Tracking proxy: swap for the raw target. No descent — everything
   // reachable from a raw state object is raw.
   const target = getProxyTarget(value)
-  if (target !== undefined) return target as R
+  if (target !== undefined) {
+    onProxy?.(value)
+    return target as R
+  }
 
   // Frozen non-proxy objects can't be repaired in place. Raw state
   // subtrees (already frozen, can't contain proxies) are the common
@@ -40,7 +52,7 @@ function untrackRecursive<R>(value: R, seen: WeakSet<object> | null): R {
   if (Array.isArray(value)) {
     for (let i = 0; i < value.length; i++) {
       const v: unknown = value[i]
-      const u = untrackRecursive(v, seen)
+      const u = untrackRecursive(v, seen, onProxy)
       if (u !== v) value[i] = u
     }
     return value
@@ -48,7 +60,7 @@ function untrackRecursive<R>(value: R, seen: WeakSet<object> | null): R {
 
   if (value instanceof Map) {
     for (const [k, v] of value) {
-      const u = untrackRecursive(v, seen)
+      const u = untrackRecursive(v, seen, onProxy)
       if (u !== v) value.set(k, u)
     }
     return value
@@ -57,7 +69,7 @@ function untrackRecursive<R>(value: R, seen: WeakSet<object> | null): R {
   if (value instanceof Set) {
     let replacements: Array<[unknown, unknown]> | null = null
     for (const v of value) {
-      const u = untrackRecursive(v, seen)
+      const u = untrackRecursive(v, seen, onProxy)
       if (u !== v) (replacements ??= []).push([v, u])
     }
     if (replacements) {
@@ -74,7 +86,7 @@ function untrackRecursive<R>(value: R, seen: WeakSet<object> | null): R {
   const record = value as Record<string, unknown>
   for (const k of Object.keys(record)) {
     const v = record[k]
-    const u = untrackRecursive(v, seen)
+    const u = untrackRecursive(v, seen, onProxy)
     if (u !== v) record[k] = u
   }
   return value
