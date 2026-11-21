@@ -60,12 +60,24 @@ const userName = useSignalSelector((state) => {
 You do not need `unwrap` for:
 
 - **Selector return values.** The hook unwraps them automatically - components, equality functions, and effects always receive plain state values.
-- **Comparisons between two values both read from `state` in the same selector run.** Proxy identities are consistent within a run.
+- **Direct comparisons between two values both read from `state` in the same selector run**, such as `state.items[1] === state.current` or `state.items.includes(state.current)`. Inside an array method callback you do need it, on both sides: `state.items.find((item) => unwrap(item) === unwrap(state.current))`. See [Proxies and identity](./useSignalSelector.md#proxies-and-identity).
 - **Anything in `useSelector`.** The standard hook never sees proxies; `unwrap` is a pass-through there.
 
 :::caution
 
-Reading fields from an unwrapped object inside the selector bypasses dependency tracking - changes to those fields will not re-run the selector. Unwrap as late as possible, and only for identity comparisons or for storing a reference, not for general field access.
+`unwrap` itself registers no dependency, and reading fields from an unwrapped object inside the selector bypasses dependency tracking - changes to those fields will not re-run the selector. Unwrap as late as possible, and only for identity comparisons or for storing a reference, not for general field access.
+
+The selector re-runs when the object you compare is replaced only if it would re-run anyway for that read. Reading `state.user` and comparing it is tracked as a dependency on the `user` object. Once the selector also reads a field of that object (`state.user.name`), the dependency narrows to that field. A selector that does both and returns only the comparison result will not re-run when `user` is replaced with a new object whose `name` is unchanged:
+
+```ts
+const isSaved = useSignalSelector((state) => {
+  const name = state.user.name
+  // Not re-run when `user` is replaced but `name` stays the same
+  return name !== '' && unwrap(state.user) === savedUser
+})
+```
+
+Do identity comparisons against outside references in the component instead: select `state.user`, then compare the result.
 
 :::
 

@@ -139,7 +139,19 @@ const selected = useSignalSelector((state) => {
 })
 ```
 
-See [`unwrap`](./unwrap.md) for details. Comparisons between two values both read from `state` in the same selector run work correctly without unwrapping.
+See [`unwrap`](./unwrap.md) for details.
+
+Comparing two values that were both read from `state` in the same selector run works without unwrapping when both are direct reads: `state.items[1] === state.current`, `state.items.indexOf(state.current)`, and `state.items.includes(state.current)` all behave as with raw state. Inside the callback of an array method (`find`, `filter`, `some`, `every`, `map`, ...), the element passed to the callback can be a different proxy than a direct read of the same object returns, so the comparison can be false even when both sides are the same state object. Unwrap **both** sides inside array method callbacks:
+
+```ts
+const current = useSignalSelector((state) =>
+  // ❌ can be false for the matching item
+  // state.items.find((item) => item === state.current)
+
+  // ✅
+  state.items.find((item) => unwrap(item) === unwrap(state.current)),
+)
+```
 
 Elements _returned_ from array methods (`state.items.find(...)`, `state.items.filter(...)`, `state.items.map(x => x)`) are raw state objects, not proxies, so they compare correctly against outside references. Only the values you read directly off `state` and inside array method callbacks are proxied.
 
