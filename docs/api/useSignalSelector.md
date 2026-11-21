@@ -157,6 +157,8 @@ Elements _returned_ from array methods (`state.items.find(...)`, `state.items.fi
 
 **Proxies never escape the selector.** The hook unwraps the selector's return value before handing it to React, so your components, effects, equality functions, and dispatched actions always see plain Redux state. `console.log` of a selector result shows plain data. For the same reason, avoid _storing_ a state object read during one selector run in an external variable for use later - the same rule as holding onto an Immer draft. Use `unwrap()` first if you need to do this.
 
+Reflection on state objects inside a selector (`Object.keys`, spreading, `for...in`, `Object.getOwnPropertyDescriptor`) behaves as on raw state, with one exception: `Object.isFrozen`, `Object.isSealed`, and `Object.isExtensible` report on the proxy, not the state object, so `Object.isFrozen(state.user)` returns `false` even when the store freezes its state. Use `Object.isFrozen(unwrap(state.user))` to check the real object.
+
 ##### Memoized (Reselect) selectors
 
 Memoized selectors created with Reselect's `createSelector` work with `useSignalSelector`, following the same rules as with [`useSelector`](./useSelector.md#using-memoizing-selectors), including selectors shared between many components and selectors that take extra arguments. Cached result values are unwrapped the same way as direct returns.
