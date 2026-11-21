@@ -171,6 +171,14 @@ export function createProbeProxy<T extends object>(
     deleteProperty(_obj, prop) {
       throwStateMutationError('delete', String(prop))
     },
+
+    defineProperty(_obj, prop) {
+      throwStateMutationError('defineProperty', String(prop))
+    },
+
+    setPrototypeOf() {
+      throwStateMutationError('setPrototypeOf', '')
+    },
   }) as T
 
   registerProxyTarget(proxy as object, state)

@@ -244,6 +244,14 @@ describe('createProbeProxy', () => {
     expect(() => {
       delete (proxy as any).a
     }).toThrow(TypeError)
+    expect(() => Object.defineProperty(proxy, 'z', { value: 1 })).toThrow(
+      /define property 'z'/,
+    )
+    expect(() => Object.setPrototypeOf(proxy, null)).toThrow(
+      /change the prototype of/,
+    )
+    expect(Object.getPrototypeOf(proxy)).toBe(Object.prototype)
+    expect('z' in proxy).toBe(false)
   })
 })
 

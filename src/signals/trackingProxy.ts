@@ -502,6 +502,12 @@ export function createTrackingProxy<T extends object>(
     deleteProperty(_obj, prop) {
       throwStateMutationError('delete', String(prop))
     },
+    defineProperty(_obj, prop) {
+      throwStateMutationError('defineProperty', String(prop))
+    },
+    setPrototypeOf() {
+      throwStateMutationError('setPrototypeOf', '')
+    },
   }) as T
 
   // Cache by target identity — unchanged Immer subtrees reuse same proxy

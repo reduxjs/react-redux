@@ -40,6 +40,29 @@ describe('createTrackingProxy', () => {
     expect(registry.has('age')).toBe(true)
   })
 
+  it('rejects property definitions and prototype changes on state', () => {
+    const state = { user: { name: 'Alice' }, items: [1, 2] }
+    const registry = makeRegistry()
+    const proxy = createTrackingProxy(state, '', registry)
+
+    expect(() => Object.defineProperty(proxy, 'extra', { value: 1 })).toThrow(
+      /define property 'extra'/,
+    )
+    expect(() =>
+      Object.defineProperty(proxy.user, 'name', { value: 'Bob' }),
+    ).toThrow(/define property 'name'/)
+    expect(() => Object.setPrototypeOf(proxy.user, null)).toThrow(
+      /change the prototype of/,
+    )
+    expect(() => Object.setPrototypeOf(proxy.items, null)).toThrow(
+      /change the prototype of/,
+    )
+    expect(state.user.name).toBe('Alice')
+    expect('extra' in state).toBe(false)
+    expect(Object.getPrototypeOf(state.user)).toBe(Object.prototype)
+    expect(Object.getPrototypeOf(state.items)).toBe(Array.prototype)
+  })
+
   it('does NOT create signals for unaccessed paths', () => {
     const state = { name: 'Alice', age: 30, email: 'alice@example.com' }
     const registry = makeRegistry()
