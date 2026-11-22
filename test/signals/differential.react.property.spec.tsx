@@ -34,7 +34,6 @@ import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import shallowEqual from '../../src/utils/shallowEqual'
 import {
   actionArb,
-  addsUndefinedRootKey,
   applyAction,
   collectStateNodes,
   compareResults,
@@ -172,9 +171,8 @@ const totals = {
 }
 
 /** Name of the known bug the transition would hit, if any. */
-function knownBug(prev: State, next: State): string | undefined {
+function knownBug(next: State): string | undefined {
   if (hasDuplicateKeys(next)) return 'duplicateKeys'
-  if (addsUndefinedRootKey(prev, next)) return 'undefinedRootKey'
   return undefined
 }
 
@@ -257,7 +255,7 @@ function runProgram({
   const transition = (action: Action) => {
     const next = applyAction(state, action)
     log.push(`  dispatch ${JSON.stringify(action)} -> ${JSON.stringify(next)}`)
-    const bug = knownBug(state, next)
+    const bug = knownBug(next)
     if (bug) {
       totals.gated[bug] = (totals.gated[bug] ?? 0) + 1
       throw new StopProgram()

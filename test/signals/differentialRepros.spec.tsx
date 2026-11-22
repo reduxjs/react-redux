@@ -329,10 +329,10 @@ describe('an inner array that moves to a new index', () => {
 })
 
 describe('the in operator on the root', () => {
-  // The root has no path signal, and the value at `a` stays undefined, so
-  // nothing fires. combineReducers rejects undefined slices, so this needs
-  // a hand-written root reducer.
-  it.fails('sees a root key added with an undefined value', () => {
+  // The value at `a` stays undefined, so only the root key signal fires.
+  // combineReducers rejects undefined slices, so this needs a hand-written
+  // root reducer.
+  it('sees a root key added with an undefined value', () => {
     const { replace, seen } = renderPromoted(
       { a: 1 } as Record<string, unknown>,
       (s) => 'a' in s,

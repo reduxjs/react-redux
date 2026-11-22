@@ -27,7 +27,6 @@ import { mountEngineHook, THREW } from './differential/engineHook'
 import type { EngineHook } from './differential/engineHook'
 import {
   actionArb,
-  addsUndefinedRootKey,
   applyAction,
   collectStateNodes,
   compareResults,
@@ -82,7 +81,6 @@ const totals = {
   extraReruns: 0,
   leakyRuns: 0,
   duplicateKeyRuns: 0,
-  undefinedRootKeyRuns: 0,
   ms: 0,
 }
 
@@ -159,10 +157,6 @@ function runProgram({
         log.push(`  dispatch ${JSON.stringify(step.action)} -> ${JSON.stringify(state)}`)
         if (hasDuplicateKeys(state)) {
           totals.duplicateKeyRuns++
-          break
-        }
-        if (addsUndefinedRootKey(prev, state)) {
-          totals.undefinedRootKeyRuns++
           break
         }
         totals.dispatches++

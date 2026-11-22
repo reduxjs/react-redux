@@ -146,20 +146,6 @@ export function collectStateNodes(state: unknown): WeakSet<object> {
 }
 
 /**
- * True when a dispatch from `prev` to `next` adds a root key holding
- * undefined; `'k' in state` misses it (see differentialRepros.spec.tsx).
- * Always false with SIGNALS_FUZZ_KNOWN_BUGS.
- */
-export function addsUndefinedRootKey(prev: unknown, next: unknown): boolean {
-  if (process.env.SIGNALS_FUZZ_KNOWN_BUGS || !isObj(prev) || !isObj(next)) {
-    return false
-  }
-  const pr = prev as Record<string, unknown>
-  const nr = next as Record<string, unknown>
-  return Object.keys(nr).some((k) => nr[k] === undefined && !(k in pr))
-}
-
-/**
  * True when some array holds two objects with the same `id` or `key` value.
  * Duplicate keys in a keyed array can hide updates (see
  * differentialRepros.spec.tsx), so runs stop checking once a state has them,

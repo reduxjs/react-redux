@@ -502,9 +502,13 @@ export function createTrackingProxy<T extends object>(
         return Reflect.has(target, prop)
       }
       const pathKey = getPathKey(prop as string)
-      registry
-        .getOrCreate(pathKey, (target as Record<string, unknown>)[prop])
-        .get()
+      const value = (target as Record<string, unknown>)[prop]
+      registry.getOrCreate(pathKey, value).get()
+      // Adding or removing a key that holds undefined leaves the value
+      // signal unchanged; only the key signal fires.
+      if (value === undefined) {
+        registry.getOrCreate(keysMetaPath(parentPath), KEYS_SEED).get()
+      }
       return Reflect.has(target, prop)
     },
 
