@@ -146,77 +146,17 @@ export function collectStateNodes(state: unknown): WeakSet<object> {
 }
 
 /**
- * True when `state` holds an object that was the root of an earlier state.
- * The old root's tracking proxy keeps path '' and its reads land on root
- * paths, so updates to those copies are missed (see
- * differentialRepros.spec.tsx). Always false with SIGNALS_FUZZ_KNOWN_BUGS.
+ * True when a dispatch from `prev` to `next` adds a root key holding
+ * undefined; `'k' in state` misses it (see differentialRepros.spec.tsx).
+ * Always false with SIGNALS_FUZZ_KNOWN_BUGS.
  */
-export function reusesOldRoot(
-  state: unknown,
-  previousRoots: WeakSet<object>,
-): boolean {
-  if (process.env.SIGNALS_FUZZ_KNOWN_BUGS || !isObj(state)) return false
-  const visited = new WeakSet<object>()
-  const visit = (v: unknown): boolean => {
-    if (!isObj(v) || visited.has(v)) return false
-    if (previousRoots.has(v)) return true
-    visited.add(v)
-    return Object.keys(v).some((k) => visit((v as Record<string, unknown>)[k]))
-  }
-  return Object.keys(state).some((k) =>
-    visit((state as Record<string, unknown>)[k]),
-  )
-}
-
-const keyOf = (el: unknown, field: string): string | number | undefined => {
-  if (!isObj(el)) return undefined
-  const kv = (el as Record<string, unknown>)[field]
-  return typeof kv === 'string' || typeof kv === 'number' ? kv : undefined
-}
-
-/** The first of `id`/`key` that some element has a usable value for. */
-const keyFieldOf = (arr: readonly unknown[]): string | undefined =>
-  ['id', 'key'].find((f) => arr.some((el) => keyOf(el, f) !== undefined))
-
-
-/**
- * Names other known bugs a dispatch from `prev` to `next` would hit (see
- * differentialRepros.spec.tsx):
- * - 'movedArray': an array element of an unkeyed array keeps its reference
- *   but moves to another index. Its cached proxy keeps the old path, so
- *   later changes at the new index can be missed.
- * - 'undefinedRootKey': a new root key holds undefined; `'k' in state`
- *   misses it.
- * Always undefined with SIGNALS_FUZZ_KNOWN_BUGS.
- */
-export function knownMoveOrRootBug(
-  prev: unknown,
-  next: unknown,
-): 'movedArray' | 'undefinedRootKey' | undefined {
+export function addsUndefinedRootKey(prev: unknown, next: unknown): boolean {
   if (process.env.SIGNALS_FUZZ_KNOWN_BUGS || !isObj(prev) || !isObj(next)) {
-    return undefined
+    return false
   }
   const pr = prev as Record<string, unknown>
   const nr = next as Record<string, unknown>
-  if (Object.keys(nr).some((k) => nr[k] === undefined && !(k in pr))) {
-    return 'undefinedRootKey'
-  }
-  const visit = (p: unknown, n: unknown): boolean => {
-    if (!isObj(p) || !isObj(n) || p === n) return false
-    if (
-      Array.isArray(p) &&
-      Array.isArray(n) &&
-      keyFieldOf(p) === undefined &&
-      keyFieldOf(n) === undefined &&
-      p.some((el, i) => Array.isArray(el) && n.includes(el) && n[i] !== el)
-    ) {
-      return true
-    }
-    const po = p as Record<string, unknown>
-    const no = n as Record<string, unknown>
-    return Object.keys(no).some((k) => visit(po[k], no[k]))
-  }
-  return visit(prev, next) ? 'movedArray' : undefined
+  return Object.keys(nr).some((k) => nr[k] === undefined && !(k in pr))
 }
 
 /**

@@ -221,8 +221,18 @@ export function createTrackingProxy<T extends object>(
   if (isRoot) {
     evaluation.epoch++
   } else {
+    // A cached proxy records reads under the path it was created at. If the
+    // target now sits at another path (an unkeyed array element that moved),
+    // reads must land on the new path, so a proxy last used in an earlier
+    // evaluation is replaced. Within one evaluation the first path wins, so
+    // an object aliased at two paths keeps a single identity.
     const cached = cache.get(target)
-    if (cached) return cached as T
+    if (cached) {
+      if (cached.path === parentPath || cached.epoch === evaluation.epoch) {
+        cached.epoch = evaluation.epoch
+        return cached.proxy as T
+      }
+    }
   }
 
   // Last-read memo for primitive leaves. Within one evaluation a repeated
@@ -524,7 +534,7 @@ export function createTrackingProxy<T extends object>(
 
   // Cache by target identity — unchanged Immer subtrees reuse same proxy
   if (!isRoot) {
-    cache.set(target, proxy)
+    cache.set(target, { proxy, path: parentPath, epoch: evaluation.epoch })
   }
   registerTrackingProxy(proxy as object, target, parentPath)
 

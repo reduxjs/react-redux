@@ -205,7 +205,7 @@ describe('keyed array with duplicate keys', () => {
 })
 
 describe('a previous root object stored inside the new state', () => {
-  it.fails('changing one of two copies of the old root is seen', () => {
+  it('changing one of two copies of the old root is seen', () => {
     const store = createStore(reducer, { a: 'x', b: [] } as object)
     const old = store.getState()
     const seen: { current: unknown } = { current: undefined }
@@ -311,10 +311,10 @@ describe('array elements inside array-method callbacks', () => {
 })
 
 describe('an inner array that moves to a new index', () => {
-  // Child proxies are cached by target and keep the path they were first
-  // created at. Primitive reads on an array subscribe to the array's own
-  // path, so after the array moves from a.0 to a.1 they listen on a.0.
-  it.fails('JSON.stringify sees a change to the moved array', () => {
+  // Child proxies are cached by target. Primitive reads on an array
+  // subscribe to the array's own path, so the cached proxy has to follow
+  // the array from a.0 to a.1.
+  it('JSON.stringify sees a change to the moved array', () => {
     const moved = [1]
     const head = {}
     const tail: number[] = []
@@ -367,7 +367,7 @@ describe('registry cleanup after unmount', () => {
     expect(registry.current!.debugStats()).toEqual(empty)
   })
 
-  it.fails('a keyed element that moves under a new parent leaves nothing behind', () => {
+  it('a keyed element that moves under a new parent leaves nothing behind', () => {
     const item = { id: 1 }
     const { replace, registry, unmountHook } = renderPromoted(
       { a: [item] } as { a: unknown },

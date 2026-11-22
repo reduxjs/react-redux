@@ -34,6 +34,7 @@ import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import shallowEqual from '../../src/utils/shallowEqual'
 import {
   actionArb,
+  addsUndefinedRootKey,
   applyAction,
   collectStateNodes,
   compareResults,
@@ -43,8 +44,6 @@ import {
   fuzzParams,
   FUZZ_TIMEOUT,
   hasDuplicateKeys,
-  knownMoveOrRootBug,
-  reusesOldRoot,
   selectorSpecArb,
   showSpec,
   stateArb,
@@ -173,16 +172,9 @@ const totals = {
 }
 
 /** Name of the known bug the transition would hit, if any. */
-function knownBug(
-  prev: State,
-  next: State,
-  previousRoots: WeakSet<object>,
-): string | undefined {
+function knownBug(prev: State, next: State): string | undefined {
   if (hasDuplicateKeys(next)) return 'duplicateKeys'
-  if (reusesOldRoot(next, previousRoots)) return 'oldRoot'
-  const other = knownMoveOrRootBug(prev, next)
-  if (other) return other
-  previousRoots.add(prev)
+  if (addsUndefinedRootKey(prev, next)) return 'undefinedRootKey'
   return undefined
 }
 
@@ -226,7 +218,6 @@ function runProgram({
     visit(s)
   }
   addNodes(state)
-  const previousRoots = new WeakSet<object>([initial])
   const log: string[] = [`  strict: ${strict}`, `  initial: ${JSON.stringify(initial)}`]
   const describeSlot = (s: Slot) => `${showSpec(s.spec)} (equality ${s.eq})`
   log.push(`  mount ${slots[0].id}: ${describeSlot(slots[0])}`)
@@ -266,7 +257,7 @@ function runProgram({
   const transition = (action: Action) => {
     const next = applyAction(state, action)
     log.push(`  dispatch ${JSON.stringify(action)} -> ${JSON.stringify(next)}`)
-    const bug = knownBug(state, next, previousRoots)
+    const bug = knownBug(state, next)
     if (bug) {
       totals.gated[bug] = (totals.gated[bug] ?? 0) + 1
       throw new StopProgram()

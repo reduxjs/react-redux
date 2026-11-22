@@ -27,6 +27,7 @@ import { mountEngineHook, THREW } from './differential/engineHook'
 import type { EngineHook } from './differential/engineHook'
 import {
   actionArb,
+  addsUndefinedRootKey,
   applyAction,
   collectStateNodes,
   compareResults,
@@ -36,8 +37,6 @@ import {
   fuzzParams,
   FUZZ_TIMEOUT,
   hasDuplicateKeys,
-  knownMoveOrRootBug,
-  reusesOldRoot,
   selectorSpecArb,
   showSpec,
   stateArb,
@@ -83,8 +82,6 @@ const totals = {
   extraReruns: 0,
   leakyRuns: 0,
   duplicateKeyRuns: 0,
-  oldRootRuns: 0,
-  movedArrayRuns: 0,
   undefinedRootKeyRuns: 0,
   ms: 0,
 }
@@ -103,7 +100,6 @@ function runProgram({
   const registry = createPathSignalRegistry(alienEngine)
   const hooks: Hook[] = []
   const log: string[] = []
-  const previousRoots = new WeakSet<object>([initial])
 
   const check = (when: string) => {
     const nodes = collectStateNodes(state)
@@ -165,21 +161,10 @@ function runProgram({
           totals.duplicateKeyRuns++
           break
         }
-        if (reusesOldRoot(state, previousRoots)) {
-          totals.oldRootRuns++
-          break
-        }
-
-        const otherBug = knownMoveOrRootBug(prev, state)
-        if (otherBug === 'movedArray') {
-          totals.movedArrayRuns++
-          break
-        }
-        if (otherBug === 'undefinedRootKey') {
+        if (addsUndefinedRootKey(prev, state)) {
           totals.undefinedRootKeyRuns++
           break
         }
-        previousRoots.add(prev)
         totals.dispatches++
         reconcileState(prev, state, registry, alienEngine)
         check(`after dispatch ${JSON.stringify(step.action)}`)

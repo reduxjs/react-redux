@@ -25,6 +25,14 @@ export interface RegistryStats {
   segmentSubs: number
 }
 
+/** A cached child proxy with the path it records reads under and the last
+ *  evaluation epoch that used it. */
+export interface CachedProxy {
+  proxy: object
+  path: string
+  epoch: number
+}
+
 export interface EvaluationState {
   /** Leaf tracker of the selector evaluation running right now, or null
    *  between evaluations. Proxies read it at trap time instead of closing
@@ -42,17 +50,18 @@ export interface EvaluationState {
    * Immer's structural sharing keeps unchanged subtrees at the same
    * reference across snapshots, so their proxies can be reused.
    *
-   * KNOWN TRADEOFF: an object aliased at two paths (e.g.
-   * `state.selected = state.items[0]`) reuses the proxy created for
-   * whichever path was read first, so child reads through the second path
-   * register signals under the first path. Per-path proxies would fix the
+   * A target found at a different path than its cached proxy gets a new
+   * proxy, unless the cached one was already used in the current
+   * evaluation. So an object aliased at two paths within one evaluation
+   * (e.g. `state.selected = state.items[0]`) keeps one proxy, created for
+   * whichever path was read first, and child reads through the second path
+   * register signals under the first path. Per-path proxies would fix that
    * attribution but break identity comparison (`state.selected ===
    * state.items[0]` must hold, and two proxies are never `===`). The alias
    * path itself still gets a version-signal dependency via the leaf-object
-   * tracker, so replacing the aliased object re-runs the selector — the
-   * misattribution can cause excess re-runs, never missed ones.
+   * tracker, so replacing the aliased object re-runs the selector.
    */
-  proxyCache: WeakMap<object, object>
+  proxyCache: WeakMap<object, CachedProxy>
 
   /** Encoded path keys for top-level state properties. Root proxies are
    *  created fresh per evaluation, so they share this instead of each
