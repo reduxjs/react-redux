@@ -550,8 +550,6 @@ export const selectorSpecArb: fc.Arbitrary<SelectorSpec> = fc.oneof(
 
 const truthy = (v: unknown) => Boolean(v)
 
-const avoidKnownBugs = !process.env.SIGNALS_FUZZ_KNOWN_BUGS
-
 const isArr = (o: unknown): o is readonly unknown[] => Array.isArray(o)
 
 export function evalExpr(e: Expr, here: unknown): unknown {
@@ -606,7 +604,6 @@ export function evalExpr(e: Expr, here: unknown): unknown {
   }
   if (!isArr(o)) return undefined
   const arr = o
-  const each = <T>(fn: () => T): T => fn()
   switch (e.t) {
     case 'len':
       return arr.length
@@ -619,19 +616,19 @@ export function evalExpr(e: Expr, here: unknown): unknown {
     case 'indexOf':
       return arr.indexOf(e.value)
     case 'map':
-      return arr.map((el) => each(() => evalExpr(e.fn, el)))
+      return arr.map((el) => evalExpr(e.fn, el))
     case 'filter':
-      return arr.filter((el) => each(() => truthy(evalExpr(e.fn, el))))
+      return arr.filter((el) => truthy(evalExpr(e.fn, el)))
     case 'find':
-      return arr.find((el) => each(() => truthy(evalExpr(e.fn, el))))
+      return arr.find((el) => truthy(evalExpr(e.fn, el)))
     case 'findLast':
-      return arr.findLast((el) => each(() => truthy(evalExpr(e.fn, el))))
+      return arr.findLast((el) => truthy(evalExpr(e.fn, el)))
     case 'findIndex':
-      return arr.findIndex((el) => each(() => truthy(evalExpr(e.fn, el))))
+      return arr.findIndex((el) => truthy(evalExpr(e.fn, el)))
     case 'some':
-      return arr.some((el) => each(() => truthy(evalExpr(e.fn, el))))
+      return arr.some((el) => truthy(evalExpr(e.fn, el)))
     case 'every':
-      return arr.every((el) => each(() => truthy(evalExpr(e.fn, el))))
+      return arr.every((el) => truthy(evalExpr(e.fn, el)))
   }
 }
 
@@ -647,16 +644,10 @@ export function compile(spec: SelectorSpec): (state: unknown) => unknown {
     case 'plain':
       return (s) => evalExpr(spec.expr, s)
     case 'memo':
-      // A result-function cache hit returns a result whose state objects
-      // were already unwrapped, so the hook loses its dependency on them
-      // (see differentialRepros.spec.tsx). Unless SIGNALS_FUZZ_KNOWN_BUGS
-      // is set, the result function is not cached; argsMemoize still is.
       return createSelector(
         [(s: unknown) => evalExpr(spec.a, s), (s: unknown) => evalExpr(spec.b, s)],
         (x, y) => [x, y],
-        avoidKnownBugs
-          ? { ...reselectOptions, memoize: <F extends (...args: never[]) => unknown>(f: F) => f }
-          : reselectOptions,
+        reselectOptions,
       )
     case 'memoRoot':
       return createSelector(

@@ -232,12 +232,10 @@ describe('a memoized result that embeds a state object', () => {
   // The input selector reads todo.done, so the only dependency on the todo
   // object itself comes from unwrapping the proxy in the result. A later
   // result-function cache hit hands back the already unwrapped result, so
-  // nothing subscribes to the todo again. Without the cache-hit dispatch
-  // the test passes. (A todo found with an intercepted .find() is tracked
-  // by the scan and does not show the problem.)
+  // the proxies stripped from it the first time are replayed.
   type Todo = { id: number; done: boolean; text: string }
   type S = { todos: Todo[]; other: number }
-  it.fails('a cache hit keeps the embedded object tracked', () => {
+  it('a cache hit keeps the embedded object tracked', () => {
     const selectFirstDone = createSelector(
       [
         (s: S) => (s.todos[0].done ? s.todos[0] : undefined),

@@ -1,5 +1,16 @@
 import { getProxyTarget } from './proxyIdentity'
 
+// Proxies already swapped out of each derived container. A memoized result
+// comes back unwrapped on a cache hit, so these are replayed to `onProxy`
+// to keep depending on the state objects it embeds.
+const strippedProxies = new WeakMap<object, object[]>()
+
+function recordStripped(container: object, proxy: object): void {
+  const list = strippedProxies.get(container)
+  if (list) list.push(proxy)
+  else strippedProxies.set(container, [proxy])
+}
+
 /**
  * Strip tracking proxies from a selector result so components, effects,
  * DevTools, and dispatch payloads only ever see raw (frozen) state.
@@ -10,8 +21,9 @@ import { getProxyTarget } from './proxyIdentity'
  *
  * Derived containers built by the selector are mutated IN PLACE (proxy
  * values swapped for raw targets), preserving container identity across
- * evaluations — a memoized (reselect-cached) array keeps its identity,
- * and re-untracking it is an idempotent no-op.
+ * evaluations — a memoized (reselect-cached) array keeps its identity.
+ * Re-untracking it changes nothing but replays the proxies stripped from
+ * it earlier, so `onProxy` sees the same state objects on a cache hit.
  *
  * `onProxy` is called for every proxy that is stripped. The tracked path
  * uses it to depend on the identity of each state object that leaves the
@@ -49,11 +61,19 @@ function untrackRecursive<R>(
   else if (seen.has(value)) return value
   seen.add(value)
 
+  if (onProxy) {
+    const replay = strippedProxies.get(value)
+    if (replay) for (let i = 0; i < replay.length; i++) onProxy(replay[i])
+  }
+
   if (Array.isArray(value)) {
     for (let i = 0; i < value.length; i++) {
       const v: unknown = value[i]
       const u = untrackRecursive(v, seen, onProxy)
-      if (u !== v) value[i] = u
+      if (u !== v) {
+        value[i] = u
+        recordStripped(value, v as object)
+      }
     }
     return value
   }
@@ -61,7 +81,10 @@ function untrackRecursive<R>(
   if (value instanceof Map) {
     for (const [k, v] of value) {
       const u = untrackRecursive(v, seen, onProxy)
-      if (u !== v) value.set(k, u)
+      if (u !== v) {
+        value.set(k, u)
+        recordStripped(value, v as object)
+      }
     }
     return value
   }
@@ -78,6 +101,7 @@ function untrackRecursive<R>(
       for (const [v, u] of replacements) {
         value.delete(v)
         value.add(u)
+        recordStripped(value, v as object)
       }
     }
     return value
@@ -87,7 +111,10 @@ function untrackRecursive<R>(
   for (const k of Object.keys(record)) {
     const v = record[k]
     const u = untrackRecursive(v, seen, onProxy)
-    if (u !== v) record[k] = u
+    if (u !== v) {
+      record[k] = u
+      recordStripped(record, v as object)
+    }
   }
   return value
 }
