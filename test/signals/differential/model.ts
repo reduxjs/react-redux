@@ -395,12 +395,8 @@ function applyToContainer(c: unknown, action: Action, isRoot: boolean): unknown 
       return { ...rec, [pool[action.at % pool.length]]: fresh(action.value) }
     }
     case 'move': {
-      // Same entries in a rotated key order. A pure reorder is a known
-      // miss for key enumeration (see differentialRepros.spec.tsx); set
-      // SIGNALS_FUZZ_KNOWN_BUGS=1 to generate it.
-      if (!keys.length || !process.env.SIGNALS_FUZZ_KNOWN_BUGS) {
-        return { ...rec }
-      }
+      // Same entries in a rotated key order.
+      if (!keys.length) return { ...rec }
       const r = action.from % keys.length
       const order = [...keys.slice(r), ...keys.slice(0, r)]
       return Object.fromEntries(order.map((k) => [k, rec[k]]))

@@ -40,7 +40,10 @@ function diffObject(
   for (let i = 0; i < nextKeys.length; i++) {
     const key = nextKeys[i]
 
-    if (!keysChanged && !(key in prev)) {
+    // Same length and the same key at every position means the same key
+    // set in the same order. Any mismatch is an added key or a reorder,
+    // and both change what Object.keys and spread return.
+    if (!keysChanged && key !== prevKeys[i]) {
       keysChanged = true
     }
 

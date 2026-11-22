@@ -103,7 +103,7 @@ describe('keyed array elements that change position', () => {
 })
 
 describe('object key order with an unchanged key set', () => {
-  it.fails('Object.keys on a nested object sees the new order', () => {
+  it('Object.keys on a nested object sees the new order', () => {
     const { replace, seen } = renderPromoted(
       { a: { x: 1, y: 2 } },
       (s: { a: Record<string, number> }) => Object.keys(s.a).join(),
@@ -113,7 +113,7 @@ describe('object key order with an unchanged key set', () => {
     expect(seen.current).toBe('y,x')
   })
 
-  it.fails('spreading the root sees the new order', () => {
+  it('spreading the root sees the new order', () => {
     const { replace, seen } = renderPromoted(
       { b: 1, c: 2 } as Record<string, number>,
       (s) => Object.keys({ ...s }).join(),
