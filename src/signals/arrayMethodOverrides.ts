@@ -113,6 +113,10 @@ export function isOverriddenArrayMethod(prop: string): boolean {
  */
 interface ScanRecorder {
   proxy: object
+  /** Same handler over an array shell, so Array.isArray and
+   *  JSON.stringify treat array elements as arrays. Created on first use. */
+  arrayProxy: object | undefined
+  handler: ProxyHandler<object>
   holder: { current: unknown }
   /** String property names the callback read on elements. */
   recorded: Set<string>
@@ -125,12 +129,14 @@ function createScanRecorder(): ScanRecorder {
   const holder: { current: unknown } = { current: undefined }
   const recorder: ScanRecorder = {
     proxy: null as unknown as object,
+    arrayProxy: undefined,
+    handler: null as unknown as ProxyHandler<object>,
     holder,
     recorded: new Set(),
     fallback: false,
   }
 
-  recorder.proxy = new Proxy({} as Record<PropertyKey, unknown>, {
+  recorder.handler = {
     get(_obj, prop) {
       const current = holder.current as Record<PropertyKey, unknown>
       if (typeof prop === 'symbol') return current[prop]
@@ -151,16 +157,21 @@ function createScanRecorder(): ScanRecorder {
       recorder.fallback = true
       return Reflect.ownKeys(holder.current as object)
     },
-    getOwnPropertyDescriptor(_obj, prop) {
+    getOwnPropertyDescriptor(shell, prop) {
       recorder.fallback = true
       const desc = Object.getOwnPropertyDescriptor(
         holder.current as object,
         prop,
       )
-      // Frozen state props are non-configurable; the recorder's dummy
-      // target doesn't have them, so report configurable to satisfy
-      // proxy invariants.
-      return desc ? { ...desc, configurable: true } : desc
+      if (desc === undefined) return desc
+      // Frozen state props are non-configurable; the recorder's shell
+      // doesn't have them, so report configurable to satisfy proxy
+      // invariants. The array shell's own `length` is non-configurable
+      // and writable, which the report has to match.
+      if (prop === 'length' && Array.isArray(shell)) {
+        return { ...desc, writable: true }
+      }
+      return { ...desc, configurable: true }
     },
     getPrototypeOf() {
       return Object.getPrototypeOf(holder.current as object)
@@ -171,8 +182,9 @@ function createScanRecorder(): ScanRecorder {
     deleteProperty(_obj, prop) {
       throwStateMutationError('delete', String(prop))
     },
-  })
+  }
 
+  recorder.proxy = new Proxy({}, recorder.handler)
   registerRecordingHolder(recorder.proxy, holder)
   return recorder
 }
@@ -188,7 +200,12 @@ function createScanRecorder(): ScanRecorder {
 function presentElement(recorder: ScanRecorder, value: unknown): unknown {
   if (value !== null && typeof value === 'object') {
     recorder.holder.current = value
-    return recorder.proxy
+    if (!Array.isArray(value)) return recorder.proxy
+    if (recorder.arrayProxy === undefined) {
+      recorder.arrayProxy = new Proxy([], recorder.handler)
+      registerRecordingHolder(recorder.arrayProxy, recorder.holder)
+    }
+    return recorder.arrayProxy
   }
   recorder.fallback = true
   return value
@@ -416,7 +433,10 @@ export function createArrayMethodInterceptor(
           const element = target[i]
           if (!rawMode) {
             const out = callback(presentElement(recorder, element), i, target)
-            if (out === recorder.proxy) {
+            if (
+              out === recorder.proxy ||
+              (out !== undefined && out === recorder.arrayProxy)
+            ) {
               mapped[i] = emitElement(registry, parentPath, target, i)
               continue
             }

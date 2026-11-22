@@ -264,14 +264,14 @@ describe('array elements inside array-method callbacks', () => {
   type S = { rows: number[][] }
   const initial: S = { rows: [[1], [2]] }
 
-  it.fails('Array.isArray is true for an array element in map', () => {
+  it('Array.isArray is true for an array element in map', () => {
     const { seen } = renderPromoted(initial, (s) =>
       s.rows.map((r) => Array.isArray(r)),
     )
     expect(seen.current).toEqual([true, true])
   })
 
-  it.fails('Array.isArray is true for an array element in filter', () => {
+  it('Array.isArray is true for an array element in filter', () => {
     const { seen } = renderPromoted(
       initial,
       (s) => s.rows.filter((r) => Array.isArray(r)).length,
@@ -279,11 +279,29 @@ describe('array elements inside array-method callbacks', () => {
     expect(seen.current).toBe(2)
   })
 
-  it.fails('JSON.stringify serializes an array element as an array', () => {
+  it('JSON.stringify serializes an array element as an array', () => {
     const { seen } = renderPromoted(initial, (s) =>
       s.rows.map((r) => JSON.stringify(r)),
     )
     expect(seen.current).toEqual(['[1]', '[2]'])
+  })
+
+  it('JSON.stringify of an array element sees a change to it', () => {
+    const { replace, seen } = renderPromoted(initial, (s) =>
+      s.rows.map((r) => JSON.stringify(r)),
+    )
+    replace({ rows: [[1], [3, 4]] })
+    expect(seen.current).toEqual(['[1]', '[3,4]'])
+  })
+
+  it('finding an array element returns the raw element', () => {
+    const { replace, seen } = renderPromoted(initial, (s) =>
+      s.rows.find((r) => r[0] === 2),
+    )
+    expect(seen.current).toBe(initial.rows[1])
+    const row = [2, 5]
+    replace({ rows: [[1], row] })
+    expect(seen.current).toBe(row)
   })
 
   it('a map callback that returns a fresh array sees a real array', () => {

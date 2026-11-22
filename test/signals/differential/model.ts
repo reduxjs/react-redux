@@ -550,27 +550,9 @@ export const selectorSpecArb: fc.Arbitrary<SelectorSpec> = fc.oneof(
 
 const truthy = (v: unknown) => Boolean(v)
 
-// Inside array-method callbacks, signals hands the callback a recorder
-// proxy that is not an array, so `Array.isArray` and `JSON.stringify` see an
-// object (a known bug, see differentialRepros.spec.tsx). Unless
-// SIGNALS_FUZZ_KNOWN_BUGS=1, the model checks arrays by shape there and
-// skips JSON so the fuzzer can find other problems.
 const avoidKnownBugs = !process.env.SIGNALS_FUZZ_KNOWN_BUGS
-let callbackDepth = 0
 
-const isArr = (o: unknown): o is readonly unknown[] =>
-  callbackDepth > 0 && avoidKnownBugs
-    ? isObj(o) && typeof (o as { length?: unknown }).length === 'number'
-    : Array.isArray(o)
-
-function inCallback<T>(fn: () => T): T {
-  callbackDepth++
-  try {
-    return fn()
-  } finally {
-    callbackDepth--
-  }
-}
+const isArr = (o: unknown): o is readonly unknown[] => Array.isArray(o)
 
 export function evalExpr(e: Expr, here: unknown): unknown {
   switch (e.t) {
@@ -596,9 +578,7 @@ export function evalExpr(e: Expr, here: unknown): unknown {
   const o = evalExpr(e.of, here)
   switch (e.t) {
     case 'json':
-      return callbackDepth > 0 && avoidKnownBugs && isObj(o)
-        ? 'object'
-        : JSON.stringify(o)
+      return JSON.stringify(o)
     case 'isArray':
       return isArr(o)
   }
@@ -626,7 +606,7 @@ export function evalExpr(e: Expr, here: unknown): unknown {
   }
   if (!isArr(o)) return undefined
   const arr = o
-  const each = inCallback
+  const each = <T>(fn: () => T): T => fn()
   switch (e.t) {
     case 'len':
       return arr.length
