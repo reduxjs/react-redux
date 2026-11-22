@@ -249,6 +249,10 @@ export function createTrackingProxy<T extends object>(
   const currentEnumeration = () =>
     enumEpoch === evaluation.epoch ? enumRecord : undefined
 
+  // Index reads of keyed elements subscribe to this array's position
+  // signals once per evaluation.
+  let positionEpoch = -1
+
   // Use an unfrozen shell as the proxy target to avoid ES Proxy invariant
   // violations with frozen objects. The shell copies the target's prototype
   // so that Array.isArray, instanceof, etc. work correctly.
@@ -348,7 +352,23 @@ export function createTrackingProxy<T extends object>(
         // Array elements use the identity path (items.{id:42}) when the
         // array has a key field, so signals survive reorders.
         if (Array.isArray(target) && isIndexProp(prop as string)) {
-          pathKey = getElementPathKey(registry, parentPath, prop, value)
+          const elementPath = getElementPathKey(
+            registry,
+            parentPath,
+            prop,
+            value,
+          )
+          // The identity path follows the element, not the index. A read
+          // of `items[0]` must also re-run when a different element lands
+          // at index 0, which only happens on a reorder, a middle insert,
+          // or a removal. Append and in-place updates keep every index
+          // pointing at the same key.
+          if (elementPath !== pathKey && positionEpoch !== evaluation.epoch) {
+            positionEpoch = evaluation.epoch
+            registry.trackStructure(parentPath, 'insertOrReorder').get()
+            registry.trackStructure(parentPath, 'remove').get()
+          }
+          pathKey = elementPath
         }
 
         // Non-plain objects (Date, Map, Set, class instances): return the

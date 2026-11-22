@@ -183,7 +183,7 @@ function knownBug(
   if (hasDuplicateKeys(next)) return 'duplicateKeys'
   if (reusesOldRoot(next, previousRoots)) return 'oldRoot'
   const keyed = knownKeyedArrayBug(prev, next, keyFields)
-  if (keyed) return keyed === 'shift' ? 'keyedShift' : 'keylessElement'
+  if (keyed) return 'keylessElement'
   const other = knownMoveOrRootBug(prev, next)
   if (other) return other
   previousRoots.add(prev)

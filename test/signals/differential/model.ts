@@ -184,8 +184,6 @@ const hasKeylessObject = (arr: readonly unknown[], field: string): boolean =>
 /**
  * Names the known keyed-array bug a dispatch from `prev` to `next` would
  * hit, comparing arrays at the same path (see differentialRepros.spec.tsx):
- * - 'shift': a key still present in `next` sits at a different index;
- *   index reads stay tied to the old element (reorder, insert before it).
  * - 'keyless': an array path that is keyed now or was keyed earlier in the
  *   run holds an object or array element without a usable value for the
  *   first key field seen at that path (`keyFields`, mirroring the registry's
@@ -197,13 +195,13 @@ export function knownKeyedArrayBug(
   prev: unknown,
   next: unknown,
   keyFields: Map<string, string>,
-): 'shift' | 'keyless' | undefined {
+): 'keyless' | undefined {
   if (process.env.SIGNALS_FUZZ_KNOWN_BUGS) return undefined
   const visit = (
     p: unknown,
     n: unknown,
     path: string,
-  ): 'shift' | 'keyless' | undefined => {
+  ): 'keyless' | undefined => {
     if (!isObj(p) || !isObj(n) || p === n) return undefined
     if (Array.isArray(p) && Array.isArray(n)) {
       const seen = keyFields.get(path) ?? keyFieldOf(p) ?? keyFieldOf(n)
@@ -211,16 +209,6 @@ export function knownKeyedArrayBug(
         keyFields.set(path, seen)
         if (hasKeylessObject(p, seen) || hasKeylessObject(n, seen)) {
           return 'keyless'
-        }
-      }
-      const field = keyFieldOf(p)
-      if (field !== undefined) {
-        const inNext = new Set(n.map((el) => keyOf(el, field)))
-        for (let i = 0; i < p.length; i++) {
-          const k = keyOf(p[i], field)
-          if (k !== undefined && inNext.has(k) && keyOf(n[i], field) !== k) {
-            return 'shift'
-          }
         }
       }
     }

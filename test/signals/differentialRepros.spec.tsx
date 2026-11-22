@@ -69,9 +69,9 @@ function renderPromoted<S extends object>(
 
 describe('keyed array elements that change position', () => {
   // An index read on a keyed array tracks the element's identity path
-  // (todos.{id:2}), not which key sits at that index.
+  // (todos.{id:2}) plus the array's reorder and removal signals.
   type S = { todos: { id: number }[] }
-  it.fails('reading the first element by index sees the new order', () => {
+  it('reading the first element by index sees the new order', () => {
     const one = { id: 1 }
     const two = { id: 2 }
     const { replace, seen } = renderPromoted<S>(
@@ -83,7 +83,7 @@ describe('keyed array elements that change position', () => {
     expect(seen.current).toBe(1)
   })
 
-  it.fails('reading the first element by index sees a sorted copy', () => {
+  it('reading the first element by index sees a sorted copy', () => {
     const { replace, seen } = renderPromoted<S>(
       { todos: [{ id: 2 }, { id: 1 }] },
       (s) => s.todos[0].id,
@@ -93,7 +93,7 @@ describe('keyed array elements that change position', () => {
     expect(seen.current).toBe(1)
   })
 
-  it.fails('reading the first element by index sees an insert at the front', () => {
+  it('reading the first element by index sees an insert at the front', () => {
     const one = { id: 1 }
     const { replace, seen } = renderPromoted<S>({ todos: [one] }, (s) => s.todos[0].id)
     expect(seen.current).toBe(1)
@@ -170,7 +170,7 @@ describe('keyed array element whose key goes from missing to present', () => {
 describe('keyed array with duplicate keys', () => {
   type S = { keys: { key: string }[] }
 
-  it.fails('replacing a later duplicate while the first is unchanged is seen', () => {
+  it('replacing a later duplicate while the first is unchanged is seen', () => {
     const first = { key: 'a' }
     const { replace, seen } = renderPromoted<S>(
       { keys: [first, { key: 'a' }] },
@@ -179,6 +179,28 @@ describe('keyed array with duplicate keys', () => {
     expect(seen.current).toBe('a')
     replace({ keys: [first, { key: 'b' }] })
     expect(seen.current).toBe('b')
+  })
+
+  it('mapping over the array sees a change to a later duplicate', () => {
+    const first = { key: 'a', v: 1 }
+    const { replace, seen } = renderPromoted<{ keys: { key: string; v: number }[] }>(
+      { keys: [first, { key: 'a', v: 1 }] },
+      (s) => s.keys.map((k) => k.v).join(),
+    )
+    expect(seen.current).toBe('1,1')
+    replace({ keys: [first, { key: 'a', v: 2 }] })
+    expect(seen.current).toBe('1,2')
+  })
+
+  it('a direct read of a later duplicate sees an in-place change', () => {
+    const first = { key: 'a', v: 1 }
+    const { replace, seen } = renderPromoted<{ keys: { key: string; v: number }[] }>(
+      { keys: [first, { key: 'a', v: 1 }] },
+      (s) => s.keys[1].v,
+    )
+    expect(seen.current).toBe(1)
+    replace({ keys: [first, { key: 'a', v: 2 }] })
+    expect(seen.current).toBe(2)
   })
 })
 

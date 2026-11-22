@@ -85,7 +85,6 @@ const totals = {
   leakyRuns: 0,
   duplicateKeyRuns: 0,
   oldRootRuns: 0,
-  keyedShiftRuns: 0,
   keylessElementRuns: 0,
   movedArrayRuns: 0,
   undefinedRootKeyRuns: 0,
@@ -174,10 +173,6 @@ function runProgram({
           break
         }
         const keyedBug = knownKeyedArrayBug(prev, state, keyFields)
-        if (keyedBug === 'shift') {
-          totals.keyedShiftRuns++
-          break
-        }
         if (keyedBug === 'keyless') {
           totals.keylessElementRuns++
           break
