@@ -84,6 +84,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "cross-env": "^7.0.3",
+    "fast-check": "^4.10.3",
     "jsdom": "^25.0.1",
     "netlify-plugin-cache": "^1.0.3",
     "oxfmt": "^0.63.0",
