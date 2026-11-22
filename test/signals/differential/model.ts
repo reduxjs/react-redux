@@ -76,9 +76,8 @@ const valueArbs = fc.letrec<{
         ),
         { maxLength: 4 },
       ),
-      process.env.SIGNALS_FUZZ_KNOWN_BUGS
-        ? fc.constantFrom(true, true, true, false)
-        : fc.constant(true),
+      // One keyed array in four may repeat a key.
+      fc.constantFrom(true, true, true, false),
     )
     .map(([keyField, items, unique]) => {
       const seen = new Set<number>()
@@ -143,35 +142,6 @@ export function collectStateNodes(state: unknown): WeakSet<object> {
   }
   visit(state)
   return nodes
-}
-
-/**
- * True when some array holds two objects with the same `id` or `key` value.
- * Duplicate keys in a keyed array can hide updates (see
- * differentialRepros.spec.tsx), so runs stop checking once a state has them,
- * unless SIGNALS_FUZZ_KNOWN_BUGS=1.
- */
-export function hasDuplicateKeys(state: unknown): boolean {
-  if (process.env.SIGNALS_FUZZ_KNOWN_BUGS) return false
-  const visited = new WeakSet<object>()
-  const visit = (v: unknown): boolean => {
-    if (!isObj(v) || visited.has(v)) return false
-    visited.add(v)
-    if (Array.isArray(v)) {
-      for (const field of ['id', 'key']) {
-        const seen = new Set<unknown>()
-        for (const el of v) {
-          if (!isObj(el)) continue
-          const kv = (el as Record<string, unknown>)[field]
-          if (typeof kv !== 'string' && typeof kv !== 'number') continue
-          if (seen.has(kv)) return true
-          seen.add(kv)
-        }
-      }
-    }
-    return Object.keys(v).some((k) => visit((v as Record<string, unknown>)[k]))
-  }
-  return visit(state)
 }
 
 // ---------------------------------------------------------------- transitions

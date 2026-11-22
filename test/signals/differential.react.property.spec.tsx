@@ -16,9 +16,6 @@
  * when its stock twin did not is counted as an extra render (not a failure).
  * After the tree unmounts every registry should be empty; leaks are counted
  * and only fail with SIGNALS_FUZZ_LEAKS=fail.
- *
- * Known bugs are kept out of the generators unless SIGNALS_FUZZ_KNOWN_BUGS=1
- * (see differential/model.ts and differentialRepros.spec.tsx).
  */
 import * as rtl from '@testing-library/react'
 import fc from 'fast-check'
@@ -42,7 +39,6 @@ import {
   expected,
   fuzzParams,
   FUZZ_TIMEOUT,
-  hasDuplicateKeys,
   selectorSpecArb,
   showSpec,
   stateArb,
@@ -165,18 +161,8 @@ const totals = {
   skippedRootResults: 0,
   extraRenders: 0,
   leakyRuns: 0,
-  // Programs stopped early because the next state hits a known bug.
-  gated: {} as Record<string, number>,
   ms: 0,
 }
-
-/** Name of the known bug the transition would hit, if any. */
-function knownBug(next: State): string | undefined {
-  if (hasDuplicateKeys(next)) return 'duplicateKeys'
-  return undefined
-}
-
-class StopProgram extends Error {}
 
 function runProgram({
   initial,
@@ -190,11 +176,6 @@ function runProgram({
   steps: Step[]
 }) {
   totals.runs++
-  if (hasDuplicateKeys(initial)) {
-    totals.gated.duplicateKeys = (totals.gated.duplicateKeys ?? 0) + 1
-    return
-  }
-
   let state = initial
   let store = makeStore(state)
   let nextId = 0
@@ -251,15 +232,9 @@ function runProgram({
     }
   }
 
-  /** Next state, or StopProgram when it would hit a known bug. */
   const transition = (action: Action) => {
     const next = applyAction(state, action)
     log.push(`  dispatch ${JSON.stringify(action)} -> ${JSON.stringify(next)}`)
-    const bug = knownBug(next)
-    if (bug) {
-      totals.gated[bug] = (totals.gated[bug] ?? 0) + 1
-      throw new StopProgram()
-    }
     addNodes(next)
     return next
   }
@@ -316,8 +291,6 @@ function runProgram({
         }
       }
     }
-  } catch (e) {
-    if (!(e instanceof StopProgram)) throw e
   } finally {
     view.unmount()
   }
