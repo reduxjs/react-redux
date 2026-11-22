@@ -358,7 +358,7 @@ describe('registry cleanup after unmount', () => {
     segmentSubs: 0,
   }
 
-  it.fails('a nested read through Object.values leaves nothing behind', () => {
+  it('a nested read through Object.values leaves nothing behind', () => {
     const { registry, unmountHook } = renderPromoted(
       { a: { b: [{}] } } as { a: Record<string, object[]> },
       (s) => !!Object.values(s.a)[0][0],

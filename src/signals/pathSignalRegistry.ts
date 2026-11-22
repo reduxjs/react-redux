@@ -307,10 +307,10 @@ export function createPathSignalRegistry(
     return rec
   }
 
-  // Register a path in the parent→children index.
-  // Only links to immediate parent: "a.b.c" → childIndex["a.b"].add("a.b.c")
-  // Ancestors are already linked by their own registrations:
-  // when "a.b" was registered, childIndex["a"].add("a.b") was called.
+  // Register a path in the parent→children index: "a.b.c" →
+  // childIndex["a.b"].add("a.b.c"). A parent that gets its first child is
+  // linked to its own parent too, so every registered path stays reachable
+  // from its root segment even after a prefix-only ancestor was swept.
   function addToChildIndex(pathKey: string): void {
     const idx = pathKey.lastIndexOf('.')
     if (idx === -1) return // root-level path, no parent
@@ -319,6 +319,7 @@ export function createPathSignalRegistry(
     if (!children) {
       children = new Set()
       childIndex.set(parent, children)
+      addToChildIndex(parent)
     }
     children.add(pathKey)
   }
@@ -349,6 +350,36 @@ export function createPathSignalRegistry(
       if (path.charCodeAt(i) === 46 /* '.' */) depth++
     }
     return depth
+  }
+
+  /**
+   * Remove every path under and including `path` that has no signal at or
+   * below it. Returns how many prefix-only registrations were removed,
+   * which is the prefix-count decrement owed by each ancestor of `path`.
+   */
+  function sweepSignalless(path: string): number {
+    let removed = 0
+    const children = childIndex.get(path)
+    if (children !== undefined) {
+      for (const child of Array.from(children)) {
+        removed += sweepSignalless(child)
+      }
+    }
+    if (signals.has(path) || childIndex.has(path)) {
+      if (removed !== 0) {
+        const current = prefixCounts.get(path)
+        if (current !== undefined) {
+          if (current <= removed) prefixCounts.delete(path)
+          else prefixCounts.set(path, current - removed)
+        }
+      }
+      return removed
+    }
+    if (prefixOnlyPaths.delete(path)) removed++
+    prefixCounts.delete(path)
+    detachFromParent(path)
+    arrays.delete(path)
+    return removed
   }
 
   /**
@@ -384,6 +415,7 @@ export function createPathSignalRegistry(
     }
 
     for (const path of pendingReleases) addOwed(path, 1)
+    const released = new Set(pendingReleases)
     // Cleared up front: the pass only reads `signals`, and a released
     // path was removed from it synchronously.
     pendingReleases.clear()
@@ -395,6 +427,19 @@ export function createPathSignalRegistry(
       // land in a bucket this loop has not reached yet.
       for (const path of bucket) {
         let count = owed.get(path)!
+
+        // A released interior path can sit above prefix-only paths that
+        // never got a signal, e.g. reads under an enumeration that
+        // collapsed into this path's version signal. Nothing releases
+        // those, so they go with the path that kept them reachable.
+        if (released.has(path) && !signals.has(path)) {
+          const children = childIndex.get(path)
+          if (children !== undefined) {
+            for (const child of Array.from(children)) {
+              count += sweepSignalless(child)
+            }
+          }
+        }
 
         const current = prefixCounts.get(path)
         if (current !== undefined) {
