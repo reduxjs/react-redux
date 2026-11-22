@@ -299,11 +299,12 @@ function diffArrayByKey(
     for (let i = startIdx; i < next.length; i++) {
       const nextItem = next[i]
       const kv = getKeyValue(nextItem, keyField)
-      if (kv !== undefined) {
-        const identityPath = buildIdentityPath(parentPath, keyField, kv)
-        if (registry.hasPrefix(identityPath)) {
-          diffAndUpdateSignals(undefined, nextItem, identityPath, registry)
-        }
+      const elementPath =
+        kv !== undefined
+          ? buildIdentityPath(parentPath, keyField, kv)
+          : joinPath(parentPath, i)
+      if (registry.hasPrefix(elementPath)) {
+        diffAndUpdateSignals(undefined, nextItem, elementPath, registry)
       }
     }
     return
@@ -315,21 +316,24 @@ function diffArrayByKey(
       registry.bumpStructure(parentPath, 'remove')
     }
     for (let i = startIdx; i < prev.length; i++) {
-      const prevItem = prev[i]
-      const kv = getKeyValue(prevItem, keyField)
-      if (kv !== undefined) {
-        const identityPath = buildIdentityPath(parentPath, keyField, kv)
-        registry.prune(identityPath)
-      }
+      const kv = getKeyValue(prev[i], keyField)
+      registry.prune(
+        kv !== undefined
+          ? buildIdentityPath(parentPath, keyField, kv)
+          : joinPath(parentPath, i),
+      )
     }
     return
   }
 
   // General case: match next elements to prev elements by key.
+  // Keyless elements (no usable key value) are tracked at index paths.
   const prevByKey = new Map<string | number, unknown>()
+  let prevKeylessFrom = -1
   for (let i = 0; i < prev.length; i++) {
     const kv = getKeyValue(prev[i], keyField)
     if (kv !== undefined) prevByKey.set(kv, prev[i])
+    else if (prevKeylessFrom === -1 && i >= startIdx) prevKeylessFrom = i
   }
 
   // Track every prev key seen in next so removed entities get pruned.
@@ -366,7 +370,10 @@ function diffArrayByKey(
       const prevItem = i < prev.length ? prev[i] : undefined
       if (prevItem !== nextItem) {
         if (registry.hasPrefix(childPath)) {
-          diffAndUpdateSignals(prevItem, nextItem, childPath, registry)
+          // Index-path signals only describe a keyless previous element.
+          const tracked =
+            getKeyValue(prevItem, keyField) === undefined ? prevItem : undefined
+          diffAndUpdateSignals(tracked, nextItem, childPath, registry)
         }
         if (fired && cols) {
           bumpColumnsForElement(prevItem, nextItem, registry, cols, fired)
@@ -425,6 +432,20 @@ function diffArrayByKey(
     if (!seenPrevKeys.has(kv)) {
       const identityPath = buildIdentityPath(parentPath, keyField, kv)
       registry.prune(identityPath)
+    }
+  }
+
+  // A keyless previous element whose index now holds a keyed element, or
+  // no element, leaves its index path behind.
+  if (prevKeylessFrom !== -1) {
+    for (let i = prevKeylessFrom; i < prev.length; i++) {
+      if (
+        prev[i] !== next[i] &&
+        getKeyValue(prev[i], keyField) === undefined &&
+        (i >= next.length || getKeyValue(next[i], keyField) !== undefined)
+      ) {
+        registry.prune(joinPath(parentPath, i))
+      }
     }
   }
 

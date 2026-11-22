@@ -178,50 +178,6 @@ const keyOf = (el: unknown, field: string): string | number | undefined => {
 const keyFieldOf = (arr: readonly unknown[]): string | undefined =>
   ['id', 'key'].find((f) => arr.some((el) => keyOf(el, f) !== undefined))
 
-const hasKeylessObject = (arr: readonly unknown[], field: string): boolean =>
-  arr.some((el) => isObj(el) && keyOf(el, field) === undefined)
-
-/**
- * Names the known keyed-array bug a dispatch from `prev` to `next` would
- * hit, comparing arrays at the same path (see differentialRepros.spec.tsx):
- * - 'keyless': an array path that is keyed now or was keyed earlier in the
- *   run holds an object or array element without a usable value for the
- *   first key field seen at that path (`keyFields`, mirroring the registry's
- *   cached key field), in `prev` or `next`. Such elements are tracked at
- *   index paths that the key-based diff never fires or prunes.
- * Always undefined with SIGNALS_FUZZ_KNOWN_BUGS.
- */
-export function knownKeyedArrayBug(
-  prev: unknown,
-  next: unknown,
-  keyFields: Map<string, string>,
-): 'keyless' | undefined {
-  if (process.env.SIGNALS_FUZZ_KNOWN_BUGS) return undefined
-  const visit = (
-    p: unknown,
-    n: unknown,
-    path: string,
-  ): 'keyless' | undefined => {
-    if (!isObj(p) || !isObj(n) || p === n) return undefined
-    if (Array.isArray(p) && Array.isArray(n)) {
-      const seen = keyFields.get(path) ?? keyFieldOf(p) ?? keyFieldOf(n)
-      if (seen !== undefined) {
-        keyFields.set(path, seen)
-        if (hasKeylessObject(p, seen) || hasKeylessObject(n, seen)) {
-          return 'keyless'
-        }
-      }
-    }
-    const pr = p as Record<string, unknown>
-    const nr = n as Record<string, unknown>
-    for (const k of Object.keys(n)) {
-      const found = visit(pr[k], nr[k], `${path}.${k}`)
-      if (found) return found
-    }
-    return undefined
-  }
-  return visit(prev, next, '')
-}
 
 /**
  * Names other known bugs a dispatch from `prev` to `next` would hit (see

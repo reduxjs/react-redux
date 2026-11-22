@@ -43,7 +43,6 @@ import {
   fuzzParams,
   FUZZ_TIMEOUT,
   hasDuplicateKeys,
-  knownKeyedArrayBug,
   knownMoveOrRootBug,
   reusesOldRoot,
   selectorSpecArb,
@@ -178,12 +177,9 @@ function knownBug(
   prev: State,
   next: State,
   previousRoots: WeakSet<object>,
-  keyFields: Map<string, string>,
 ): string | undefined {
   if (hasDuplicateKeys(next)) return 'duplicateKeys'
   if (reusesOldRoot(next, previousRoots)) return 'oldRoot'
-  const keyed = knownKeyedArrayBug(prev, next, keyFields)
-  if (keyed) return 'keylessElement'
   const other = knownMoveOrRootBug(prev, next)
   if (other) return other
   previousRoots.add(prev)
@@ -231,7 +227,6 @@ function runProgram({
   }
   addNodes(state)
   const previousRoots = new WeakSet<object>([initial])
-  const keyFields = new Map<string, string>()
   const log: string[] = [`  strict: ${strict}`, `  initial: ${JSON.stringify(initial)}`]
   const describeSlot = (s: Slot) => `${showSpec(s.spec)} (equality ${s.eq})`
   log.push(`  mount ${slots[0].id}: ${describeSlot(slots[0])}`)
@@ -271,7 +266,7 @@ function runProgram({
   const transition = (action: Action) => {
     const next = applyAction(state, action)
     log.push(`  dispatch ${JSON.stringify(action)} -> ${JSON.stringify(next)}`)
-    const bug = knownBug(state, next, previousRoots, keyFields)
+    const bug = knownBug(state, next, previousRoots)
     if (bug) {
       totals.gated[bug] = (totals.gated[bug] ?? 0) + 1
       throw new StopProgram()

@@ -36,7 +36,6 @@ import {
   fuzzParams,
   FUZZ_TIMEOUT,
   hasDuplicateKeys,
-  knownKeyedArrayBug,
   knownMoveOrRootBug,
   reusesOldRoot,
   selectorSpecArb,
@@ -85,7 +84,6 @@ const totals = {
   leakyRuns: 0,
   duplicateKeyRuns: 0,
   oldRootRuns: 0,
-  keylessElementRuns: 0,
   movedArrayRuns: 0,
   undefinedRootKeyRuns: 0,
   ms: 0,
@@ -106,7 +104,6 @@ function runProgram({
   const hooks: Hook[] = []
   const log: string[] = []
   const previousRoots = new WeakSet<object>([initial])
-  const keyFields = new Map<string, string>()
 
   const check = (when: string) => {
     const nodes = collectStateNodes(state)
@@ -172,11 +169,7 @@ function runProgram({
           totals.oldRootRuns++
           break
         }
-        const keyedBug = knownKeyedArrayBug(prev, state, keyFields)
-        if (keyedBug === 'keyless') {
-          totals.keylessElementRuns++
-          break
-        }
+
         const otherBug = knownMoveOrRootBug(prev, state)
         if (otherBug === 'movedArray') {
           totals.movedArrayRuns++

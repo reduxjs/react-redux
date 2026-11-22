@@ -128,7 +128,7 @@ describe('keyed array element whose key goes from missing to present', () => {
   type Todo = { id: number | null; text: string }
   type S = { todos: Todo[] }
 
-  it.fails('reading the element sees the new key', () => {
+  it('reading the element sees the new key', () => {
     const { replace, seen } = renderPromoted<S>(
       { todos: [{ id: null, text: 'draft' }] },
       (s) => s.todos[0],
@@ -138,7 +138,7 @@ describe('keyed array element whose key goes from missing to present', () => {
     expect(seen.current).toBe(saved)
   })
 
-  it.fails('reading the key field sees the new key', () => {
+  it('reading the key field sees the new key', () => {
     const { replace, seen } = renderPromoted<S>(
       { todos: [{ id: null, text: 'draft' }] },
       (s) => s.todos[0].id,
@@ -147,7 +147,7 @@ describe('keyed array element whose key goes from missing to present', () => {
     expect(seen.current).toBe(1)
   })
 
-  it.fails('an array whose only element had no key field sees it gain one', () => {
+  it('an array whose only element had no key field sees it gain one', () => {
     const { replace, seen } = renderPromoted<{ a: object[] }>(
       { a: [{}] },
       (s) => s.a[0],
