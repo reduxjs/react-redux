@@ -2,6 +2,8 @@ import { encodePathSegment, findKeyField } from './arrayKeys'
 import { createSegmentIndex } from './segmentIndex'
 import type { SegmentIndex } from './segmentIndex'
 import { isObjectOrArray } from './objects'
+import { defaultSweepPolicy } from './sweepPolicy'
+import type { SweepPolicyFactory } from './sweepPolicy'
 import type { LeafObjectTracker } from './trackingProxy'
 import type { PathKey, ReactiveSignal, SignalEngine } from './types'
 
@@ -139,6 +141,11 @@ export interface PathSignalRegistry extends RegistryDebug {
    *  evict the live replacement. */
   release(pathKey: PathKey, node: ReactiveSignal<unknown>): void
 
+  /** Called once per dispatch before the diff. Removes leftover
+   *  bookkeeping under released paths that the sweep policy says are
+   *  due. */
+  startReconcile(): void
+
   /** Check if any tracked signal exists at or below this path prefix. */
   hasPrefix(prefix: string): boolean
 
@@ -256,9 +263,24 @@ function decrementPrefixes(
   }
 }
 
+export interface PathSignalRegistryOptions {
+  /** Decides when prefix-only paths under a released path are removed. */
+  sweepPolicy?: SweepPolicyFactory
+  /** Clock passed to the sweep policy, in milliseconds. Read once per dispatch. */
+  now?: () => number
+}
+
 export function createPathSignalRegistry(
   engine: SignalEngine,
+  {
+    sweepPolicy = defaultSweepPolicy,
+    now = Date.now,
+  }: PathSignalRegistryOptions = {},
 ): PathSignalRegistry {
+  const policy = sweepPolicy()
+  // Captured in `startReconcile` so the hot registration paths never
+  // read the clock.
+  let time = now()
   const signals = new Map<PathKey, ReactiveSignal<unknown>>()
   // Prefix counter map: for each path prefix, how many tracked signals
   // exist at or below that prefix. Enables O(1) hasPrefix lookups.
@@ -393,8 +415,12 @@ export function createPathSignalRegistry(
    * `ensurePrefix`, which never get a signal and so never get released)
    * once only their own registration is left, and paths whose signal is
    * gone. Never touches a signal, so it is safe to run mid-`unlink`.
+   *
+   * A released path left with children and no signal is handed to the
+   * sweep policy. Paths in `sweep` lose every signal-less descendant
+   * first.
    */
-  function flushReleases(): void {
+  function flushReleases(sweep?: ReadonlySet<string>): void {
     // How many prefix-count decrements each touched path still owes.
     const owed = new Map<string, number>()
     // Touched paths bucketed by depth, so the pass can go deepest-first
@@ -415,6 +441,7 @@ export function createPathSignalRegistry(
     }
 
     for (const path of pendingReleases) addOwed(path, 1)
+    if (sweep !== undefined) for (const path of sweep) addOwed(path, 0)
     const released = new Set(pendingReleases)
     // Cleared up front: the pass only reads `signals`, and a released
     // path was removed from it synchronously.
@@ -428,11 +455,7 @@ export function createPathSignalRegistry(
       for (const path of bucket) {
         let count = owed.get(path)!
 
-        // A released interior path can sit above prefix-only paths that
-        // never got a signal, e.g. reads under an enumeration that
-        // collapsed into this path's version signal. Nothing releases
-        // those, so they go with the path that kept them reachable.
-        if (released.has(path) && !signals.has(path)) {
+        if (sweep?.has(path)) {
           const children = childIndex.get(path)
           if (children !== undefined) {
             for (const child of Array.from(children)) {
@@ -445,6 +468,10 @@ export function createPathSignalRegistry(
         if (current !== undefined) {
           if (current <= count) prefixCounts.delete(path)
           else prefixCounts.set(path, current - count)
+        }
+
+        if (released.has(path) && !signals.has(path) && childIndex.has(path)) {
+          policy.released(path, prefixCounts.get(path) ?? 0, time)
         }
 
         if (!childIndex.has(path)) {
@@ -473,7 +500,24 @@ export function createPathSignalRegistry(
     }
   }
 
+  // Sweeps the prefix-only paths under each of `paths` that is still
+  // released.
+  function sweep(paths: readonly string[]): void {
+    if (paths.length === 0) return
+    const stale = new Set<string>()
+    for (const path of paths) {
+      if (!signals.has(path) && !prefixOnlyPaths.has(path)) stale.add(path)
+    }
+    if (stale.size !== 0) flushReleases(stale)
+  }
+
   const registry: Omit<PathSignalRegistry, keyof RegistryDebug> = {
+    startReconcile(): void {
+      time = now()
+      if (pendingReleases.size !== 0) flushReleases()
+      sweep(policy.tick(time))
+    },
+
     getOrCreate(
       pathKey: PathKey,
       currentValue: unknown,
@@ -492,6 +536,7 @@ export function createPathSignalRegistry(
           prefixOnlyPaths.delete(pathKey)
         } else {
           incrementPrefixes(prefixCounts, pathKey)
+          policy.read(pathKey, time)
         }
       }
       return sig
@@ -506,6 +551,7 @@ export function createPathSignalRegistry(
       prefixOnlyPaths.add(pathKey)
       addToChildIndex(pathKey)
       incrementPrefixes(prefixCounts, pathKey)
+      policy.read(pathKey, time)
     },
 
     update(pathKey: PathKey, newValue: unknown): void {
@@ -659,6 +705,7 @@ export function createPathSignalRegistry(
       debugPaths: () => Array.from(signals.keys()).sort(),
       debugStats() {
         if (pendingReleases.size !== 0) flushReleases()
+        sweep(policy.drain())
         let columns = 0
         let structures = 0
         for (const rec of arrays.values()) {

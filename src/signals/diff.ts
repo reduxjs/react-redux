@@ -550,6 +550,7 @@ export function reconcileState(
   engine: SignalEngine,
 ): string[] | null {
   if (prev === next) return NO_CHANGED_KEYS
+  registry.startReconcile()
 
   if (isPlainObject(prev) && isPlainObject(next)) {
     const changedRootKeys: string[] = []

@@ -401,6 +401,36 @@ describe('PathSignalRegistry', () => {
       expect(registry.debugStats()).toEqual(EMPTY_STATS)
     })
 
+    it('prefix-only paths under a released path stay for 16 reconciles, then go', () => {
+      const registry = createRegistry()
+      const sig = registry.getOrCreate('items', {})
+      registry.ensurePrefix('items.1')
+      registry.ensurePrefix('items.2')
+      watch(sig).stop()
+      expect(registry.hasPrefix('items.2')).toBe(true)
+
+      for (let i = 0; i < 15; i++) registry.startReconcile()
+      expect(registry.hasPrefix('items.1')).toBe(true)
+
+      registry.startReconcile()
+      expect(registry.hasPrefix('items')).toBe(false)
+      expect(registry.debugStats()).toEqual(EMPTY_STATS)
+    })
+
+    it('reading a released path again keeps its prefix-only children', () => {
+      const registry = createRegistry()
+      const sig = registry.getOrCreate('items', {})
+      registry.ensurePrefix('items.1')
+      watch(sig).stop()
+      expect(registry.hasPrefix('items.1')).toBe(true)
+
+      registry.startReconcile()
+      registry.getOrCreate('items', {})
+      for (let i = 0; i < 20; i++) registry.startReconcile()
+      expect(registry.hasPrefix('items.1')).toBe(true)
+      expect(registry.has('items')).toBe(true)
+    })
+
     it('a signal resurrected before the flush is not evicted', () => {
       const registry = createRegistry()
       const first = registry.getOrCreate('a.b', 1)
