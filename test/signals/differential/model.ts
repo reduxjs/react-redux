@@ -168,15 +168,78 @@ const pathArb = fc.array(fc.nat({ max: 7 }), { maxLength: 4 })
 const pickArb = fc.nat({ max: 7 })
 
 export const actionArb: fc.Arbitrary<Action> = fc.oneof(
-  { arbitrary: fc.record({ t: fc.constant('set' as const), path: pathArb, value: valueArb }), weight: 4 },
-  { arbitrary: fc.record({ t: fc.constant('setKey' as const), path: pathArb, key: fc.constantFrom(...ROOT_KEYS, ...OBJ_KEYS), value: valueArb }), weight: 2 },
-  { arbitrary: fc.record({ t: fc.constant('remove' as const), path: pathArb, pick: pickArb }), weight: 2 },
-  { arbitrary: fc.record({ t: fc.constant('insert' as const), path: pathArb, at: pickArb, value: valueArb }), weight: 2 },
-  { arbitrary: fc.record({ t: fc.constant('move' as const), path: pathArb, from: pickArb, to: pickArb }), weight: 1 },
-  { arbitrary: fc.record({ t: fc.constant('truncate' as const), path: pathArb, n: fc.nat({ max: 4 }) }), weight: 1 },
-  { arbitrary: fc.record({ t: fc.constant('rekey' as const), path: pathArb, pick: pickArb, id: fc.integer({ min: 1, max: 9 }) }), weight: 1 },
-  { arbitrary: fc.record({ t: fc.constant('clone' as const), path: pathArb }), weight: 1 },
-  { arbitrary: fc.record({ t: fc.constant('alias' as const), from: pathArb, to: pathArb }), weight: 1 },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('set' as const),
+      path: pathArb,
+      value: valueArb,
+    }),
+    weight: 4,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('setKey' as const),
+      path: pathArb,
+      key: fc.constantFrom(...ROOT_KEYS, ...OBJ_KEYS),
+      value: valueArb,
+    }),
+    weight: 2,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('remove' as const),
+      path: pathArb,
+      pick: pickArb,
+    }),
+    weight: 2,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('insert' as const),
+      path: pathArb,
+      at: pickArb,
+      value: valueArb,
+    }),
+    weight: 2,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('move' as const),
+      path: pathArb,
+      from: pickArb,
+      to: pickArb,
+    }),
+    weight: 1,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('truncate' as const),
+      path: pathArb,
+      n: fc.nat({ max: 4 }),
+    }),
+    weight: 1,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('rekey' as const),
+      path: pathArb,
+      pick: pickArb,
+      id: fc.integer({ min: 1, max: 9 }),
+    }),
+    weight: 1,
+  },
+  {
+    arbitrary: fc.record({ t: fc.constant('clone' as const), path: pathArb }),
+    weight: 1,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('alias' as const),
+      from: pathArb,
+      to: pathArb,
+    }),
+    weight: 1,
+  },
   { arbitrary: fc.constant({ t: 'noop' as const }), weight: 1 },
   { arbitrary: fc.constant({ t: 'touch' as const }), weight: 1 },
 )
@@ -213,7 +276,11 @@ function resolveContainer(root: unknown, path: PickPath): Key[] {
   return keys
 }
 
-function updateIn(node: unknown, keys: Key[], fn: (v: unknown) => unknown): unknown {
+function updateIn(
+  node: unknown,
+  keys: Key[],
+  fn: (v: unknown) => unknown,
+): unknown {
   if (keys.length === 0) return fn(node)
   const [k, ...rest] = keys
   if (Array.isArray(node)) {
@@ -228,7 +295,11 @@ function updateIn(node: unknown, keys: Key[], fn: (v: unknown) => unknown): unkn
 const shallowCopy = (v: unknown): unknown =>
   Array.isArray(v) ? v.slice() : isRecord(v) ? { ...v } : v
 
-function applyToContainer(c: unknown, action: Action, isRoot: boolean): unknown {
+function applyToContainer(
+  c: unknown,
+  action: Action,
+  isRoot: boolean,
+): unknown {
   const fresh = (v: Value) => clone(v)
   if (Array.isArray(c)) {
     const len = c.length
@@ -303,7 +374,8 @@ function applyToContainer(c: unknown, action: Action, isRoot: boolean): unknown 
   return { ...rec }
 }
 
-const rootKeyFor = (path: PickPath) => ROOT_KEYS[(path[0] ?? 0) % ROOT_KEYS.length]
+const rootKeyFor = (path: PickPath) =>
+  ROOT_KEYS[(path[0] ?? 0) % ROOT_KEYS.length]
 
 export function applyAction(state: State, action: Action): State {
   let next: unknown
@@ -343,7 +415,9 @@ export function applyAction(state: State, action: Action): State {
   }
   // The root stays a plain object: only container ops reach it, and those
   // keep objects as objects.
-  return deepFreeze(isRecord(next) ? (next as State) : (shallowCopy(state) as State))
+  return deepFreeze(
+    isRecord(next) ? (next as State) : (shallowCopy(state) as State),
+  )
 }
 
 // ---------------------------------------------------------------- selectors
@@ -361,7 +435,14 @@ type Unary =
   | 'isExtensible'
   | 'isArray'
   | 'hasOwn'
-type Callback = 'map' | 'filter' | 'find' | 'findLast' | 'findIndex' | 'some' | 'every'
+type Callback =
+  | 'map'
+  | 'filter'
+  | 'find'
+  | 'findLast'
+  | 'findIndex'
+  | 'some'
+  | 'every'
 
 export type Expr =
   | { t: 'here' }
@@ -401,30 +482,74 @@ const exprArbs = fc.letrec<{
     { arbitrary: tie('callback'), weight: 2 },
     { arbitrary: tie('other'), weight: 2 },
   ),
-  get: fc.record({ t: fc.constant('get' as const), of: tie('expr'), key: keyArb }),
+  get: fc.record({
+    t: fc.constant('get' as const),
+    of: tie('expr'),
+    key: keyArb,
+  }),
   // isFrozen / isExtensible are evaluated but not generated: state proxies
   // report their extensible shell, a documented difference (reflection
   // spec). Set SIGNALS_FUZZ_REFLECT=1 to include them.
   unary: fc.record({
     t: fc.constantFrom<Unary>(
-      'len', 'keys', 'values', 'entries', 'spreadObj', 'spreadArr', 'forIn',
-      'json', 'isArray', 'hasOwn',
-      ...(process.env.SIGNALS_FUZZ_REFLECT ? (['isFrozen', 'isExtensible'] as const) : []),
+      'len',
+      'keys',
+      'values',
+      'entries',
+      'spreadObj',
+      'spreadArr',
+      'forIn',
+      'json',
+      'isArray',
+      'hasOwn',
+      ...(process.env.SIGNALS_FUZZ_REFLECT
+        ? (['isFrozen', 'isExtensible'] as const)
+        : []),
     ),
     of: tie('expr'),
   }),
   callback: fc.record({
-    t: fc.constantFrom<Callback>('map', 'filter', 'find', 'findLast', 'findIndex', 'some', 'every'),
+    t: fc.constantFrom<Callback>(
+      'map',
+      'filter',
+      'find',
+      'findLast',
+      'findIndex',
+      'some',
+      'every',
+    ),
     of: tie('expr'),
     fn: tie('expr'),
   }),
   other: fc.oneof(
-    fc.record({ t: fc.constant('slice' as const), of: tie('expr'), start: fc.integer({ min: -2, max: 3 }), end: fc.integer({ min: -2, max: 4 }) }),
-    fc.record({ t: fc.constantFrom('includes' as const, 'indexOf' as const), of: tie('expr'), value: primArb }),
+    fc.record({
+      t: fc.constant('slice' as const),
+      of: tie('expr'),
+      start: fc.integer({ min: -2, max: 3 }),
+      end: fc.integer({ min: -2, max: 4 }),
+    }),
+    fc.record({
+      t: fc.constantFrom('includes' as const, 'indexOf' as const),
+      of: tie('expr'),
+      value: primArb,
+    }),
     fc.record({ t: fc.constant('in' as const), of: tie('expr'), key: keyArb }),
-    fc.record({ t: fc.constant('eq' as const), of: tie('expr'), value: primArb }),
-    fc.record({ t: fc.constant('cond' as const), test: tie('expr'), yes: tie('expr'), no: tie('expr') }),
-    fc.record({ t: fc.constant('pair' as const), a: tie('expr'), b: tie('expr') }),
+    fc.record({
+      t: fc.constant('eq' as const),
+      of: tie('expr'),
+      value: primArb,
+    }),
+    fc.record({
+      t: fc.constant('cond' as const),
+      test: tie('expr'),
+      yes: tie('expr'),
+      no: tie('expr'),
+    }),
+    fc.record({
+      t: fc.constant('pair' as const),
+      a: tie('expr'),
+      b: tie('expr'),
+    }),
   ),
 }))
 
@@ -439,9 +564,28 @@ export type SelectorSpec =
   | { kind: 'memoRoot'; expr: Expr }
 
 export const selectorSpecArb: fc.Arbitrary<SelectorSpec> = fc.oneof(
-  { arbitrary: fc.record({ kind: fc.constant('plain' as const), expr: exprArb }), weight: 4 },
-  { arbitrary: fc.record({ kind: fc.constant('memo' as const), a: exprArb, b: exprArb }), weight: 1 },
-  { arbitrary: fc.record({ kind: fc.constant('memoRoot' as const), expr: exprArb }), weight: 1 },
+  {
+    arbitrary: fc.record({
+      kind: fc.constant('plain' as const),
+      expr: exprArb,
+    }),
+    weight: 4,
+  },
+  {
+    arbitrary: fc.record({
+      kind: fc.constant('memo' as const),
+      a: exprArb,
+      b: exprArb,
+    }),
+    weight: 1,
+  },
+  {
+    arbitrary: fc.record({
+      kind: fc.constant('memoRoot' as const),
+      expr: exprArb,
+    }),
+    weight: 1,
+  },
 )
 
 const truthy = (v: unknown) => Boolean(v)
@@ -529,7 +673,10 @@ export function evalExpr(e: Expr, here: unknown): unknown {
 }
 
 const reselectOptions = {
-  devModeChecks: { inputStabilityCheck: 'never', identityFunctionCheck: 'never' },
+  devModeChecks: {
+    inputStabilityCheck: 'never',
+    identityFunctionCheck: 'never',
+  },
 } as const
 
 /** Builds a fresh selector function. Call once per hook and per
@@ -541,7 +688,10 @@ export function compile(spec: SelectorSpec): (state: unknown) => unknown {
       return (s) => evalExpr(spec.expr, s)
     case 'memo':
       return createSelector(
-        [(s: unknown) => evalExpr(spec.a, s), (s: unknown) => evalExpr(spec.b, s)],
+        [
+          (s: unknown) => evalExpr(spec.a, s),
+          (s: unknown) => evalExpr(spec.b, s),
+        ],
         (x, y) => [x, y],
         reselectOptions,
       )
@@ -709,7 +859,9 @@ export function containsRoot(result: unknown, root: object): boolean {
 export function fuzzParams(defaultRuns: number) {
   const env = process.env
   return {
-    numRuns: env.SIGNALS_FUZZ_RUNS ? Number(env.SIGNALS_FUZZ_RUNS) : defaultRuns,
+    numRuns: env.SIGNALS_FUZZ_RUNS
+      ? Number(env.SIGNALS_FUZZ_RUNS)
+      : defaultRuns,
     ...(env.SIGNALS_FUZZ_SEED ? { seed: Number(env.SIGNALS_FUZZ_SEED) } : {}),
     ...(env.SIGNALS_FUZZ_PATH ? { path: env.SIGNALS_FUZZ_PATH } : {}),
   }

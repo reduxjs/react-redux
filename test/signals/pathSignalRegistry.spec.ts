@@ -401,18 +401,44 @@ describe('PathSignalRegistry', () => {
       expect(registry.debugStats()).toEqual(EMPTY_STATS)
     })
 
-    it('prefix-only paths under a released path stay for 16 reconciles, then go', () => {
-      const registry = createRegistry()
+    function releasedItems() {
+      let time = 0
+      const registry = createPathSignalRegistry(alienEngine, {
+        now: () => time,
+      })
       const sig = registry.getOrCreate('items', {})
       registry.ensurePrefix('items.1')
       registry.ensurePrefix('items.2')
       watch(sig).stop()
       expect(registry.hasPrefix('items.2')).toBe(true)
+      const reconcile = (ms: number) => {
+        time += ms
+        registry.startReconcile()
+      }
+      return { registry, reconcile }
+    }
 
-      for (let i = 0; i < 15; i++) registry.startReconcile()
+    it('prefix-only paths under a released path stay for 16 reconciles, then go', () => {
+      const { registry, reconcile } = releasedItems()
+
+      for (let i = 0; i < 15; i++) reconcile(1000)
       expect(registry.hasPrefix('items.1')).toBe(true)
 
-      registry.startReconcile()
+      reconcile(1000)
+      expect(registry.hasPrefix('items')).toBe(false)
+      expect(registry.debugStats()).toEqual(EMPTY_STATS)
+    })
+
+    it('prefix-only paths under a released path stay for at least 100 ms', () => {
+      const { registry, reconcile } = releasedItems()
+
+      for (let i = 0; i < 50; i++) reconcile(1)
+      expect(registry.hasPrefix('items.1')).toBe(true)
+
+      reconcile(49)
+      expect(registry.hasPrefix('items.1')).toBe(true)
+
+      reconcile(1)
       expect(registry.hasPrefix('items')).toBe(false)
       expect(registry.debugStats()).toEqual(EMPTY_STATS)
     })

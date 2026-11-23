@@ -67,10 +67,20 @@ const stepArb: fc.Arbitrary<Step> = fc.oneof(
     weight: 6,
   },
   {
-    arbitrary: fc.record({ t: fc.constant('mount' as const), spec: selectorSpecArb, eq: eqArb }),
+    arbitrary: fc.record({
+      t: fc.constant('mount' as const),
+      spec: selectorSpecArb,
+      eq: eqArb,
+    }),
     weight: 2,
   },
-  { arbitrary: fc.record({ t: fc.constant('unmount' as const), pick: fc.nat({ max: 7 }) }), weight: 1 },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('unmount' as const),
+      pick: fc.nat({ max: 7 }),
+    }),
+    weight: 1,
+  },
   {
     arbitrary: fc.record({
       t: fc.constant('swapSelector' as const),
@@ -79,7 +89,13 @@ const stepArb: fc.Arbitrary<Step> = fc.oneof(
     }),
     weight: 1,
   },
-  { arbitrary: fc.record({ t: fc.constant('swapStore' as const), action: actionArb }), weight: 1 },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('swapStore' as const),
+      action: actionArb,
+    }),
+    weight: 1,
+  },
 )
 
 const programArb = fc.record({
@@ -110,7 +126,8 @@ interface Recorder {
   registries: Set<PathSignalRegistry>
 }
 
-const bump = (m: Map<number, number>, id: number) => m.set(id, (m.get(id) ?? 0) + 1)
+const bump = (m: Map<number, number>, id: number) =>
+  m.set(id, (m.get(id) ?? 0) + 1)
 
 function StockHook({ slot, rec }: { slot: Slot; rec: Recorder }) {
   const selector = useMemo(() => compile(slot.spec), [slot.spec])
@@ -133,16 +150,29 @@ function GrabRegistry({ rec }: { rec: Recorder }) {
   return null
 }
 
-function App(props: { store: Store; slots: Slot[]; rec: Recorder; strict: boolean }) {
+function App(props: {
+  store: Store
+  slots: Slot[]
+  rec: Recorder
+  strict: boolean
+}) {
   const { store, slots, rec, strict } = props
   const body: ReactNode = (
     <>
-      <Provider store={store} stabilityCheck="never" identityFunctionCheck="never">
+      <Provider
+        store={store}
+        stabilityCheck="never"
+        identityFunctionCheck="never"
+      >
         {slots.map((slot) => (
           <StockHook key={slot.id} slot={slot} rec={rec} />
         ))}
       </Provider>
-      <SignalProvider store={store} stabilityCheck="never" identityFunctionCheck="never">
+      <SignalProvider
+        store={store}
+        stabilityCheck="never"
+        identityFunctionCheck="never"
+      >
         <GrabRegistry rec={rec} />
         {slots.map((slot) => (
           <SignalHook key={slot.id} slot={slot} rec={rec} />
@@ -197,7 +227,10 @@ function runProgram({
     visit(s)
   }
   addNodes(state)
-  const log: string[] = [`  strict: ${strict}`, `  initial: ${JSON.stringify(initial)}`]
+  const log: string[] = [
+    `  strict: ${strict}`,
+    `  initial: ${JSON.stringify(initial)}`,
+  ]
   const describeSlot = (s: Slot) => `${showSpec(s.spec)} (equality ${s.eq})`
   log.push(`  mount ${slots[0].id}: ${describeSlot(slots[0])}`)
 
@@ -221,12 +254,14 @@ function runProgram({
       const stockValue = rec.stock.get(slot.id)
       if (slot.eq === 'is') {
         const harness = compareResults(want, stockValue, current)
-        if (harness) fail('HARNESS (stock hook disagrees with model)', slot, when, harness)
+        if (harness)
+          fail('HARNESS (stock hook disagrees with model)', slot, when, harness)
       }
       const signalsValue = rec.signals.get(slot.id)
       // Under shallowEqual, which of two equal results a hook keeps depends
       // on when it last ran the selector, so equal results are a match.
-      if (slot.eq === 'shallow' && shallowEqual(stockValue, signalsValue)) continue
+      if (slot.eq === 'shallow' && shallowEqual(stockValue, signalsValue))
+        continue
       const diff = compareResults(stockValue, signalsValue, allNodes)
       if (diff) fail('MISMATCH', slot, when, diff)
     }
@@ -239,7 +274,9 @@ function runProgram({
     return next
   }
 
-  const view = rtl.render(<App store={store} slots={slots} rec={rec} strict={strict} />)
+  const view = rtl.render(
+    <App store={store} slots={slots} rec={rec} strict={strict} />,
+  )
   const rerender = () =>
     view.rerender(<App store={store} slots={slots} rec={rec} strict={strict} />)
   try {
@@ -249,7 +286,9 @@ function runProgram({
       const stockBefore = new Map(rec.stockRenders)
       const signalsBefore = new Map(rec.signalsRenders)
       if (step.t === 'dispatch') {
-        const states = step.actions.map((action) => (state = transition(action)))
+        const states = step.actions.map(
+          (action) => (state = transition(action)),
+        )
         rtl.act(() => {
           for (const payload of states) {
             totals.dispatches++
@@ -284,9 +323,11 @@ function runProgram({
       if (step.t === 'dispatch') {
         for (const slot of slots) {
           const stockRendered =
-            (rec.stockRenders.get(slot.id) ?? 0) > (stockBefore.get(slot.id) ?? 0)
+            (rec.stockRenders.get(slot.id) ?? 0) >
+            (stockBefore.get(slot.id) ?? 0)
           const signalsRendered =
-            (rec.signalsRenders.get(slot.id) ?? 0) > (signalsBefore.get(slot.id) ?? 0)
+            (rec.signalsRenders.get(slot.id) ?? 0) >
+            (signalsBefore.get(slot.id) ?? 0)
           if (signalsRendered && !stockRendered) totals.extraRenders++
         }
       }

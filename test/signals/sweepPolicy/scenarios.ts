@@ -171,7 +171,8 @@ function viewToggle(): Scenario {
   const trace = { dispatches: 2000, msPerDispatch: 100, events }
   return {
     name: 'view toggle',
-    description: 'Ten panels are released and read again 50-200 dispatches later.',
+    description:
+      'Ten panels are released and read again 50-200 dispatches later.',
     trace,
     check(metrics) {
       const broken: string[] = []
@@ -230,7 +231,8 @@ function deletedEntities(): Scenario {
   const trace = { dispatches: 300, msPerDispatch: 16, events }
   return {
     name: 'deleted entities',
-    description: 'Twenty entity paths are released every dispatch for 100 dispatches.',
+    description:
+      'Twenty entity paths are released every dispatch for 100 dispatches.',
     trace,
     check(metrics) {
       const broken: string[] = []

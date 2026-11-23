@@ -20,6 +20,7 @@ import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import { reconcileState } from '../../src/signals/diff'
+import { delayedSweepPolicy } from '../../src/signals/sweepPolicy'
 import { mountEngineHook, THREW } from './differential/engineHook'
 import type { EngineHook } from './differential/engineHook'
 import {
@@ -44,9 +45,27 @@ type Step =
   | { t: 'dispatch'; action: Action }
 
 export const stepArb: fc.Arbitrary<Step> = fc.oneof(
-  { arbitrary: fc.record({ t: fc.constant('mount' as const), spec: selectorSpecArb }), weight: 2 },
-  { arbitrary: fc.record({ t: fc.constant('unmount' as const), pick: fc.nat({ max: 7 }) }), weight: 1 },
-  { arbitrary: fc.record({ t: fc.constant('dispatch' as const), action: actionArb }), weight: 6 },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('mount' as const),
+      spec: selectorSpecArb,
+    }),
+    weight: 2,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('unmount' as const),
+      pick: fc.nat({ max: 7 }),
+    }),
+    weight: 1,
+  },
+  {
+    arbitrary: fc.record({
+      t: fc.constant('dispatch' as const),
+      action: actionArb,
+    }),
+    weight: 6,
+  },
 )
 
 const programArb = fc.record({
@@ -65,9 +84,10 @@ function mountHook(
   spec: SelectorSpec,
   registry: PathSignalRegistry,
 ): Hook {
-  return Object.assign(mountEngineHook(getState, compile(spec), registry), { spec })
+  return Object.assign(mountEngineHook(getState, compile(spec), registry), {
+    spec,
+  })
 }
-
 
 const totals = {
   runs: 0,
@@ -76,7 +96,25 @@ const totals = {
   skippedRootResults: 0,
   extraReruns: 0,
   leakyRuns: 0,
+  sweeps: 0,
   ms: 0,
+}
+
+// Programs are too short for the default sweep delay. With this policy, the
+// time floor holds a release back on the second dispatch after it, and the
+// sweep runs on the third.
+const fuzzSweepPolicy = delayedSweepPolicy({ dispatches: 2, ms: 100 })
+
+const countingSweepPolicy = () => {
+  const policy = fuzzSweepPolicy()
+  return {
+    ...policy,
+    tick(now: number) {
+      const due = policy.tick(now)
+      totals.sweeps += due.length
+      return due
+    },
+  }
 }
 
 function runProgram({
@@ -90,7 +128,11 @@ function runProgram({
 }) {
   totals.runs++
   let state = initial
-  const registry = createPathSignalRegistry(alienEngine)
+  let time = 0
+  const registry = createPathSignalRegistry(alienEngine, {
+    sweepPolicy: countingSweepPolicy,
+    now: () => time,
+  })
   const hooks: Hook[] = []
   const log: string[] = []
 
@@ -142,17 +184,27 @@ function runProgram({
         log.push(`  unmount ${index}`)
       } else {
         const prev = state
-        const before = hooks.map((h) => ({ evals: h.evals, want: expected(h.spec, prev) }))
+        const before = hooks.map((h) => ({
+          evals: h.evals,
+          want: expected(h.spec, prev),
+        }))
         state = applyAction(prev, step.action)
-        log.push(`  dispatch ${JSON.stringify(step.action)} -> ${JSON.stringify(state)}`)
+        log.push(
+          `  dispatch ${JSON.stringify(step.action)} -> ${JSON.stringify(state)}`,
+        )
         totals.dispatches++
+        time += 40
         reconcileState(prev, state, registry, alienEngine)
         check(`after dispatch ${JSON.stringify(step.action)}`)
         const nodes = collectStateNodes(state)
         for (const [i, hook] of hooks.entries()) {
           const reran = hook.evals > before[i].evals
           const changed =
-            compareResults(before[i].want, expected(hook.spec, state), nodes) !== null
+            compareResults(
+              before[i].want,
+              expected(hook.spec, state),
+              nodes,
+            ) !== null
           if (reran && !changed) totals.extraReruns++
         }
       }

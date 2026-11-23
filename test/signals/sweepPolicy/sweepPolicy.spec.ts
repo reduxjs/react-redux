@@ -1,5 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import {
+  delayedSweepPolicy,
   fixedDelaySweepPolicy,
   sweepImmediately,
 } from '../../../src/signals/sweepPolicy'
@@ -11,6 +12,23 @@ import type { Metrics } from './simulate'
 const policies: Record<string, SweepPolicyFactory> = {
   'sweep immediately': sweepImmediately,
   'fixed delay 16': fixedDelaySweepPolicy({ dispatches: 16 }),
+  'fixed 16 + 100 ms': delayedSweepPolicy({ dispatches: 16, ms: 100 }),
+  'backoff 16 x2 to 256': delayedSweepPolicy({
+    dispatches: 16,
+    growth: 2,
+    maxDispatches: 256,
+  }),
+  'backoff 4 x4 to 256': delayedSweepPolicy({
+    dispatches: 4,
+    growth: 4,
+    maxDispatches: 256,
+  }),
+  'backoff 16 x2 to 256 + 100 ms': delayedSweepPolicy({
+    dispatches: 16,
+    ms: 100,
+    growth: 2,
+    maxDispatches: 256,
+  }),
 }
 
 /** Policy -> scenario -> why it is expected to break the scenario's limits. */
@@ -27,6 +45,20 @@ const knownShortfalls: Record<string, Record<string, string>> = {
       'counts dispatches, so a 10-60 ms gap at 1 ms per dispatch is too long',
     'flag-dependent selector':
       'does not learn that the same paths keep coming back after 17-40 dispatches',
+  },
+  'fixed 16 + 100 ms': {
+    'flag-dependent selector':
+      'does not learn that the same paths keep coming back after 17-40 dispatches',
+  },
+  'backoff 16 x2 to 256': {
+    'high-rate feed':
+      'learns, but each path is swept and re-registered a few times first',
+  },
+  'backoff 4 x4 to 256': {
+    'dependency moves between components':
+      'a 4-dispatch start re-registers each collection before it learns',
+    'high-rate feed': 'gaps outlast the forget window, so it never learns',
+    mixed: 'a 4-dispatch start re-registers each collection before it learns',
   },
 }
 
