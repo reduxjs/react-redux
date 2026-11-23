@@ -360,6 +360,23 @@ export function createPathSignalRegistry(
     }
   }
 
+  // Remove the ancestors of a pruned path that are left with no signal and
+  // no children. `flushReleases` only visits ancestors of released signals,
+  // so nothing else would remove them once the subtree below is gone.
+  function dropEmptyAncestors(pathKey: string): void {
+    let idx = pathKey.lastIndexOf('.')
+    while (idx !== -1) {
+      const parent = pathKey.substring(0, idx)
+      if (signals.has(parent) || childIndex.has(parent)) return
+      if (prefixOnlyPaths.delete(parent))
+        decrementPrefixes(prefixCounts, parent)
+      arrays.delete(parent)
+      detachFromParent(parent)
+      pathKey = parent
+      idx = parent.lastIndexOf('.')
+    }
+  }
+
   // Paths whose signal has been released but whose prefix accounting and
   // structural unlinking have not been applied yet. Draining is deferred
   // so that a subtree unmounting - which fires one `release` per node -
@@ -601,6 +618,7 @@ export function createPathSignalRegistry(
         }
       }
       detachFromParent(pathKey)
+      dropEmptyAncestors(pathKey)
     },
 
     release(pathKey: PathKey, node: ReactiveSignal<unknown>): void {

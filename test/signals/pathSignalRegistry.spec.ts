@@ -340,6 +340,35 @@ describe('PathSignalRegistry', () => {
       expect(registry.has('leaf')).toBe(true)
       expect(registry.size()).toBe(1)
     })
+
+    it('removes a prefix-only path and its prefix-only ancestors once nothing is left under them', () => {
+      const registry = createRegistry()
+      registry.ensurePrefix('b')
+      registry.ensurePrefix('b.1')
+      const sig = registry.getOrCreate('b.1.length', 0)
+      const scope = watch(sig)
+
+      registry.pruneChildren('b.1')
+      scope.stop()
+
+      expect(registry.hasPrefix('b')).toBe(false)
+      expect(registry.debugStats()).toEqual(EMPTY_STATS)
+    })
+
+    it('keeps a prefix-only parent that still has other children', () => {
+      const registry = createRegistry()
+      registry.ensurePrefix('b')
+      registry.ensurePrefix('b.0')
+      registry.ensurePrefix('b.1')
+      registry.getOrCreate('b.0.length', 0)
+      registry.getOrCreate('b.1.length', 0)
+
+      registry.pruneChildren('b.1')
+
+      expect(registry.hasPrefix('b.1')).toBe(false)
+      expect(registry.hasPrefix('b')).toBe(true)
+      expect(registry.has('b.0.length')).toBe(true)
+    })
   })
 
   describe('release (unwatched callback) and flushReleases', () => {
