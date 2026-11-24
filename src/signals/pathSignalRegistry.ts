@@ -378,6 +378,7 @@ export function createPathSignalRegistry(
         decrementPrefixes(prefixCounts, parent)
       arrays.delete(parent)
       detachFromParent(parent)
+      policy.forget(parent)
       pathKey = parent
       idx = parent.lastIndexOf('.')
     }
@@ -424,6 +425,7 @@ export function createPathSignalRegistry(
     prefixCounts.delete(path)
     detachFromParent(path)
     arrays.delete(path)
+    policy.forget(path)
     return removed
   }
 
@@ -504,6 +506,7 @@ export function createPathSignalRegistry(
               prefixCounts.delete(path)
               detachFromParent(path)
               arrays.delete(path)
+              policy.forget(path)
               count += 1
             }
           } else if (!signals.has(path)) {
@@ -514,6 +517,7 @@ export function createPathSignalRegistry(
             // or below it any more, so its array record goes too.
             detachFromParent(path)
             arrays.delete(path)
+            policy.forget(path)
           }
         }
 
@@ -596,6 +600,7 @@ export function createPathSignalRegistry(
       while (stack.length > 0) {
         const key = stack.pop()!
         arrays.delete(key)
+        policy.forget(key)
         // Push children onto stack before deleting
         const children = childIndex.get(key)
         if (children) {

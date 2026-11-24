@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import type { RegistryStats } from '../../src/signals/pathSignalRegistry'
+import { delayedSweepPolicy } from '../../src/signals/sweepPolicy'
 import type { ReactiveSignal } from '../../src/signals/types'
 
 const EMPTY_STATS: RegistryStats = {
@@ -514,6 +515,46 @@ describe('PathSignalRegistry', () => {
 
       expect(registry.has('x')).toBe(true)
       expect(registry.getOrCreate('x', 0)).toBe(live)
+    })
+
+    // With backoff, a path read again after its sweep keeps a record of
+    // its longer delay while it stays registered.
+    function sweptThenReadAgain() {
+      const registry = createPathSignalRegistry(alienEngine, {
+        sweepPolicy: delayedSweepPolicy({
+          dispatches: 1,
+          growth: 2,
+          maxDispatches: 4,
+        }),
+      })
+      const first = registry.getOrCreate('items', {})
+      registry.ensurePrefix('items.1')
+      watch(first).stop()
+      registry.startReconcile()
+      expect(registry.hasPrefix('items')).toBe(false)
+      const sig = registry.getOrCreate('items', {})
+      expect(registry.debugStatsWithoutSweep().sweepRecords).toBe(1)
+      return { registry, sig }
+    }
+
+    it('drops the backoff record of a path released with nothing below it', () => {
+      const { registry, sig } = sweptThenReadAgain()
+      watch(sig).stop()
+      for (let i = 0; i < 10; i++) registry.startReconcile()
+      expect(registry.debugStatsWithoutSweep()).toEqual({
+        ...EMPTY_STATS,
+        sweepRecords: 0,
+      })
+    })
+
+    it('drops the backoff record of a pruned path', () => {
+      const { registry } = sweptThenReadAgain()
+      registry.prune('items')
+      for (let i = 0; i < 10; i++) registry.startReconcile()
+      expect(registry.debugStatsWithoutSweep()).toEqual({
+        ...EMPTY_STATS,
+        sweepRecords: 0,
+      })
     })
   })
 

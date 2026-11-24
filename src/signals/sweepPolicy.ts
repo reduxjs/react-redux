@@ -18,6 +18,11 @@ export interface SweepPolicy {
   released(path: string, weight: number, now: number): void
   /** `path` was registered again, as a signal or a prefix-only entry. */
   read(path: string, now: number): void
+  /**
+   * `path` is no longer registered at all. A policy should drop what it
+   * keeps for the path, other than history it uses to learn from sweeps.
+   */
+  forget(path: string): void
   /** A dispatch is starting. Returns the held paths to sweep now. */
   tick(now: number): readonly string[]
   /** Records held, including any history kept for paths already swept. */
@@ -44,7 +49,10 @@ export interface DelayedSweepOptions {
 }
 
 interface PathRecord {
-  /** `held` until swept; `swept` until read again or forgotten; then `live`. */
+  /**
+   * `held` until swept; `swept` until read again or expired; then `live`
+   * until released again or the path is removed.
+   */
   state: 'held' | 'swept' | 'live'
   delay: number
   /** Tick of the release, or of the sweep while `swept`. */
@@ -95,6 +103,13 @@ export function delayedSweepPolicy({
         } else {
           record.state = 'live'
         }
+      },
+      forget(path) {
+        if (records.size === 0) return
+        // A swept record has to outlive the sweep that removed its path,
+        // since a read after that is what grows the delay. It expires on
+        // its own in `tick`.
+        if (records.get(path)?.state !== 'swept') records.delete(path)
       },
       tick(now) {
         ticks++
