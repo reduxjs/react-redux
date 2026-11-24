@@ -31,7 +31,14 @@ const policies: Record<string, SweepPolicyFactory> = {
   }),
 }
 
-/** Policy -> scenario -> why it is expected to break the scenario's limits. */
+/**
+ * Policy -> scenario -> the limit of that policy that makes it break the
+ * scenario's limits. These follow from how each policy is defined, not
+ * from mistakes in the code: the policies other than the default
+ * ('fixed 16 + 100 ms') are here to compare against, and each one gives up
+ * something. A delayed policy forgets a swept path after one more delay,
+ * so it only learns from a read that comes back within that window.
+ */
 const knownShortfalls: Record<string, Record<string, string>> = {
   'sweep immediately': {
     'dependency moves between components':
@@ -44,21 +51,24 @@ const knownShortfalls: Record<string, Record<string, string>> = {
     'high-rate feed':
       'counts dispatches, so a 10-60 ms gap at 1 ms per dispatch is too long',
     'flag-dependent selector':
-      'does not learn that the same paths keep coming back after 17-40 dispatches',
+      'never grows its delay, so paths that come back after 17-40 dispatches are re-registered every time',
   },
   'fixed 16 + 100 ms': {
+    // At 16 ms per dispatch the time floor passes before 16 dispatches do.
     'flag-dependent selector':
-      'does not learn that the same paths keep coming back after 17-40 dispatches',
+      'never grows its delay, so paths that come back after 17-40 dispatches are re-registered every time',
   },
   'backoff 16 x2 to 256': {
     'high-rate feed':
-      'learns, but each path is swept and re-registered a few times first',
+      'doubling from 16 takes two sweeps of each path to cover 60-dispatch gaps',
   },
   'backoff 4 x4 to 256': {
     'dependency moves between components':
-      'a 4-dispatch start re-registers each collection before it learns',
-    'high-rate feed': 'gaps outlast the forget window, so it never learns',
-    mixed: 'a 4-dispatch start re-registers each collection before it learns',
+      'starts at 4 dispatches and forgets after 4 more, so gaps of 12-15 re-register before a 5-8 gap teaches it',
+    'high-rate feed':
+      'every 10-60 dispatch gap outlasts the 4-dispatch forget window, so it never learns',
+    mixed:
+      'starts at 4 dispatches and forgets after 4 more, so gaps of 12-15 re-register before a 5-8 gap teaches it',
   },
 }
 
@@ -88,7 +98,11 @@ describe('sweep policies against usage scenarios', () => {
       for (const scenario of scenarios) {
         const shortfall = knownShortfalls[policyName]?.[scenario.name]
         const run = shortfall === undefined ? it : it.fails
-        run(scenario.name, () => {
+        const title =
+          shortfall === undefined
+            ? scenario.name
+            : `${scenario.name} (known limit: ${shortfall})`
+        run(title, () => {
           const metrics = simulate(factory, scenario.trace)
           ;(results[scenario.name] ??= {})[policyName] = metrics
           expect(scenario.check(metrics, scenario.trace)).toEqual([])
