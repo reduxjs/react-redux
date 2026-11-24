@@ -527,13 +527,15 @@ export function createPathSignalRegistry(
     }
   }
 
-  // Sweeps the prefix-only paths under each of `paths` that is still
-  // released.
+  // Sweeps the signal-less paths under each of `paths` that has no signal
+  // of its own. A prefix-only path can be due here too, from being held
+  // again in `ensurePrefix`. Removing a subtree with no signal in it never
+  // hides a signal from `diff`, so this is safe while readers traverse it.
   function sweep(paths: readonly string[]): void {
     if (paths.length === 0) return
     const stale = new Set<string>()
     for (const path of paths) {
-      if (!signals.has(path) && !prefixOnlyPaths.has(path)) stale.add(path)
+      if (!signals.has(path)) stale.add(path)
     }
     if (stale.size !== 0) flushReleases(stale)
   }
@@ -575,10 +577,17 @@ export function createPathSignalRegistry(
       // Flush only removes entries from these structures, so the checks
       // above cannot flip from false to true across it.
       if (pendingReleases.size !== 0) flushReleases()
+      const hadChildren = childIndex.has(pathKey)
       prefixOnlyPaths.add(pathKey)
       addToChildIndex(pathKey)
       incrementPrefixes(prefixCounts, pathKey)
       policy.read(pathKey, time)
+      // A prefix-only path is never released, so whatever a previous
+      // reader left under it would otherwise stay forever. Hold it again
+      // so the policy still sweeps the leftovers.
+      if (hadChildren) {
+        policy.released(pathKey, prefixCounts.get(pathKey) ?? 0, time)
+      }
     },
 
     update(pathKey: PathKey, newValue: unknown): void {

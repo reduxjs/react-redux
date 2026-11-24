@@ -556,6 +556,29 @@ describe('PathSignalRegistry', () => {
         sweepRecords: 0,
       })
     })
+
+    it.each([
+      ['fixed', delayedSweepPolicy({ dispatches: 2 })],
+      [
+        'backoff',
+        delayedSweepPolicy({ dispatches: 2, growth: 2, maxDispatches: 8 }),
+      ],
+    ])(
+      'sweeps what was left under a held path that another reader traverses again (%s delay)',
+      (_name, sweepPolicy) => {
+        const registry = createPathSignalRegistry(alienEngine, { sweepPolicy })
+        const first = registry.getOrCreate('b', {})
+        registry.ensurePrefix('b.leftover')
+        watch(first).stop()
+        registry.ensurePrefix('b')
+        watch(registry.getOrCreate('b.a', false)).stop()
+        for (let i = 0; i < 20; i++) registry.startReconcile()
+        expect(registry.debugStatsWithoutSweep()).toEqual({
+          ...EMPTY_STATS,
+          sweepRecords: 0,
+        })
+      },
+    )
   })
 
   describe('array metadata', () => {
