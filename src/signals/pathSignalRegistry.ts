@@ -95,8 +95,14 @@ export interface RegistryDebug {
   /** All registered signal paths, sorted. */
   debugPaths(): string[]
 
-  /** Entry counts for every internal structure. */
+  /** Entry counts for every internal structure, after sweeping every path
+   *  the sweep policy is holding. */
   debugStats(): RegistryStats
+
+  /** Entry counts without sweeping held paths, plus how many records the
+   *  sweep policy keeps. Shows what the registry holds between dispatches,
+   *  so tests can check that held paths go under the policy's own rules. */
+  debugStatsWithoutSweep(): RegistryStats & { sweepRecords: number }
 }
 
 export interface PathSignalRegistry extends RegistryDebug {
@@ -717,6 +723,27 @@ export function createPathSignalRegistry(
   }
 
   if (process.env.NODE_ENV !== 'production') {
+    const countEntries = (): RegistryStats => {
+      // Pending releases are deferred bookkeeping that any registry read
+      // applies first, not a sweep decision.
+      if (pendingReleases.size !== 0) flushReleases()
+      let columns = 0
+      let structures = 0
+      for (const rec of arrays.values()) {
+        columns += rec.columns?.size ?? 0
+        structures += rec.structures?.size ?? 0
+      }
+      return {
+        signals: signals.size,
+        prefixCounts: prefixCounts.size,
+        prefixOnlyPaths: prefixOnlyPaths.size,
+        childIndex: childIndex.size,
+        arrays: arrays.size,
+        columns,
+        structures,
+        segmentSubs: registry.segmentIndex.size(),
+      }
+    }
     const debug: RegistryDebug = {
       size: () => signals.size,
       has: (pathKey) => signals.has(pathKey),
@@ -724,23 +751,12 @@ export function createPathSignalRegistry(
       debugStats() {
         if (pendingReleases.size !== 0) flushReleases()
         sweep(policy.drain())
-        let columns = 0
-        let structures = 0
-        for (const rec of arrays.values()) {
-          columns += rec.columns?.size ?? 0
-          structures += rec.structures?.size ?? 0
-        }
-        return {
-          signals: signals.size,
-          prefixCounts: prefixCounts.size,
-          prefixOnlyPaths: prefixOnlyPaths.size,
-          childIndex: childIndex.size,
-          arrays: arrays.size,
-          columns,
-          structures,
-          segmentSubs: registry.segmentIndex.size(),
-        }
+        return countEntries()
       },
+      debugStatsWithoutSweep: () => ({
+        ...countEntries(),
+        sweepRecords: policy.size(),
+      }),
     }
     Object.assign(registry, debug)
   }

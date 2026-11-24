@@ -14,20 +14,36 @@
  * Stock hooks using Object.is are also checked against the selector run on
  * raw state, to catch harness mistakes. A signal component that rendered
  * when its stock twin did not is counted as an extra render (not a failure).
- * After the tree unmounts every registry should be empty; leaks are counted
- * and only fail with SIGNALS_FUZZ_LEAKS=fail.
+ *
+ * Only `Date` is faked, and it moves forward a fixed step before every
+ * dispatch, so the registry's default sweep policy (replaced here by a
+ * short counting one) sees both its dispatch delay and its time floor pass
+ * during a program. After the tree unmounts, each registry gets idle
+ * dispatches until its policy has swept and forgotten everything. A
+ * registry still holding entries then is a stuck sweep if sweeping every
+ * held path empties it, and a leak otherwise. Both are counted and only
+ * fail with SIGNALS_FUZZ_LEAKS=fail.
  */
 import * as rtl from '@testing-library/react'
 import fc from 'fast-check'
 import { StrictMode, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { legacy_createStore as createStore } from 'redux'
-import { afterAll, afterEach, describe, expect, it } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import Provider from '../../src/components/Provider'
 import { useSelector } from '../../src/hooks/useSelector'
 import { SignalProvider, useSignalSelector } from '../../src/signals'
 import { useSignalContext } from '../../src/signals/context'
 import type { PathSignalRegistry } from '../../src/signals/pathSignalRegistry'
+import type * as SweepPolicyModule from '../../src/signals/sweepPolicy'
 import shallowEqual from '../../src/utils/shallowEqual'
 import {
   actionArb,
@@ -44,6 +60,45 @@ import {
   stateArb,
 } from './differential/model'
 import type { Action, SelectorSpec, State } from './differential/model'
+import { settleBound, settleRegistry } from './differential/settle'
+
+const MS_PER_DISPATCH = 40
+
+const sweep = vi.hoisted(() => ({
+  // Holds a released path for two dispatches and 100 ms, so with 40 ms per
+  // dispatch the floor decides and the sweep comes on the third dispatch.
+  options: { dispatches: 2, ms: 100 },
+  holds: 0,
+  sweeps: 0,
+  settleSweeps: 0,
+  settling: false,
+}))
+
+vi.mock('../../src/signals/sweepPolicy', async (importOriginal) => {
+  const actual = await importOriginal<typeof SweepPolicyModule>()
+  const create = actual.delayedSweepPolicy(sweep.options)
+  return {
+    ...actual,
+    defaultSweepPolicy: () => {
+      const policy = create()
+      return {
+        ...policy,
+        released(path: string, weight: number, now: number) {
+          sweep.holds++
+          policy.released(path, weight, now)
+        },
+        tick(now: number) {
+          const due = policy.tick(now)
+          if (sweep.settling) sweep.settleSweeps += due.length
+          else sweep.sweeps += due.length
+          return due
+        },
+      }
+    },
+  }
+})
+
+const advanceClock = () => vi.setSystemTime(Date.now() + MS_PER_DISPATCH)
 
 type Eq = 'is' | 'shallow'
 const eqFns = { is: Object.is, shallow: shallowEqual }
@@ -98,12 +153,23 @@ const stepArb: fc.Arbitrary<Step> = fc.oneof(
   },
 )
 
-const programArb = fc.record({
-  initial: stateArb,
-  strict: fc.boolean(),
-  first: fc.record({ spec: selectorSpecArb, eq: eqArb }),
-  steps: fc.array(stepArb, { maxLength: 10 }),
-})
+const programArb = (maxLength: number, size: fc.SizeForArbitrary) =>
+  fc.record({
+    initial: stateArb,
+    strict: fc.boolean(),
+    first: fc.record({ spec: selectorSpecArb, eq: eqArb }),
+    steps: fc.array(stepArb, { maxLength, size }),
+  })
+
+/**
+ * Short programs cover many small cases. A path held by the sweep policy
+ * needs three more dispatches before it is swept, which short programs
+ * rarely reach, so long ones cover sweeps while components are mounted.
+ */
+const programs = {
+  short: { arb: programArb(10, 'small'), defaultRuns: 30 },
+  long: { arb: programArb(30, 'max'), defaultRuns: 10 },
+}
 
 type Replace = { type: 'replace'; payload: State }
 const reducer = (s: State = {}, a: Replace | { type: string }) =>
@@ -183,7 +249,7 @@ function App(props: {
   return strict ? <StrictMode>{body}</StrictMode> : body
 }
 
-const totals = {
+const makeTotals = () => ({
   runs: 0,
   steps: 0,
   dispatches: 0,
@@ -191,8 +257,10 @@ const totals = {
   skippedRootResults: 0,
   extraRenders: 0,
   leakyRuns: 0,
+  stuckRuns: 0,
   ms: 0,
-}
+})
+let totals = makeTotals()
 
 function runProgram({
   initial,
@@ -206,6 +274,7 @@ function runProgram({
   steps: Step[]
 }) {
   totals.runs++
+  sweep.settling = false
   let state = initial
   let store = makeStore(state)
   let nextId = 0
@@ -292,6 +361,7 @@ function runProgram({
         rtl.act(() => {
           for (const payload of states) {
             totals.dispatches++
+            advanceClock()
             store.dispatch({ type: 'replace', payload })
           }
         })
@@ -336,41 +406,64 @@ function runProgram({
     view.unmount()
   }
 
+  sweep.settling = true
+  const bound = settleBound(
+    { maxDispatches: sweep.options.dispatches, ms: sweep.options.ms },
+    MS_PER_DISPATCH,
+  )
   for (const registry of rec.registries) {
-    const stats = registry.debugStats()
-    if (Object.values(stats).every((n) => n === 0)) continue
-    totals.leakyRuns++
+    const outcome = settleRegistry(registry, advanceClock, bound)
+    if (outcome.kind === 'empty') continue
+    if (outcome.kind === 'stuck') totals.stuckRuns++
+    else totals.leakyRuns++
     if (process.env.SIGNALS_FUZZ_LEAKS !== 'fail') break
+    const problem =
+      outcome.kind === 'stuck'
+        ? `STUCK SWEEP: entries left after ${bound} idle dispatches, ` +
+          'cleared only by sweeping every held path'
+        : `REGISTRY LEAK after unmount: ${JSON.stringify(outcome.drained)} ` +
+          `paths=${JSON.stringify(registry.debugPaths())}`
     throw new Error(
-      `REGISTRY LEAK after unmount: ${JSON.stringify(stats)} ` +
-        `paths=${JSON.stringify(registry.debugPaths())}\n${log.join('\n')}`,
+      `${problem}\n  before sweeping: ${JSON.stringify(outcome.held)}\n` +
+        log.join('\n'),
     )
   }
 }
+
+beforeAll(() => {
+  // Installed before any render: the registry reads `Date.now` when created.
+  vi.useFakeTimers({ toFake: ['Date'] })
+})
 
 afterEach(() => {
   rtl.cleanup()
 })
 
-describe('useSignalSelector vs useSelector differential (property)', () => {
-  afterAll(() => {
-    // Written to stdout directly: vitest hides console output of passing tests.
-    if (process.env.SIGNALS_FUZZ_RUNS) {
-      process.stdout.write(
-        `[react differential] ${JSON.stringify(totals)} ` +
-          `${((totals.runs / totals.ms) * 1000).toFixed(0)} runs/s\n`,
-      )
-    }
-  })
+afterAll(() => {
+  vi.useRealTimers()
+})
 
-  it(
-    'every signal hook returns what its stock twin returns after every step',
-    () => {
+describe('useSignalSelector vs useSelector differential (property)', () => {
+  it.each(Object.keys(programs) as (keyof typeof programs)[])(
+    'every signal hook returns what its stock twin returns after every step (%s programs)',
+    (shape) => {
+      const { arb, defaultRuns } = programs[shape]
+      totals = makeTotals()
+      Object.assign(sweep, { holds: 0, sweeps: 0, settleSweeps: 0 })
       const start = performance.now()
       try {
-        fc.assert(fc.property(programArb, runProgram), fuzzParams(30))
+        fc.assert(fc.property(arb, runProgram), fuzzParams(defaultRuns))
       } finally {
         totals.ms += performance.now() - start
+        // Written to stdout directly: vitest hides console output of passing tests.
+        if (process.env.SIGNALS_FUZZ_RUNS) {
+          const { holds, sweeps, settleSweeps } = sweep
+          process.stdout.write(
+            `[react differential, ${shape} programs] ` +
+              `${JSON.stringify({ ...totals, holds, sweeps, settleSweeps })} ` +
+              `${((totals.runs / totals.ms) * 1000).toFixed(0)} runs/s\n`,
+          )
+        }
       }
       expect(totals.runs).toBeGreaterThan(0)
     },
