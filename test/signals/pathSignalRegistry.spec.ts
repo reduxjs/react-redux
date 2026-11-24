@@ -578,6 +578,17 @@ describe('PathSignalRegistry', () => {
       expect(registry.keyFieldFor('todos', { text: 'a' })).toBeUndefined()
       expect(registry.debugStats()).toEqual(EMPTY_STATS)
     })
+
+    it('keyFieldFor keeps the key field when releases queued before it remove the array', () => {
+      const registry = createRegistry()
+      registry.keyFieldFor('todos', { id: 1 })
+      watch(registry.getOrCreate('todos.{id:1}', {})).stop()
+      // The release that empties `todos` is still queued here, so the
+      // lookup must apply it first or the record it returns is dropped.
+      expect(registry.keyFieldFor('todos', { id: 1 })).toBe('id')
+      registry.getOrCreate('todos.{id:1}', {})
+      expect(registry.getArrayRecord('todos')?.keyField).toBe('id')
+    })
   })
 
   describe('column signals', () => {

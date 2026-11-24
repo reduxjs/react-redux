@@ -678,6 +678,10 @@ export function createPathSignalRegistry(
     },
 
     keyFieldFor(arrayPath: string, sample: unknown): string | undefined {
+      // A queued release can still remove this array's record. Storing
+      // the key field on that record would lose it once the release
+      // is applied, and diffArray would fall back to index paths.
+      if (pendingReleases.size !== 0) flushReleases()
       const rec = arrays.get(arrayPath)
       if (rec?.keyField !== undefined) return rec.keyField
       const keyField = findKeyField(sample)
