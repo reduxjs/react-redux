@@ -102,6 +102,22 @@ It helps least (and can cost slightly more than `useSelector`) when most dispatc
 
 Because `useSelector` and `useSignalSelector` coexist under one `<SignalProvider>`, you can adopt it incrementally in the components with the highest subscription counts.
 
+### What's supported
+
+`useSignalSelector` supports the same usage as `useSelector`, as long as the selector reads plain, immutably updated Redux state:
+
+- Inline selectors, including selectors that close over props or local state
+- Memoized selectors from Reselect's `createSelector`, including selectors shared between components and selectors with extra arguments
+- Custom equality functions (`shallowEqual` and others) and the development mode checks
+- Mixing `useSignalSelector`, `useSelector`, and `connect` under one `<SignalProvider>`
+- `<StrictMode>`, Suspense, and concurrent rendering, with the same tearing guarantees as `useSelector`
+- Server rendering and hydration via the `serverState` prop
+- Swapping the `store` prop on `<SignalProvider>`
+
+What is not supported is listed under [Hard constraints](#hard-constraints) below: mutating state, per-field tracking inside non-plain values (`Map`, `Set`, class instances) or a non-plain root state, and selectors that return the root state itself. Identity comparisons inside array method callbacks need [`unwrap`](#proxies-and-identity).
+
+Beyond that, selectors that inspect the state objects themselves rather than reading data from them (property descriptors, prototypes, frozenness, reflection on the root state object) are outside what the hook is designed for. They may work, but are not guaranteed to update.
+
 ### Differences from `useSelector`
 
 The observable behavior - what your components render, when they re-render, what values they receive - matches `useSelector` in almost all cases. The differences fall into three groups.
@@ -157,7 +173,7 @@ Elements _returned_ from array methods (`state.items.find(...)`, `state.items.fi
 
 **Proxies never escape the selector.** The hook unwraps the selector's return value before handing it to React, so your components, effects, equality functions, and dispatched actions always see plain Redux state. `console.log` of a selector result shows plain data. For the same reason, avoid _storing_ a state object read during one selector run in an external variable for use later - the same rule as holding onto an Immer draft. Use `unwrap()` first if you need to do this.
 
-Reflection on state objects inside a selector (`Object.keys`, spreading, `for...in`, `Object.getOwnPropertyDescriptor`) behaves as on raw state, with one exception: `Object.isFrozen`, `Object.isSealed`, and `Object.isExtensible` report on the proxy, not the state object, so `Object.isFrozen(state.user)` returns `false` even when the store freezes its state. Use `Object.isFrozen(unwrap(state.user))` to check the real object.
+Reflection on nested state objects inside a selector (`Object.keys`, spreading, `for...in`, `Object.getOwnPropertyDescriptor`) behaves as on raw state, with one exception: `Object.isFrozen`, `Object.isSealed`, and `Object.isExtensible` report on the proxy, not the state object, so `Object.isFrozen(state.user)` returns `false` even when the store freezes its state. Use `Object.isFrozen(unwrap(state.user))` to check the real object.
 
 ##### Memoized (Reselect) selectors
 
