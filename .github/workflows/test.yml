@@ -45,6 +45,9 @@ jobs:
       - name: Run test suite
         run: pnpm test
 
+      - name: Run test suite against signal hooks
+        run: pnpm test:signals
+
       - name: Build
         run: pnpm build
 
