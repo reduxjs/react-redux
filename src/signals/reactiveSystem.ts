@@ -33,7 +33,7 @@
  * - `unwatched`'s plain-signal branch calls back into the owning
  *   registry (see `SignalOwner`).
  *
- * `test/signals/reactiveSystemGuard.spec.ts` asserts the shape of the
+ * `test/signals/internals/reactiveSystemGuard.spec.ts` asserts the shape of the
  * upstream `system` export so a breaking change there fails loudly
  * rather than silently.
  */

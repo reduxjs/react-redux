@@ -49,9 +49,9 @@
     },
     {
       "files": [
-        "test/signals/diff.spec.ts",
-        "test/signals/identityArrayTracking.spec.ts",
-        "test/signals/trackingProxy.spec.ts"
+        "test/signals/internals/diff.spec.ts",
+        "test/signals/internals/identityArrayTracking.spec.ts",
+        "test/signals/internals/trackingProxy.spec.ts"
       ],
       "rules": {
         "no-unused-expressions": "off"
