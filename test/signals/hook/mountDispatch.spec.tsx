@@ -65,115 +65,118 @@ const effectKinds = [
   { name: 'useEffect', useMountEffect: useEffect },
 ] as const
 
-describe.each(implementations)('$name: dispatch from a mount effect', (impl) => {
-  const { Provider, useSel } = impl
+describe.each(implementations)(
+  '$name: dispatch from a mount effect',
+  (impl) => {
+    const { Provider, useSel } = impl
 
-  describe.each(effectKinds)('$name', ({ useMountEffect }) => {
-    describe.each([
-      { mode: 'plain', wrap: (n: ReactNode) => n },
-      {
-        mode: 'StrictMode',
-        wrap: (n: ReactNode) => <StrictMode>{n}</StrictMode>,
-      },
-    ])('$mode', ({ wrap }) => {
-      function setup() {
-        const store = makeStore()
-        const seenX: number[] = []
-        const seenY: number[] = []
+    describe.each(effectKinds)('$name', ({ useMountEffect }) => {
+      describe.each([
+        { mode: 'plain', wrap: (n: ReactNode) => n },
+        {
+          mode: 'StrictMode',
+          wrap: (n: ReactNode) => <StrictMode>{n}</StrictMode>,
+        },
+      ])('$mode', ({ wrap }) => {
+        function setup() {
+          const store = makeStore()
+          const seenX: number[] = []
+          const seenY: number[] = []
 
-        function MountDispatcher() {
-          useMountEffect(() => {
-            if (store.getState().a.x === 0) {
-              store.dispatch({ type: 'setX', payload: 1 })
-            }
-          }, [])
-          return null
+          function MountDispatcher() {
+            useMountEffect(() => {
+              if (store.getState().a.x === 0) {
+                store.dispatch({ type: 'setX', payload: 1 })
+              }
+            }, [])
+            return null
+          }
+          function ReadX() {
+            const x = useSel((s: State) => s.a.x)
+            seenX.push(x)
+            return <div data-testid="x">{x}</div>
+          }
+          function ReadY() {
+            const y = useSel((s: State) => s.b.y)
+            seenY.push(y)
+            return <div data-testid="y">{y}</div>
+          }
+
+          const utils = rtl.render(
+            wrap(
+              <Provider store={store}>
+                <ReadX />
+                <MountDispatcher />
+                <ReadY />
+              </Provider>,
+            ),
+          )
+          const text = (id: string) => utils.getByTestId(id).textContent
+          return { store, text, seenX, seenY }
         }
-        function ReadX() {
-          const x = useSel((s: State) => s.a.x)
-          seenX.push(x)
-          return <div data-testid="x">{x}</div>
-        }
-        function ReadY() {
-          const y = useSel((s: State) => s.b.y)
-          seenY.push(y)
-          return <div data-testid="y">{y}</div>
-        }
 
-        const utils = rtl.render(
-          wrap(
-            <Provider store={store}>
-              <ReadX />
-              <MountDispatcher />
-              <ReadY />
-            </Provider>,
-          ),
-        )
-        const text = (id: string) => utils.getByTestId(id).textContent
-        return { store, text, seenX, seenY }
-      }
-
-      it('shows the mount dispatch', () => {
-        const { store, text } = setup()
-        expect(store.getState().a.x).toBe(1)
-        expect(text('x')).toBe('1')
-        expect(text('y')).toBe('0')
-      })
-
-      it('sees a later dispatch that puts the mount-dispatched path back', () => {
-        const { store, text } = setup()
-        expect(text('x')).toBe('1')
-
-        rtl.act(() => {
-          store.dispatch({ type: 'setX', payload: 0 })
+        it('shows the mount dispatch', () => {
+          const { store, text } = setup()
+          expect(store.getState().a.x).toBe(1)
+          expect(text('x')).toBe('1')
+          expect(text('y')).toBe('0')
         })
-        expect(text('x')).toBe('0')
-      })
 
-      it('sees a later dispatch that changes the mount-dispatched path again', () => {
-        const { store, text } = setup()
+        it('sees a later dispatch that puts the mount-dispatched path back', () => {
+          const { store, text } = setup()
+          expect(text('x')).toBe('1')
 
-        rtl.act(() => {
-          store.dispatch({ type: 'setX', payload: 2 })
+          rtl.act(() => {
+            store.dispatch({ type: 'setX', payload: 0 })
+          })
+          expect(text('x')).toBe('0')
         })
-        expect(text('x')).toBe('2')
 
-        rtl.act(() => {
-          store.dispatch({ type: 'setX', payload: 0 })
+        it('sees a later dispatch that changes the mount-dispatched path again', () => {
+          const { store, text } = setup()
+
+          rtl.act(() => {
+            store.dispatch({ type: 'setX', payload: 2 })
+          })
+          expect(text('x')).toBe('2')
+
+          rtl.act(() => {
+            store.dispatch({ type: 'setX', payload: 0 })
+          })
+          expect(text('x')).toBe('0')
         })
-        expect(text('x')).toBe('0')
-      })
 
-      it('sees a revert after an unrelated dispatch in between', () => {
-        const { store, text } = setup()
+        it('sees a revert after an unrelated dispatch in between', () => {
+          const { store, text } = setup()
 
-        rtl.act(() => {
-          store.dispatch({ type: 'setY', payload: 5 })
+          rtl.act(() => {
+            store.dispatch({ type: 'setY', payload: 5 })
+          })
+          expect(text('y')).toBe('5')
+          expect(text('x')).toBe('1')
+
+          rtl.act(() => {
+            store.dispatch({ type: 'setX', payload: 0 })
+          })
+          expect(text('x')).toBe('0')
         })
-        expect(text('y')).toBe('5')
-        expect(text('x')).toBe('1')
 
-        rtl.act(() => {
-          store.dispatch({ type: 'setX', payload: 0 })
+        it('does not re-render an unrelated reader on a later dispatch', () => {
+          const { store, text, seenY } = setup()
+          const before = seenY.length
+
+          rtl.act(() => {
+            store.dispatch({ type: 'setX', payload: 0 })
+          })
+          expect(text('x')).toBe('0')
+          if (impl.name === 'signals') {
+            expect(seenY.length).toBe(before)
+          }
         })
-        expect(text('x')).toBe('0')
-      })
-
-      it('does not re-render an unrelated reader on a later dispatch', () => {
-        const { store, text, seenY } = setup()
-        const before = seenY.length
-
-        rtl.act(() => {
-          store.dispatch({ type: 'setX', payload: 0 })
-        })
-        expect(text('x')).toBe('0')
-        if (impl.name === 'signals') {
-          expect(seenY.length).toBe(before)
-        }
       })
     })
-  })
-})
+  },
+)
 
 // A layout-effect dispatch in a child runs before the provider subscribes.
 // A signal hook whose reads can't be gated by top-level key builds its

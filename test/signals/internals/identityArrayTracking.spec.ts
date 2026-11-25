@@ -1070,11 +1070,19 @@ describe('identity-based array tracking: hooks mounted after a teardown', () => 
 
     // Serializing tracks every element of `b` by identity, and stopping
     // leaves those releases queued when the next hook mounts.
-    const first = mountEngineHook(() => state, (s) => JSON.stringify(s), registry)
+    const first = mountEngineHook(
+      () => state,
+      (s) => JSON.stringify(s),
+      registry,
+    )
     dispatch({ a: [], b: [{ id: 1 }] })
     first.stop()
 
-    const hook = mountEngineHook(() => state, (s) => (s as typeof state).b![0], registry)
+    const hook = mountEngineHook(
+      () => state,
+      (s) => (s as typeof state).b![0],
+      registry,
+    )
     expect(hook.last).toEqual({ id: 1 })
     dispatch({ a: [], b: [0] })
     expect(hook.last).toBe(0)

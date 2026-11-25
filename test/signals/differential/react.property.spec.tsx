@@ -698,7 +698,8 @@ function runProgram({
         const payloads = transitions(step.actions)
         if (!step.flipFirst) log.push(flipLog)
         const flip = () => {
-          if (slot.via === 'state') setters.forEach((set) => set?.(flipped.useAlt))
+          if (slot.via === 'state')
+            setters.forEach((set) => set?.(flipped.useAlt))
           else push()
         }
         rtl.act(() => {

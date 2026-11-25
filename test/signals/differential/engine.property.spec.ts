@@ -267,10 +267,7 @@ function runProgram(
     () => {
       time += MS_PER_DISPATCH
     },
-    settleBound(
-      { maxDispatches: 2, ...sweepOptions[policy] },
-      MS_PER_DISPATCH,
-    ),
+    settleBound({ maxDispatches: 2, ...sweepOptions[policy] }, MS_PER_DISPATCH),
   )
   if (outcome.kind === 'empty') return
   if (outcome.kind === 'stuck') totals.stuckRuns++
