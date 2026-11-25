@@ -20,6 +20,21 @@ export function SignalProvider<
   A extends Action<string> = UnknownAction,
   S extends object = object,
 >(providerProps: SignalProviderProps<A, S>) {
+  if (process.env.NODE_ENV !== 'production') {
+    // The React Server Components build of React has no effect hooks
+    if (typeof useIsomorphicLayoutEffect !== 'function') {
+      throw new Error(
+        'The React Redux `<SignalProvider>` component requires React hooks ' +
+          'that are not available in a React Server Component. This usually ' +
+          'means you are rendering `<SignalProvider>` in a Server Component. ' +
+          'Add the `"use client"` directive to the top of the file that ' +
+          'renders `<SignalProvider>` (or a parent that ends up rendering it) ' +
+          'so it is treated as a Client Component. See ' +
+          'https://react.dev/reference/rsc/use-client for more information.',
+      )
+    }
+  }
+
   const { children, context, serverState, store } = providerProps
 
   // The signal graph and the diff baseline are keyed to the store:
@@ -43,7 +58,7 @@ export function SignalProvider<
     const baseContextValue: SignalContextValue<S, A> = {
       store,
       subscription,
-      getServerState: serverState ? () => serverState : undefined,
+      getServerState: serverState != null ? () => serverState : undefined,
       registry,
     }
 
