@@ -79,7 +79,7 @@ export function SignalProvider<
   // + signal diff on each dispatch
   useIsomorphicLayoutEffect(() => {
     const { subscription } = contextValue
-    subscription.onStateChange = () => {
+    const onStateChange = () => {
       // Run signal diff BEFORE notifying nested subs, so computed values
       // are up-to-date when useSelector/useSignalSelector read them
       const prev = signalState.prevState
@@ -102,12 +102,16 @@ export function SignalProvider<
 
       subscription.notifyNestedSubs()
     }
+    subscription.onStateChange = onStateChange
     subscription.trySubscribe()
 
     // A dispatch between render and this effect: prevState is still the
-    // render-time state, because onStateChange wasn't attached yet.
+    // render-time state, because onStateChange wasn't attached yet. Run the
+    // full handler so the diff baseline advances along with the signals;
+    // notifying alone would leave signals seeded from the newer state
+    // diffed against the older baseline on the next dispatch.
     if (signalState.prevState !== store.getState()) {
-      subscription.notifyNestedSubs()
+      onStateChange()
     }
     return () => {
       subscription.tryUnsubscribe()
