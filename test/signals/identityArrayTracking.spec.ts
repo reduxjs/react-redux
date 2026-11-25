@@ -1074,7 +1074,7 @@ describe('identity-based array tracking: hooks mounted after a teardown', () => 
     dispatch({ a: [], b: [{ id: 1 }] })
     first.stop()
 
-    const hook = mountEngineHook(() => state, (s) => s.b![0], registry)
+    const hook = mountEngineHook(() => state, (s) => (s as typeof state).b![0], registry)
     expect(hook.last).toEqual({ id: 1 })
     dispatch({ a: [], b: [0] })
     expect(hook.last).toBe(0)
