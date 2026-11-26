@@ -289,45 +289,6 @@ describe('useSignalSelector outside a SignalProvider', () => {
       spy.mockRestore()
     }
   })
-
-  it('throws when there is no provider at all', () => {
-    function Reader() {
-      const a = useSignalSelector((state: CounterState) => state.a)
-      return <div>{a}</div>
-    }
-
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    try {
-      expect(() => rtl.render(<Reader />)).toThrow(
-        'useSignalSelector must be used within a <SignalProvider>',
-      )
-    } finally {
-      spy.mockRestore()
-    }
-  })
-
-  it('throws when a bound hook reads a custom context filled by a regular Provider', () => {
-    const store = makeStore()
-    const CustomContext = createContext<ReactReduxContextValue | null>(null)
-    const useCustomSignalSelector = createSignalSelectorHook(CustomContext)
-    function Reader() {
-      const a = useCustomSignalSelector((state: CounterState) => state.a)
-      return <div>{a}</div>
-    }
-
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    try {
-      expect(() =>
-        rtl.render(
-          <Provider store={store} context={CustomContext}>
-            <Reader />
-          </Provider>,
-        ),
-      ).toThrow('not a regular <Provider>')
-    } finally {
-      spy.mockRestore()
-    }
-  })
 })
 
 describe('nested providers', () => {

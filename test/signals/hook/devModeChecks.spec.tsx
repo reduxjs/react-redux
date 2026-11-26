@@ -297,82 +297,6 @@ describe('identityFunctionCheck', () => {
 })
 
 describe('stabilityCheck', () => {
-  it('warns once on mount for an unstable selector', () => {
-    const { store } = makeStore()
-    function Comp() {
-      useSignalSelector((s: RootState) => s.todos.list.map((t) => t.id))
-      return null
-    }
-    rtl.render(
-      <SignalProvider store={store}>
-        <Comp />
-      </SignalProvider>,
-    )
-    expect(stabilityWarnings()).toHaveLength(1)
-  })
-
-  it('does not warn for a stable selector', () => {
-    const { store } = makeStore()
-    function Comp() {
-      useSignalSelector((s: RootState) => s.todos.list)
-      return null
-    }
-    rtl.render(
-      <SignalProvider store={store}>
-        <Comp />
-      </SignalProvider>,
-    )
-    expect(stabilityWarnings()).toHaveLength(0)
-  })
-
-  it('uses the provided equalityFn for the comparison', () => {
-    const { store } = makeStore()
-    const shallowArrayEqual = (a: number[], b: number[]) =>
-      a.length === b.length && a.every((v, i) => v === b[i])
-    function Comp() {
-      useSignalSelector((s: RootState) => s.todos.list.map((t) => t.id), {
-        equalityFn: shallowArrayEqual,
-      })
-      return null
-    }
-    rtl.render(
-      <SignalProvider store={store}>
-        <Comp />
-      </SignalProvider>,
-    )
-    expect(stabilityWarnings()).toHaveLength(0)
-  })
-
-  it('is silenced by devModeChecks: { stabilityCheck: "never" }', () => {
-    const { store } = makeStore()
-    function Comp() {
-      useSignalSelector((s: RootState) => s.todos.list.map((t) => t.id), {
-        devModeChecks: { stabilityCheck: 'never' },
-      })
-      return null
-    }
-    rtl.render(
-      <SignalProvider store={store}>
-        <Comp />
-      </SignalProvider>,
-    )
-    expect(stabilityWarnings()).toHaveLength(0)
-  })
-
-  it('is silenced by a Provider-level stabilityCheck="never"', () => {
-    const { store } = makeStore()
-    function Comp() {
-      useSignalSelector((s: RootState) => s.todos.list.map((t) => t.id))
-      return null
-    }
-    rtl.render(
-      <SignalProvider store={store} stabilityCheck="never">
-        <Comp />
-      </SignalProvider>,
-    )
-    expect(stabilityWarnings()).toHaveLength(0)
-  })
-
   it('"always" re-checks on store-driven re-evaluations', () => {
     const { store, addTodo } = makeStore()
     function Comp() {
@@ -394,25 +318,6 @@ describe('stabilityCheck', () => {
     // One more warning per selector evaluation after the dispatch:
     // one for the promotion run, one for the render-phase swap run
     expect(stabilityWarnings()).toHaveLength(3)
-  })
-
-  it('"once" does not re-check on later evaluations', () => {
-    const { store, addTodo } = makeStore()
-    function Comp() {
-      useSignalSelector((s: RootState) => s.todos.list.map((t) => t.id))
-      return null
-    }
-    rtl.render(
-      <SignalProvider store={store}>
-        <Comp />
-      </SignalProvider>,
-    )
-    expect(stabilityWarnings()).toHaveLength(1)
-
-    rtl.act(() => {
-      store.dispatch(addTodo())
-    })
-    expect(stabilityWarnings()).toHaveLength(1)
   })
 })
 

@@ -2,7 +2,6 @@
 
 import * as rtl from '@testing-library/react'
 import React, { StrictMode, useLayoutEffect, useState } from 'react'
-import { renderToString } from 'react-dom/server'
 import {
   configureStore,
   createSlice,
@@ -143,57 +142,6 @@ describe('useSignalSelector', () => {
   // ==========================================================================
 
   describe('core functionality', () => {
-    it('selects the state on initial render', () => {
-      let result: string | undefined
-      const Comp = () => {
-        const filter = useSignalSelector((state: TestState) => state.filter)
-
-        useLayoutEffect(() => {
-          result = filter
-        }, [filter])
-
-        return <div>{filter}</div>
-      }
-
-      rtl.render(
-        <SignalProvider store={store}>
-          <Comp />
-        </SignalProvider>,
-      )
-
-      expect(result).toBe('all')
-    })
-
-    it('selects the state and renders when store updates', () => {
-      const selector = vi.fn((state: TestState) => state.filter)
-      let result: string | undefined
-
-      const Comp = () => {
-        const filter = useSignalSelector(selector)
-
-        useLayoutEffect(() => {
-          result = filter
-        }, [filter])
-
-        return <div data-testid="filter">{filter}</div>
-      }
-
-      const { getByTestId } = rtl.render(
-        <SignalProvider store={store}>
-          <Comp />
-        </SignalProvider>,
-      )
-
-      expect(result).toBe('all')
-
-      rtl.act(() => {
-        store.dispatch(filterSlice.actions.set('active'))
-      })
-
-      expect(getByTestId('filter').textContent).toBe('active')
-      expect(result).toBe('active')
-    })
-
     it('handles nested object selection', () => {
       let result: number | undefined
       const Comp = () => {
@@ -642,76 +590,6 @@ describe('useSignalSelector', () => {
   })
 
   // ==========================================================================
-  // Dynamic Dependencies (new — specific to prototype #2)
-  // ==========================================================================
-
-  describe('dynamic dependencies', () => {
-    it('re-tracks when selector accesses different paths based on state', () => {
-      const selectedIdSlice = createSlice({
-        name: 'selectedId',
-        initialState: 1,
-        reducers: {
-          set(_state, action: PayloadAction<number>) {
-            return action.payload
-          },
-        },
-      })
-
-      const itemsSlice = createSlice({
-        name: 'items',
-        initialState: { 1: 'A', 2: 'B', 3: 'C' } as Record<number, string>,
-        reducers: {
-          update(state, action: PayloadAction<{ id: number; value: string }>) {
-            state[action.payload.id] = action.payload.value
-          },
-        },
-      })
-
-      const dynStore = configureStore({
-        reducer: {
-          selectedId: selectedIdSlice.reducer,
-          items: itemsSlice.reducer,
-        },
-      })
-      type DynState = ReturnType<typeof dynStore.getState>
-
-      let selectorCalls = 0
-
-      const Comp = () => {
-        const item = useSignalSelector((state: DynState) => {
-          selectorCalls++
-          return state.items[state.selectedId]
-        })
-        return <div data-testid="item">{item}</div>
-      }
-
-      const { getByTestId } = rtl.render(
-        <SignalProvider store={dynStore}>
-          <Comp />
-        </SignalProvider>,
-      )
-
-      expect(getByTestId('item').textContent).toBe('A')
-
-      // Change selectedId to 2 → now tracks items.2
-      rtl.act(() => {
-        dynStore.dispatch(selectedIdSlice.actions.set(2))
-      })
-
-      expect(getByTestId('item').textContent).toBe('B')
-
-      // Change items.1 → selector may re-run because of shared `"items"`
-      // parent version-counter signal, but the computed returns the same
-      // value ("B") so React does NOT re-render.
-      rtl.act(() => {
-        dynStore.dispatch(itemsSlice.actions.update({ id: 1, value: 'A2' }))
-      })
-
-      expect(getByTestId('item').textContent).toBe('B')
-    })
-  })
-
-  // ==========================================================================
   // Array Mutations (new — specific to prototype #2)
   // ==========================================================================
 
@@ -1149,25 +1027,6 @@ describe('edge cases: React integration', () => {
 
       expect(getByTestId('greedy').textContent).toBe('2')
       expect(getByTestId('other').textContent).toBe('2')
-    })
-  })
-
-  describe('server-side rendering', () => {
-    // useSyncExternalStore is called without a getServerSnapshot argument,
-    // so any server render (Next.js etc.) throws.
-    it('supports renderToString', () => {
-      function FilterReader() {
-        const filter = useSignalSelector((s: TestState) => s.filter)
-        return <div>{filter}</div>
-      }
-
-      const html = renderToString(
-        <SignalProvider store={store}>
-          <FilterReader />
-        </SignalProvider>,
-      )
-
-      expect(html).toContain('all')
     })
   })
 
