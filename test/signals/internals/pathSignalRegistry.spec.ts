@@ -796,7 +796,7 @@ describe('PathSignalRegistry', () => {
 describe('identity-based array tracking: hooks mounted after a teardown', () => {
   it('a hook mounted right after another stops still sees its element replaced', () => {
     let state: { a: unknown[]; b?: unknown[] } = { a: [] }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const dispatch = (next: typeof state) => {
       const prev = state
       state = next
@@ -825,10 +825,10 @@ describe('identity-based array tracking: hooks mounted after a teardown', () => 
   })
 })
 
-describe('edge cases: registry lifecycle', () => {
+describe('registry lifecycle', () => {
   it('prune clears array identity metadata', () => {
     const state = { items: [{ id: 1, v: 1 }] }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     // Element access detects the key field and stores it on the array record

@@ -38,6 +38,7 @@ import * as rtl from '@testing-library/react'
 import React, { StrictMode, Suspense, startTransition, useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import { noStabilityCheck } from '../helpers/env'
 import { createRegistryCapture } from '../helpers/react'
 import { EMPTY_STATS } from '../helpers/registry'
 
@@ -78,10 +79,6 @@ const makeStore = () => {
 }
 
 type AppState = ReturnType<ReturnType<typeof makeStore>['store']['getState']>
-
-const noStabilityCheck = {
-  devModeChecks: { stabilityCheck: 'never' as const },
-}
 
 // Enumerating the root makes the probe mark the hook ungateable, so the
 // mount path builds the deep graph eagerly, during render. The nested

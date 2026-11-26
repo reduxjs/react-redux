@@ -14,9 +14,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { keysMetaPath } from '../../../src/signals/arrayKeys'
 import { useSignalContext } from '../../../src/signals/context'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
+import { IS_SIGNALS } from '../helpers/env'
 import { promoteToDeepTier, renderSignalSelector } from '../helpers/react'
-
-const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
 
 const slice = createSlice({
   name: 'data',

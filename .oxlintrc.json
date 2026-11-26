@@ -50,7 +50,6 @@
     {
       "files": [
         "test/signals/internals/diff.spec.ts",
-        "test/signals/internals/identityArrayTracking.spec.ts",
         "test/signals/internals/trackingProxy.spec.ts"
       ],
       "rules": {

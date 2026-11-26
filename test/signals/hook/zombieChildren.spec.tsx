@@ -25,10 +25,10 @@ import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import * as React from 'react'
 import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { SignalProvider } from '../../../src/signals/SignalProvider'
 import { useSignalSelector } from '../../../src/signals/useSignalSelector'
 import { ErrorBoundary } from '../helpers/react'
+import { createRegistry } from '../helpers/registry'
 
 interface Item {
   id: number
@@ -63,7 +63,7 @@ describe('prune fires non-numeric primitive leaf signals', () => {
     ['boolean', true],
     ['null', null],
   ])('a computed depending on a pruned %s leaf re-runs', (_kind, value) => {
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     registry.getOrCreate('items.child', value)
 
     let runs = 0

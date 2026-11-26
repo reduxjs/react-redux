@@ -21,6 +21,7 @@ import * as rtl from '@testing-library/react'
 import React, { useCallback, useState } from 'react'
 import { legacy_createStore as createStore } from 'redux'
 import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import { noStabilityCheck } from '../helpers/env'
 import { createRegistryCapture } from '../helpers/react'
 
 const makeStore = () => {
@@ -55,10 +56,6 @@ const makeStore = () => {
 }
 
 type AppState = ReturnType<ReturnType<typeof makeStore>['store']['getState']>
-
-const noStabilityCheck = {
-  devModeChecks: { stabilityCheck: 'never' as const },
-}
 
 afterEach(() => {
   rtl.cleanup()

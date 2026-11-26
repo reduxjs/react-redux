@@ -1,16 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import { getProxyPath } from '../../../src/signals/proxyIdentity'
 import { untrackResult } from '../../../src/signals/untrack'
+import { createRegistry } from '../helpers/registry'
 
 const isTrackingProxy = (v: unknown) =>
   v !== null && typeof v === 'object' && getProxyPath(v) !== undefined
 
 describe('untrackResult unit behavior', () => {
   function setup() {
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const state = {
       a: { x: 1 },
       list: [{ id: 1, v: 'one' }],
@@ -92,7 +91,7 @@ describe('untrackResult with derived arrays', () => {
   }
 
   function setupArrayState() {
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const rows: Row[] = []
     for (let i = 0; i < 10; i++) {
       rows.push({ id: i, status: i % 2 === 0 ? 'even' : 'odd', score: i * 10 })

@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import { diffAndUpdateSignals, reconcileState } from '../../../src/signals/diff'
-import { setupRegistry } from '../helpers/registry'
+import { createRegistry, setupRegistry } from '../helpers/registry'
 import { deepFreeze } from '../helpers/state'
 
 describe('diffAndUpdateSignals', () => {
@@ -363,7 +362,7 @@ describe('diffAndUpdateSignals', () => {
       const prev = [1, 2, 3]
       const next = [1]
 
-      const registry = createPathSignalRegistry(alienEngine)
+      const registry = createRegistry()
       // Manually track some paths
       const proxy = createTrackingProxy({ items: prev }, '', registry)
       proxy.items.length // triggers @@keys and items tracking
@@ -665,7 +664,7 @@ describe('diffAndUpdateSignals', () => {
     it('handles empty objects', () => {
       const prev = {}
       const next = { a: 1 }
-      const registry = createPathSignalRegistry(alienEngine)
+      const registry = createRegistry()
 
       expect(() => diffAndUpdateSignals(prev, next, '', registry)).not.toThrow()
       // Nothing was tracked, so nothing should be created
@@ -674,7 +673,7 @@ describe('diffAndUpdateSignals', () => {
 
     it('handles root-level primitive comparison', () => {
       // Edge case: comparing primitives at root level
-      const registry = createPathSignalRegistry(alienEngine)
+      const registry = createRegistry()
       const rootSig = registry.getOrCreate('root', 'old')
 
       expect(() =>
@@ -688,7 +687,7 @@ describe('diffAndUpdateSignals', () => {
       const prev = { value: 10 }
       const next = { value: 20 }
 
-      const registry = createPathSignalRegistry(alienEngine)
+      const registry = createRegistry()
       const valueSig = registry.getOrCreate('nested.obj.value', 10)
 
       // Diff starting from a path offset
@@ -1451,7 +1450,7 @@ describe('identity-based array tracking: diff', () => {
   })
 })
 
-describe('edge cases: NaN leaf values', () => {
+describe('NaN leaf values', () => {
   it('does not re-run a computed when an untouched NaN leaf is re-diffed', () => {
     // The diff's skip checks use Object.is semantics for NaN (self-inequal
     // values on both sides are treated as equal), so an untouched NaN leaf
@@ -1460,7 +1459,7 @@ describe('edge cases: NaN leaf values', () => {
     const prev = { metrics: { ratio: NaN, count: 1 } }
     const next = { metrics: { ratio: NaN, count: 2 } }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(prev, '', registry)
 
     let runs = 0
@@ -1478,7 +1477,7 @@ describe('edge cases: NaN leaf values', () => {
   })
 })
 
-describe('edge cases: same-length keyed array replacement (remove + add)', () => {
+describe('same-length keyed array replacement (remove + add)', () => {
   // diffArrayByKey's general path tracks seen keys unconditionally, so a
   // same-length replacement (remove one entity, add another) prunes the
   // removed entity's signals even though the array length is unchanged.
@@ -1488,7 +1487,7 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
     const prev = { items: [shared, { id: 2, text: 'second' }] }
     const next = { items: [shared, { id: 9, text: 'ninth' }] }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.items[0].text).toBe('first')
     expect(proxy.items[1].text).toBe('second')
@@ -1505,7 +1504,7 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
     const prev = { items: [{ id: 'temp-1', text: 'draft' }] }
     const next = { items: [{ id: 42, text: 'draft' }] }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.items[0].text).toBe('draft')
     expect(registry.has('items.{id:temp-1}.text')).toBe(true)
@@ -1522,7 +1521,7 @@ describe('edge cases: same-length keyed array replacement (remove + add)', () =>
     const prev = { items: [shared, { id: 2, text: 'second' }] }
     const next = { items: [shared, { id: 9, text: 'ninth' }] }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.items[1].text).toBe('second')
 

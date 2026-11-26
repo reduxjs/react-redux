@@ -24,10 +24,9 @@ import { Provider, useSelector } from 'react-redux'
 import { useDispatch, useStore } from '../../../src/index'
 import { unwrap } from '../../../src/signals/proxyIdentity'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { IS_SIGNALS } from '../helpers/env'
 import { createRegistryCapture } from '../helpers/react'
 import { EMPTY_STATS } from '../helpers/registry'
-
-const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
 
 interface Post {
   id: number

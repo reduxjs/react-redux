@@ -6,7 +6,6 @@ import {
 import { getProxyPath, unwrap } from '../../../src/signals/proxyIdentity'
 import { reconcileState } from '../../../src/signals/diff'
 import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { createRegistry, setupRegistry } from '../helpers/registry'
 import { deepFreeze } from '../helpers/state'
@@ -1066,7 +1065,7 @@ describe('identity-based array tracking: proxy', () => {
     const state = deepFreeze({
       items: [{ id: 1, name: 'Alice' }],
     })
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     // Before access — no record
@@ -1085,7 +1084,7 @@ describe('identity-based array tracking: proxy', () => {
         { id: 2, name: 'Bob' },
       ],
     })
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     ;(proxy as any).items[0].name
@@ -1138,12 +1137,12 @@ describe('identity-based array tracking: proxy', () => {
   })
 })
 
-describe('edge cases: common selector patterns (smoke)', () => {
+describe('common selector patterns (smoke)', () => {
   it('JSON.stringify over a proxied subtree matches the raw state', () => {
     const state = {
       settings: { theme: 'dark', flags: { beta: true }, list: [1, 2, 3] },
     }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(JSON.stringify(proxy.settings)).toBe(JSON.stringify(state.settings))
@@ -1151,7 +1150,7 @@ describe('edge cases: common selector patterns (smoke)', () => {
 
   it('Object.values / Object.entries work through the proxy', () => {
     const state = { counts: { a: 1, b: 2 } }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(Object.values(proxy.counts)).toEqual([1, 2])
@@ -1163,7 +1162,7 @@ describe('edge cases: common selector patterns (smoke)', () => {
 
   it('destructuring a proxied object reads tracked values', () => {
     const state = { settings: { theme: 'dark', fontSize: 12 } }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     const { theme, fontSize } = proxy.settings
@@ -1175,7 +1174,7 @@ describe('edge cases: common selector patterns (smoke)', () => {
 
   it('reading a missing index of a primitive array subscribes coarsely and returns undefined', () => {
     const state = { ids: [1, 2, 3] }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.ids[5]).toBeUndefined()
@@ -1185,14 +1184,14 @@ describe('edge cases: common selector patterns (smoke)', () => {
   })
 })
 
-describe('edge cases: leafTracker capture through the shared proxy cache', () => {
+describe('leafTracker capture through the shared proxy cache', () => {
   // The active leaf tracker lives in registry.evaluation.tracker and is
   // swapped in for each evaluation, so cached proxies created by an
   // earlier evaluation record into the CURRENT evaluation's tracker.
 
   it('a second evaluation records leaf accesses into its own tracker', () => {
     const state = { settings: { theme: 'dark' } }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
 
     // Evaluation A creates and caches all the proxies
     const trackerA = createLeafTracker()
@@ -1211,7 +1210,7 @@ describe('edge cases: leafTracker capture through the shared proxy cache', () =>
   })
 })
 
-describe('edge cases: non-plain objects in state', () => {
+describe('non-plain objects in state', () => {
   // Non-plain objects (Date, Map, Set, class instances) are opaque leaves:
   // the proxy returns them raw (no shell, so internal-slot methods work)
   // and tracks them by reference via a version signal at their path.
@@ -1219,7 +1218,7 @@ describe('edge cases: non-plain objects in state', () => {
   it('supports calling Date methods on a state Date', () => {
     const createdAt = new Date(2020, 0, 1)
     const state = { createdAt }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.createdAt.getTime()).toBe(createdAt.getTime())
@@ -1227,7 +1226,7 @@ describe('edge cases: non-plain objects in state', () => {
 
   it('supports calling Map methods on a state Map', () => {
     const state = { lookup: new Map([['a', 1]]) }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.lookup.get('a')).toBe(1)
@@ -1235,7 +1234,7 @@ describe('edge cases: non-plain objects in state', () => {
 
   it('supports calling Set methods on a state Set', () => {
     const state = { tags: new Set(['x']) }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.tags.has('x')).toBe(true)
@@ -1243,7 +1242,7 @@ describe('edge cases: non-plain objects in state', () => {
 
   it('instanceof checks work through the proxy (getPrototypeOf trap)', () => {
     const state = { createdAt: new Date(2020, 0, 1) }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.createdAt instanceof Date).toBe(true)
@@ -1251,7 +1250,7 @@ describe('edge cases: non-plain objects in state', () => {
 
   it('reads Map.size through the proxy (getter invoked on the real target)', () => {
     const state = { lookup: new Map([['a', 1]]) }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.lookup.size).toBe(1)

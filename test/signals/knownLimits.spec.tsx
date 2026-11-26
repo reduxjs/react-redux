@@ -21,9 +21,10 @@ import {
   unwrap,
   useSignalSelector,
 } from '../../src/signals/index'
+import { noStabilityCheck } from './helpers/env'
 import { promoteToDeepTier, renderSignalSelector } from './helpers/react'
+import { createRegistry } from './helpers/registry'
 import { alienEngine } from '../../src/signals/engine'
-import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import {
   createLeafTracker,
   createTrackingProxy,
@@ -36,10 +37,6 @@ const isTrackingProxy = (v: unknown) =>
   v !== null && typeof v === 'object' && getProxyPath(v) !== undefined
 
 describe('the root state must be a plain object', () => {
-  const noStabilityCheck = {
-    devModeChecks: { stabilityCheck: 'never' as const },
-  }
-
   it('a Map root throws on mount instead of falling back untracked', () => {
     // The tracking proxy's shell breaks Map method receivers, so mount
     // throws "Method Map.prototype.get called on incompatible receiver".
@@ -130,7 +127,7 @@ describe('Map, Set, Date and class instances are tracked by reference', () => {
     const prev = { user: alice }
     const next = { user: new User('Bob') }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(prev, '', registry)
 
     // The instance comes back raw — no proxy shell, no child signals.
@@ -234,7 +231,7 @@ describe('proxies and identity', () => {
 
 describe('frozen derived containers keep their proxies', () => {
   function setup() {
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const state = { a: { x: 1 } }
     Object.freeze(state.a)
     Object.freeze(state)
@@ -313,7 +310,7 @@ describe('aliased state objects (same object at two paths)', () => {
     const item = { id: 1, name: 'a' }
     const state = { items: [item], selected: item }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     // Traverse via items first — item's proxy is cached with path "items.{id:1}"
@@ -335,7 +332,7 @@ describe('aliased state objects (same object at two paths)', () => {
     const item = { id: 1, name: 'a' }
     const state = { items: [item], selected: item }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const tracker = createLeafTracker()
     registry.evaluation.tracker = tracker
     const proxy = createTrackingProxy(state, '', registry)

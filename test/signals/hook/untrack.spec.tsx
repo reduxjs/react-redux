@@ -4,7 +4,11 @@
  *
  * Tracking proxies are evaluation-scoped tools. Components, effects,
  * refs, DevTools, and dispatch payloads should only ever see raw
- * (Immer-frozen) state. These tests pin that boundary.
+ * (Immer-frozen) state. These tests pin that boundary, and check that
+ * reads through a proxy kept past its evaluation record nothing.
+ *
+ * Unit tests for untrackResult itself live in
+ * internals/untrackResult.spec.ts.
  */
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'

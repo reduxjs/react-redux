@@ -1,7 +1,6 @@
 import { describe, it, test, expect, vi } from 'vitest'
 import { createSelector } from 'reselect'
 import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import {
   createLeafTracker,
@@ -770,7 +769,7 @@ describe('Array method overrides on tracking proxy', () => {
         }),
       )
       const state = deepFreeze(items)
-      const registry = createPathSignalRegistry(alienEngine)
+      const registry = createRegistry()
       const proxy = createTrackingProxy(state, 'items', registry)
 
       // selectById pattern
@@ -2025,7 +2024,7 @@ const isElementPath = (p: string) => /^comments\.entities\.\d+/.test(p)
 
 describe('dependency churn with memoized collection selectors', () => {
   it('keeps element signals stable when a shared selectAll is memoized', () => {
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const recorder = instrument(registry)
     let state = makeState()
     const getState = () => state

@@ -5,9 +5,9 @@ import {
   getKeyValue,
 } from '../../../src/signals/arrayKeys'
 import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import { reconcileState } from '../../../src/signals/diff'
+import { createRegistry } from '../helpers/registry'
 
 describe('findKeyField', () => {
   it('detects "id" field', () => {
@@ -132,7 +132,7 @@ describe('getKeyValue', () => {
   })
 })
 
-describe('edge cases: object keys with reserved path characters', () => {
+describe('object keys with reserved path characters', () => {
   // Object property keys are encoded with the same %-escaping as identity
   // key values. Without encoding, state like { 'a.b': 1, a: { b: 2 } }
   // maps both locations to the path string "a.b" — updates clobber each
@@ -140,7 +140,7 @@ describe('edge cases: object keys with reserved path characters', () => {
 
   it('a dotted key and a nested path do not share a signal', () => {
     const prev = { 'a.b': 1, a: { b: 2 } }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     let current: typeof prev = prev
 
     let dottedRuns = 0
@@ -185,7 +185,7 @@ describe('edge cases: object keys with reserved path characters', () => {
     const prev = { queries: { [key]: { status: 'pending' } } }
     const next = { queries: { [key]: { status: 'fulfilled' } } }
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     let runs = 0
     const computed = alienEngine.computed(() => {
       runs++
@@ -201,7 +201,7 @@ describe('edge cases: object keys with reserved path characters', () => {
 
   it('a state key literally named "@@keys" does not collide with the keys meta signal', () => {
     const prev = { obj: { '@@keys': 'v1', x: 1 } }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(prev, '', registry)
 
     expect(proxy.obj['@@keys']).toBe('v1')
@@ -236,7 +236,7 @@ describe('edge cases: object keys with reserved path characters', () => {
       items: [{ id: 1, name: 'real' }],
       lookup: { '{id:1}': 'literal' },
     }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.items[0].name).toBe('real')
@@ -247,7 +247,7 @@ describe('edge cases: object keys with reserved path characters', () => {
 
   it('column signals encode scanned property names', () => {
     const state = { rows: [{ id: 1, 'a.b': 'x' }] }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     const found = proxy.rows.find((r) => r['a.b'] === 'x')
@@ -257,7 +257,7 @@ describe('edge cases: object keys with reserved path characters', () => {
   })
 })
 
-describe('edge cases: identity key values', () => {
+describe('identity key values', () => {
   it('numeric and string key values produce distinct identity paths', () => {
     // {id: 1} builds "items.{id:1}" while {id: "1"} builds 'items.{id:"1"}' —
     // numeric-looking string keys are quoted to avoid colliding.
@@ -280,7 +280,7 @@ describe('edge cases: identity key values', () => {
     // splits on '.', so dots (and %, {, }, ", @) in key values are
     // percent-escaped: "users.{id:a%40b%2Ecom}.name".
     const state = { users: [{ id: 'a@b.com', name: 'Alice' }] }
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
 
     expect(proxy.users[0].name).toBe('Alice')
@@ -293,7 +293,7 @@ describe('edge cases: identity key values', () => {
     const identityPath = buildIdentityPath('users', 'id', 'a@b.com')
     expect(identityPath).toBe('users.{id:a%40b%2Ecom}')
 
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const proxy = createTrackingProxy(prev, '', registry)
     expect(proxy.users[0].name).toBe('Alice')
     expect(registry.has(`${identityPath}.name`)).toBe(true)

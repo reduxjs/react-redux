@@ -25,9 +25,8 @@ import type { Reducer, Store } from 'redux'
 import { legacy_createStore as createStore } from 'redux'
 import { describe, expect, it, vi } from 'vitest'
 import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
-import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { createTrackingProxy } from '../../../src/signals/trackingProxy'
+import { createRegistry } from '../helpers/registry'
 
 describe('in-place mutation (mutable slices)', () => {
   interface MutState {
@@ -336,7 +335,7 @@ describe('non-plain values in state (Map, class instances)', () => {
 
 describe('selectors that mutate state', () => {
   const buildProxy = () => {
-    const registry = createPathSignalRegistry(alienEngine)
+    const registry = createRegistry()
     const state = {
       items: [3, 1, 2],
       user: { name: 'alice' },
