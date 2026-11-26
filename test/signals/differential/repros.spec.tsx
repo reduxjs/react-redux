@@ -9,63 +9,14 @@ import { legacy_createStore as createStore } from 'redux'
 import { createSelector } from 'reselect'
 import { afterEach, describe, expect, it } from 'vitest'
 import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
-import { useSignalContext } from '../../../src/signals/context'
-import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
-
-type Replace = { type: 'replace'; payload: object }
-const reducer = (s: object = {}, a: Replace | { type: string }) =>
-  a.type === 'replace' ? (a as Replace).payload : s
+import {
+  renderPromotedWithReplace as renderPromoted,
+  replaceReducer as reducer,
+} from '../helpers/react'
 
 afterEach(() => {
   rtl.cleanup()
 })
-
-const cloneShallow = (v: unknown): unknown =>
-  Array.isArray(v) ? [...v] : v !== null && typeof v === 'object' ? { ...v } : v
-
-function renderPromoted<S extends object>(
-  initial: S,
-  selector: (s: S) => unknown,
-) {
-  const store = createStore(reducer, initial)
-  const seen: { current: unknown } = { current: undefined }
-  const registry: { current: PathSignalRegistry | undefined } = {
-    current: undefined,
-  }
-  function Grab() {
-    registry.current = useSignalContext().registry
-    return null
-  }
-  function Comp() {
-    seen.current = useSignalSelector(selector)
-    return null
-  }
-  const view = rtl.render(
-    <SignalProvider store={store}>
-      <Grab />
-      <Comp />
-    </SignalProvider>,
-  )
-  const replace = (payload: object) =>
-    rtl.act(() => {
-      store.dispatch({ type: 'replace', payload })
-    })
-  // New references for every root value wake the hook's coarse
-  // subscription and move it to the deep (signal-tracked) tier.
-  const state = store.getState() as Record<string, unknown>
-  replace(
-    Object.fromEntries(
-      Object.entries(state).map(([k, v]) => [k, cloneShallow(v)]),
-    ),
-  )
-  const unmountHook = () =>
-    view.rerender(
-      <SignalProvider store={store}>
-        <Grab />
-      </SignalProvider>,
-    )
-  return { replace, seen, registry, unmountHook }
-}
 
 describe('keyed array elements that change position', () => {
   // An index read on a keyed array tracks the element's identity path

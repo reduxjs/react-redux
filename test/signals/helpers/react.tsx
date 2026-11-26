@@ -1,5 +1,6 @@
 import * as rtl from '@testing-library/react'
 import * as React from 'react'
+import { legacy_createStore as createStore } from 'redux'
 import type { Action, Store } from 'redux'
 import { useSignalContext } from '../../../src/signals/context'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
@@ -57,6 +58,66 @@ export function promoteToDeepTier<A extends Action>(
   rtl.act(() => {
     store.dispatch(action)
   })
+}
+
+type Replace = { type: 'replace'; payload: object }
+/** A reducer whose only action, `replace`, swaps in a whole new state. */
+export const replaceReducer = (
+  s: object = {},
+  a: Replace | { type: string },
+) => (a.type === 'replace' ? (a as Replace).payload : s)
+
+const cloneShallow = (v: unknown): unknown =>
+  Array.isArray(v) ? [...v] : v !== null && typeof v === 'object' ? { ...v } : v
+
+/**
+ * Renders one `useSignalSelector` hook over a store whose only action
+ * replaces the whole state, then promotes it to the deep tier.
+ * `unmountHook()` unmounts the hook but keeps the provider mounted, so
+ * `registry.current` can be checked for leftovers.
+ */
+export function renderPromotedWithReplace<S extends object>(
+  initial: S,
+  selector: (s: S) => unknown,
+) {
+  const store = createStore(replaceReducer, initial)
+  const seen: { current: unknown } = { current: undefined }
+  const registry: { current: PathSignalRegistry | undefined } = {
+    current: undefined,
+  }
+  function Grab() {
+    registry.current = useSignalContext().registry
+    return null
+  }
+  function Comp() {
+    seen.current = useSignalSelector(selector)
+    return null
+  }
+  const view = rtl.render(
+    <SignalProvider store={store}>
+      <Grab />
+      <Comp />
+    </SignalProvider>,
+  )
+  const replace = (payload: object) =>
+    rtl.act(() => {
+      store.dispatch({ type: 'replace', payload })
+    })
+  // New references for every root value wake the hook's coarse
+  // subscription and move it to the deep (signal-tracked) tier.
+  const state = store.getState() as Record<string, unknown>
+  replace(
+    Object.fromEntries(
+      Object.entries(state).map(([k, v]) => [k, cloneShallow(v)]),
+    ),
+  )
+  const unmountHook = () =>
+    view.rerender(
+      <SignalProvider store={store}>
+        <Grab />
+      </SignalProvider>,
+    )
+  return { replace, seen, registry, unmountHook }
 }
 
 export class ErrorBoundary extends React.Component<
