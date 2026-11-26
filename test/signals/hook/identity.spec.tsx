@@ -1558,3 +1558,89 @@ describe('state object embedded in a derived result and read through', () => {
     }
   })
 })
+
+describe('identity comparison across multiple components', () => {
+  const settingsSlice = createSlice({
+    name: 'settings',
+    initialState: { theme: 'dark', fontSize: 12 },
+    reducers: {
+      setFontSize(state, action: PayloadAction<number>) {
+        state.fontSize = action.payload
+      },
+    },
+  })
+
+  function createTestStore() {
+    return configureStore({ reducer: { settings: settingsSlice.reducer } })
+  }
+
+  type TestState = ReturnType<ReturnType<typeof createTestStore>['getState']>
+
+  let store: ReturnType<typeof createTestStore>
+
+  beforeEach(() => {
+    store = createTestStore()
+  })
+
+  it('control: a lone component tracks identity changes of a leaf object', () => {
+    const originalSettings = store.getState().settings
+
+    function IdentityWatcher() {
+      const result = useSignalSelector((s: TestState) =>
+        unwrap(s.settings) === originalSettings ? 'same' : 'changed',
+      )
+      return <div data-testid="identity">{result}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        <IdentityWatcher />
+      </SignalProvider>,
+    )
+
+    expect(getByTestId('identity').textContent).toBe('same')
+
+    rtl.act(() => {
+      store.dispatch(settingsSlice.actions.setFontSize(99))
+    })
+
+    expect(getByTestId('identity').textContent).toBe('changed')
+  })
+
+  // The active leaf tracker lives in registry.evaluation.tracker and is
+  // swapped in per evaluation, so component B's identity-only reads land
+  // in B's own tracker even when component A's earlier traversal already
+  // populated the proxy cache.
+  it('a second component still tracks identity changes when another component traversed the same slice first', () => {
+    const originalSettings = store.getState().settings
+
+    function ThemeReader() {
+      const theme = useSignalSelector((s: TestState) => s.settings.theme)
+      return <div data-testid="theme">{theme}</div>
+    }
+
+    function IdentityWatcher() {
+      const result = useSignalSelector((s: TestState) =>
+        unwrap(s.settings) === originalSettings ? 'same' : 'changed',
+      )
+      return <div data-testid="identity">{result}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        {/* A mounts first, creating + caching the proxies with its tracker */}
+        <ThemeReader />
+        <IdentityWatcher />
+      </SignalProvider>,
+    )
+
+    expect(getByTestId('identity').textContent).toBe('same')
+
+    // Changes fontSize only — theme untouched, settings ref replaced
+    rtl.act(() => {
+      store.dispatch(settingsSlice.actions.setFontSize(99))
+    })
+
+    expect(getByTestId('identity').textContent).toBe('changed')
+  })
+})

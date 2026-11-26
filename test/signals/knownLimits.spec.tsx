@@ -6,8 +6,12 @@
  */
 import React from 'react'
 import * as rtl from '@testing-library/react'
-import { configureStore, createSlice } from '@reduxjs/toolkit'
-import { describe, it, expect } from 'vitest'
+import {
+  configureStore,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit'
+import { beforeEach, describe, it, expect } from 'vitest'
 import {
   SignalProvider,
   unwrap,
@@ -205,5 +209,52 @@ describe('proxies and identity', () => {
       (s) => s.data.items.find((i) => i === s.data.current)?.id,
     )
     expect(result).toEqual({ probeTier: 2, deepTier: undefined })
+  })
+})
+
+describe('root identity selector', () => {
+  const filterSlice = createSlice({
+    name: 'filter',
+    initialState: 'all' as 'all' | 'active' | 'completed',
+    reducers: {
+      set(_state, action: PayloadAction<'all' | 'active' | 'completed'>) {
+        return action.payload
+      },
+    },
+  })
+
+  function createTestStore() {
+    return configureStore({ reducer: { filter: filterSlice.reducer } })
+  }
+
+  type TestState = ReturnType<ReturnType<typeof createTestStore>['getState']>
+
+  let store: ReturnType<typeof createTestStore>
+
+  beforeEach(() => {
+    store = createTestStore()
+  })
+
+  // The root proxy's path is '' and the diff never updates the '' path,
+  // so `s => s` establishes no firing dependency.
+  it.fails('state => state re-renders on dispatch', () => {
+    function WholeState() {
+      const state = useSignalSelector((s: TestState) => s)
+      return <div data-testid="filter">{state.filter}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        <WholeState />
+      </SignalProvider>,
+    )
+
+    expect(getByTestId('filter').textContent).toBe('all')
+
+    rtl.act(() => {
+      store.dispatch(filterSlice.actions.set('active'))
+    })
+
+    expect(getByTestId('filter').textContent).toBe('active')
   })
 })
