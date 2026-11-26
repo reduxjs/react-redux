@@ -4,7 +4,16 @@
  * "Gotchas"). Sweep policy shortfalls live in the table in
  * internals/sweepPolicy/sweepPolicy.spec.ts.
  */
+import React from 'react'
+import * as rtl from '@testing-library/react'
+import { configureStore, createSlice } from '@reduxjs/toolkit'
 import { describe, it, expect } from 'vitest'
+import {
+  SignalProvider,
+  unwrap,
+  useSignalSelector,
+} from '../../src/signals/index'
+import { promoteToDeepTier, renderSignalSelector } from './helpers/react'
 import { alienEngine } from '../../src/signals/engine'
 import { createPathSignalRegistry } from '../../src/signals/pathSignalRegistry'
 import {
@@ -121,5 +130,80 @@ describe('frozen derived containers keep their proxies', () => {
     // Can't repair in place — proxies survive. Frozen raw state subtrees
     // are skipped for the same check, which is the common (safe) case.
     expect(isTrackingProxy(result.child)).toBe(true)
+  })
+})
+
+describe('proxies and identity', () => {
+  type Item = { id: number }
+
+  const makeStore = () => {
+    const current: Item = { id: 2 }
+    const slice = createSlice({
+      name: 'data',
+      initialState: {
+        items: [{ id: 1 }, current] as Item[],
+        current,
+        tick: 0,
+      },
+      reducers: {
+        tick: (state) => {
+          state.tick += 1
+        },
+      },
+      extraReducers: (builder) => {
+        builder.addCase('replaceCurrent', (state) => {
+          state.current = { id: state.current.id }
+        })
+      },
+    })
+    const store = configureStore({ reducer: { data: slice.reducer } })
+    return { store, tick: slice.actions.tick }
+  }
+
+  type RootState = ReturnType<ReturnType<typeof makeStore>['store']['getState']>
+
+  function renderInBothTiers<R>(selector: (s: RootState) => R) {
+    const { store, tick } = makeStore()
+    const seen = renderSignalSelector(store, selector)
+    const probeTier = seen.current
+    promoteToDeepTier(store, tick())
+    const deepTier = seen.current
+    return { probeTier, deepTier }
+  }
+
+  it('does not re-run for an identity change of an object whose field was also read', () => {
+    const { store, tick } = makeStore()
+    const saved = store.getState().data.current
+    let result: boolean | undefined
+    function Comp() {
+      result = useSignalSelector(
+        (s: RootState) =>
+          s.data.current.id > 0 && unwrap(s.data.current) === saved,
+      )
+      return null
+    }
+    rtl.render(
+      <SignalProvider store={store}>
+        <Comp />
+      </SignalProvider>,
+    )
+    rtl.act(() => {
+      store.dispatch(tick())
+    })
+    expect(result).toBe(true)
+    rtl.act(() => {
+      store.dispatch({ type: 'replaceCurrent' })
+    })
+    // The state object changed identity but the selector only depends on
+    // `current.id`, so the result stays stale.
+    expect(store.getState().data.current).not.toBe(saved)
+    expect(result).toBe(true)
+  })
+
+  it('does not match inside a scan callback without unwrap after promotion', () => {
+    const result = renderInBothTiers(
+      (s) => s.data.items.find((i) => i === s.data.current)?.id,
+    )
+    expect(result).toEqual({ probeTier: 2, deepTier: undefined })
   })
 })

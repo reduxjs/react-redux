@@ -7,7 +7,14 @@ import {
   createSlice,
   type PayloadAction,
 } from '@reduxjs/toolkit'
-import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import {
+  SignalProvider,
+  unwrap,
+  useSignalSelector,
+} from '../../../src/signals/index'
+import shallowEqual from '../../../src/utils/shallowEqual'
+import type { EqualityFn } from '../../../src/types'
+import { promoteToDeepTier, renderSignalSelector } from '../helpers/react'
 
 // ============================================================================
 // Test: Object Identity Comparison in Selectors
@@ -1385,5 +1392,169 @@ describe('object identity comparison in selectors', () => {
       })
       expect(getByTestId('result').textContent).toBe('false-1')
     })
+  })
+})
+
+// Identity comparisons between two state values inside a selector, at mount
+// (probe tier) and after the hook has been promoted (deep tier). Inside an
+// array scan callback the deep tier hands the callback a scan proxy for each
+// element, so comparing it with a direct read needs `unwrap` on both sides.
+describe('identity comparisons between state values', () => {
+  type Item = { id: number }
+
+  const makeStore = () => {
+    const current: Item = { id: 2 }
+    const slice = createSlice({
+      name: 'data',
+      initialState: {
+        items: [{ id: 1 }, current] as Item[],
+        current,
+        tick: 0,
+      },
+      reducers: {
+        tick: (state) => {
+          state.tick += 1
+        },
+      },
+      extraReducers: (builder) => {
+        builder.addCase('replaceCurrent', (state) => {
+          state.current = { id: state.current.id }
+        })
+      },
+    })
+    const store = configureStore({ reducer: { data: slice.reducer } })
+    return { store, tick: slice.actions.tick }
+  }
+
+  type RootState = ReturnType<ReturnType<typeof makeStore>['store']['getState']>
+
+  function renderInBothTiers<R>(selector: (s: RootState) => R) {
+    const { store, tick } = makeStore()
+    const seen = renderSignalSelector(store, selector)
+    const probeTier = seen.current
+    promoteToDeepTier(store, tick())
+    const deepTier = seen.current
+    return { probeTier, deepTier }
+  }
+
+  it('works for a direct comparison in both tiers', () => {
+    const result = renderInBothTiers(
+      (s) => s.data.items[1] === s.data.current && s.data.tick >= 0,
+    )
+    expect(result).toEqual({ probeTier: true, deepTier: true })
+  })
+
+  it('works for indexOf and includes in both tiers', () => {
+    const result = renderInBothTiers(
+      (s) =>
+        `${s.data.items.indexOf(s.data.current)}:${s.data.items.includes(s.data.current)}:${s.data.tick >= 0}`,
+    )
+    expect(result).toEqual({
+      probeTier: '1:true:true',
+      deepTier: '1:true:true',
+    })
+  })
+
+  it('works inside a scan callback with unwrap on both sides', () => {
+    const result = renderInBothTiers(
+      (s) => s.data.items.find((i) => unwrap(i) === unwrap(s.data.current))?.id,
+    )
+    expect(result).toEqual({ probeTier: 2, deepTier: 2 })
+  })
+})
+
+// A selector can return a state object inside a derived result and also read
+// a field through that same object. The returned object must still update
+// when a field the selector did NOT read changes, because the component holds
+// the whole object.
+describe('state object embedded in a derived result and read through', () => {
+  interface User {
+    name: string
+    age: number
+  }
+
+  const userSlice = createSlice({
+    name: 'user',
+    initialState: { name: 'Ann', age: 0 } as User,
+    reducers: {
+      birthday: (state) => {
+        state.age += 1
+      },
+    },
+  })
+
+  const makeStore = () =>
+    configureStore({
+      reducer: { user: userSlice.reducer, other: (s: number = 0) => s },
+    })
+
+  type RootState = ReturnType<ReturnType<typeof makeStore>['getState']>
+
+  const shapes: Array<[string, (s: RootState) => { u: User }]> = [
+    ['{ u: s.user, n: s.user.name }', (s) => ({ u: s.user, n: s.user.name })],
+    [
+      '{ u: s.user, arr: [s.user, s.user.name] }',
+      (s) => ({ u: s.user, arr: [s.user, s.user.name] }),
+    ],
+  ]
+
+  const equalities: Array<[string, EqualityFn<any> | undefined]> = [
+    ['shallowEqual', shallowEqual],
+    ['reference equality', undefined],
+  ]
+
+  for (const [shapeName, selector] of shapes) {
+    for (const [eqName, equalityFn] of equalities) {
+      it(`${shapeName} with ${eqName} updates when an unread field changes`, () => {
+        const store = makeStore()
+        let seen: User | undefined
+
+        function Comp() {
+          const result = useSignalSelector(selector, equalityFn)
+          seen = result.u
+          return null
+        }
+
+        rtl.render(
+          <SignalProvider store={store}>
+            <Comp />
+          </SignalProvider>,
+        )
+        expect(seen).toBe(store.getState().user)
+
+        for (let i = 1; i <= 3; i++) {
+          rtl.act(() => {
+            store.dispatch(userSlice.actions.birthday())
+          })
+          expect(seen?.age).toBe(i)
+          expect(seen).toBe(store.getState().user)
+        }
+      })
+    }
+  }
+
+  it('returning the state object alone still updates', () => {
+    const store = makeStore()
+    let seen: User | undefined
+
+    function Comp() {
+      seen = useSignalSelector(
+        (s: RootState) => ({ u: s.user }),
+        shallowEqual,
+      ).u
+      return null
+    }
+
+    rtl.render(
+      <SignalProvider store={store}>
+        <Comp />
+      </SignalProvider>,
+    )
+    for (let i = 1; i <= 3; i++) {
+      rtl.act(() => {
+        store.dispatch(userSlice.actions.birthday())
+      })
+      expect(seen?.age).toBe(i)
+    }
   })
 })
