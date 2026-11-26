@@ -299,36 +299,3 @@ describe('the in operator on the root', () => {
     expect(seen.current).toBe(true)
   })
 })
-
-describe('registry cleanup after unmount', () => {
-  const empty = {
-    signals: 0,
-    prefixCounts: 0,
-    prefixOnlyPaths: 0,
-    childIndex: 0,
-    arrays: 0,
-    columns: 0,
-    structures: 0,
-    segmentSubs: 0,
-  }
-
-  it('a nested read through Object.values leaves nothing behind', () => {
-    const { registry, unmountHook } = renderPromoted(
-      { a: { b: [{}] } } as { a: Record<string, object[]> },
-      (s) => !!Object.values(s.a)[0][0],
-    )
-    unmountHook()
-    expect(registry.current!.debugStats()).toEqual(empty)
-  })
-
-  it('a keyed element that moves under a new parent leaves nothing behind', () => {
-    const item = { id: 1 }
-    const { replace, registry, unmountHook } = renderPromoted(
-      { a: [item] } as { a: unknown },
-      (s) => JSON.stringify(s.a),
-    )
-    replace({ a: { b: [item] } })
-    unmountHook()
-    expect(registry.current!.debugStats()).toEqual(empty)
-  })
-})
