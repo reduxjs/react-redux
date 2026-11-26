@@ -12,6 +12,11 @@ import {
   createTrackingProxy,
 } from '../../src/signals/trackingProxy'
 import { reconcileState } from '../../src/signals/diff'
+import { getProxyPath } from '../../src/signals/proxyIdentity'
+import { untrackResult } from '../../src/signals/untrack'
+
+const isTrackingProxy = (v: unknown) =>
+  v !== null && typeof v === 'object' && getProxyPath(v) !== undefined
 
 describe('class instances are tracked by reference', () => {
   it('documented limitation: class instances are opaque leaves tracked by reference', () => {
@@ -96,5 +101,25 @@ describe('edge cases: aliased references (same object at two paths)', () => {
 
     expect(tracker.accessedObjects.has('selected')).toBe(true)
     expect(tracker.traversedPaths.has('selected')).toBe(false)
+  })
+})
+
+describe('frozen derived containers keep their proxies', () => {
+  function setup() {
+    const registry = createPathSignalRegistry(alienEngine)
+    const state = { a: { x: 1 } }
+    Object.freeze(state.a)
+    Object.freeze(state)
+    const proxy = createTrackingProxy(state, '', registry)
+    return { state, proxy }
+  }
+
+  it('documented limitation: frozen derived containers holding proxies are skipped', () => {
+    const { proxy } = setup()
+    const frozen = Object.freeze({ child: proxy.a })
+    const result = untrackResult(frozen)
+    // Can't repair in place — proxies survive. Frozen raw state subtrees
+    // are skipped for the same check, which is the common (safe) case.
+    expect(isTrackingProxy(result.child)).toBe(true)
   })
 })

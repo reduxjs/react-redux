@@ -9,15 +9,15 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import * as React from 'react'
+import { createStore } from 'redux'
 import { describe, expect, it, afterEach } from 'vitest'
 
+import { useSignalContext } from '../../../src/signals/context'
+import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { SignalProvider } from '../../../src/signals/SignalProvider'
+import type { LeafObjectTracker } from '../../../src/signals/trackingProxy'
 import { useSignalSelector } from '../../../src/signals/useSignalSelector'
-import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
-import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import { getProxyPath } from '../../../src/signals/proxyIdentity'
-import { untrackResult } from '../../../src/signals/untrack'
 
 const isTrackingProxy = (v: unknown) =>
   v !== null && typeof v === 'object' && getProxyPath(v) !== undefined
@@ -150,182 +150,68 @@ describe('untrack at the hook boundary', () => {
   })
 })
 
-describe('untrackResult unit behavior', () => {
-  function setup() {
-    const registry = createPathSignalRegistry(alienEngine)
-    const state = {
-      a: { x: 1 },
-      list: [{ id: 1, v: 'one' }],
+interface State {
+  n: number
+  x: { y: number; z: { w: number } }
+}
+
+function reducer(
+  state: State = { n: 0, x: { y: 1, z: { w: 2 } } },
+  action: { type: string },
+): State {
+  return action.type === 'tick' ? { ...state, n: state.n + 1 } : state
+}
+
+describe('evaluation tracker lifecycle', () => {
+  it('reads through a proxy kept past its evaluation do not record into the finished tracker', () => {
+    const store = createStore(reducer)
+    let registry: PathSignalRegistry | null = null
+    let kept: State['x'] | null = null
+    let seen: LeafObjectTracker | undefined
+
+    function CaptureRegistry() {
+      registry = useSignalContext<State>().registry
+      return null
     }
-    Object.freeze(state.a)
-    Object.freeze(state.list[0])
-    Object.freeze(state.list)
-    Object.freeze(state)
-    const proxy = createTrackingProxy(state, '', registry)
-    return { state, proxy }
-  }
 
-  it('returns primitives unchanged', () => {
-    expect(untrackResult(42)).toBe(42)
-    expect(untrackResult('x')).toBe('x')
-    expect(untrackResult(null)).toBe(null)
-    expect(untrackResult(undefined)).toBe(undefined)
-  })
-
-  it('swaps a bare proxy for its target', () => {
-    const { state, proxy } = setup()
-    expect(untrackResult(proxy.a)).toBe(state.a)
-  })
-
-  it('mutates derived containers in place, preserving container identity', () => {
-    const { state, proxy } = setup()
-    const container = { child: proxy.a, arr: [proxy.list[0]] }
-    const result = untrackResult(container)
-    expect(result).toBe(container)
-    expect(result.child).toBe(state.a)
-    expect(result.arr[0]).toBe(state.list[0])
-  })
-
-  it('is idempotent (second pass over a memoized container is a no-op)', () => {
-    const { state, proxy } = setup()
-    const container = { child: proxy.a }
-    const once = untrackResult(container)
-    const twice = untrackResult(once)
-    expect(twice).toBe(container)
-    expect(twice.child).toBe(state.a)
-  })
-
-  it('handles Map values', () => {
-    const { state, proxy } = setup()
-    const m = new Map([['a', proxy.a]])
-    const result = untrackResult(m)
-    expect(result).toBe(m)
-    expect(result.get('a')).toBe(state.a)
-  })
-
-  it('handles Set values', () => {
-    const { state, proxy } = setup()
-    const s = new Set([proxy.a])
-    const result = untrackResult(s)
-    expect(result).toBe(s)
-    expect(result.has(state.a)).toBe(true)
-    expect(result.size).toBe(1)
-  })
-
-  it('handles self-referential containers without looping', () => {
-    const { state, proxy } = setup()
-    interface Cyclic {
-      child: object
-      self?: Cyclic
+    function Reader() {
+      const n = useSignalSelector((s: State) => {
+        kept = s.x
+        seen = registry?.evaluation.tracker ?? undefined
+        return s.n
+      })
+      return <div data-testid="n">{n}</div>
     }
-    const container: Cyclic = { child: proxy.a }
-    container.self = container
-    const result = untrackResult(container)
-    expect(result.child).toBe(state.a)
-    expect(result.self).toBe(container)
-  })
 
-  it('documented limitation: frozen derived containers holding proxies are skipped', () => {
-    const { proxy } = setup()
-    const frozen = Object.freeze({ child: proxy.a })
-    const result = untrackResult(frozen)
-    // Can't repair in place — proxies survive. Frozen raw state subtrees
-    // are skipped for the same check, which is the common (safe) case.
-    expect(isTrackingProxy(result.child)).toBe(true)
-  })
-})
-
-describe('untrackResult with derived arrays', () => {
-  interface Row {
-    id: number
-    status: string
-    score: number
-  }
-
-  function setupArrayState() {
-    const registry = createPathSignalRegistry(alienEngine)
-    const rows: Row[] = []
-    for (let i = 0; i < 10; i++) {
-      rows.push({ id: i, status: i % 2 === 0 ? 'even' : 'odd', score: i * 10 })
-    }
-    const state = { rows, extra: { x: 1 } }
-    for (const r of rows) Object.freeze(r)
-    Object.freeze(rows)
-    Object.freeze(state.extra)
-    Object.freeze(state)
-    const proxy = createTrackingProxy(state, '', registry) as typeof state
-    return { state, proxy }
-  }
-
-  // Mimic one hook evaluation: run the selector, untrack the result.
-  function evaluate<R>(
-    proxy: ReturnType<typeof setupArrayState>['proxy'],
-    selector: (s: ReturnType<typeof setupArrayState>['proxy']) => R,
-  ): R {
-    return untrackResult(selector(proxy))
-  }
-
-  it('untracks filter() results to raw elements', () => {
-    const { state, proxy } = setupArrayState()
-    const result = evaluate(proxy, (s) =>
-      s.rows.filter((r) => r.status === 'even'),
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        <CaptureRegistry />
+        <Reader />
+      </SignalProvider>,
     )
-    expect(result).toHaveLength(5)
-    for (let i = 0; i < result.length; i++) {
-      expect(isTrackingProxy(result[i])).toBe(false)
-    }
-    expect(result[0]).toBe(state.rows[0])
-    expect(result[4]).toBe(state.rows[8])
-  })
 
-  it('handles filter().sort() — user mutation of a library-built array', () => {
-    const { state, proxy } = setupArrayState()
-    const result = evaluate(proxy, (s) =>
-      s.rows
-        .filter((r) => r.status === 'even')
-        .sort((a, b) => b.score - a.score),
-    )
-    expect(result.map((r) => r.id)).toEqual([8, 6, 4, 2, 0])
-    for (const r of result) {
-      expect(isTrackingProxy(r)).toBe(false)
-    }
-    expect(result[0]).toBe(state.rows[8])
-  })
-
-  it('handles an element replaced with a user-built container', () => {
-    const { state, proxy } = setupArrayState()
-    const result = evaluate(proxy, (s) => {
-      const matches: unknown[] = s.rows.filter((r) => r.status === 'even')
-      matches[0] = { wrapped: s.extra }
-      return matches
+    // Promote the selector past the coarse probe tier so it runs through
+    // tracking proxies.
+    rtl.act(() => {
+      store.dispatch({ type: 'tick' })
     })
-    expect(isTrackingProxy((result[0] as { wrapped: object }).wrapped)).toBe(
-      false,
-    )
-    expect((result[0] as { wrapped: object }).wrapped).toBe(state.extra)
-    expect(isTrackingProxy(result[1])).toBe(false)
-  })
+    rtl.act(() => {
+      store.dispatch({ type: 'tick' })
+    })
+    expect(getByTestId('n').textContent).toBe('2')
 
-  it('untracks slice() results', () => {
-    const { state, proxy } = setupArrayState()
-    const result = evaluate(proxy, (s) => s.rows.slice(2, 5))
-    expect(result).toHaveLength(3)
-    for (const r of result) {
-      expect(isTrackingProxy(r)).toBe(false)
-    }
-    expect(result[0]).toBe(state.rows[2])
-  })
+    const tracker = seen
+    expect(tracker).toBeDefined()
+    const accessed = new Map(tracker!.accessedObjects)
+    const traversed = new Set(tracker!.traversedPaths)
 
-  it('untracks library-built arrays embedded in user containers', () => {
-    const { state, proxy } = setupArrayState()
-    const result = evaluate(proxy, (s) => ({
-      matches: s.rows.filter((r) => r.score > 50),
-      first: s.rows[0],
-    }))
-    for (const r of result.matches) {
-      expect(isTrackingProxy(r)).toBe(false)
-    }
-    expect(isTrackingProxy(result.first)).toBe(false)
-    expect(result.first).toBe(state.rows[0])
+    expect(kept!.y).toBe(1)
+    expect(kept!.z.w).toBe(2)
+    void Object.keys(kept!)
+
+    expect(tracker!.traversedPaths).toEqual(traversed)
+    expect(tracker!.accessedObjects).toEqual(accessed)
+    expect(tracker!.enumerated.size).toBe(0)
+    expect(registry!.evaluation.tracker).toBeNull()
   })
 })
