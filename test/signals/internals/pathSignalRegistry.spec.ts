@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { alienEngine } from '../../../src/signals/engine'
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { delayedSweepPolicy } from '../../../src/signals/sweepPolicy'
+import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import type { ReactiveSignal } from '../../../src/signals/types'
 import { reconcileState } from '../../../src/signals/diff'
 import { mountEngineHook } from '../differential/engineHook'
@@ -825,5 +826,22 @@ describe('identity-based array tracking: hooks mounted after a teardown', () => 
     dispatch({ a: [], b: [0] })
     expect(hook.last).toBe(0)
     hook.stop()
+  })
+})
+
+describe('edge cases: registry lifecycle', () => {
+  it('prune clears array identity metadata', () => {
+    const state = { items: [{ id: 1, v: 1 }] }
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(state, '', registry)
+
+    // Element access detects the key field and stores it on the array record
+    expect(proxy.items[0].v).toBe(1)
+    expect(registry.getArrayRecord('items')?.keyField).toBe('id')
+
+    registry.prune('items')
+
+    // After a reset action prunes the slice, its metadata is released too.
+    expect(registry.getArrayRecord('items')).toBeUndefined()
   })
 })

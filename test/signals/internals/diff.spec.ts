@@ -1450,3 +1450,87 @@ describe('identity-based array tracking: diff', () => {
     })
   })
 })
+
+describe('edge cases: NaN leaf values', () => {
+  it('does not re-run a computed when an untouched NaN leaf is re-diffed', () => {
+    // The diff's skip checks use Object.is semantics for NaN (self-inequal
+    // values on both sides are treated as equal), so an untouched NaN leaf
+    // no longer re-fires its signal on every dispatch that touches the
+    // parent object.
+    const prev = { metrics: { ratio: NaN, count: 1 } }
+    const next = { metrics: { ratio: NaN, count: 2 } }
+
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(prev, '', registry)
+
+    let runs = 0
+    const c = alienEngine.computed(() => {
+      runs++
+      return proxy.metrics.ratio
+    })
+    expect(Number.isNaN(c.get() as number)).toBe(true)
+    expect(runs).toBe(1)
+
+    reconcileState(prev, next, registry, alienEngine)
+
+    c.get()
+    expect(runs).toBe(1)
+  })
+})
+
+describe('edge cases: same-length keyed array replacement (remove + add)', () => {
+  // diffArrayByKey's general path tracks seen keys unconditionally, so a
+  // same-length replacement (remove one entity, add another) prunes the
+  // removed entity's signals even though the array length is unchanged.
+
+  it('prunes signals for an entity removed in a same-length replacement', () => {
+    const shared = { id: 1, text: 'first' }
+    const prev = { items: [shared, { id: 2, text: 'second' }] }
+    const next = { items: [shared, { id: 9, text: 'ninth' }] }
+
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(prev, '', registry)
+    expect(proxy.items[0].text).toBe('first')
+    expect(proxy.items[1].text).toBe('second')
+    expect(registry.has('items.{id:2}.text')).toBe(true)
+
+    reconcileState(prev, next, registry, alienEngine)
+
+    expect(registry.has('items.{id:2}.text')).toBe(false)
+  })
+
+  it('temp-id → server-id swap prunes the temp entity signals', () => {
+    // Optimistic update pattern: entity created with a temp id, server
+    // responds with the real id. Same array length, key value changes.
+    const prev = { items: [{ id: 'temp-1', text: 'draft' }] }
+    const next = { items: [{ id: 42, text: 'draft' }] }
+
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(prev, '', registry)
+    expect(proxy.items[0].text).toBe('draft')
+    expect(registry.has('items.{id:temp-1}.text')).toBe(true)
+
+    reconcileState(prev, next, registry, alienEngine)
+
+    expect(registry.has('items.{id:temp-1}.text')).toBe(false)
+  })
+
+  it('fires the structural remove signal for a same-length replacement', () => {
+    // The structural classification is computed independently of the prune
+    // bookkeeping, so scans (filter/find/...) DO see the removal.
+    const shared = { id: 1, text: 'first' }
+    const prev = { items: [shared, { id: 2, text: 'second' }] }
+    const next = { items: [shared, { id: 9, text: 'ninth' }] }
+
+    const registry = createPathSignalRegistry(alienEngine)
+    const proxy = createTrackingProxy(prev, '', registry)
+    expect(proxy.items[1].text).toBe('second')
+
+    const removeSig = registry.trackStructure('items', 'remove')
+    const before = removeSig.get()
+
+    reconcileState(prev, next, registry, alienEngine)
+
+    expect(removeSig.get()).not.toBe(before)
+  })
+})
