@@ -11,7 +11,9 @@ import {
   createSlice,
   type PayloadAction,
 } from '@reduxjs/toolkit'
-import { beforeEach, describe, it, expect } from 'vitest'
+import { Provider, useSelector } from 'react-redux'
+import { legacy_createStore as createStore } from 'redux'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import {
   SignalProvider,
   unwrap,
@@ -30,6 +32,49 @@ import { untrackResult } from '../../src/signals/untrack'
 
 const isTrackingProxy = (v: unknown) =>
   v !== null && typeof v === 'object' && getProxyPath(v) !== undefined
+
+describe('the root state must be a plain object', () => {
+  const noStabilityCheck = {
+    devModeChecks: { stabilityCheck: 'never' as const },
+  }
+
+  it('declines to probe a non-plain root (Map roots are unsupported, pre-existing)', () => {
+    // The deep tracking system does not support Map root state: the
+    // tracking proxy's shell breaks Map method receivers, so mount throws
+    // "Method Map.prototype.get called on incompatible receiver". That
+    // failure predates the coarse tier (verified against the
+    // pre-coarse-tier implementation). What the coarse tier guarantees is
+    // that a non-plain root is never PROBED — the hook goes straight to
+    // the eager-build path and fails the same way it always did, instead
+    // of failing differently inside the probe proxy.
+    const store = createStore(
+      (state: Map<string, number> = new Map([['v', 0]]), action) =>
+        action.type === 'bump'
+          ? new Map([['v', (state.get('v') ?? 0) + 1]])
+          : state,
+    )
+
+    const selectV = (s: Map<string, number>) => s.get('v')
+
+    function Watcher() {
+      const value = useSignalSelector(selectV, noStabilityCheck)
+      return <div data-testid="value">{value}</div>
+    }
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      expect(() => {
+        rtl.render(
+          <SignalProvider store={store}>
+            <Watcher />
+          </SignalProvider>,
+        )
+      }).toThrow(/incompatible receiver/)
+    } finally {
+      spy.mockRestore()
+    }
+  })
+})
 
 describe('class instances are tracked by reference', () => {
   it('documented limitation: class instances are opaque leaves tracked by reference', () => {
@@ -256,5 +301,51 @@ describe('root identity selector', () => {
     })
 
     expect(getByTestId('filter').textContent).toBe('active')
+  })
+})
+
+describe('memoized selectors whose cache never reads state', () => {
+  interface RootState {
+    counter: { value: number }
+  }
+
+  const makeStore = () =>
+    configureStore({
+      reducer: {
+        counter: (
+          state: { value: number } = { value: 0 },
+          action: { type: string },
+        ) => (action.type === 'increment' ? { value: state.value + 1 } : state),
+      },
+    })
+
+  const incrementTimes = (store: ReturnType<typeof makeStore>, n: number) => {
+    for (let i = 0; i < n; i++) {
+      rtl.act(() => {
+        store.dispatch({ type: 'increment' })
+      })
+    }
+  }
+
+  it('documented limitation: a cache that never reads state cannot be tracked', () => {
+    // Same result in both implementations — stock useSelector returns the
+    // stale cached object too. Pinned so the behavior is deliberate.
+    const store = makeStore()
+    let cached: { doubled: number } | undefined
+    const selectOnce = (s: RootState) => {
+      if (cached === undefined) cached = { doubled: s.counter.value * 2 }
+      return cached
+    }
+
+    function A() {
+      return <div data-testid="a">{useSelector(selectOnce).doubled}</div>
+    }
+    const { getByTestId } = rtl.render(
+      <Provider store={store}>
+        <A />
+      </Provider>,
+    )
+    incrementTimes(store, 2)
+    expect(getByTestId('a').textContent).toBe('0')
   })
 })

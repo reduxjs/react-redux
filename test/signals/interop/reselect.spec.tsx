@@ -918,28 +918,6 @@ describe('args-memoization cache hits', () => {
       expect(getByTestId('a').textContent).toBe(expected)
     }
   })
-
-  it('documented limitation: a cache that never reads state cannot be tracked', () => {
-    // Same result in both implementations — stock useSelector returns the
-    // stale cached object too. Pinned so the behavior is deliberate.
-    const store = makeStore()
-    let cached: { doubled: number } | undefined
-    const selectOnce = (s: RootState) => {
-      if (cached === undefined) cached = { doubled: s.counter.value * 2 }
-      return cached
-    }
-
-    function A() {
-      return <div data-testid="a">{useSelector(selectOnce).doubled}</div>
-    }
-    const { getByTestId } = rtl.render(
-      <Provider store={store}>
-        <A />
-      </Provider>,
-    )
-    incrementTimes(store, 2)
-    expect(getByTestId('a').textContent).toBe('0')
-  })
 })
 
 describe('entity adapter selectors feeding result functions', () => {

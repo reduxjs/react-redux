@@ -496,41 +496,4 @@ describe('coarse tier: deferred deep-graph build', () => {
       spy.mockRestore()
     }
   })
-
-  it('declines to probe a non-plain root (Map roots are unsupported, pre-existing)', () => {
-    // The deep tracking system does not support Map root state: the
-    // tracking proxy's shell breaks Map method receivers, so mount throws
-    // "Method Map.prototype.get called on incompatible receiver". That
-    // failure predates the coarse tier (verified against the
-    // pre-coarse-tier implementation). What the coarse tier guarantees is
-    // that a non-plain root is never PROBED — the hook goes straight to
-    // the eager-build path and fails the same way it always did, instead
-    // of failing differently inside the probe proxy.
-    const store = createStore(
-      (state: Map<string, number> = new Map([['v', 0]]), action) =>
-        action.type === 'bump'
-          ? new Map([['v', (state.get('v') ?? 0) + 1]])
-          : state,
-    )
-
-    const selectV = (s: Map<string, number>) => s.get('v')
-
-    function Watcher() {
-      const value = useSignalSelector(selectV, noStabilityCheck)
-      return <div data-testid="value">{value}</div>
-    }
-
-    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    try {
-      expect(() => {
-        rtl.render(
-          <SignalProvider store={store}>
-            <Watcher />
-          </SignalProvider>,
-        )
-      }).toThrow(/incompatible receiver/)
-    } finally {
-      spy.mockRestore()
-    }
-  })
 })
