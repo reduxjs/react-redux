@@ -477,7 +477,7 @@ describe('diffAndUpdateSignals', () => {
       expect(computedRuns).toBe(initialRuns + 1)
     })
 
-    it('does NOT trigger computed that depends on unchanged path', () => {
+    it('does not trigger computed that depends on unchanged path', () => {
       const todos = deepFreeze([{ id: 1, text: 'hi' }])
       const prev = deepFreeze({ todos, counter: 0 })
       const next = Object.freeze({ todos, counter: 1 }) // share todos ref

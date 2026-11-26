@@ -60,7 +60,7 @@ describe('createTrackingProxy', () => {
     expect(Object.getPrototypeOf(state.items)).toBe(Array.prototype)
   })
 
-  it('does NOT create signals for unaccessed paths', () => {
+  it('does not create signals for unaccessed paths', () => {
     const state = { name: 'Alice', age: 30, email: 'alice@example.com' }
     const registry = createRegistry()
     const proxy = createTrackingProxy(state, '', registry)
@@ -545,7 +545,7 @@ describe('createTrackingProxy', () => {
     scope.stop()
   })
 
-  it('intermediate object traversal does NOT create signal dependency', () => {
+  it('intermediate object traversal does not create signal dependency', () => {
     const state = Object.freeze({
       nested: Object.freeze({ deep: Object.freeze({ value: 42 }) }),
     })
@@ -570,7 +570,7 @@ describe('createTrackingProxy', () => {
     c.get()
     expect(calls).toBe(1)
 
-    // Bumping the leaf signal SHOULD trigger
+    // Bumping the leaf signal should trigger
     registry.update('nested.deep.value', 99)
     c.get()
     expect(calls).toBe(2)
@@ -578,7 +578,7 @@ describe('createTrackingProxy', () => {
     scope.stop()
   })
 
-  it('parent object signal does NOT fire when only a child leaf changes', () => {
+  it('parent object signal does not fire when only a child leaf changes', () => {
     const state = Object.freeze({
       parent: Object.freeze({ child: Object.freeze({ leaf: 'hello' }) }),
     })
@@ -666,7 +666,7 @@ describe('createTrackingProxy', () => {
     expect(c.get()).toBe('all')
     expect(callCount).toBe(1)
 
-    // Update the 'filter' signal → computed SHOULD re-evaluate on next read
+    // Update the 'filter' signal → computed should re-evaluate on next read
     registry.update('filter', 'completed')
     c.get() // pull to trigger re-evaluation
     expect(callCount).toBe(2)

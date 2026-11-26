@@ -1,6 +1,6 @@
 /**
- * Behavior-pinning tests for non-idiomatic store patterns reported from the
- * Slack field trial (2026-08) and the original 2023 Slack perf call:
+ * Behavior-pinning tests for non-idiomatic store patterns seen in large
+ * production apps:
  *
  * 1. Reducers that mutate state in place ("mutable slices" with clever
  *    tricks to make Redux behave). The diff relies on referential
@@ -11,7 +11,7 @@
  * 3. Selectors that mutate state (e.g. calling .sort() directly on a state
  *    array). The tracking proxy rejects the write; these tests pin the
  *    error the user actually sees.
- * 4. Batched store notifications (Slack batches subscriber notification
+ * 4. Batched store notifications (some apps batch subscriber notification
  *    via rAF). Several dispatches followed by one notification must diff
  *    cumulatively and render once.
  *
@@ -141,7 +141,7 @@ describe('in-place mutation (mutable slices)', () => {
     expect(getByTestId('value').textContent).toBe('1')
   })
 
-  it('mutate-child-clone-root: a NOT-yet-promoted hook recovers via coarse promotion', () => {
+  it('mutate-child-clone-root: a not-yet-promoted hook recovers via coarse promotion', () => {
     const store = makeMutableStore()
     const { getByTestId } = renderValueReader(store)
     expect(getByTestId('value').textContent).toBe('1')

@@ -6,7 +6,7 @@ import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import type { ReactiveSignal } from '../../../src/signals/types'
 import { reconcileState } from '../../../src/signals/diff'
 import { mountEngineHook } from '../differential/engineHook'
-import { EMPTY_STATS } from '../helpers/registry'
+import { createRegistry, EMPTY_STATS } from '../helpers/registry'
 
 type Registry = ReturnType<typeof createPathSignalRegistry>
 
@@ -33,10 +33,6 @@ function watch(sig: ReactiveSignal<unknown>) {
 }
 
 describe('PathSignalRegistry', () => {
-  function createRegistry() {
-    return createPathSignalRegistry(alienEngine)
-  }
-
   describe('getOrCreate', () => {
     it('creates a signal for a primitive value', () => {
       const registry = createRegistry()

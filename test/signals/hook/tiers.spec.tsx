@@ -10,8 +10,8 @@
  * - Irrelevant dispatches neither re-render nor promote a deferred hook
  * - A relevant dispatch promotes exactly the affected hooks, which then
  *   behave identically to eagerly-built hooks
- * - Swapping the selector while unbuilt re-probes and re-registers (the
- *   missed-update bug in react-redux PR #2355's version of this design)
+ * - Swapping the selector while unbuilt re-probes and re-registers, so
+ *   the hook is not left subscribed to the old selector's segments
  * - Selectors the probe can't gate (root enumeration, empty footprint,
  *   non-plain-object root state) build eagerly at mount
  */
@@ -128,7 +128,7 @@ describe('coarse tier: deferred deep-graph build', () => {
     expect(getByTestId('value').textContent).toBe('2')
   })
 
-  it('re-probes when the selector is swapped while unbuilt (missed-update bug in PR #2355)', () => {
+  it('re-probes when the selector is swapped while unbuilt', () => {
     const { store, bumpA, bumpB } = makeStore()
     let renders = 0
 
@@ -160,8 +160,8 @@ describe('coarse tier: deferred deep-graph build', () => {
     rtl.fireEvent.click(getByTestId('toggle'))
     expect(getByTestId('value').textContent).toBe('0') // b.value is still 0
 
-    // A dispatch that changes b MUST reach this hook. A stale {a}
-    // registration (the #2355 bug) would miss this update forever.
+    // A dispatch that changes b must reach this hook. A stale {a}
+    // registration would miss this update forever.
     rtl.act(() => {
       store.dispatch(bumpB())
     })

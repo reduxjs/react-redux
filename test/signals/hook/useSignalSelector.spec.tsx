@@ -138,7 +138,7 @@ describe('useSignalSelector', () => {
   })
 
   // ==========================================================================
-  // Core Functionality (ported from prototype #1)
+  // Core Functionality
   // ==========================================================================
 
   describe('core functionality', () => {
@@ -229,7 +229,7 @@ describe('useSignalSelector', () => {
   })
 
   // ==========================================================================
-  // Selector Identity Handling (ported from prototype #1)
+  // Selector Identity Handling
   // ==========================================================================
 
   describe('selector identity handling', () => {
@@ -296,10 +296,10 @@ describe('useSignalSelector', () => {
   })
 
   // ==========================================================================
-  // Selective Execution — Key POC Validation (ported from prototype #1)
+  // Selective Execution
   // ==========================================================================
 
-  describe('selective execution (key POC validation)', () => {
+  describe('selective execution', () => {
     it('todo selector does not run when counter changes', () => {
       let todoSelectorCalls = 0
       let counterSelectorCalls = 0
@@ -480,7 +480,7 @@ describe('useSignalSelector', () => {
   })
 
   // ==========================================================================
-  // Equality Functions (ported from prototype #1)
+  // Equality Functions
   // ==========================================================================
 
   describe('equality functions', () => {
@@ -524,13 +524,13 @@ describe('useSignalSelector', () => {
   })
 
   // ==========================================================================
-  // Frozen State Handling (new — specific to prototype #2)
+  // Frozen State Handling
   // ==========================================================================
 
   describe('frozen state handling', () => {
     it('works with configureStore (Immer freezes state)', () => {
-      // configureStore uses Immer which freezes state — this is the real
-      // production scenario that killed prototype #1
+      // configureStore uses Immer, which freezes state, and tracking
+      // proxies must work over frozen objects.
       const frozenStore = createTestStore()
 
       const Comp = () => {
@@ -590,7 +590,7 @@ describe('useSignalSelector', () => {
   })
 
   // ==========================================================================
-  // Array Mutations (new — specific to prototype #2)
+  // Array Mutations
   // ==========================================================================
 
   describe('array mutations', () => {
@@ -770,7 +770,7 @@ describe('useSignalSelector', () => {
   })
 })
 
-describe('edge cases: React integration', () => {
+describe('useSignalSelector inside React rendering', () => {
   let store: TestStore
 
   beforeEach(() => {

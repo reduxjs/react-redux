@@ -16,11 +16,10 @@
  * - If the component stays mounted, the error surfaces during render,
  *   where an error boundary owns it.
  *
- * Also covers the prune-signal bug this scenario exposed: prune()
- * previously wrote a signal's own value back to it, which never fires
- * for non-numeric primitives under alien-signals' `!==` equality —
- * leaving selectors that only read string/boolean leaves of a removed
- * entity permanently stale.
+ * Also covers prune() firing the signals of a removed entity. Writing a
+ * signal's own value back to it never fires for non-numeric primitives
+ * under alien-signals' `!==` equality, so selectors that only read
+ * string/boolean leaves of a removed entity would stay stale.
  */
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'

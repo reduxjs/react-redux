@@ -839,24 +839,13 @@ describe('array column and structure tracking after the array signal is released
 })
 
 describe('registry cleanup after unmount', () => {
-  const empty = {
-    signals: 0,
-    prefixCounts: 0,
-    prefixOnlyPaths: 0,
-    childIndex: 0,
-    arrays: 0,
-    columns: 0,
-    structures: 0,
-    segmentSubs: 0,
-  }
-
   it('a nested read through Object.values leaves nothing behind', () => {
     const { registry, unmountHook } = renderPromoted(
       { a: { b: [{}] } } as { a: Record<string, object[]> },
       (s) => !!Object.values(s.a)[0][0],
     )
     unmountHook()
-    expect(registry.current!.debugStats()).toEqual(empty)
+    expect(registry.current!.debugStats()).toEqual(EMPTY_STATS)
   })
 
   it('a keyed element that moves under a new parent leaves nothing behind', () => {
@@ -867,6 +856,6 @@ describe('registry cleanup after unmount', () => {
     )
     replace({ a: { b: [item] } })
     unmountHook()
-    expect(registry.current!.debugStats()).toEqual(empty)
+    expect(registry.current!.debugStats()).toEqual(EMPTY_STATS)
   })
 })

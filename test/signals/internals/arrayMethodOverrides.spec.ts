@@ -1010,7 +1010,7 @@ describe('array method dependency tracking', () => {
     stop()
   })
 
-  it('find(x => x.done) — SHOULD re-run when a non-matching element becomes done', () => {
+  it('find(x => x.done) re-runs when a non-matching element becomes done', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: false },
       { id: 2, text: 'b', done: true },
@@ -1042,7 +1042,7 @@ describe('array method dependency tracking', () => {
     stop()
   })
 
-  it('find(x => x.done) — SHOULD re-run when a new element is added', () => {
+  it('find(x => x.done) re-runs when a new element is added', () => {
     let state = makeFrozenState([{ id: 1, text: 'a', done: false }])
     const registry = createRegistry()
 
@@ -1109,7 +1109,7 @@ describe('array method dependency tracking', () => {
     stop()
   })
 
-  it('filter(x => x.done) — SHOULD re-run when a non-matching element becomes done', () => {
+  it('filter(x => x.done) re-runs when a non-matching element becomes done', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: true },
       { id: 2, text: 'b', done: false },
@@ -1146,7 +1146,7 @@ describe('array method dependency tracking', () => {
 
   // ─── some() / every() with property predicate ───
 
-  it('some(x => x.done) — SHOULD re-run when result changes from true to false', () => {
+  it('some(x => x.done) re-runs when result changes from true to false', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: false },
       { id: 2, text: 'b', done: true },
@@ -1176,7 +1176,7 @@ describe('array method dependency tracking', () => {
     stop()
   })
 
-  it('every(x => x.done) — SHOULD re-run when one element becomes not done', () => {
+  it('every(x => x.done) re-runs when one element becomes not done', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: true },
       { id: 2, text: 'b', done: true },
@@ -1239,7 +1239,7 @@ describe('array method dependency tracking', () => {
     stop()
   })
 
-  it('map(x => x.text) — does NOT re-run when unrelated property (done) changes', () => {
+  it('map(x => x.text) does not re-run when unrelated property (done) changes', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: false },
       { id: 2, text: 'b', done: false },
@@ -1273,7 +1273,7 @@ describe('array method dependency tracking', () => {
 
   // ─── includes/indexOf — identity methods ───
 
-  it('includes() — SHOULD re-run when array structure changes', () => {
+  it('includes() re-runs when array structure changes', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: false },
       { id: 2, text: 'b', done: false },
@@ -1308,7 +1308,7 @@ describe('array method dependency tracking', () => {
 
   // ─── slice — structural ───
 
-  it('slice(0, 2) — SHOULD re-run when array gains elements', () => {
+  it('slice(0, 2) re-runs when array gains elements', () => {
     let state = makeFrozenState([{ id: 1, text: 'a', done: false }])
     const registry = createRegistry()
 
@@ -1342,7 +1342,7 @@ describe('array method dependency tracking', () => {
     stop()
   })
 
-  it('slice(1, 2) — SHOULD re-run when a sliced element changes', () => {
+  it('slice(1, 2) re-runs when a sliced element changes', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: false },
       { id: 2, text: 'b', done: false },
@@ -1370,7 +1370,7 @@ describe('array method dependency tracking', () => {
 
   // ─── findIndex — predicate, returns primitive ───
 
-  it('findIndex(x => x.done) — SHOULD re-run when a different element becomes done', () => {
+  it('findIndex(x => x.done) re-runs when a different element becomes done', () => {
     let state = makeFrozenState([
       { id: 1, text: 'a', done: false },
       { id: 2, text: 'b', done: true },
@@ -1448,7 +1448,7 @@ describe('array method dependency tracking', () => {
       return Object.freeze({ items: Object.freeze(items) }) as TodoState
     }
 
-    it('find (matched) — does NOT re-run on append', () => {
+    it('find (matched) does not re-run on append', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: false },
         { id: 2, text: 'b', done: true },
@@ -1478,7 +1478,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('find (matched) — does NOT re-run when a later element is removed', () => {
+    it('find (matched) does not re-run when a later element is removed', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: false },
         { id: 2, text: 'b', done: true },
@@ -1510,7 +1510,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('find (matched) — SHOULD re-run when a matching element is inserted before the match', () => {
+    it('find (matched) re-runs when a matching element is inserted before the match', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: false },
         { id: 3, text: 'c', done: true },
@@ -1540,7 +1540,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('find (matched) — does NOT re-run when an untracked prop of a non-matched element changes', () => {
+    it('find (matched) does not re-run when an untracked prop of a non-matched element changes', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: false },
         { id: 2, text: 'b', done: true },
@@ -1571,7 +1571,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('findIndex (matched) — SHOULD re-run when an earlier element is removed (index shifts)', () => {
+    it('findIndex (matched) re-runs when an earlier element is removed (index shifts)', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: false },
         { id: 2, text: 'b', done: true },
@@ -1602,7 +1602,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('some (true) — SHOULD re-run when the witness element is removed', () => {
+    it('some (true) re-runs when the witness element is removed', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: false },
         { id: 2, text: 'b', done: true },
@@ -1632,7 +1632,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('some (true) — does NOT re-run on append', () => {
+    it('some (true) does not re-run on append', () => {
       let state = makeFrozenState([{ id: 1, text: 'a', done: true }])
       const registry = createRegistry()
 
@@ -1659,7 +1659,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('every (true) — SHOULD re-run on append (new element might fail predicate)', () => {
+    it('every (true) re-runs on append (new element might fail predicate)', () => {
       let state = makeFrozenState([{ id: 1, text: 'a', done: true }])
       const registry = createRegistry()
 
@@ -1685,7 +1685,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('every (true) — does NOT re-run when an element is removed', () => {
+    it('every (true) does not re-run when an element is removed', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: true },
         { id: 2, text: 'b', done: true },
@@ -1715,7 +1715,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('every (false) — SHOULD re-run when the counterexample is removed', () => {
+    it('every (false) re-runs when the counterexample is removed', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: true },
         { id: 2, text: 'b', done: false },
@@ -1745,7 +1745,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('filter — SHOULD re-run when a matching element is removed', () => {
+    it('filter re-runs when a matching element is removed', () => {
       let state = makeFrozenState([
         { id: 1, text: 'a', done: true },
         { id: 2, text: 'b', done: false },
@@ -1779,7 +1779,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('filter — SHOULD re-run on append', () => {
+    it('filter re-runs on append', () => {
       let state = makeFrozenState([{ id: 1, text: 'a', done: true }])
       const registry = createRegistry()
 
@@ -1809,7 +1809,7 @@ describe('array method dependency tracking', () => {
       stop()
     })
 
-    it('find (missed) — SHOULD re-run on append', () => {
+    it('find (missed) re-runs on append', () => {
       let state = makeFrozenState([{ id: 1, text: 'a', done: false }])
       const registry = createRegistry()
 

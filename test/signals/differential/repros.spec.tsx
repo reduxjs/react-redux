@@ -1,8 +1,7 @@
 /**
  * Minimal repros for mismatches found by the differential fuzzers
- * (differential.*.property.spec). Each case is marked `it.fails` while the
- * library bug is open; when a fix lands the test starts passing, vitest
- * reports it, and the marker should be removed.
+ * (differential.*.property.spec). Each case pins the fixed behavior so the
+ * mismatch cannot come back unnoticed.
  */
 import * as rtl from '@testing-library/react'
 import { legacy_createStore as createStore } from 'redux'
