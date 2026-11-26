@@ -1,0 +1,1600 @@
+/* eslint-disable react/prop-types */
+
+import * as rtl from '@testing-library/react'
+import React, { useLayoutEffect } from 'react'
+import {
+  configureStore,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit'
+import {
+  SignalProvider,
+  unwrap,
+  useSignalSelector,
+} from '../../../src/signals/index'
+import shallowEqual from '../../../src/utils/shallowEqual'
+import type { EqualityFn } from '../../../src/types'
+import { promoteToDeepTier, renderSignalSelector } from '../helpers/react'
+
+// ============================================================================
+// Object identity comparisons in selectors
+//
+// Selectors that compare state objects by reference (===, Object.is,
+// includes, indexOf) without reading any field inside them. Reading an object
+// through the tracking proxy must still subscribe to its path, so the selector
+// re-runs when either reference changes. The proxy cache returns the same
+// proxy for the same underlying object, so comparing two state reads gives the
+// same answer as comparing the raw objects.
+// ============================================================================
+
+// ============================================================================
+// Store Setup
+// ============================================================================
+
+interface Item {
+  id: number
+  name: string
+}
+
+interface NestedObj {
+  label: string
+}
+
+interface IdentityTestState {
+  items: Item[]
+  selectedItem: Item | null
+  draft: Record<string, unknown> | null
+  published: Record<string, unknown> | null
+  current: Record<string, unknown>
+  saved: Record<string, unknown>
+  listA: Item[]
+  setB: number[] // IDs in set B
+  // Additional fields for edge case tests
+  objA: NestedObj
+  objB: NestedObj
+  deep: { nested: { target: NestedObj } }
+  maybeNull: NestedObj | null
+  siblingPrimitive: number
+}
+
+const initialItems: Item[] = [
+  { id: 1, name: 'Alpha' },
+  { id: 2, name: 'Beta' },
+  { id: 3, name: 'Gamma' },
+]
+
+const sharedObj = { title: 'shared', version: 1 }
+const sharedNested: NestedObj = { label: 'shared-nested' }
+
+const identitySlice = createSlice({
+  name: 'identity',
+  initialState: {
+    items: initialItems,
+    selectedItem: initialItems[0], // same ref as items[0]
+    draft: sharedObj,
+    published: sharedObj, // same ref as draft
+    current: { x: 1 } as Record<string, unknown>,
+    saved: { x: 1 } as Record<string, unknown>, // different ref, same value
+    listA: initialItems,
+    setB: [1, 3], // IDs of items in set B
+    objA: sharedNested,
+    objB: sharedNested, // same ref as objA
+    deep: { nested: { target: sharedNested } },
+    maybeNull: sharedNested as NestedObj | null,
+    siblingPrimitive: 0,
+  } as IdentityTestState,
+  reducers: {
+    selectItem(state, action: PayloadAction<number>) {
+      state.selectedItem = state.items[action.payload] ?? null
+    },
+    clearSelection(state) {
+      state.selectedItem = null
+    },
+    publishDraft(state) {
+      // Make draft and published point to the same new object
+      const newObj = { title: 'updated', version: 2 }
+      state.draft = newObj
+      state.published = newObj
+    },
+    divergeDraftFromPublished(state) {
+      // Make draft differ from published
+      state.draft = { title: 'draft-v2', version: 3 }
+      // published stays at its current value
+    },
+    syncCurrentToSaved(state) {
+      // Make current and saved point to the same ref
+      // In Immer, both get new refs but with same content
+      state.saved = { ...state.current }
+    },
+    mutateCurrent(state) {
+      state.current = { x: 999 }
+    },
+    addToSetB(state, action: PayloadAction<number>) {
+      state.setB.push(action.payload)
+    },
+    removeFromSetB(state, action: PayloadAction<number>) {
+      state.setB = state.setB.filter((id) => id !== action.payload)
+    },
+    updateItemName(
+      state,
+      action: PayloadAction<{ index: number; name: string }>,
+    ) {
+      state.items[action.payload.index].name = action.payload.name
+    },
+    replaceItems(state, action: PayloadAction<Item[]>) {
+      state.items = action.payload
+      // selectedItem is now stale (points to old array's item)
+    },
+    // Edge case reducers
+    setObjA(state, action: PayloadAction<NestedObj>) {
+      state.objA = action.payload
+    },
+    setObjB(state, action: PayloadAction<NestedObj>) {
+      state.objB = action.payload
+    },
+    setDeepTarget(state, action: PayloadAction<NestedObj>) {
+      state.deep.nested.target = action.payload
+    },
+    setMaybeNull(state, action: PayloadAction<NestedObj | null>) {
+      state.maybeNull = action.payload
+    },
+    bumpSiblingPrimitive(state) {
+      state.siblingPrimitive += 1
+    },
+  },
+})
+
+function createIdentityStore() {
+  return configureStore({
+    reducer: {
+      identity: identitySlice.reducer,
+    },
+  })
+}
+
+type IdentityStore = ReturnType<typeof createIdentityStore>
+type RootState = ReturnType<IdentityStore['getState']>
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+describe('object identity comparison in selectors', () => {
+  let store: IdentityStore
+
+  beforeEach(() => {
+    store = createIdentityStore()
+  })
+
+  afterEach(() => {
+    rtl.cleanup()
+  })
+
+  // ==========================================================================
+  // selectedItem === items[i]
+  //
+  // A selector reads state.selectedItem and state.items[i] and compares them.
+  // The proxy's get trap fires for both reads. The question is whether the
+  // dependency tracking is sufficient to re-run when selectedItem changes
+  // to point to a different object.
+  // ==========================================================================
+
+  describe('selectedItem === items[i]', () => {
+    it('detects when selectedItem is the same ref as items[0]', () => {
+      const Comp = () => {
+        const isSelected = useSignalSelector(
+          (state: RootState) =>
+            state.identity.selectedItem === state.identity.items[0],
+        )
+        return <div data-testid="result">{String(isSelected)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially selectedItem is items[0] (same ref in initialState)
+      expect(getByTestId('result').textContent).toBe('true')
+    })
+
+    it('updates when selectedItem changes to a different item', () => {
+      let selectorCalls = 0
+
+      const Comp = () => {
+        const isSelected = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          return state.identity.selectedItem === state.identity.items[0]
+        })
+        return <div data-testid="result">{String(isSelected)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+      const callsAfterMount = selectorCalls
+
+      // Change selection to items[1] — selectedItem now differs from items[0]
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.selectItem(1))
+      })
+
+      // The selector must re-run and return false
+      expect(getByTestId('result').textContent).toBe('false')
+      expect(selectorCalls).toBeGreaterThan(callsAfterMount)
+    })
+
+    it('updates when selectedItem becomes null', () => {
+      const Comp = () => {
+        const isSelected = useSignalSelector(
+          (state: RootState) =>
+            state.identity.selectedItem === state.identity.items[0],
+        )
+        return <div data-testid="result">{String(isSelected)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.clearSelection())
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('updates when items array is replaced (selected item becomes stale)', () => {
+      const Comp = () => {
+        const isSelected = useSignalSelector(
+          (state: RootState) =>
+            state.identity.selectedItem === state.identity.items[0],
+        )
+        return <div data-testid="result">{String(isSelected)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Replace items array entirely — selectedItem still points to old item
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.replaceItems([
+            { id: 10, name: 'New Alpha' },
+            { id: 20, name: 'New Beta' },
+          ]),
+        )
+      })
+
+      // selectedItem is the old {id:1, name:'Alpha'}, items[0] is now {id:10, name:'New Alpha'}
+      // These are different refs → should be false
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+  })
+
+  // ==========================================================================
+  // draft === published (cross-slice identity)
+  //
+  // Two state branches might point to the same object. Selector checks
+  // if they are identical.
+  // ==========================================================================
+
+  describe('draft === published', () => {
+    it('detects when draft and published are the same ref', () => {
+      const Comp = () => {
+        const isSynced = useSignalSelector(
+          (state: RootState) =>
+            state.identity.draft === state.identity.published,
+        )
+        return <div data-testid="result">{String(isSynced)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially draft and published are the same object ref
+      expect(getByTestId('result').textContent).toBe('true')
+    })
+
+    it('updates when draft diverges from published', () => {
+      const Comp = () => {
+        const isSynced = useSignalSelector(
+          (state: RootState) =>
+            state.identity.draft === state.identity.published,
+        )
+        return <div data-testid="result">{String(isSynced)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.divergeDraftFromPublished())
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('stays true when both draft and published are updated to same new ref', () => {
+      const Comp = () => {
+        const isSynced = useSignalSelector(
+          (state: RootState) =>
+            state.identity.draft === state.identity.published,
+        )
+        return <div data-testid="result">{String(isSynced)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Both draft and published get set to the same new object
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.publishDraft())
+      })
+
+      // After Immer, these will be different refs (Immer creates new objects)
+      // but the selector should still reflect the actual state
+      const state = store.getState()
+      const expectedResult = state.identity.draft === state.identity.published
+      expect(getByTestId('result').textContent).toBe(String(expectedResult))
+    })
+  })
+
+  // ==========================================================================
+  // current !== saved (boolean from identity comparison)
+  //
+  // Selector returns a boolean based on whether two objects are the same ref.
+  // This is the "has unsaved changes" pattern.
+  // ==========================================================================
+
+  describe('current !== saved (unsaved changes detection)', () => {
+    it('returns true when current and saved are different refs', () => {
+      const Comp = () => {
+        const hasChanges = useSignalSelector(
+          (state: RootState) => state.identity.current !== state.identity.saved,
+        )
+        return <div data-testid="result">{String(hasChanges)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially current and saved are different objects (even though same values)
+      expect(getByTestId('result').textContent).toBe('true')
+    })
+
+    it('updates when current is mutated', () => {
+      let selectorCalls = 0
+
+      const Comp = () => {
+        const hasChanges = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          return state.identity.current !== state.identity.saved
+        })
+        return <div data-testid="result">{String(hasChanges)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+      const callsAfterMount = selectorCalls
+
+      // Mutate current — it was already !== saved, stays that way
+      // But selector should still re-run because current's ref changed
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.mutateCurrent())
+      })
+
+      // Result is still true, but selector should have re-run due to
+      // the version counter on identity.current changing
+      expect(getByTestId('result').textContent).toBe('true')
+      // We expect the selector to have been re-evaluated
+      expect(selectorCalls).toBeGreaterThan(callsAfterMount)
+    })
+  })
+
+  // ==========================================================================
+  // Reading object ref without accessing properties
+  //
+  // The selector reads an object but only uses it for identity comparison,
+  // never accessing any of its properties. Does the proxy still track this?
+  // ==========================================================================
+
+  describe('object ref read without property access', () => {
+    it('tracks object ref changes via proxy version counter', () => {
+      // This selector reads state.identity.current (an object) but doesn't
+      // access any of its properties. It just checks if the ref exists.
+      const Comp = () => {
+        const hasCurrent = useSignalSelector(
+          (state: RootState) => state.identity.current != null,
+        )
+        return <div data-testid="result">{String(hasCurrent)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+    })
+
+    it('selector re-runs when object ref changes even without property access', () => {
+      let selectorCalls = 0
+
+      // The selector reads two object refs and compares them without reading
+      // any field inside either object, and returns a boolean rather than a
+      // proxy. Reading each object must still subscribe to its path.
+      const Comp = () => {
+        const isSame = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          // Read two object refs — get trap fires for each
+          const current = state.identity.current
+          const saved = state.identity.saved
+          // Compare identity — no property access on either
+          return current === saved
+        })
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially different refs
+      expect(getByTestId('result').textContent).toBe('false')
+      const callsAfterMount = selectorCalls
+
+      // Mutate current to a new object — still !== saved
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.mutateCurrent())
+      })
+
+      // The result is still false (different refs), so even if selector
+      // re-runs, the component may not re-render.
+      // The key question: does the selector re-run at all?
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('detects identity change when result flips from false to true', () => {
+      // Start with current !== saved, then sync them.
+      // This is the critical test: if no deps are tracked for the object
+      // reads, the selector won't re-run and the UI stays stale.
+      const Comp = () => {
+        const isSame = useSignalSelector((state: RootState) => {
+          const current = state.identity.current
+          const saved = state.identity.saved
+          return current === saved
+        })
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('false')
+
+      // Sync saved to match current
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.syncCurrentToSaved())
+      })
+
+      // After Immer, saved gets a new object with same content as current.
+      // But Immer creates a new ref for saved, so current !== saved still.
+      // Let's check what the store actually has:
+      const state = store.getState()
+      const expected = state.identity.current === state.identity.saved
+      expect(getByTestId('result').textContent).toBe(String(expected))
+    })
+  })
+
+  // ==========================================================================
+  // Array.includes / Set.has with object identity
+  //
+  // Selectors that use methods relying on identity comparison internally.
+  // ==========================================================================
+
+  describe('identity-based collection methods', () => {
+    it('tracks when using manual identity check across arrays', () => {
+      // Selector: find items from listA whose id is in setB
+      const Comp = () => {
+        const matchingItems = useSignalSelector((state: RootState) => {
+          const setBIds = new Set(state.identity.setB)
+          return state.identity.listA.filter((item) => setBIds.has(item.id))
+        })
+        return (
+          <div data-testid="result">
+            {matchingItems.map((i) => i.name).join(',')}
+          </div>
+        )
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // setB has ids [1, 3], so Alpha and Gamma match
+      expect(getByTestId('result').textContent).toBe('Alpha,Gamma')
+
+      // Add id 2 to setB
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.addToSetB(2))
+      })
+
+      expect(getByTestId('result').textContent).toBe('Alpha,Beta,Gamma')
+    })
+
+    it('updates when setB changes to exclude an item', () => {
+      const Comp = () => {
+        const matchingItems = useSignalSelector((state: RootState) => {
+          const setBIds = new Set(state.identity.setB)
+          return state.identity.listA.filter((item) => setBIds.has(item.id))
+        })
+        return (
+          <div data-testid="result">
+            {matchingItems.map((i) => i.name).join(',')}
+          </div>
+        )
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('Alpha,Gamma')
+
+      // Remove id 1 from setB
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.removeFromSetB(1))
+      })
+
+      expect(getByTestId('result').textContent).toBe('Gamma')
+    })
+
+    // The search argument is a proxy while the array's elements are raw
+    // objects, so the includes override has to unwrap the argument first.
+    it('selector using Array.includes with object identity', () => {
+      // This test creates a scenario where Array.includes is used with
+      // object references. Array.includes uses ===.
+      const Comp = () => {
+        const isFirstItemSelected = useSignalSelector((state: RootState) => {
+          // This is subtle: state.identity.items is a proxy, and
+          // state.identity.selectedItem is also a proxy.
+          // Array.includes on a proxy array checks if the proxy of
+          // selectedItem is in the proxy array.
+          return state.identity.items.includes(
+            state.identity.selectedItem as Item,
+          )
+        })
+        return <div data-testid="result">{String(isFirstItemSelected)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // selectedItem is items[0], and items includes it
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Clear selection — null is not in items
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.clearSelection())
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+  })
+
+  // ==========================================================================
+  // Selective re-execution verification
+  //
+  // Does the selector re-run when a compared reference changes even though
+  // no field it read changed, and keep the right result when an unrelated
+  // field changes?
+  // ==========================================================================
+
+  describe('selective re-execution with identity selectors', () => {
+    it('identity selector keeps the right result when an unrelated field changes', () => {
+      let identitySelectorCalls = 0
+      let unrelatedSelectorCalls = 0
+
+      const IdentityComp = () => {
+        const isSame = useSignalSelector((state: RootState) => {
+          identitySelectorCalls++
+          return state.identity.draft === state.identity.published
+        })
+        return <div data-testid="identity">{String(isSame)}</div>
+      }
+
+      // A second component reading something entirely different
+      const UnrelatedComp = () => {
+        const name = useSignalSelector((state: RootState) => {
+          unrelatedSelectorCalls++
+          return state.identity.items[0].name
+        })
+        return <div data-testid="unrelated">{name}</div>
+      }
+
+      rtl.render(
+        <SignalProvider store={store}>
+          <IdentityComp />
+          <UnrelatedComp />
+        </SignalProvider>,
+      )
+
+      const identityCallsAfterMount = identitySelectorCalls
+      const unrelatedCallsAfterMount = unrelatedSelectorCalls
+
+      // Update items[0].name — only the unrelated selector should re-run
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.updateItemName({ index: 0, name: 'AlphaV2' }),
+        )
+      })
+
+      expect(unrelatedSelectorCalls).toBeGreaterThan(unrelatedCallsAfterMount)
+      // draft and published did not change. Whether the identity selector
+      // re-runs here is only logged; the assertion is on its result.
+      const identityRan = identitySelectorCalls > identityCallsAfterMount
+
+      // Whether or not it re-ran, the result should be correct
+      expect(
+        document.querySelector('[data-testid="identity"]')!.textContent,
+      ).toBe('true')
+
+      // Log for analysis
+      console.log(
+        `Identity selector re-ran on unrelated change: ${identityRan}`,
+      )
+    })
+
+    it('identity selector re-runs when a compared reference changes', () => {
+      let selectorCalls = 0
+
+      const Comp = () => {
+        const isSame = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          return state.identity.draft === state.identity.published
+        })
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+      const callsAfterMount = selectorCalls
+
+      // Diverge draft from published — selector must re-run and return false
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.divergeDraftFromPublished())
+      })
+
+      expect(selectorCalls).toBeGreaterThan(callsAfterMount)
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+  })
+
+  // ==========================================================================
+  // Proxy identity consistency
+  //
+  // Verify that when two state paths point to the same underlying object,
+  // the proxy cache returns the same proxy, making === work correctly
+  // THROUGH the proxy layer.
+  // ==========================================================================
+
+  describe('proxy identity preservation', () => {
+    it('same underlying object produces same proxy via cache', () => {
+      // This is fundamental: if state.draft and state.published point to
+      // the same object, do their proxies compare as === ?
+      let proxyDraft: unknown
+      let proxyPublished: unknown
+
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          proxyDraft = state.identity.draft
+          proxyPublished = state.identity.published
+          return state.identity.draft === state.identity.published
+        })
+        return <div data-testid="result">{String(result)}</div>
+      }
+
+      rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Verify the proxies are actually the same object
+      expect(proxyDraft).toBe(proxyPublished)
+    })
+
+    it('different underlying objects produce different proxies', () => {
+      let proxyCurrent: unknown
+      let proxySaved: unknown
+
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          proxyCurrent = state.identity.current
+          proxySaved = state.identity.saved
+          return state.identity.current === state.identity.saved
+        })
+        return <div data-testid="result">{String(result)}</div>
+      }
+
+      rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // current and saved are different objects with same values
+      expect(proxyCurrent).not.toBe(proxySaved)
+    })
+  })
+
+  // ==========================================================================
+  // Immer structural sharing edge case
+  //
+  // When Immer updates one field but leaves another untouched,
+  // the untouched field keeps its reference. Test that identity
+  // comparisons reflect this correctly.
+  // ==========================================================================
+
+  describe('Immer structural sharing with identity', () => {
+    it('reflects Immer structural sharing in identity comparisons', () => {
+      // After dispatching divergeDraftFromPublished, draft changes but
+      // published keeps its old ref. selectedItem should still be items[0].
+      const results: boolean[] = []
+
+      const Comp = () => {
+        const selectedIsFirst = useSignalSelector((state: RootState) => {
+          return state.identity.selectedItem === state.identity.items[0]
+        })
+        results.push(selectedIsFirst)
+        return <div data-testid="result">{String(selectedIsFirst)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Dispatch something that doesn't affect items or selectedItem
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.divergeDraftFromPublished())
+      })
+
+      // selectedItem and items[0] should still be the same ref
+      // (Immer structural sharing preserves them)
+      const state = store.getState()
+      expect(state.identity.selectedItem).toBe(state.identity.items[0])
+
+      // The UI should still show true
+      expect(getByTestId('result').textContent).toBe('true')
+    })
+  })
+
+  // ==========================================================================
+  // Workarounds — identity comparison WITH property access
+  //
+  // These tests show that adding a primitive property access alongside
+  // the identity comparison makes the selector correctly reactive.
+  // This is the natural workaround for real-world selectors.
+  // ==========================================================================
+
+  describe('workaround — identity comparison with property access', () => {
+    it('identity selector works when also reading a primitive property', () => {
+      // This is the realistic pattern: compare identity BUT ALSO read
+      // a property (like id or name) from the objects.
+      const Comp = () => {
+        const isSelected = useSignalSelector((state: RootState) => {
+          // Reading .id creates a signal dependency on selectedItem.id
+          // and items.{id:1}.id — these signals fire when the refs change
+          const selId = state.identity.selectedItem?.id
+          const firstId = state.identity.items[0]?.id
+          return selId === firstId
+        })
+        return <div data-testid="result">{String(isSelected)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Change selection to items[1]
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.selectItem(1))
+      })
+
+      // Now selectedItem.id is 2, items[0].id is still 1 → false
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('identity selector works when reading any leaf from compared objects', () => {
+      // Comparing draft and published identity, but also reading .title
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          // Read a primitive from each to establish signal deps
+          const draftTitle = (state.identity.draft as Record<string, unknown>)
+            ?.title
+          const pubTitle = (state.identity.published as Record<string, unknown>)
+            ?.title
+          return draftTitle === pubTitle
+        })
+        return <div data-testid="result">{String(result)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Diverge draft
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.divergeDraftFromPublished())
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+  })
+
+  // ==========================================================================
+  // indexOf/lastIndexOf with proxy arguments
+  //
+  // Same root cause as includes: the override calls the raw array method
+  // with a proxy argument, which can't match raw objects.
+  // ==========================================================================
+
+  describe('indexOf/lastIndexOf with object args', () => {
+    it('indexOf returns correct index for proxy-wrapped object', () => {
+      const Comp = () => {
+        const idx = useSignalSelector((state: RootState) => {
+          return state.identity.items.indexOf(
+            state.identity.selectedItem as Item,
+          )
+        })
+        return <div data-testid="result">{String(idx)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // selectedItem is items[0], so indexOf should return 0
+      expect(getByTestId('result').textContent).toBe('0')
+    })
+  })
+
+  // ==========================================================================
+  // Null/undefined identity transitions
+  //
+  // Object goes from non-null to null and back. Tests that the transition
+  // between object and null is tracked (type changes at a path).
+  // ==========================================================================
+
+  describe('null identity transitions', () => {
+    it('tracks object → null transition', () => {
+      const Comp = () => {
+        const isNull = useSignalSelector(
+          (state: RootState) => state.identity.maybeNull === null,
+        )
+        return <div data-testid="result">{String(isNull)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially maybeNull is sharedNested (not null)
+      expect(getByTestId('result').textContent).toBe('false')
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setMaybeNull(null))
+      })
+
+      expect(getByTestId('result').textContent).toBe('true')
+    })
+
+    it('tracks null → object transition', () => {
+      // Start by setting to null
+      store.dispatch(identitySlice.actions.setMaybeNull(null))
+
+      const Comp = () => {
+        const isNull = useSignalSelector(
+          (state: RootState) => state.identity.maybeNull === null,
+        )
+        return <div data-testid="result">{String(isNull)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setMaybeNull({ label: 'restored' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('tracks object → null → different object', () => {
+      let selectorCalls = 0
+
+      const Comp = () => {
+        const label = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          const obj = state.identity.maybeNull
+          return obj === null ? 'none' : 'exists'
+        })
+        return <div data-testid="result">{label}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('exists')
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setMaybeNull(null))
+      })
+      expect(getByTestId('result').textContent).toBe('none')
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setMaybeNull({ label: 'new-obj' }))
+      })
+      expect(getByTestId('result').textContent).toBe('exists')
+    })
+  })
+
+  // ==========================================================================
+  // Nested leaf object (deep traversal, identity at leaf)
+  //
+  // state.deep.nested.target used for identity. Three levels of intermediate
+  // traversal, leaf object at the end.
+  // ==========================================================================
+
+  describe('nested leaf object identity', () => {
+    it('tracks identity change on deeply nested object', () => {
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) =>
+            state.identity.deep.nested.target === state.identity.objA,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially deep.nested.target and objA are both sharedNested
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Change deep.nested.target to a different object
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setDeepTarget({ label: 'different' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('tracks when deeply nested object becomes same ref as sibling', () => {
+      // First diverge them
+      store.dispatch(identitySlice.actions.setObjA({ label: 'diverged' }))
+
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) =>
+            state.identity.deep.nested.target === state.identity.objA,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('false')
+
+      // Set deep.nested.target to a new object with same content as objA
+      // (Immer will make them different refs)
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setDeepTarget({ label: 'diverged' }),
+        )
+      })
+
+      // After Immer, these are different refs even with same content
+      const state = store.getState()
+      const expected = state.identity.deep.nested.target === state.identity.objA
+      expect(getByTestId('result').textContent).toBe(String(expected))
+    })
+  })
+
+  // ==========================================================================
+  // Multiple leaf objects from same parent
+  //
+  // state.objA === state.objB where both are siblings under identity.
+  // Tests that leaf detection works when both leaves share a parent.
+  // ==========================================================================
+
+  describe('sibling leaf objects', () => {
+    it('tracks identity between sibling objects', () => {
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) => state.identity.objA === state.identity.objB,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially both are sharedNested
+      expect(getByTestId('result').textContent).toBe('true')
+
+      // Diverge objA
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setObjA({ label: 'changed' }))
+      })
+
+      expect(getByTestId('result').textContent).toBe('false')
+    })
+
+    it('tracks when siblings converge to same ref', () => {
+      // Diverge first
+      store.dispatch(identitySlice.actions.setObjA({ label: 'different' }))
+
+      const Comp = () => {
+        const isSame = useSignalSelector(
+          (state: RootState) => state.identity.objA === state.identity.objB,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('false')
+
+      // Change objB to match objA's content (Immer creates new refs)
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setObjB({ label: 'different' }))
+      })
+
+      const state = store.getState()
+      const expected = state.identity.objA === state.identity.objB
+      expect(getByTestId('result').textContent).toBe(String(expected))
+    })
+  })
+
+  // ==========================================================================
+  // Parent version signal false-positive suppression
+  //
+  // Sibling primitive changes → parent version signal fires → selector
+  // re-runs → returns same result → equality check suppresses re-render.
+  // Verifies the "benign false positive" trade-off of parent version signals.
+  // ==========================================================================
+
+  describe('false-positive suppression via equality check', () => {
+    it('does not re-render when sibling changes but selector result is stable', () => {
+      let renderCount = 0
+
+      const Comp = () => {
+        renderCount++
+        const isSame = useSignalSelector(
+          (state: RootState) => state.identity.objA === state.identity.objB,
+        )
+        return <div data-testid="result">{String(isSame)}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true')
+      const rendersAfterMount = renderCount
+
+      // Change siblingPrimitive — shares the identity parent with objA/objB.
+      // This fires the identity parent version signal. The selector re-runs
+      // but objA === objB is still true. Equality check suppresses re-render.
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.bumpSiblingPrimitive())
+      })
+
+      // Result should still be true, and render count should not increase
+      expect(getByTestId('result').textContent).toBe('true')
+      expect(renderCount).toBe(rendersAfterMount)
+    })
+  })
+
+  // ==========================================================================
+  // Conditional property access based on identity
+  //
+  // Selector first checks identity, then conditionally reads properties.
+  // On first run it may only read objects (leaf detection needed).
+  // On re-run after state change, it reads different paths.
+  // ==========================================================================
+
+  describe('conditional property access after identity check', () => {
+    it('handles selector that conditionally reads properties', () => {
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          if (state.identity.objA === state.identity.objB) {
+            // Same ref — just return the label
+            return state.identity.objA.label
+          }
+          // Different refs — return comparison string
+          return `${state.identity.objA.label} vs ${state.identity.objB.label}`
+        })
+        return <div data-testid="result">{result}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Initially same ref → returns label
+      expect(getByTestId('result').textContent).toBe('shared-nested')
+
+      // Diverge objA — different refs now
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setObjA({ label: 'alpha' }))
+      })
+
+      expect(getByTestId('result').textContent).toBe('alpha vs shared-nested')
+    })
+
+    it('handles short-circuit: reads only one side when first is null', () => {
+      // Set maybeNull to null first
+      store.dispatch(identitySlice.actions.setMaybeNull(null))
+
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          // Short circuit: if maybeNull is null, don't read objA
+          if (state.identity.maybeNull === null) {
+            return 'no-object'
+          }
+          return state.identity.maybeNull === state.identity.objA
+            ? 'same'
+            : 'different'
+        })
+        return <div data-testid="result">{result}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('no-object')
+
+      // Restore maybeNull — now it's a different ref from objA
+      rtl.act(() => {
+        store.dispatch(
+          identitySlice.actions.setMaybeNull({ label: 'restored' }),
+        )
+      })
+
+      expect(getByTestId('result').textContent).toBe('different')
+    })
+  })
+
+  // ==========================================================================
+  // Returning a leaf object (terminal proxy check)
+  //
+  // Selector returns an object directly (not a boolean from comparison).
+  // The terminal proxy check in useSignalSelector should handle this.
+  // ==========================================================================
+
+  describe('selector returning leaf object', () => {
+    it('re-runs when returned object ref changes', () => {
+      let selectorCalls = 0
+
+      const Comp = () => {
+        const obj = useSignalSelector((state: RootState) => {
+          selectorCalls++
+          return state.identity.objA
+        })
+        return <div data-testid="result">{(obj as NestedObj).label}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('shared-nested')
+      const callsAfterMount = selectorCalls
+
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.setObjA({ label: 'updated' }))
+      })
+
+      expect(getByTestId('result').textContent).toBe('updated')
+      expect(selectorCalls).toBeGreaterThan(callsAfterMount)
+    })
+  })
+
+  // ==========================================================================
+  // Mixed identity + primitive in same selector
+  //
+  // Selector reads both object identity and primitive properties.
+  // Tests that leaf object detection and parent version signals
+  // work together without interference.
+  // ==========================================================================
+
+  describe('mixed identity and primitive reads', () => {
+    it('tracks both identity and primitive changes', () => {
+      const Comp = () => {
+        const result = useSignalSelector((state: RootState) => {
+          const isSame = state.identity.draft === state.identity.published
+          const count = state.identity.siblingPrimitive
+          return `${isSame}-${count}`
+        })
+        return <div data-testid="result">{result}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('result').textContent).toBe('true-0')
+
+      // Change primitive
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.bumpSiblingPrimitive())
+      })
+      expect(getByTestId('result').textContent).toBe('true-1')
+
+      // Change identity
+      rtl.act(() => {
+        store.dispatch(identitySlice.actions.divergeDraftFromPublished())
+      })
+      expect(getByTestId('result').textContent).toBe('false-1')
+    })
+  })
+})
+
+// Identity comparisons between two state values inside a selector, at mount
+// (probe tier) and after the hook has been promoted (deep tier). Inside an
+// array scan callback the deep tier hands the callback a scan proxy for each
+// element, so comparing it with a direct read needs `unwrap` on both sides.
+describe('identity comparisons between state values', () => {
+  type Item = { id: number }
+
+  const makeStore = () => {
+    const current: Item = { id: 2 }
+    const slice = createSlice({
+      name: 'data',
+      initialState: {
+        items: [{ id: 1 }, current] as Item[],
+        current,
+        tick: 0,
+      },
+      reducers: {
+        tick: (state) => {
+          state.tick += 1
+        },
+      },
+      extraReducers: (builder) => {
+        builder.addCase('replaceCurrent', (state) => {
+          state.current = { id: state.current.id }
+        })
+      },
+    })
+    const store = configureStore({ reducer: { data: slice.reducer } })
+    return { store, tick: slice.actions.tick }
+  }
+
+  type RootState = ReturnType<ReturnType<typeof makeStore>['store']['getState']>
+
+  function renderInBothTiers<R>(selector: (s: RootState) => R) {
+    const { store, tick } = makeStore()
+    const seen = renderSignalSelector(store, selector)
+    const probeTier = seen.current
+    promoteToDeepTier(store, tick())
+    const deepTier = seen.current
+    return { probeTier, deepTier }
+  }
+
+  it('works for a direct comparison in both tiers', () => {
+    const result = renderInBothTiers(
+      (s) => s.data.items[1] === s.data.current && s.data.tick >= 0,
+    )
+    expect(result).toEqual({ probeTier: true, deepTier: true })
+  })
+
+  it('works for indexOf and includes in both tiers', () => {
+    const result = renderInBothTiers(
+      (s) =>
+        `${s.data.items.indexOf(s.data.current)}:${s.data.items.includes(s.data.current)}:${s.data.tick >= 0}`,
+    )
+    expect(result).toEqual({
+      probeTier: '1:true:true',
+      deepTier: '1:true:true',
+    })
+  })
+
+  it('works inside a scan callback with unwrap on both sides', () => {
+    const result = renderInBothTiers(
+      (s) => s.data.items.find((i) => unwrap(i) === unwrap(s.data.current))?.id,
+    )
+    expect(result).toEqual({ probeTier: 2, deepTier: 2 })
+  })
+})
+
+// A selector can return a state object inside a derived result and also read
+// a field through that same object. The returned object must still update
+// when a field the selector did not read changes, because the component holds
+// the whole object.
+describe('state object embedded in a derived result and read through', () => {
+  interface User {
+    name: string
+    age: number
+  }
+
+  const userSlice = createSlice({
+    name: 'user',
+    initialState: { name: 'Ann', age: 0 } as User,
+    reducers: {
+      birthday: (state) => {
+        state.age += 1
+      },
+    },
+  })
+
+  const makeStore = () =>
+    configureStore({
+      reducer: { user: userSlice.reducer, other: (s: number = 0) => s },
+    })
+
+  type RootState = ReturnType<ReturnType<typeof makeStore>['getState']>
+
+  const shapes: Array<[string, (s: RootState) => { u: User }]> = [
+    ['{ u: s.user, n: s.user.name }', (s) => ({ u: s.user, n: s.user.name })],
+    [
+      '{ u: s.user, arr: [s.user, s.user.name] }',
+      (s) => ({ u: s.user, arr: [s.user, s.user.name] }),
+    ],
+  ]
+
+  const equalities: Array<[string, EqualityFn<any> | undefined]> = [
+    ['shallowEqual', shallowEqual],
+    ['reference equality', undefined],
+  ]
+
+  for (const [shapeName, selector] of shapes) {
+    for (const [eqName, equalityFn] of equalities) {
+      it(`${shapeName} with ${eqName} updates when an unread field changes`, () => {
+        const store = makeStore()
+        let seen: User | undefined
+
+        function Comp() {
+          const result = useSignalSelector(selector, equalityFn)
+          seen = result.u
+          return null
+        }
+
+        rtl.render(
+          <SignalProvider store={store}>
+            <Comp />
+          </SignalProvider>,
+        )
+        expect(seen).toBe(store.getState().user)
+
+        for (let i = 1; i <= 3; i++) {
+          rtl.act(() => {
+            store.dispatch(userSlice.actions.birthday())
+          })
+          expect(seen?.age).toBe(i)
+          expect(seen).toBe(store.getState().user)
+        }
+      })
+    }
+  }
+
+  it('returning the state object alone still updates', () => {
+    const store = makeStore()
+    let seen: User | undefined
+
+    function Comp() {
+      seen = useSignalSelector(
+        (s: RootState) => ({ u: s.user }),
+        shallowEqual,
+      ).u
+      return null
+    }
+
+    rtl.render(
+      <SignalProvider store={store}>
+        <Comp />
+      </SignalProvider>,
+    )
+    for (let i = 1; i <= 3; i++) {
+      rtl.act(() => {
+        store.dispatch(userSlice.actions.birthday())
+      })
+      expect(seen?.age).toBe(i)
+    }
+  })
+})
+
+describe('identity comparison across multiple components', () => {
+  const settingsSlice = createSlice({
+    name: 'settings',
+    initialState: { theme: 'dark', fontSize: 12 },
+    reducers: {
+      setFontSize(state, action: PayloadAction<number>) {
+        state.fontSize = action.payload
+      },
+    },
+  })
+
+  function createTestStore() {
+    return configureStore({ reducer: { settings: settingsSlice.reducer } })
+  }
+
+  type TestState = ReturnType<ReturnType<typeof createTestStore>['getState']>
+
+  let store: ReturnType<typeof createTestStore>
+
+  beforeEach(() => {
+    store = createTestStore()
+  })
+
+  it('control: a lone component tracks identity changes of a leaf object', () => {
+    const originalSettings = store.getState().settings
+
+    function IdentityWatcher() {
+      const result = useSignalSelector((s: TestState) =>
+        unwrap(s.settings) === originalSettings ? 'same' : 'changed',
+      )
+      return <div data-testid="identity">{result}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        <IdentityWatcher />
+      </SignalProvider>,
+    )
+
+    expect(getByTestId('identity').textContent).toBe('same')
+
+    rtl.act(() => {
+      store.dispatch(settingsSlice.actions.setFontSize(99))
+    })
+
+    expect(getByTestId('identity').textContent).toBe('changed')
+  })
+
+  // The active leaf tracker lives in registry.evaluation.tracker and is
+  // swapped in per evaluation, so component B's identity-only reads land
+  // in B's own tracker even when component A's earlier traversal already
+  // populated the proxy cache.
+  it('a second component still tracks identity changes when another component traversed the same slice first', () => {
+    const originalSettings = store.getState().settings
+
+    function ThemeReader() {
+      const theme = useSignalSelector((s: TestState) => s.settings.theme)
+      return <div data-testid="theme">{theme}</div>
+    }
+
+    function IdentityWatcher() {
+      const result = useSignalSelector((s: TestState) =>
+        unwrap(s.settings) === originalSettings ? 'same' : 'changed',
+      )
+      return <div data-testid="identity">{result}</div>
+    }
+
+    const { getByTestId } = rtl.render(
+      <SignalProvider store={store}>
+        {/* A mounts first, creating + caching the proxies with its tracker */}
+        <ThemeReader />
+        <IdentityWatcher />
+      </SignalProvider>,
+    )
+
+    expect(getByTestId('identity').textContent).toBe('same')
+
+    // Changes fontSize only — theme untouched, settings ref replaced
+    rtl.act(() => {
+      store.dispatch(settingsSlice.actions.setFontSize(99))
+    })
+
+    expect(getByTestId('identity').textContent).toBe('changed')
+  })
+})

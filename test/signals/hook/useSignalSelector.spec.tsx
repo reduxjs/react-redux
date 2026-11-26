@@ -1,0 +1,1127 @@
+/* eslint-disable react/prop-types */
+
+import * as rtl from '@testing-library/react'
+import React, { StrictMode, useLayoutEffect, useState } from 'react'
+import {
+  configureStore,
+  createSlice,
+  type PayloadAction,
+} from '@reduxjs/toolkit'
+import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import { ErrorBoundary } from '../helpers/react'
+
+// ============================================================================
+// Test State Shape (RTK slices)
+// ============================================================================
+
+interface Todo {
+  id: number
+  text: string
+  completed: boolean
+}
+
+interface Counter {
+  id: string
+  label: string
+  value: number
+}
+
+const todosSlice = createSlice({
+  name: 'todos',
+  initialState: [
+    { id: 1, text: 'Learn Redux', completed: true },
+    { id: 2, text: 'Learn Signals', completed: false },
+    { id: 3, text: 'Build POC', completed: false },
+  ] as Todo[],
+  reducers: {
+    toggle(state, action: PayloadAction<number>) {
+      const todo = state.find((t) => t.id === action.payload)
+      if (todo) todo.completed = !todo.completed
+    },
+    add(state, action: PayloadAction<{ id: number; text: string }>) {
+      state.push({
+        id: action.payload.id,
+        text: action.payload.text,
+        completed: false,
+      })
+    },
+    remove(state, action: PayloadAction<number>) {
+      return state.filter((t) => t.id !== action.payload)
+    },
+  },
+})
+
+const countersSlice = createSlice({
+  name: 'counters',
+  initialState: {
+    counter1: { id: 'counter1', label: 'Clicks', value: 0 } as Counter,
+    counter2: { id: 'counter2', label: 'Views', value: 42 } as Counter,
+  },
+  reducers: {
+    increment(state, action: PayloadAction<'counter1' | 'counter2'>) {
+      state[action.payload].value += 1
+    },
+  },
+})
+
+const filterSlice = createSlice({
+  name: 'filter',
+  initialState: 'all' as 'all' | 'active' | 'completed',
+  reducers: {
+    set(_state, action: PayloadAction<'all' | 'active' | 'completed'>) {
+      return action.payload
+    },
+  },
+})
+
+const settingsSlice = createSlice({
+  name: 'settings',
+  initialState: { theme: 'dark', fontSize: 12 },
+  reducers: {
+    setFontSize(state, action: PayloadAction<number>) {
+      state.fontSize = action.payload
+    },
+    setTheme(state, action: PayloadAction<string>) {
+      state.theme = action.payload
+    },
+  },
+})
+
+function createTestStore() {
+  return configureStore({
+    reducer: {
+      todos: todosSlice.reducer,
+      counters: countersSlice.reducer,
+      filter: filterSlice.reducer,
+      settings: settingsSlice.reducer,
+    },
+  })
+}
+
+type TestStore = ReturnType<typeof createTestStore>
+type TestState = ReturnType<TestStore['getState']>
+
+// ============================================================================
+// Test Helpers
+// ============================================================================
+
+function createTrackedSelector<S, T>(
+  selector: (state: S) => T,
+): { selector: (state: S) => T; getCalls: () => number; reset: () => void } {
+  let calls = 0
+  const tracked = (state: S): T => {
+    calls++
+    return selector(state)
+  }
+  return {
+    selector: tracked,
+    getCalls: () => calls,
+    reset: () => {
+      calls = 0
+    },
+  }
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
+
+describe('useSignalSelector', () => {
+  let store: TestStore
+
+  beforeEach(() => {
+    store = createTestStore()
+  })
+
+  afterEach(() => {
+    rtl.cleanup()
+  })
+
+  // ==========================================================================
+  // Core Functionality
+  // ==========================================================================
+
+  describe('core functionality', () => {
+    it('handles nested object selection', () => {
+      let result: number | undefined
+      const Comp = () => {
+        const value = useSignalSelector(
+          (state: TestState) => state.counters.counter1.value,
+        )
+
+        useLayoutEffect(() => {
+          result = value
+        }, [value])
+
+        return <div data-testid="value">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(result).toBe(0)
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      expect(getByTestId('value').textContent).toBe('1')
+      expect(result).toBe(1)
+    })
+
+    it('handles array selection', () => {
+      let result: Todo | undefined
+      const Comp = () => {
+        const todo = useSignalSelector((state: TestState) => state.todos[0])
+
+        useLayoutEffect(() => {
+          result = todo
+        }, [todo])
+
+        return (
+          <div data-testid="todo">{todo.completed ? 'done' : 'pending'}</div>
+        )
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(result?.completed).toBe(true)
+
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.toggle(1))
+      })
+
+      expect(getByTestId('todo').textContent).toBe('pending')
+      expect(result?.completed).toBe(false)
+    })
+
+    it('unsubscribes when component unmounts', () => {
+      const selector = vi.fn((state: TestState) => state.filter)
+
+      const Comp = () => {
+        const filter = useSignalSelector(selector)
+        return <div>{filter}</div>
+      }
+
+      const { unmount } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      const callsBeforeUnmount = selector.mock.calls.length
+
+      unmount()
+
+      // Dispatch after unmount
+      store.dispatch(filterSlice.actions.set('completed'))
+
+      // Selector should not have been called again
+      expect(selector.mock.calls.length).toBe(callsBeforeUnmount)
+    })
+  })
+
+  // ==========================================================================
+  // Selector Identity Handling
+  // ==========================================================================
+
+  describe('selector identity handling', () => {
+    it('handles inline selectors', () => {
+      const renders: string[] = []
+      const Comp = () => {
+        // Inline selector - new function every render
+        const filter = useSignalSelector((state: TestState) => state.filter)
+        renders.push(filter)
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(renders[0]).toBe('all')
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+      })
+
+      expect(getByTestId('filter').textContent).toBe('active')
+      expect(renders[renders.length - 1]).toBe('active')
+    })
+
+    it('re-tracks when selector closure changes via key remount', () => {
+      const CounterDisplay = ({ id }: { id: 'counter1' | 'counter2' }) => {
+        const counter = useSignalSelector(
+          (state: TestState) => state.counters[id],
+        )
+        return (
+          <div data-testid={`display-${id}`}>
+            {counter?.label}: {counter?.value}
+          </div>
+        )
+      }
+
+      const Parent = () => {
+        const [selectedId, setSelectedId] = React.useState<
+          'counter1' | 'counter2'
+        >('counter1')
+        return (
+          <SignalProvider store={store}>
+            <CounterDisplay key={selectedId} id={selectedId} />
+            <button onClick={() => setSelectedId('counter2')}>Switch</button>
+          </SignalProvider>
+        )
+      }
+
+      const { getByTestId, getByText } = rtl.render(<Parent />)
+
+      expect(getByTestId('display-counter1').textContent).toBe('Clicks: 0')
+
+      // Switch to counter2
+      rtl.act(() => {
+        getByText('Switch').click()
+      })
+
+      expect(getByTestId('display-counter2').textContent).toBe('Views: 42')
+    })
+  })
+
+  // ==========================================================================
+  // Selective Execution
+  // ==========================================================================
+
+  describe('selective execution', () => {
+    it('todo selector does not run when counter changes', () => {
+      let todoSelectorCalls = 0
+      let counterSelectorCalls = 0
+
+      const TodoComp = () => {
+        const todo = useSignalSelector((state: TestState) => {
+          todoSelectorCalls++
+          return state.todos[0]
+        })
+        return <div data-testid="todo">{todo.text}</div>
+      }
+
+      const CounterComp = () => {
+        const counter = useSignalSelector((state: TestState) => {
+          counterSelectorCalls++
+          return state.counters.counter1
+        })
+        return <div data-testid="counter">{counter.value}</div>
+      }
+
+      rtl.render(
+        <SignalProvider store={store}>
+          <TodoComp />
+          <CounterComp />
+        </SignalProvider>,
+      )
+
+      // Mount: one probe run each, plus one extra from the default
+      // stabilityCheck: 'once' dev check
+      expect(todoSelectorCalls).toBe(2)
+      expect(counterSelectorCalls).toBe(2)
+
+      const todoCallsBefore = todoSelectorCalls
+      const counterCallsBefore = counterSelectorCalls
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      // Counter selector runs twice: once on promotion (old inline ref),
+      // once when the re-render swaps in the new inline function.
+      // The todo selector must NOT run at all.
+      expect(counterSelectorCalls - counterCallsBefore).toBe(2)
+      expect(todoSelectorCalls - todoCallsBefore).toBe(0)
+    })
+
+    it('counter selector does not run when todo changes', () => {
+      const todoSelector = createTrackedSelector(
+        (state: TestState) => state.todos[0],
+      )
+      const counterSelector = createTrackedSelector(
+        (state: TestState) => state.counters.counter1,
+      )
+
+      const TodoComp = () => {
+        const todo = useSignalSelector(todoSelector.selector)
+        return (
+          <div data-testid="todo">{todo.completed ? 'done' : 'pending'}</div>
+        )
+      }
+
+      const CounterComp = () => {
+        const counter = useSignalSelector(counterSelector.selector)
+        return <div data-testid="counter">{counter.value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <TodoComp />
+          <CounterComp />
+        </SignalProvider>,
+      )
+
+      todoSelector.reset()
+      counterSelector.reset()
+
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.toggle(1))
+      })
+
+      expect(getByTestId('todo').textContent).toBe('pending')
+      // Stable selector ref: exactly one run on promotion, no swap re-run
+      expect(todoSelector.getCalls()).toBe(1)
+      expect(counterSelector.getCalls()).toBe(0)
+    })
+
+    it('filter selector does not run when todos change', () => {
+      const filterSelector = createTrackedSelector(
+        (state: TestState) => state.filter,
+      )
+      const todoSelector = createTrackedSelector(
+        (state: TestState) => state.todos,
+      )
+
+      const FilterComp = () => {
+        const filter = useSignalSelector(filterSelector.selector)
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const TodoListComp = () => {
+        const todos = useSignalSelector(todoSelector.selector)
+        return <div data-testid="todos">{todos.length}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <FilterComp />
+          <TodoListComp />
+        </SignalProvider>,
+      )
+
+      filterSelector.reset()
+      todoSelector.reset()
+
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.add({ id: 4, text: 'New todo' }))
+      })
+
+      expect(getByTestId('todos').textContent).toBe('4')
+      // Stable selector ref: exactly one run on promotion, no swap re-run
+      expect(todoSelector.getCalls()).toBe(1)
+      expect(filterSelector.getCalls()).toBe(0)
+    })
+
+    it('counter1 selector does not run when counter2 changes', () => {
+      // Note: Both selectors read through `state.counters.counterX`, so they
+      // share the intermediate `"counters"` version-counter signal. When either
+      // counter changes, both selectors RE-RUN (signal dep on parent object).
+      // However, the correct component still renders the correct value —
+      // selectivity at the object level is coarser than leaf level.
+      // Leaf-returning selectors (e.g., `state.counters.counter1.value`) get
+      // full propagation cutoff via Object.is on the computed result.
+      const counter1Selector = createTrackedSelector(
+        (state: TestState) => state.counters.counter1.value,
+      )
+      const counter2Selector = createTrackedSelector(
+        (state: TestState) => state.counters.counter2.value,
+      )
+
+      let counter1Renders = 0
+      let counter2Renders = 0
+
+      const Counter1Comp = () => {
+        const value = useSignalSelector(counter1Selector.selector)
+        counter1Renders++
+        return <div data-testid="counter1">{value}</div>
+      }
+
+      const Counter2Comp = () => {
+        const value = useSignalSelector(counter2Selector.selector)
+        counter2Renders++
+        return <div data-testid="counter2">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Counter1Comp />
+          <Counter2Comp />
+        </SignalProvider>,
+      )
+
+      const renders1After = counter1Renders
+      const renders2After = counter2Renders
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      // counter1 value changed → exactly one re-render
+      expect(getByTestId('counter1').textContent).toBe('1')
+      expect(counter1Renders).toBe(renders1After + 1)
+
+      // counter2 value did NOT change → should NOT re-render
+      // (Object.is cutoff on the primitive computed result)
+      expect(getByTestId('counter2').textContent).toBe('42')
+      expect(counter2Renders).toBe(renders2After)
+    })
+  })
+
+  // ==========================================================================
+  // Equality Functions
+  // ==========================================================================
+
+  describe('equality functions', () => {
+    it('allows custom equality functions', () => {
+      let renderCount = 0
+
+      const Comp = () => {
+        const todosLength = useSignalSelector(
+          (state: TestState) => ({ length: state.todos.length }),
+          (a, b) => a.length === b.length,
+        )
+        renderCount++
+        return <div data-testid="length">{todosLength.length}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('length').textContent).toBe('3')
+      const rendersAfterMount = renderCount
+
+      // Toggle a todo — array changes but length stays same
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.toggle(1))
+      })
+
+      // Should NOT have re-rendered because length is the same
+      expect(renderCount).toBe(rendersAfterMount)
+
+      // Add a todo — length changes
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.add({ id: 4, text: 'New todo' }))
+      })
+
+      expect(getByTestId('length').textContent).toBe('4')
+      expect(renderCount).toBe(rendersAfterMount + 1)
+    })
+  })
+
+  // ==========================================================================
+  // Frozen State Handling
+  // ==========================================================================
+
+  describe('frozen state handling', () => {
+    it('works with configureStore (Immer freezes state)', () => {
+      // configureStore uses Immer, which freezes state, and tracking
+      // proxies must work over frozen objects.
+      const frozenStore = createTestStore()
+
+      const Comp = () => {
+        const filter = useSignalSelector((state: TestState) => state.filter)
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={frozenStore}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('filter').textContent).toBe('all')
+
+      // Verify slice state is frozen by Immer (individual slices, not root)
+      expect(Object.isFrozen(frozenStore.getState().todos)).toBe(true)
+      expect(Object.isFrozen(frozenStore.getState().counters)).toBe(true)
+
+      rtl.act(() => {
+        frozenStore.dispatch(filterSlice.actions.set('active'))
+      })
+
+      expect(getByTestId('filter').textContent).toBe('active')
+    })
+
+    it('works with deeply frozen nested objects', () => {
+      const frozenStore = createTestStore()
+
+      const Comp = () => {
+        const value = useSignalSelector(
+          (state: TestState) => state.counters.counter1.value,
+        )
+        return <div data-testid="value">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={frozenStore}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      // Verify nested state is frozen
+      expect(Object.isFrozen(frozenStore.getState().counters)).toBe(true)
+      expect(Object.isFrozen(frozenStore.getState().counters.counter1)).toBe(
+        true,
+      )
+
+      expect(getByTestId('value').textContent).toBe('0')
+
+      rtl.act(() => {
+        frozenStore.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      expect(getByTestId('value').textContent).toBe('1')
+    })
+  })
+
+  // ==========================================================================
+  // Array Mutations
+  // ==========================================================================
+
+  describe('array mutations', () => {
+    it('handles array item addition', () => {
+      const Comp = () => {
+        const count = useSignalSelector(
+          (state: TestState) => state.todos.length,
+        )
+        return <div data-testid="count">{count}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('count').textContent).toBe('3')
+
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.add({ id: 4, text: 'New' }))
+      })
+
+      expect(getByTestId('count').textContent).toBe('4')
+    })
+
+    it('handles array item removal', () => {
+      const Comp = () => {
+        const count = useSignalSelector(
+          (state: TestState) => state.todos.length,
+        )
+        return <div data-testid="count">{count}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('count').textContent).toBe('3')
+
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.remove(1))
+      })
+
+      expect(getByTestId('count').textContent).toBe('2')
+    })
+
+    it('handles array item property change', () => {
+      const Comp = () => {
+        const text = useSignalSelector(
+          (state: TestState) => state.todos[0].text,
+        )
+        return <div data-testid="text">{text}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('text').textContent).toBe('Learn Redux')
+
+      rtl.act(() => {
+        store.dispatch(todosSlice.actions.toggle(1))
+      })
+
+      // text didn't change, only completed did
+      expect(getByTestId('text').textContent).toBe('Learn Redux')
+    })
+  })
+
+  // ==========================================================================
+  // NOOP Dispatches
+  // ==========================================================================
+
+  describe('noop dispatches', () => {
+    it('does not re-render on NOOP dispatch', () => {
+      let renderCount = 0
+
+      const Comp = () => {
+        const filter = useSignalSelector((state: TestState) => state.filter)
+        renderCount++
+        return <div>{filter}</div>
+      }
+
+      rtl.render(
+        <SignalProvider store={store}>
+          <Comp />
+        </SignalProvider>,
+      )
+
+      const rendersAfterMount = renderCount
+
+      rtl.act(() => {
+        store.dispatch({ type: 'NOOP' } as any)
+      })
+
+      expect(renderCount).toBe(rendersAfterMount)
+    })
+  })
+
+  // ==========================================================================
+  // Error Handling
+  // ==========================================================================
+
+  describe('error handling', () => {
+    it('throws when used outside SignalProvider', () => {
+      const Comp = () => {
+        const filter = useSignalSelector((state: TestState) => state.filter)
+        return <div>{filter}</div>
+      }
+
+      expect(() => {
+        rtl.render(<Comp />)
+      }).toThrow('useSignalSelector must be used within a <SignalProvider>')
+    })
+  })
+
+  // ==========================================================================
+  // Multiple Components
+  // ==========================================================================
+
+  describe('multiple components', () => {
+    it('multiple components with different selectors all render correctly', () => {
+      const FilterComp = () => {
+        const filter = useSignalSelector((state: TestState) => state.filter)
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const TodoComp = () => {
+        const count = useSignalSelector(
+          (state: TestState) => state.todos.length,
+        )
+        return <div data-testid="todos">{count}</div>
+      }
+
+      const CounterComp = () => {
+        const value = useSignalSelector(
+          (state: TestState) => state.counters.counter1.value,
+        )
+        return <div data-testid="counter">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <FilterComp />
+          <TodoComp />
+          <CounterComp />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('filter').textContent).toBe('all')
+      expect(getByTestId('todos').textContent).toBe('3')
+      expect(getByTestId('counter').textContent).toBe('0')
+
+      // Update counter — only counter component should update
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      expect(getByTestId('filter').textContent).toBe('all')
+      expect(getByTestId('todos').textContent).toBe('3')
+      expect(getByTestId('counter').textContent).toBe('1')
+
+      // Update filter — only filter component should update
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('completed'))
+      })
+
+      expect(getByTestId('filter').textContent).toBe('completed')
+      expect(getByTestId('todos').textContent).toBe('3')
+      expect(getByTestId('counter').textContent).toBe('1')
+    })
+  })
+})
+
+describe('useSignalSelector inside React rendering', () => {
+  let store: TestStore
+
+  beforeEach(() => {
+    store = createTestStore()
+  })
+
+  afterEach(() => {
+    rtl.cleanup()
+  })
+
+  describe('selector closing over props', () => {
+    // A render that brings a different selector function triggers a
+    // render-phase swap: the computed is invalidated and re-evaluated in
+    // place, so getSnapshot returns the new closure's value in the same
+    // render (same approach as useSyncExternalStoreWithSelector).
+    it('re-selects when a prop used by the selector changes', () => {
+      function CounterValue({ which }: { which: 'counter1' | 'counter2' }) {
+        const value = useSignalSelector(
+          (s: TestState) => s.counters[which].value,
+        )
+        return <div data-testid="value">{value}</div>
+      }
+
+      let setWhich: (w: 'counter1' | 'counter2') => void = () => {}
+      function Parent() {
+        const [which, set] = useState<'counter1' | 'counter2'>('counter1')
+        setWhich = set
+        return <CounterValue which={which} />
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Parent />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('value').textContent).toBe('0')
+
+      rtl.act(() => {
+        setWhich('counter2')
+      })
+
+      // counter2's value is 42 — the stale closure keeps showing counter1's 0
+      expect(getByTestId('value').textContent).toBe('42')
+    })
+  })
+
+  describe('StrictMode', () => {
+    it('renders and updates correctly under StrictMode', () => {
+      function FilterReader() {
+        const filter = useSignalSelector((s: TestState) => s.filter)
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <StrictMode>
+          <SignalProvider store={store}>
+            <FilterReader />
+          </SignalProvider>
+        </StrictMode>,
+      )
+
+      expect(getByTestId('filter').textContent).toBe('all')
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+      })
+
+      expect(getByTestId('filter').textContent).toBe('active')
+    })
+  })
+
+  describe('re-entrant dispatch', () => {
+    it('handles a component dispatching from a layout effect in response to a change', () => {
+      function ChainedDispatcher() {
+        const value = useSignalSelector(
+          (s: TestState) => s.counters.counter1.value,
+        )
+        useLayoutEffect(() => {
+          if (value === 1) {
+            store.dispatch(countersSlice.actions.increment('counter1'))
+          }
+        }, [value])
+        return <div data-testid="chained">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <ChainedDispatcher />
+        </SignalProvider>,
+      )
+
+      expect(getByTestId('chained').textContent).toBe('0')
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      // The layout effect chains a second increment: 0 → 1 → 2
+      expect(getByTestId('chained').textContent).toBe('2')
+    })
+
+    it('handles a store subscriber dispatching during notification', () => {
+      function FilterReader() {
+        const filter = useSignalSelector((s: TestState) => s.filter)
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <FilterReader />
+        </SignalProvider>,
+      )
+
+      const unsubscribe = store.subscribe(() => {
+        if (store.getState().filter === 'active') {
+          store.dispatch(filterSlice.actions.set('completed'))
+        }
+      })
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+      })
+
+      expect(getByTestId('filter').textContent).toBe('completed')
+      unsubscribe()
+    })
+  })
+
+  describe('selector errors', () => {
+    it('recovers when a throwing evaluation is superseded before React renders', () => {
+      // Two dispatches in one act: the first makes the selector throw
+      // during the effect's re-evaluation, the second fixes the state.
+      // The successful re-run must clear the pending error so the
+      // render that follows never sees it.
+      let throwCount = 0
+      function FilterReader() {
+        const filter = useSignalSelector((s: TestState) => {
+          if (s.filter === 'active') {
+            throwCount++
+            throw new Error('transient selector failure')
+          }
+          return s.filter
+        })
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId, queryByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <ErrorBoundary>
+            <FilterReader />
+          </ErrorBoundary>
+        </SignalProvider>,
+      )
+      expect(getByTestId('filter').textContent).toBe('all')
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+        store.dispatch(filterSlice.actions.set('completed'))
+      })
+
+      // The throw really happened — recovery is what is being tested,
+      // not a selector that never saw the bad state.
+      expect(throwCount).toBeGreaterThan(0)
+      expect(queryByTestId('boundary')).toBeNull()
+      expect(getByTestId('filter').textContent).toBe('completed')
+    })
+
+    it('recovers when a store subscriber corrects the throwing state during notification', () => {
+      // Same retry leg, driven re-entrantly: the subscriber sees the
+      // bad state mid-notification and dispatches the fix before React
+      // gets to render.
+      let throwCount = 0
+      function FilterReader() {
+        const filter = useSignalSelector((s: TestState) => {
+          if (s.filter === 'active') {
+            throwCount++
+            throw new Error('transient selector failure')
+          }
+          return s.filter
+        })
+        return <div data-testid="filter">{filter}</div>
+      }
+
+      const { getByTestId, queryByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <ErrorBoundary>
+            <FilterReader />
+          </ErrorBoundary>
+        </SignalProvider>,
+      )
+
+      // Promote out of the coarse tier first so the deep effect
+      // re-evaluates the selector synchronously on each dispatch —
+      // otherwise the hook never observes the intermediate state.
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('completed'))
+      })
+      expect(getByTestId('filter').textContent).toBe('completed')
+
+      const unsubscribe = store.subscribe(() => {
+        if (store.getState().filter === 'active') {
+          store.dispatch(filterSlice.actions.set('all'))
+        }
+      })
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+      })
+
+      expect(throwCount).toBeGreaterThan(0)
+      expect(queryByTestId('boundary')).toBeNull()
+      expect(getByTestId('filter').textContent).toBe('all')
+      unsubscribe()
+    })
+  })
+
+  describe('dispatch during a selector', () => {
+    it('a selector that dispatches once during evaluation settles on the final state', () => {
+      // Dispatching from a selector is an application bug, but it must
+      // not corrupt the graph or loop forever — the guarded dispatch
+      // lands and every hook settles on the post-dispatch state.
+      let dispatched = false
+
+      function GreedyReader() {
+        const value = useSignalSelector((s: TestState) => {
+          if (!dispatched && s.counters.counter1.value === 1) {
+            dispatched = true
+            store.dispatch(countersSlice.actions.increment('counter1'))
+          }
+          return s.counters.counter1.value
+        })
+        return <div data-testid="greedy">{value}</div>
+      }
+
+      function OtherReader() {
+        const value = useSignalSelector(
+          (s: TestState) => s.counters.counter1.value,
+        )
+        return <div data-testid="other">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <GreedyReader />
+          <OtherReader />
+        </SignalProvider>,
+      )
+      expect(getByTestId('greedy').textContent).toBe('0')
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+
+      expect(getByTestId('greedy').textContent).toBe('2')
+      expect(getByTestId('other').textContent).toBe('2')
+    })
+  })
+
+  describe('conditional reads', () => {
+    // Dependencies are rebuilt from scratch on every evaluation, so a
+    // branch that was not read the first time still becomes a dependency
+    // as soon as the selector starts reading it.
+    it('tracks the branch that is read after a toggle flips', () => {
+      let selectorRuns = 0
+      let renders = 0
+      const selectByFilter = (s: TestState) => {
+        selectorRuns++
+        return s.filter === 'all'
+          ? s.counters.counter1.value
+          : s.counters.counter2.value
+      }
+      function Value() {
+        renders++
+        const value = useSignalSelector(selectByFilter)
+        return <div data-testid="value">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Value />
+        </SignalProvider>,
+      )
+      expect(getByTestId('value').textContent).toBe('0')
+      expect(renders).toBe(1)
+
+      // counter2 is not read yet: no evaluation, no render.
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter2'))
+      })
+      expect(getByTestId('value').textContent).toBe('0')
+      expect(renders).toBe(1)
+
+      rtl.act(() => {
+        store.dispatch(filterSlice.actions.set('active'))
+      })
+      expect(getByTestId('value').textContent).toBe('43')
+      expect(renders).toBe(2)
+
+      // Now counter2 IS a dependency and counter1 no longer is.
+      const runsBefore = selectorRuns
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter2'))
+      })
+      expect(getByTestId('value').textContent).toBe('44')
+      expect(renders).toBe(3)
+
+      rtl.act(() => {
+        store.dispatch(countersSlice.actions.increment('counter1'))
+      })
+      expect(getByTestId('value').textContent).toBe('44')
+      expect(renders).toBe(3)
+      expect(selectorRuns).toBe(runsBefore + 1)
+    })
+
+    it('drops a dependency that an early return stops reading', () => {
+      let selectorRuns = 0
+      function Value() {
+        const value = useSignalSelector((s: TestState) => {
+          selectorRuns++
+          if (s.settings.theme === 'light') return 'light mode'
+          return `${s.settings.theme}/${s.settings.fontSize}`
+        })
+        return <div data-testid="value">{value}</div>
+      }
+
+      const { getByTestId } = rtl.render(
+        <SignalProvider store={store}>
+          <Value />
+        </SignalProvider>,
+      )
+      expect(getByTestId('value').textContent).toBe('dark/12')
+
+      rtl.act(() => {
+        store.dispatch(settingsSlice.actions.setFontSize(14))
+      })
+      expect(getByTestId('value').textContent).toBe('dark/14')
+
+      rtl.act(() => {
+        store.dispatch(settingsSlice.actions.setTheme('light'))
+      })
+      expect(getByTestId('value').textContent).toBe('light mode')
+
+      // fontSize is no longer read past the early return, so changing it
+      // must not evaluate the selector at all.
+      const runsBefore = selectorRuns
+      rtl.act(() => {
+        store.dispatch(settingsSlice.actions.setFontSize(16))
+      })
+      expect(getByTestId('value').textContent).toBe('light mode')
+      expect(selectorRuns).toBe(runsBefore)
+    })
+  })
+})

@@ -46,6 +46,15 @@
       "rules": {
         "no-unused-expressions": "off"
       }
+    },
+    {
+      "files": [
+        "test/signals/internals/diff.spec.ts",
+        "test/signals/internals/trackingProxy.spec.ts"
+      ],
+      "rules": {
+        "no-unused-expressions": "off"
+      }
     }
   ]
 }

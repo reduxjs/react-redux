@@ -11,6 +11,9 @@ importers:
       '@types/use-sync-external-store':
         specifier: ^0.0.6
         version: 0.0.6
+      alien-signals:
+        specifier: ^3.2.1
+        version: 3.2.1
       use-sync-external-store:
         specifier: ^1.4.0
         version: 1.6.0(react@19.2.8)
@@ -19,8 +22,8 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
       '@reduxjs/toolkit':
-        specifier: ^2.12.0
-        version: 2.12.0(react@19.2.8)
+        specifier: ^2.13.0
+        version: 2.13.0(react@19.2.8)
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
@@ -45,6 +48,9 @@ importers:
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
+      fast-check:
+        specifier: ^4.10.3
+        version: 4.10.3
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1(supports-color@7.2.0)
@@ -69,6 +75,9 @@ importers:
       redux:
         specifier: ^5.0.1
         version: 5.0.1
+      reselect:
+        specifier: ^5.2.0
+        version: 5.3.0
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -411,8 +420,8 @@ packages:
   '@quansync/fs@1.0.0':
     resolution: {integrity: sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ==}
 
-  '@reduxjs/toolkit@2.12.0':
-    resolution: {integrity: sha512-KiT+RzZbp6mQET+Mg+h2c97+9j1sNflUxQkIHI7Yuzf6Peu+OYpmkn6nbHWmLLWj+1ZODUJFwGZ7gx3L9R9EOw==}
+  '@reduxjs/toolkit@2.13.0':
+    resolution: {integrity: sha512-f6jwVRfwW30+tnllz4YcsHHpPYYOE7abcHkyUCovD+P7DyhdAI5prz2Fh/8TLhakjpN+7aIEion1s5L/tvlYlA==}
     peerDependencies:
       react: ^16.9.0 || ^17.0.0 || ^18 || ^19
       react-redux: ^7.2.1 || ^8.1.3 || ^9.0.0
@@ -754,6 +763,9 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
+  alien-signals@3.2.1:
+    resolution: {integrity: sha512-I8FjmltrfnDFoZedi5CG8DghVYNhzb/Ijluz7tCSJH0xpd0484Kowhbb1XDYOxfJpU1p5wnM2X54dA+IfGyD1g==}
+
   ansi-escapes@7.3.0:
     resolution: {integrity: sha512-BvU8nYgGQBxcmMuEeUEmNTvrMVjJNSH7RgW24vXexN4Ven6qCvy4TntnvlnwnMLTVlcRQQdbRY8NKnaIoeWDNg==}
     engines: {node: '>=18'}
@@ -976,6 +988,10 @@ packages:
   expect-type@1.4.0:
     resolution: {integrity: sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==}
     engines: {node: '>=12.0.0'}
+
+  fast-check@4.10.3:
+    resolution: {integrity: sha512-SBaU6nhh+sXxb05r2IHAKfxnR/1Pu6MqtHYaewM1BY6V5xzOxOk+4yoWO7WfeeyZG1iArFE6/DO/7iLYMUuOJg==}
+    engines: {node: '>=12.17.0'}
 
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
@@ -1322,6 +1338,9 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+
+  pure-rand@8.4.2:
+    resolution: {integrity: sha512-vvuOGgcuPJAirlHvuQw1TrOiw7ptaIXXmIbNuiNOY6lNGJJH49PQ1Kj4nd783nPdQhQdicgOjVI2yI/9BD6/Ng==}
 
   quansync@1.0.0:
     resolution: {integrity: sha512-5xZacEEufv3HSTPQuchrvV6soaiACMFnq1H8wkVioctoH3TRha9Sz66lOxRwPK/qZj7HPiSveih9yAyh98gvqA==}
@@ -1935,7 +1954,7 @@ snapshots:
     dependencies:
       quansync: 1.0.0
 
-  '@reduxjs/toolkit@2.12.0(react@19.2.8)':
+  '@reduxjs/toolkit@2.13.0(react@19.2.8)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@standard-schema/utils': 0.3.0
@@ -2174,6 +2193,8 @@ snapshots:
 
   agent-base@7.1.4: {}
 
+  alien-signals@3.2.1: {}
+
   ansi-escapes@7.3.0:
     dependencies:
       environment: 1.1.0
@@ -2349,6 +2370,10 @@ snapshots:
       '@types/estree': 1.0.9
 
   expect-type@1.4.0: {}
+
+  fast-check@4.10.3:
+    dependencies:
+      pure-rand: 8.4.2
 
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
@@ -2682,6 +2707,8 @@ snapshots:
       react-is: 17.0.2
 
   punycode@2.3.1: {}
+
+  pure-rand@8.4.2: {}
 
   quansync@1.0.0: {}
 

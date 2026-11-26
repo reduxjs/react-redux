@@ -1,0 +1,698 @@
+import type { Context } from 'react'
+import { React } from '../utils/react'
+import type { DevModeChecks, UseSelectorOptions } from '../hooks/useSelector'
+import type { ReactReduxContextValue } from '../components/Context'
+import type { EqualityFn } from '../types'
+import { createProbeProxy } from './probeProxy'
+import type { CoarseSub } from './segmentIndex'
+import type { SignalContextValue } from './context'
+import {
+  createSignalContextHook,
+  ReactReduxContext,
+  useSignalContext,
+} from './context'
+import {
+  createLeafTracker,
+  createTrackingProxy,
+  finalizeDependencies,
+} from './trackingProxy'
+import { getProxyPath } from './proxyIdentity'
+import { computed, effect, signal } from './reactiveSystem'
+import { untrackResult } from './untrack'
+import { isPlainObject } from './objects'
+
+const { useRef, useMemo, useSyncExternalStore, useDebugValue } = React
+
+const refEquality: EqualityFn<any> = Object.is
+
+// Returned by the computed when the selector threw. A unique sentinel
+// (never a real result) so alien-signals sees the value as changed and
+// keeps propagating to the effect — returning the previous result would
+// cut off propagation and React would never be notified of the error.
+const SELECTOR_THREW = Symbol('selector threw') as unknown
+
+/**
+ * A React hook that selects state from a Redux store using signal-based
+ * dependency tracking. A store update re-runs only the selectors that read
+ * a changed path, and the component re-renders only when the selected
+ * value changes.
+ *
+ * Must be used within a <SignalProvider>.
+ * @param selector - Function that extracts a value from the store state
+ * @param equalityFnOrOptions - Equality function, or an options object
+ *   with `equalityFn` and `devModeChecks` (same shape as stock
+ *   `useSelector`)
+ * @param useBoundSignalContext - Internal: the context hook to read the
+ *   signal context from. Bound by `createSignalSelectorHook`.
+ * @returns The selected value
+ */
+const useSignalSelectorImpl = <S, R>(
+  selector: (state: S) => R,
+  equalityFnOrOptions: EqualityFn<R> | UseSelectorOptions<R> = {},
+  useBoundSignalContext: <SS>() => SignalContextValue<SS> = useSignalContext,
+): R => {
+  const { equalityFn = refEquality as EqualityFn<R>, devModeChecks = {} } =
+    typeof equalityFnOrOptions === 'function'
+      ? { equalityFn: equalityFnOrOptions, devModeChecks: {} }
+      : equalityFnOrOptions
+
+  if (process.env.NODE_ENV !== 'production') {
+    if (!selector) {
+      throw new Error(`You must pass a selector to useSignalSelector`)
+    }
+    if (typeof selector !== 'function') {
+      throw new Error(
+        `You must pass a function as a selector to useSignalSelector`,
+      )
+    }
+    if (typeof equalityFn !== 'function') {
+      throw new Error(
+        `You must pass a function as an equality function to useSignalSelector`,
+      )
+    }
+  }
+
+  const reduxContext = useBoundSignalContext<S>()
+  const { store, registry } = reduxContext
+
+  // Track the latest equalityFn via a ref. Updated during render
+  // (idempotent ref write, same approach as React's
+  // useSyncExternalStoreWithSelector). The selector itself lives in the
+  // bridge; see setSelector.
+  const equalityFnRef = useRef(equalityFn)
+  equalityFnRef.current = equalityFn
+
+  // Dev-mode check settings. Per-hook `devModeChecks` overrides merge over
+  // the Provider-level defaults, matching stock useSelector. Kept in refs
+  // (idempotent render-phase writes) so the bridge closure always reads
+  // the latest values.
+  const devModeChecksRef = useRef<Partial<DevModeChecks>>(devModeChecks)
+  devModeChecksRef.current = devModeChecks
+  const contextRef = useRef(reduxContext)
+  contextRef.current = reduxContext
+
+  // Create the signal bridge once (stable across renders)
+  const bridge = useMemo(() => {
+    // Each bridge owns its selector, seeded from the render that created
+    // it. A bridge built for a new store (or StrictMode's extra useMemo
+    // call) never runs a selector that another bridge was handed.
+    let currentSelector = selector
+    let currentResult: R
+    // Whether currentResult has ever been seeded. User equality
+    // functions must never be called with the unseeded value — stock
+    // useSelector never compares against a nonexistent previous result.
+    let hasResult = false
+    let notifyReact: (() => void) | null = null
+    let suppressNotify = false
+    // Set when the selector threw during an effect re-evaluation (classic
+    // zombie child: an entity was removed while a component selecting it
+    // is still mounted). getSnapshot retries and rethrows if it persists.
+    let pendingError: unknown = null
+
+    // --- Coarse tier state ---
+    // The hook starts "unbuilt": no tracking proxies, no path signals,
+    // no alien-signals effect. At mount, one shallow probe records which
+    // top-level state keys the selector reads; the hook then waits in
+    // the segment index and is promoted to the deep tier on the first
+    // dispatch that changes one of those keys.
+    let built = false
+    let disposeEffect: (() => void) | null = null
+    let coarseSub: CoarseSub | null = null
+    let probeSegments = new Set<string>()
+    // Footprint can't be gated: the selector read no top-level keys,
+    // returned the root, or enumerated root keys — or the root isn't a
+    // plain object. Such hooks build the deep tier eagerly.
+    let ungateable = false
+    // State ref that probeSegments/currentResult were probed against.
+    let probedState: unknown = null
+    // State ref that currentResult was last computed against. getSnapshot
+    // compares it to store.getState() to catch dispatches whose listener
+    // notification hasn't arrived yet.
+    let lastSnapshotState: unknown = null
+    // Freshness cache for getServerSnapshot, keyed on the serverState ref.
+    let lastServerState: unknown = null
+    let serverResult: R
+
+    // Adopt a freshly computed value unless the user's equality function
+    // says it matches the current one. Keeping the PREVIOUS reference for
+    // equal-but-new results (`() => [1, 2, 3]` with a custom equalityFn)
+    // is what makes the equality check stick: React only sees a new value
+    // when the selector's output actually changed. The equality function
+    // is never called before the first value is seeded.
+    const adopt = (value: R): boolean => {
+      if (hasResult && equalityFnRef.current(currentResult, value)) {
+        return false
+      }
+      currentResult = value
+      hasResult = true
+      return true
+    }
+
+    // Bumped when the component re-renders with a different selector
+    // function (e.g., an inline selector closing over changed props).
+    // The computed reads it, so bumping forces a re-evaluation with the
+    // new closure — otherwise the selector would keep returning the old
+    // closure's result until an unrelated store change fired a signal.
+    const selectorVersionSignal = signal(0)
+
+    // Force a fresh evaluation of the computed WITHOUT notifying React.
+    // Bumping the version signal dirties the computed; a plain .get()
+    // alone would return the cached value. On a selector error the
+    // computed records pendingError and yields the SELECTOR_THREW
+    // sentinel, which must never replace the last good result.
+    const recomputeInPlace = (): void => {
+      suppressNotify = true
+      try {
+        selectorVersionSignal.set(selectorVersionSignal.get() + 1)
+        const value = selectorComputed.get()
+        if (pendingError === null) {
+          adopt(value)
+        }
+      } finally {
+        suppressNotify = false
+      }
+    }
+
+    const setSelector = (nextSelector: (state: S) => R): void => {
+      currentSelector = nextSelector
+
+      if (built) {
+        // Recompute in place: this runs during render, and getSnapshot
+        // picks up the fresh value in the same pass. Scheduling a
+        // re-render here would loop forever for selectors that return a
+        // new reference on every run.
+        recomputeInPlace()
+        if (pendingError !== null) {
+          // The new closure threw — surface it in this render.
+          throw pendingError
+        }
+        return
+      }
+
+      // Still in the coarse tier: the registered footprint reflects the
+      // OLD closure. Re-probe with the new one and swap the registration
+      // — `s => flag ? s.a : s.b` left registered under {a} alone would
+      // silently miss every change to b.
+      const state = store.getState()
+      if (isPlainObject(state)) {
+        // A probe throw propagates into this render (stock parity for
+        // selector swaps); the old registration stays until a working
+        // closure lands.
+        probe(state as S & object)
+        if (coarseSub !== null) {
+          registry.segmentIndex.unregister(coarseSub)
+          coarseSub = {
+            // Ungateable after the swap (returns root / enumerates keys):
+            // the deep effect can't be attached during render, so
+            // register a wildcard — the next root change promotes it.
+            segments: ungateable ? null : probeSegments,
+            onCoarseHit,
+          }
+          registry.segmentIndex.register(coarseSub)
+        }
+        // Not subscribed yet: subscribe() handles registration (and the
+        // eager build for ungateable footprints).
+      } else {
+        // Root became non-plain while never subscribed (a dispatch in
+        // the render→subscribe gap) — can't probe it. Don't build during
+        // render either (an uncommitted component would orphan the
+        // build). Invalidate the snapshot cache so getSnapshot re-runs
+        // the NEW closure in this render; subscribe() builds the deep
+        // tier on commit.
+        ungateable = true
+        lastSnapshotState = null
+      }
+    }
+
+    // Dev-mode selector checks (stability / identity function), matching
+    // stock useSelector. They run inside the computed because that is the
+    // only place the selector executes. `firstRun` is per hook instance:
+    // 'once' means literally once, on the first evaluation — a later
+    // render-phase selector swap does NOT re-arm it.
+    let firstRun = true
+    const runDevModeChecks = (selected: R, proxy: S, rawState: S): void => {
+      const { stabilityCheck = 'once', identityFunctionCheck = 'once' } =
+        contextRef.current
+      const finalChecks: DevModeChecks = {
+        stabilityCheck,
+        identityFunctionCheck,
+        ...devModeChecksRef.current,
+      }
+
+      if (
+        finalChecks.stabilityCheck === 'always' ||
+        (finalChecks.stabilityCheck === 'once' && firstRun)
+      ) {
+        // Re-running the selector against the same proxy registers the
+        // same dependencies (idempotent) and returns proxy-consistent
+        // values, so === / shallowEqual comparisons behave correctly.
+        const toCompare = currentSelector(proxy)
+        if (!equalityFnRef.current(selected, toCompare)) {
+          let stack: string | undefined = undefined
+          try {
+            throw new Error()
+          } catch (e) {
+            stack = (e as Error).stack
+          }
+          console.warn(
+            'Selector ' +
+              (currentSelector.name || 'unknown') +
+              ' returned a different result when called with the same parameters. This can lead to unnecessary rerenders.' +
+              '\nSelectors that return a new reference (such as an object or an array) should be memoized: https://redux.js.org/usage/deriving-data-selectors#optimizing-selectors-with-memoization',
+            // `state` is the RAW store state, not the proxy the selector
+            // ran against — the warning is user-facing and a tracking
+            // proxy in the console would register phantom dependencies
+            // for anything the user expanded in devtools.
+            { state: rawState, selected, selected2: toCompare, stack },
+          )
+        }
+      }
+
+      if (
+        finalChecks.identityFunctionCheck === 'always' ||
+        (finalChecks.identityFunctionCheck === 'once' && firstRun)
+      ) {
+        if ((selected as unknown) === proxy) {
+          let stack: string | undefined = undefined
+          try {
+            throw new Error()
+          } catch (e) {
+            stack = (e as Error).stack
+          }
+          console.warn(
+            'Selector ' +
+              (currentSelector.name || 'unknown') +
+              ' returned the root state when called. With useSignalSelector this component will NEVER re-render, because signal dependencies are only created for the specific paths a selector reads — and this selector read none.' +
+              '\nSelect the smallest values your component needs instead of the entire state object.',
+            { stack },
+          )
+        }
+      }
+
+      firstRun = false
+    }
+
+    // The computed runs the selector through a tracking proxy, which
+    // establishes signal dependencies on the paths the selector reads.
+    // Intermediate object traversals don't create signal dependencies
+    // (avoiding "false sharing" where sibling changes cause re-runs);
+    // primitive reads depend on their own paths, and object reads are
+    // settled after the selector returns: objects used only for identity
+    // (`a === b`) and state objects embedded in the result depend on
+    // their own version signals.
+    const selectorComputed = computed(() => {
+      selectorVersionSignal.get()
+      // pendingError reflects the LAST evaluation: a successful re-run
+      // clears an earlier error.
+      pendingError = null
+      // Restored rather than cleared so a nested evaluation hands the
+      // tracker back to the one it interrupted.
+      const outerTracker = registry.evaluation.tracker
+      try {
+        const state = store.getState() as S & object
+        lastSnapshotState = state
+
+        const leafTracker = createLeafTracker()
+        registry.evaluation.tracker = leafTracker
+        const proxy = createTrackingProxy(state, '', registry)
+        const result = currentSelector(proxy as S)
+
+        if (process.env.NODE_ENV !== 'production') {
+          runDevModeChecks(result, proxy as S, state as S)
+        }
+
+        // Deferred reads: collapse complete enumerations onto object
+        // version signals, then track identity for leaf objects (read
+        // but never traversed, e.g. used only for `===`).
+        finalizeDependencies(leafTracker, registry)
+
+        // Strip tracking proxies before the result crosses into React.
+        // Everything downstream — equalityFn, getSnapshot, components,
+        // dispatch payloads — sees only raw state. Every state object
+        // that leaves the selector gets an identity dependency, even if
+        // the selector also read fields through it: the component holds
+        // the whole object. The root is skipped when nested inside a
+        // derived result (only a root returned as the whole result reads
+        // the root signal).
+        return untrackResult(result, (p) => {
+          const path = getProxyPath(p)
+          if (path !== undefined && (path !== '' || p === result)) {
+            registry.getOrCreate(path, p).get()
+          }
+        })
+      } catch (e) {
+        // The selector threw — typically a zombie child whose entity was
+        // removed in the same dispatch that will unmount it. The error
+        // CANNOT propagate from here: alien-signals evaluates dirty
+        // computeds during its flush (checkDirty), so an uncaught throw
+        // escapes store.dispatch and skips every remaining component's
+        // effect. Record it and yield the sentinel; the effect notifies
+        // React and getSnapshot re-evaluates — if a parent unmounts this
+        // component first the error dissolves, otherwise it rethrows
+        // into the render where an error boundary owns it (matching
+        // stock useSelector under React's useSyncExternalStore).
+        pendingError = e
+        return SELECTOR_THREW as R
+      } finally {
+        registry.evaluation.tracker = outerTracker
+      }
+    })
+
+    // Create the alien-signals effect that drives the deep tier: fires
+    // when the computed value changes, applies the user's equalityFn,
+    // and notifies React. Extracted from subscribe() because promotion
+    // from the coarse tier (first coarse hit) also attaches it.
+    const attachEffect = (): void => {
+      let isFirst = true
+      disposeEffect = effect(() => {
+        const newValue = selectorComputed.get()
+
+        if (pendingError !== null) {
+          // The evaluation threw (newValue is the SELECTOR_THREW
+          // sentinel — never adopt it). Notify React so getSnapshot
+          // can retry and surface or dissolve the error.
+          isFirst = false
+          if (!suppressNotify) {
+            notifyReact?.()
+          }
+          return
+        }
+
+        if (isFirst) {
+          // First effect run — just establish tracking, don't notify
+          isFirst = false
+          return
+        }
+
+        if (suppressNotify) {
+          // Render-phase selector swap (setSelector): adopt the value
+          // so the equality baseline is current, but let the ongoing
+          // render pick it up via getSnapshot instead of scheduling
+          // another render. Equality still applies: this effect runs
+          // synchronously inside recomputeInPlace, so skipping the check
+          // here would adopt the new reference before recomputeInPlace
+          // ever gets to reject it.
+          adopt(newValue)
+          return
+        }
+
+        if (adopt(newValue)) {
+          notifyReact?.()
+        }
+      })
+    }
+
+    // Run the selector once through a one-level shallow probe proxy:
+    // seeds currentResult and records the coarse footprint (which
+    // top-level keys it read) without building tracking proxies or path
+    // signals. Throws propagate to the caller — mount render / selector
+    // swap, stock parity.
+    const probe = (state: S & object): void => {
+      const { proxy, record } = createProbeProxy(state)
+      const value = currentSelector(proxy as S)
+      if (process.env.NODE_ENV !== 'production') {
+        runDevModeChecks(value, proxy as S, state as S)
+      }
+      // A re-probe after a render-phase selector swap keeps the previous
+      // reference for equal-but-new results.
+      adopt(untrackResult(value))
+      probeSegments = record.segments
+      ungateable = record.segments.size === 0 || record.enumerated
+      probedState = state
+      lastSnapshotState = state
+    }
+
+    // Promotion: a dispatch changed one of this hook's root segments.
+    // Build the deep tier — evaluate the computed (creating tracking
+    // proxies and path signals), attach the driving effect, and notify
+    // React if the value actually changed. Runs synchronously inside
+    // the Provider's onStateChange, before notifyNestedSubs.
+    const onCoarseHit = (): void => {
+      if (built || notifyReact === null) return
+      if (coarseSub !== null) {
+        registry.segmentIndex.unregister(coarseSub)
+        coarseSub = null
+      }
+      built = true
+      attachEffect()
+      // The effect's first run evaluated the computed (isFirst skip);
+      // this read returns the cached value.
+      const newValue = selectorComputed.get()
+      if (pendingError !== null) {
+        // Zombie-child window: the dispatch that woke us also removed
+        // the entity. getSnapshot retries and surfaces or dissolves it.
+        notifyReact?.()
+        return
+      }
+      if (adopt(newValue)) {
+        notifyReact?.()
+      }
+    }
+
+    // --- Mount seeding ---
+    // Probe the selector's coarse footprint and seed the initial value.
+    // A selector that throws on mount surfaces here, during render —
+    // same as stock useSelector.
+    //
+    // The deep tier is NEVER built during render, even for ungateable
+    // footprints. React only calls subscribe for components that commit,
+    // so a render-phase build has no owner until then: a component that
+    // suspends, a transition render that gets abandoned, or the extra
+    // bridge from StrictMode's useMemo double-invoke would orphan the
+    // computed and permanently anchor path signals in the registry.
+    // Until subscribe builds the deep tier, getSnapshot serves values by
+    // running the raw selector (see the unbuilt branch below).
+    const initialState = store.getState()
+    if (isPlainObject(initialState)) {
+      probe(initialState as S & object)
+    } else {
+      // Non-plain root: can't probe it (methods called through a proxy
+      // over a Map, Set or class instance would run with the proxy as
+      // `this` and lose internal-slot access). getSnapshot's unbuilt path runs
+      // the raw selector during render (throw-on-mount parity);
+      // subscribe() builds the deep tier on commit.
+      ungateable = true
+    }
+
+    const getSnapshot = (): R => {
+      if (built && pendingError !== null) {
+        // A previous evaluation threw. Retry against current state:
+        // the situation may have resolved (entity restored, or this is
+        // a fresh render pass after the parent re-rendered). Clear
+        // first — the effect's catch re-sets it if the selector still
+        // throws. On rethrow, LEAVE pendingError set so the next
+        // getSnapshot (React retries during render after a
+        // subscription-phase throw) re-evaluates instead of returning
+        // a stale value.
+        pendingError = null
+        recomputeInPlace()
+        if (pendingError !== null) {
+          throw pendingError
+        }
+      }
+
+      // The store moved but nothing has refreshed currentResult yet: an
+      // unbuilt hook has no effect watching (render→subscribe gap, or a
+      // coarse-tier hook waiting for its Provider notification), and a
+      // built hook's listeners may not have been notified (deferred
+      // notification, e.g. RTK's autoBatchEnhancer). A render landing in
+      // that gap must still see current state, the same way stock
+      // useSelector reads store.getState() directly. Recompute against
+      // RAW state with no dependency changes, cached per state ref. When
+      // the notification arrives the effect re-evaluates, finds the
+      // value equal, and stays quiet. A throw propagates into render —
+      // stock parity.
+      //
+      // Raw state does not guarantee a proxy-free result: a selector can
+      // close over values captured during an earlier tracked evaluation
+      // (RTK Query's `lastValue` ref holds the previous default result,
+      // whose `data` is a tracking proxy when `selectFromResult` is
+      // used) and return them. Untrack here as on the tracked path.
+      const state = store.getState()
+      if (state !== lastSnapshotState) {
+        lastSnapshotState = state
+        adopt(untrackResult(currentSelector(state as S)))
+      }
+      return currentResult
+    }
+
+    return {
+      subscribe(onStoreChange: () => void): () => void {
+        notifyReact = onStoreChange
+
+        if (!built) {
+          // A dispatch may have landed between render (probe) and
+          // subscribe. Re-probe so the registered footprint and seeded
+          // value reflect the state we're subscribing against.
+          const state = store.getState()
+          if (state !== probedState) {
+            if (isPlainObject(state)) {
+              try {
+                probe(state as S & object)
+              } catch {
+                // The selector threw against the newer state (zombie
+                // window). Fall back to the deep tier — its pendingError
+                // machinery owns surfacing (effect notify → getSnapshot
+                // rethrow into render).
+                built = true
+                recomputeInPlace()
+              }
+            } else {
+              built = true
+              recomputeInPlace()
+            }
+          }
+
+          if (!built) {
+            if (ungateable) {
+              // Can't gate this footprint — build eagerly. On error the
+              // computed set pendingError; the effect's first run
+              // notifies and getSnapshot rethrows into render.
+              // Equality applies before adopting: the probe already
+              // seeded currentResult, and a selector that returns a
+              // new-but-equal reference must not change the identity
+              // React saw during render (that would force an immediate
+              // extra re-render at subscribe time).
+              built = true
+              const value = selectorComputed.get()
+              if (pendingError === null) {
+                adopt(value)
+              }
+            } else {
+              coarseSub = { segments: probeSegments, onCoarseHit }
+              registry.segmentIndex.register(coarseSub)
+            }
+          }
+        }
+
+        if (built && disposeEffect === null) {
+          attachEffect()
+        }
+
+        return () => {
+          notifyReact = null
+          if (coarseSub !== null) {
+            registry.segmentIndex.unregister(coarseSub)
+            coarseSub = null
+          }
+          if (disposeEffect !== null) {
+            disposeEffect()
+            disposeEffect = null
+          }
+        }
+      },
+
+      getSnapshot,
+
+      // Hydration snapshot. `<SignalProvider serverState>` records the
+      // state the server rendered against; the client store may already
+      // have moved on, and returning its current value would produce a
+      // hydration mismatch. Runs the raw selector against the server
+      // state — no proxies, no signals, nothing to register — and
+      // caches per server-state reference so repeated calls in one
+      // hydration pass return an identical result.
+      getServerSnapshot(): R {
+        const { getServerState } = contextRef.current
+        if (getServerState === undefined) {
+          return getSnapshot()
+        }
+        const state = getServerState()
+        if (state !== lastServerState) {
+          lastServerState = state
+          serverResult = untrackResult(currentSelector(state as S))
+        }
+        return serverResult as R
+      },
+
+      getSelector: (): ((state: S) => R) => currentSelector,
+
+      setSelector,
+    }
+    // The selector is deliberately not a dependency: a new selector
+    // reaches an existing bridge through setSelector below.
+  }, [store, registry])
+
+  // Render-phase selector swap: if this render brought a different
+  // selector function (inline selector closing over changed props),
+  // re-evaluate now so getSnapshot returns the new closure's value in
+  // this same render.
+  if (bridge.getSelector() !== selector) {
+    bridge.setSelector(selector)
+  }
+
+  // React only re-checks the snapshot after commit when getSnapshot's
+  // identity changed. Stock useSelector gets that for free from
+  // useSyncExternalStoreWithSelector, which derives a new getSnapshot per
+  // selector identity; a store change made in a layout effect is then
+  // rendered synchronously instead of waiting for the store listener.
+  // Hand React a wrapper keyed on the selector so the two match.
+  const getSnapshot = useMemo(
+    () => () => bridge.getSnapshot(),
+    [bridge, selector],
+  )
+
+  const selectedState = useSyncExternalStore(
+    bridge.subscribe,
+    getSnapshot,
+    bridge.getServerSnapshot,
+  )
+
+  useDebugValue(selectedState)
+
+  return selectedState
+}
+
+/**
+ * The signal-based `useSignalSelector` hook, including the `withTypes`
+ * helper for creating a pre-typed version:
+ *
+ * ```ts
+ * export const useAppSignalSelector = useSignalSelector.withTypes<RootState>()
+ * ```
+ */
+export interface UseSignalSelector<StateType = unknown> {
+  <TState extends StateType = StateType, Selected = unknown>(
+    selector: (state: TState) => Selected,
+    equalityFnOrOptions?:
+      | EqualityFn<NoInfer<Selected>>
+      | UseSelectorOptions<NoInfer<Selected>>,
+  ): Selected
+
+  withTypes: <
+    OverrideStateType extends StateType,
+  >() => UseSignalSelector<OverrideStateType>
+}
+
+/**
+ * Hook factory, which creates a `useSignalSelector` hook bound to a given
+ * context. Mirrors stock `createSelectorHook`.
+ *
+ * The context must be provided by a `<SignalProvider context={...}>` —
+ * the returned hook validates that the context value carries the signal
+ * registry.
+ *
+ * @param context - Context passed to your `<SignalProvider>`.
+ * @returns A `useSignalSelector` hook bound to the given context.
+ */
+export function createSignalSelectorHook(
+  context: Context<ReactReduxContextValue<any, any> | null> = ReactReduxContext,
+): UseSignalSelector {
+  const useBoundSignalContext =
+    context === ReactReduxContext
+      ? useSignalContext
+      : createSignalContextHook(context)
+
+  const useSignalSelectorBound = <S, R>(
+    selector: (state: S) => R,
+    equalityFnOrOptions: EqualityFn<R> | UseSelectorOptions<R> = {},
+  ): R =>
+    useSignalSelectorImpl(selector, equalityFnOrOptions, useBoundSignalContext)
+
+  const boundHook = Object.assign(useSignalSelectorBound, {
+    withTypes: () => boundHook,
+  }) as UseSignalSelector
+
+  return boundHook
+}
+
+export const useSignalSelector = /* @__PURE__ */ createSignalSelectorHook()

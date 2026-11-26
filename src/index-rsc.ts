@@ -30,6 +30,10 @@ export {
   throwNotSupportedError as useDispatch,
   throwNotSupportedError as useSelector,
   throwNotSupportedError as useStore,
+  throwNotSupportedError as SignalProvider,
+  throwNotSupportedError as createSignalSelectorHook,
+  throwNotSupportedError as unwrap,
+  throwNotSupportedError as useSignalSelector,
 }
 export const ReactReduxContext = {} as any
 export { default as shallowEqual } from './utils/shallowEqual'

@@ -1,0 +1,861 @@
+/**
+ * What the path signal registry holds onto across mount/unmount churn.
+ *
+ * `evaluation.proxyCache` is a WeakMap, so its contents cannot be observed from a
+ * test. Everything else is counted by `registry.debugStats()`.
+ *
+ * Imports come from source modules rather than `src/index`, so these
+ * tests are unaffected by the local benchmark override in
+ * `src/exports.ts`.
+ */
+import * as rtl from '@testing-library/react'
+import React from 'react'
+import { createStore } from 'redux'
+import type { Store } from 'redux'
+import { beforeEach, describe, expect, it } from 'vitest'
+import type {
+  PathSignalRegistry,
+  RegistryStats,
+} from '../../../src/signals/pathSignalRegistry'
+import { SignalProvider } from '../../../src/signals/SignalProvider'
+import { useSignalSelector } from '../../../src/signals/useSignalSelector'
+import {
+  createRegistryCapture,
+  renderPromotedWithReplace as renderPromoted,
+} from '../helpers/react'
+import { EMPTY_STATS } from '../helpers/registry'
+
+interface Slice {
+  value: number
+  nested: { n: number }
+}
+
+interface Item {
+  id: number
+  done: boolean
+  text: string
+}
+
+interface AppState {
+  slices: Record<string, Slice>
+  dyn: Record<string, { v: number }>
+  items: Item[]
+  other: { flag: boolean }
+}
+
+type Action =
+  | { type: 'bump'; key: string }
+  | { type: 'toggleOther' }
+  | { type: 'addDyn'; id: string }
+  | { type: 'removeDyn'; id: string }
+  | { type: 'toggleItem'; id: number }
+  | { type: 'pushItem' }
+  | { type: 'popItem' }
+
+const SLICE_COUNT = 20
+
+function makeInitialState(): AppState {
+  const slices: Record<string, Slice> = {}
+  for (let i = 0; i < SLICE_COUNT; i++) {
+    slices[`s${i}`] = { value: i, nested: { n: i * 10 } }
+  }
+  const items: Item[] = Array.from({ length: 10 }, (_, i) => ({
+    id: i,
+    done: i % 2 === 0,
+    text: `item ${i}`,
+  }))
+  return { slices, dyn: {}, items, other: { flag: false } }
+}
+
+function reducer(
+  state: AppState = makeInitialState(),
+  action: Action,
+): AppState {
+  switch (action.type) {
+    case 'bump': {
+      const prev = state.slices[action.key]
+      return {
+        ...state,
+        slices: {
+          ...state.slices,
+          [action.key]: {
+            value: prev.value + 1,
+            nested: { n: prev.nested.n + 1 },
+          },
+        },
+      }
+    }
+    case 'toggleOther':
+      return { ...state, other: { flag: !state.other.flag } }
+    case 'addDyn':
+      return { ...state, dyn: { ...state.dyn, [action.id]: { v: 1 } } }
+    case 'removeDyn': {
+      const next = { ...state.dyn }
+      delete next[action.id]
+      return { ...state, dyn: next }
+    }
+    case 'toggleItem':
+      return {
+        ...state,
+        items: state.items.map((item) =>
+          item.id === action.id ? { ...item, done: !item.done } : item,
+        ),
+      }
+    case 'pushItem': {
+      const id = state.items.length
+      return {
+        ...state,
+        items: [...state.items, { id, done: false, text: `item ${id}` }],
+      }
+    }
+    case 'popItem':
+      return { ...state, items: state.items.slice(0, -1) }
+    default:
+      return state
+  }
+}
+
+function makeStore(): Store<AppState, Action> {
+  return createStore(reducer)
+}
+
+const {
+  Capture: CaptureRegistry,
+  registry: requireRegistry,
+  reset: resetCapturedRegistry,
+} = createRegistryCapture()
+
+function Watcher({ index }: { index: number }) {
+  const n = useSignalSelector((s: AppState) => s.slices[`s${index}`].nested.n)
+  return <div data-testid={`w${index}`}>{n}</div>
+}
+
+function DynWatcher({ id }: { id: string }) {
+  const v = useSignalSelector((s: AppState) => s.dyn[id]?.v ?? -1)
+  return <div data-testid={`d${id}`}>{v}</div>
+}
+
+function ListWatcher() {
+  const doneCount = useSignalSelector(
+    (s: AppState) => s.items.filter((item) => item.done).length,
+  )
+  return <div data-testid="list">{doneCount}</div>
+}
+
+function Tree({
+  store,
+  count,
+  dynIds = [],
+  withList = false,
+}: {
+  store: Store<AppState, Action>
+  count: number
+  dynIds?: string[]
+  withList?: boolean
+}) {
+  return (
+    <SignalProvider store={store}>
+      <CaptureRegistry />
+      {Array.from({ length: count }, (_, i) => (
+        <Watcher key={i} index={i} />
+      ))}
+      {dynIds.map((id) => (
+        <DynWatcher key={id} id={id} />
+      ))}
+      {withList ? <ListWatcher /> : null}
+    </SignalProvider>
+  )
+}
+
+beforeEach(() => {
+  resetCapturedRegistry()
+})
+
+describe('registry lifecycle: coarse tier only (never promoted)', () => {
+  it('registers one coarse subscriber per hook and nothing else', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+
+    expect(requireRegistry().debugStats()).toEqual({
+      ...EMPTY_STATS,
+      segmentSubs: SLICE_COUNT,
+    })
+
+    unmount()
+  })
+
+  it('releases every coarse subscriber on unmount', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+    const registry = requireRegistry()
+
+    expect(registry.debugStats().segmentSubs).toBe(SLICE_COUNT)
+
+    unmount()
+
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+
+  it('keeps hooks coarse when dispatches never touch their root key', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+    const registry = requireRegistry()
+
+    for (let i = 0; i < 5; i++) {
+      rtl.act(() => {
+        store.dispatch({ type: 'toggleOther' })
+      })
+    }
+
+    expect(registry.debugStats()).toEqual({
+      ...EMPTY_STATS,
+      segmentSubs: SLICE_COUNT,
+    })
+
+    unmount()
+
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+})
+
+describe('registry lifecycle: after promotion to the deep graph', () => {
+  it('builds path signals on the first dispatch that hits a tracked root key', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+    const registry = requireRegistry()
+
+    expect(registry.debugStats().signals).toBe(0)
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+
+    const promoted = registry.debugStats()
+    expect(promoted.signals).toBeGreaterThan(0)
+    expect(promoted.childIndex).toBeGreaterThan(0)
+    expect(promoted.segmentSubs).toBe(0)
+
+    unmount()
+  })
+
+  it('releases every path signal once the last watching component unmounts', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+    const mounted = registry.debugStats()
+    expect(mounted.signals).toBeGreaterThan(0)
+
+    unmount()
+
+    // Unmount disposes each hook's effect, which drops the last
+    // subscriber from its computed and cascades `unwatched` down to
+    // every path signal it read. The registry ends up back at the
+    // state it had before anything mounted.
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+
+  it('keeps a shared path alive until the last of its watchers unmounts', () => {
+    const store = makeStore()
+
+    // Both watchers read `slices.s0.nested.n`, and both sit under one
+    // provider, so they share a single registry entry for that path.
+    function Pair({ showSecond }: { showSecond: boolean }) {
+      return (
+        <SignalProvider store={store}>
+          <CaptureRegistry />
+          <Watcher index={0} />
+          {showSecond ? <Watcher index={0} /> : null}
+        </SignalProvider>
+      )
+    }
+
+    const { rerender, unmount } = rtl.render(<Pair showSecond />)
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+
+    const shared = registry.debugPaths()
+    expect(shared).toContain('slices.s0.nested.n')
+
+    // One watcher goes away; the other still reads the path, so the
+    // signal keeps its subscriber and must survive.
+    rerender(<Pair showSecond={false} />)
+    expect(registry.debugPaths()).toEqual(shared)
+
+    unmount()
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+})
+
+describe('selectors that switch which paths they read', () => {
+  it('holds only the current branch as a conditional selector alternates', () => {
+    const store = makeStore()
+
+    function Branching({ index }: { index: number }) {
+      const n = useSignalSelector(
+        (s: AppState) => s.slices[`s${index}`].nested.n,
+      )
+      return <div data-testid="branch">{n}</div>
+    }
+
+    function App({ index }: { index: number }) {
+      return (
+        <SignalProvider store={store}>
+          <CaptureRegistry />
+          <Branching index={index} />
+        </SignalProvider>
+      )
+    }
+
+    const { rerender, unmount } = rtl.render(<App index={0} />)
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+    expect(registry.debugPaths()).toContain('slices.s0.nested.n')
+
+    // Re-running the selector against a different branch relinks the
+    // computed onto the new path. The old path loses its only
+    // subscriber, so it must not linger — otherwise every branch ever
+    // visited stays in the registry and keeps `hasPrefix` true, which
+    // is the traversal cost this mechanism exists to remove.
+    const visited: number[] = [1, 2, 3, 4]
+    for (const index of visited) {
+      rerender(<App index={index} />)
+      rtl.act(() => {
+        store.dispatch({ type: 'bump', key: `s${index}` })
+      })
+
+      const paths = registry.debugPaths()
+      expect(paths).toContain(`slices.s${index}.nested.n`)
+      for (const other of visited) {
+        if (other !== index) {
+          expect(paths).not.toContain(`slices.s${other}.nested.n`)
+        }
+      }
+      expect(paths).not.toContain('slices.s0.nested.n')
+    }
+
+    unmount()
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+})
+
+describe('partial unmount under a shared ancestor', () => {
+  it('keeps the shared ancestor alive while any sibling still reads it', () => {
+    const store = makeStore()
+    const { rerender, unmount } = rtl.render(
+      <Tree store={store} count={SLICE_COUNT} />,
+    )
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+    expect(registry.debugPaths()).toContain(
+      `slices.s${SLICE_COUNT - 1}.nested.n`,
+    )
+
+    // Drop 15 of the 20 watchers in a single commit. Every released
+    // path shares the `slices` ancestor, so its bookkeeping takes 15
+    // decrements merged into one pass. The arithmetic has to land
+    // exactly: over-decrement and `slices` is dropped while five live
+    // paths still sit under it, which would make `hasPrefix` say no and
+    // stop the diff from ever reaching them again.
+    rerender(<Tree store={store} count={5} />)
+
+    const paths = registry.debugPaths()
+    for (let i = 0; i < 5; i++) {
+      expect(paths).toContain(`slices.s${i}.nested.n`)
+    }
+    for (let i = 5; i < SLICE_COUNT; i++) {
+      expect(paths).not.toContain(`slices.s${i}.nested.n`)
+    }
+    expect(registry.hasPrefix('slices')).toBe(true)
+
+    // The survivors have to still be wired up, not just present in the
+    // registry — this is what catches a severed ancestor chain.
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's4' })
+    })
+    expect(rtl.screen.getByTestId('w4').textContent).toBe('41')
+
+    unmount()
+    expect(registry.debugStats()).toEqual(EMPTY_STATS)
+  })
+})
+
+describe('repeated mount/unmount churn', () => {
+  it('does not grow across cycles that reuse the same store and selectors', () => {
+    const store = makeStore()
+    const stats: RegistryStats[] = []
+    let registry: PathSignalRegistry | null = null
+
+    for (let cycle = 0; cycle < 5; cycle++) {
+      const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+      registry = requireRegistry()
+      rtl.act(() => {
+        store.dispatch({ type: 'bump', key: 's0' })
+      })
+      unmount()
+      stats.push(registry.debugStats())
+    }
+
+    expect(registry).not.toBeNull()
+    for (const snapshot of stats) {
+      expect(snapshot).toEqual(stats[0])
+    }
+    expect(stats[0].segmentSubs).toBe(0)
+  })
+
+  it('does not grow when each cycle mounts a different subset of components', () => {
+    const store = makeStore()
+    const counts = [SLICE_COUNT, 5, SLICE_COUNT, 1, SLICE_COUNT]
+    const seen: RegistryStats[] = []
+    let registry: PathSignalRegistry | null = null
+
+    for (const count of counts) {
+      const { unmount } = rtl.render(<Tree store={store} count={count} />)
+      registry = requireRegistry()
+      rtl.act(() => {
+        store.dispatch({ type: 'bump', key: 's0' })
+      })
+      unmount()
+      seen.push(registry!.debugStats())
+    }
+
+    const peak = seen[0]
+    for (const snapshot of seen) {
+      expect(snapshot.signals).toBeLessThanOrEqual(peak.signals)
+      expect(snapshot.childIndex).toBeLessThanOrEqual(peak.childIndex)
+      expect(snapshot.prefixCounts).toBeLessThanOrEqual(peak.prefixCounts)
+      expect(snapshot.segmentSubs).toBe(0)
+    }
+  })
+
+  it('releases coarse subscribers on every cycle even without promotion', () => {
+    const store = makeStore()
+
+    for (let cycle = 0; cycle < 5; cycle++) {
+      const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+      const registry = requireRegistry()
+      expect(registry.debugStats().segmentSubs).toBe(SLICE_COUNT)
+      unmount()
+      expect(registry.debugStats().segmentSubs).toBe(0)
+    }
+  })
+})
+
+describe('unmount during a dispatch', () => {
+  it('releases the coarse subscriber when a component unmounts from a store listener', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(<Tree store={store} count={SLICE_COUNT} />)
+    const registry = requireRegistry()
+
+    const stopListening = store.subscribe(() => {
+      unmount()
+    })
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+    stopListening()
+
+    expect(registry.debugStats().segmentSubs).toBe(0)
+  })
+
+  it('survives a dispatch that lands while a subtree is being removed', () => {
+    const store = makeStore()
+    const { rerender, unmount } = rtl.render(
+      <Tree store={store} count={SLICE_COUNT} />,
+    )
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's0' })
+    })
+
+    rtl.act(() => {
+      rerender(<Tree store={store} count={0} />)
+      store.dispatch({ type: 'bump', key: 's1' })
+    })
+
+    expect(registry.debugStats().segmentSubs).toBe(0)
+
+    rtl.act(() => {
+      store.dispatch({ type: 'bump', key: 's2' })
+    })
+
+    unmount()
+    expect(registry.debugStats().segmentSubs).toBe(0)
+  })
+})
+
+describe('array metadata', () => {
+  it('retains array metadata after unmount but does not grow across cycles', () => {
+    const store = makeStore()
+    const seen: RegistryStats[] = []
+    let registry: PathSignalRegistry | null = null
+
+    for (let cycle = 0; cycle < 4; cycle++) {
+      const { unmount } = rtl.render(<Tree store={store} count={0} withList />)
+      registry = requireRegistry()
+      rtl.act(() => {
+        store.dispatch({ type: 'toggleItem', id: 1 })
+      })
+      if (cycle === 0) {
+        const promoted = registry.debugStats()
+        expect(promoted.arrays).toBeGreaterThan(0)
+        expect(promoted.columns).toBeGreaterThan(0)
+      }
+      unmount()
+      seen.push(registry.debugStats())
+    }
+
+    for (const snapshot of seen) {
+      expect(snapshot.signals).toBeLessThanOrEqual(seen[0].signals)
+      expect(snapshot.prefixCounts).toBeLessThanOrEqual(seen[0].prefixCounts)
+      expect(snapshot.arrays).toBe(seen[0].arrays)
+      expect(snapshot.columns).toBe(seen[0].columns)
+      expect(snapshot.structures).toBe(seen[0].structures)
+      expect(snapshot.segmentSubs).toBe(0)
+    }
+    expect(seen[seen.length - 1]).toEqual(seen[1])
+  })
+
+  it('does not accumulate array metadata across grow/shrink cycles', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(<Tree store={store} count={0} withList />)
+    const registry = requireRegistry()
+    const seen: RegistryStats[] = []
+
+    for (let cycle = 0; cycle < 5; cycle++) {
+      rtl.act(() => {
+        store.dispatch({ type: 'pushItem' })
+      })
+      rtl.act(() => {
+        store.dispatch({ type: 'popItem' })
+      })
+      seen.push(registry.debugStats())
+    }
+
+    for (const snapshot of seen) {
+      expect(snapshot).toEqual(seen[0])
+    }
+
+    unmount()
+  })
+})
+
+describe('state keys that disappear', () => {
+  it('prunes signals for paths removed from state', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(
+      <Tree store={store} count={1} dynIds={['x', 'y']} />,
+    )
+    const registry = requireRegistry()
+
+    rtl.act(() => {
+      store.dispatch({ type: 'addDyn', id: 'x' })
+    })
+    rtl.act(() => {
+      store.dispatch({ type: 'addDyn', id: 'y' })
+    })
+    const withDyn = registry.debugStats()
+    expect(registry.debugPaths()).toContain('dyn.x.v')
+
+    rtl.act(() => {
+      store.dispatch({ type: 'removeDyn', id: 'x' })
+    })
+    rtl.act(() => {
+      store.dispatch({ type: 'removeDyn', id: 'y' })
+    })
+
+    const afterRemoval = registry.debugStats()
+    // Not `toBeLessThan`: the components stay mounted and keep reading
+    // `dyn.x`/`dyn.y`, so the registry swaps the `.v` leaf signals for
+    // signals on the now-undefined parent keys rather than shrinking.
+    // What matters is that the removed leaves are gone.
+    expect(afterRemoval.signals).toBeLessThanOrEqual(withDyn.signals)
+    expect(registry.debugPaths()).not.toContain('dyn.x.v')
+    expect(registry.debugPaths()).not.toContain('dyn.y.v')
+
+    unmount()
+  })
+
+  it('does not accumulate across add/remove cycles of the same keys', () => {
+    const store = makeStore()
+    const { unmount } = rtl.render(
+      <Tree store={store} count={1} dynIds={['x']} />,
+    )
+    const registry = requireRegistry()
+    const seen: number[] = []
+
+    for (let cycle = 0; cycle < 5; cycle++) {
+      rtl.act(() => {
+        store.dispatch({ type: 'addDyn', id: 'x' })
+      })
+      rtl.act(() => {
+        store.dispatch({ type: 'removeDyn', id: 'x' })
+      })
+      seen.push(registry.debugStats().signals)
+    }
+
+    for (const count of seen) {
+      expect(count).toBe(seen[0])
+    }
+
+    unmount()
+  })
+})
+
+// Column signals (`items.some(i => i.done)`) and structure signals
+// (append/remove/reorder) are tracked per array. Another subscriber
+// releasing the array's own signal must not stop those from firing.
+describe('array column and structure tracking after the array signal is released', () => {
+  interface Item {
+    id: number
+    done: boolean
+  }
+
+  interface AppState {
+    items: Item[]
+    other: number
+  }
+
+  type Action =
+    | { type: 'toggle'; id: number }
+    | { type: 'append'; done: boolean }
+    | { type: 'touchItems' }
+    | { type: 'other' }
+
+  function reducer(
+    state: AppState = {
+      items: [
+        { id: 0, done: false },
+        { id: 1, done: false },
+        { id: 2, done: false },
+      ],
+      other: 0,
+    },
+    action: Action,
+  ): AppState {
+    switch (action.type) {
+      case 'toggle':
+        return {
+          ...state,
+          items: state.items.map((i) =>
+            i.id === action.id ? { ...i, done: !i.done } : i,
+          ),
+        }
+      case 'append':
+        return {
+          ...state,
+          items: [
+            ...state.items,
+            { id: state.items.length, done: action.done },
+          ],
+        }
+      case 'touchItems':
+        return { ...state, items: [...state.items] }
+      case 'other':
+        return { ...state, other: state.other + 1 }
+      default:
+        return state
+    }
+  }
+
+  const makeStore = (): Store<AppState, Action> => createStore(reducer)
+
+  const { Capture: CaptureRegistry, registry: capturedRegistry } =
+    createRegistryCapture()
+
+  function WholeArray() {
+    useSignalSelector((s: AppState) => s.items)
+    return null
+  }
+
+  let anyDone: boolean | undefined
+  function AnyDone() {
+    anyDone = useSignalSelector((s: AppState) => s.items.some((i) => i.done))
+    return null
+  }
+
+  let doneCount: number | undefined
+  function DoneCount() {
+    doneCount = useSignalSelector(
+      (s: AppState) => s.items.filter((i) => i.done).length,
+    )
+    return null
+  }
+
+  function Tree({
+    store,
+    whole,
+    children,
+  }: {
+    store: Store<AppState, Action>
+    whole: boolean
+    children?: React.ReactNode
+  }) {
+    return (
+      <SignalProvider store={store}>
+        <CaptureRegistry />
+        {whole ? <WholeArray /> : null}
+        {children}
+      </SignalProvider>
+    )
+  }
+
+  it('a column read keeps updating after another hook on the whole array unmounts', () => {
+    const store = makeStore()
+    const ui = (whole: boolean) => (
+      <Tree store={store} whole={whole}>
+        <AnyDone />
+        <DoneCount />
+      </Tree>
+    )
+    const { rerender, unmount } = rtl.render(ui(true))
+
+    // Promote every hook to the deep tier.
+    rtl.act(() => {
+      store.dispatch({ type: 'touchItems' })
+    })
+    expect(anyDone).toBe(false)
+    expect(doneCount).toBe(0)
+
+    rerender(ui(false))
+
+    rtl.act(() => {
+      store.dispatch({ type: 'toggle', id: 1 })
+    })
+    expect(anyDone).toBe(true)
+    expect(doneCount).toBe(1)
+
+    unmount()
+  })
+
+  it('an append keeps updating after another hook on the whole array unmounts', () => {
+    const store = makeStore()
+    const ui = (whole: boolean) => (
+      <Tree store={store} whole={whole}>
+        <AnyDone />
+        <DoneCount />
+      </Tree>
+    )
+    const { rerender, unmount } = rtl.render(ui(true))
+    rtl.act(() => {
+      store.dispatch({ type: 'touchItems' })
+    })
+
+    rerender(ui(false))
+
+    rtl.act(() => {
+      store.dispatch({ type: 'append', done: true })
+    })
+    expect(anyDone).toBe(true)
+    expect(doneCount).toBe(1)
+
+    unmount()
+  })
+
+  it('a selector that switches from reading the whole array to a column read keeps updating', () => {
+    const store = makeStore()
+    let result: string | boolean | undefined
+
+    function Switching({ mode }: { mode: 'join' | 'some' }) {
+      result = useSignalSelector((s: AppState) =>
+        mode === 'join' ? s.items.join(',') : s.items.some((i) => i.done),
+      )
+      return null
+    }
+
+    const ui = (mode: 'join' | 'some') => (
+      <Tree store={store} whole={false}>
+        <Switching mode={mode} />
+      </Tree>
+    )
+    const { rerender, unmount } = rtl.render(ui('join'))
+    rtl.act(() => {
+      store.dispatch({ type: 'touchItems' })
+    })
+    expect(result).toBe(store.getState().items.join(','))
+
+    rerender(ui('some'))
+    expect(result).toBe(false)
+    rtl.act(() => {
+      store.dispatch({ type: 'other' })
+    })
+
+    rtl.act(() => {
+      store.dispatch({ type: 'toggle', id: 2 })
+    })
+    expect(result).toBe(true)
+
+    unmount()
+  })
+
+  it('leaves no array tracking behind once every hook unmounts', () => {
+    const store = makeStore()
+    const ui = (mounted: boolean) => (
+      <Tree store={store} whole={mounted}>
+        {mounted ? (
+          <>
+            <AnyDone />
+            <DoneCount />
+          </>
+        ) : null}
+      </Tree>
+    )
+    const { rerender, unmount } = rtl.render(ui(true))
+    rtl.act(() => {
+      store.dispatch({ type: 'toggle', id: 0 })
+    })
+    rtl.act(() => {
+      store.dispatch({ type: 'append', done: false })
+    })
+
+    rerender(ui(false))
+    rtl.act(() => {
+      store.dispatch({ type: 'other' })
+    })
+
+    const stats = capturedRegistry().debugStats()
+    expect(stats.signals).toBe(0)
+    expect(stats.arrays).toBe(0)
+    expect(stats.columns).toBe(0)
+    expect(stats.structures).toBe(0)
+    expect(stats.childIndex).toBe(0)
+
+    unmount()
+  })
+})
+
+describe('registry cleanup after unmount', () => {
+  it('a nested read through Object.values leaves nothing behind', () => {
+    const { registry, unmountHook } = renderPromoted(
+      { a: { b: [{}] } } as { a: Record<string, object[]> },
+      (s) => !!Object.values(s.a)[0][0],
+    )
+    unmountHook()
+    expect(registry.current!.debugStats()).toEqual(EMPTY_STATS)
+  })
+
+  it('a keyed element that moves under a new parent leaves nothing behind', () => {
+    const item = { id: 1 }
+    const { replace, registry, unmountHook } = renderPromoted(
+      { a: [item] } as { a: unknown },
+      (s) => JSON.stringify(s.a),
+    )
+    replace({ a: { b: [item] } })
+    unmountHook()
+    expect(registry.current!.debugStats()).toEqual(EMPTY_STATS)
+  })
+})

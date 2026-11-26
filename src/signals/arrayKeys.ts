@@ -1,0 +1,188 @@
+/**
+ * Identity-based array tracking utilities.
+ *
+ * When array elements have ID fields (e.g., {id: 42, name: "Alice"}),
+ * signals use identity-based paths (items.{id:42}.name) instead of
+ * index-based paths (items.0.name). This makes signals stable across
+ * reorders, insertions, and removals.
+ */
+
+import type { PathSignalRegistry } from './pathSignalRegistry'
+
+/** Candidate key field names, checked in priority order. */
+const KEY_CANDIDATES = ['id', 'key', '_id', '__id'] as const
+
+/**
+ * Detect an identity key field on an object.
+ * Returns the property name if found, undefined otherwise.
+ * Checks 'id' > 'key' > '_id' > '__id' — same priority order as Legend State.
+ * @param obj - The object to inspect for a key field
+ * @returns The key field name, or undefined if none found
+ */
+export function findKeyField(obj: unknown): string | undefined {
+  for (let i = 0; i < KEY_CANDIDATES.length; i++) {
+    const candidate = KEY_CANDIDATES[i]
+    if (getKeyValue(obj, candidate) !== undefined) return candidate
+  }
+  return undefined
+}
+
+// Characters that corrupt path bookkeeping if they appear in a path
+// segment (an object key or an identity key value):
+// '.' breaks the ancestor walks (lastIndexOf('.')), '{'/'}' can collide
+// with identity/column segments, '%' is the escape character itself,
+// '"' is reserved for quoting numeric-looking strings (a literal quote
+// in a key would otherwise collide with the quoted form of another key),
+// and '@' guards meta segments — a state key literally named '@@keys'
+// must not collide with the `parent.@@keys` meta signal.
+const NEEDS_ESCAPE = /[%.{}"@]/
+
+/**
+ * Encode a single path segment so it can be safely joined with '.' into
+ * a path string. Reserved characters are %-escaped. The common case
+ * (no reserved characters) returns the input string unchanged.
+ * Used for object property keys, identity key values, and column props.
+ * @param s - The raw segment (object key or stringified key value)
+ * @returns The encoded segment
+ */
+export function encodePathSegment(s: string): string {
+  if (!NEEDS_ESCAPE.test(s)) return s
+  return s
+    .replace(/%/g, '%25')
+    .replace(/\./g, '%2E')
+    .replace(/\{/g, '%7B')
+    .replace(/\}/g, '%7D')
+    .replace(/"/g, '%22')
+    .replace(/@/g, '%40')
+}
+
+/**
+ * Join an ALREADY-ENCODED segment (or an array index) onto a parent
+ * path. The root object's path is the empty string, so a root-level
+ * segment is the path by itself. Callers must run object keys through
+ * `encodePathSegment` first; array indexes need no encoding.
+ * @param parentPath - Path of the containing object ('' for the root)
+ * @param segment - Encoded segment or array index
+ * @returns The joined path key
+ */
+export function joinPath(parentPath: string, segment: string | number): string {
+  return parentPath ? parentPath + '.' + segment : String(segment)
+}
+
+/**
+ * Path of the `@@keys` meta signal for an object/array. Built raw (NOT
+ * via encodePathSegment): '@@keys' is a meta segment, and encoding
+ * would turn it into an ordinary (escaped) property path. A state key
+ * literally named '@@keys' encodes to '%40%40keys' and cannot collide.
+ * @param parentPath - Path of the object whose key set is tracked
+ * @returns The meta path key
+ */
+export function keysMetaPath(parentPath: string): string {
+  return joinPath(parentPath, '@@keys')
+}
+
+/**
+ * Initial value of an `@@keys` signal. The signal is a version counter:
+ * diff bumps it whenever the key set (or an array's length) changes,
+ * and nothing reads the value itself.
+ */
+export const KEYS_SEED = 0
+
+/**
+ * Render a key value as a path segment fragment.
+ *
+ * Two invariants:
+ * 1. No '.', '{', or '}' in the output (escaped as %XX) so path
+ *    prefix walking and pruning stay correct for ids like "a@b.com".
+ * 2. A string key never renders identically to a number key. Strings
+ *    whose escaped form matches a number's rendering (e.g. "1", "1.5")
+ *    are wrapped in quotes: number 1 → `1`, string "1" → `"1"`.
+ * @param keyValue - The identity key value
+ * @returns The encoded segment fragment
+ */
+function encodeKeyValue(keyValue: string | number): string {
+  if (typeof keyValue === 'number') {
+    // Integers (the common case) can't contain escapable characters
+    if (Number.isInteger(keyValue)) return String(keyValue)
+    return encodePathSegment(String(keyValue))
+  }
+  const escaped = encodePathSegment(keyValue)
+  // Quote strings that would collide with a number's rendering
+  return String(Number(keyValue)) === keyValue ? '"' + escaped + '"' : escaped
+}
+
+/**
+ * Build the identity path segment for an array element.
+ * e.g., arrayPath="items", keyField="id", element={id: 42} → "items.{id:42}"
+ * Key values are encoded: dots/braces are %-escaped, and numeric-looking
+ * string keys are quoted to stay distinct from number keys.
+ * @param arrayPath - Parent array's path
+ * @param keyField - The identity key field name
+ * @param keyValue - The identity key value
+ * @returns The identity-based path string
+ */
+export function buildIdentityPath(
+  arrayPath: string,
+  keyField: string,
+  keyValue: string | number,
+): string {
+  return joinPath(arrayPath, `{${keyField}:${encodeKeyValue(keyValue)}}`)
+}
+
+/**
+ * Extract a key value from an array element.
+ * Returns undefined if element is not an object or the key is missing or
+ * not a string or number (it must fit in a path string).
+ * @param element - The array element to extract the key from
+ * @param keyField - The identity key field name
+ * @returns The key value, or undefined if not extractable
+ */
+export function getKeyValue(
+  element: unknown,
+  keyField: string,
+): string | number | undefined {
+  if (
+    element === null ||
+    typeof element !== 'object' ||
+    Array.isArray(element)
+  ) {
+    return undefined
+  }
+  const value = (element as Record<string, unknown>)[keyField]
+  if (typeof value === 'string' || typeof value === 'number') {
+    return value
+  }
+  return undefined
+}
+
+/**
+ * Path key for an object element of a tracked array: the identity path
+ * (`items.{id:42}`) when the array has a detectable key field, otherwise
+ * the index path (`items.3`). Detects and records the array's key field
+ * on first use.
+ * @param registry - Signal registry holding per-array metadata
+ * @param arrayPath - Path of the containing array
+ * @param index - The element's index (number or canonical index string)
+ * @param element - The raw element object
+ * @returns The element's path key
+ */
+export function getElementPathKey(
+  registry: PathSignalRegistry,
+  arrayPath: string,
+  index: number | string,
+  element: object,
+): string {
+  if (!Array.isArray(element)) {
+    const keyField = registry.keyFieldFor(arrayPath, element)
+    if (keyField !== undefined) {
+      const kv = getKeyValue(element, keyField)
+      if (kv !== undefined) {
+        return buildIdentityPath(arrayPath, keyField, kv)
+      }
+    }
+  }
+  return joinPath(
+    arrayPath,
+    typeof index === 'number' ? index : encodePathSegment(index),
+  )
+}

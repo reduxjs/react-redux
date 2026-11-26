@@ -1,0 +1,187 @@
+import { throwStateMutationError } from './mutationError'
+import { isPlainObject } from './objects'
+import { registerProxyTarget, shellDescriptor } from './proxyIdentity'
+
+/**
+ * Mutable record filled in while a selector runs against a probe proxy.
+ */
+export interface ProbeRecord {
+  /** Raw top-level state keys the selector touched (get / has /
+   *  getOwnPropertyDescriptor). */
+  segments: Set<string>
+  /** The selector enumerated the root's keys (Object.keys, spread,
+   *  for...in). Key-set changes can't be gated by the segments alone,
+   *  so an enumerating selector must build the deep tier eagerly. */
+  enumerated: boolean
+}
+
+function isGuardable(value: unknown): value is object {
+  return Array.isArray(value) || isPlainObject(value)
+}
+
+// Guards are cached by target identity so a probe run wraps each object
+// once. Module-level: guards carry no per-probe state, and `untrackResult`
+// strips them from results regardless of which probe created them.
+const guardCache = new WeakMap<object, object>()
+
+/**
+ * Dev-only read-only wrapper for nested objects handed out by the probe
+ * proxy. The deep tracking proxy rejects selector writes, but the probe
+ * returns nested values raw — without this guard, a mutating selector
+ * (e.g. `s => s.items.sort()`) silently corrupts real store state during
+ * the mount evaluation and only starts throwing after promotion.
+ *
+ * The guard records nothing (the probe already recorded the top-level
+ * segment); it exists purely to make write rejection consistent across
+ * both tiers. Plain objects and arrays only: wrapping Date/Map/Set/class
+ * instances breaks methods that need internal slots, and the deep tier
+ * returns those raw too.
+ *
+ * The proxy target is an unfrozen shell (same trick as the deep tracking
+ * proxy): the get trap returns nested guards, which would violate ES
+ * Proxy invariants on a frozen target's non-configurable properties.
+ *
+ * Registered in the proxy→target map so `untrackResult` and `unwrap`
+ * strip guards from selector results.
+ * @param target - The raw nested state object to guard
+ * @returns A proxy that reads through to `target` and throws on writes
+ */
+function createWriteGuard<T extends object>(target: T): T {
+  const cached = guardCache.get(target)
+  if (cached) return cached as T
+
+  const shell = Array.isArray(target)
+    ? []
+    : Object.create(Object.getPrototypeOf(target))
+
+  const proxy = new Proxy(shell as T, {
+    get(_obj, prop) {
+      if (typeof prop === 'symbol') return Reflect.get(target, prop)
+      const value = (target as Record<string, unknown>)[prop]
+      return isGuardable(value) ? createWriteGuard(value) : value
+    },
+
+    has(_obj, prop) {
+      return Reflect.has(target, prop)
+    },
+
+    ownKeys(_obj) {
+      return Reflect.ownKeys(target)
+    },
+
+    getOwnPropertyDescriptor(_obj, prop) {
+      return shellDescriptor(target, prop)
+    },
+
+    getPrototypeOf(_obj) {
+      return Object.getPrototypeOf(target)
+    },
+
+    set(_obj, prop) {
+      throwStateMutationError('set', String(prop))
+    },
+
+    deleteProperty(_obj, prop) {
+      throwStateMutationError('delete', String(prop))
+    },
+
+    defineProperty(_obj, prop) {
+      throwStateMutationError('defineProperty', String(prop))
+    },
+
+    setPrototypeOf() {
+      throwStateMutationError('setPrototypeOf', '')
+    },
+  }) as T
+
+  guardCache.set(target, proxy)
+  registerProxyTarget(proxy as object, target)
+  return proxy
+}
+
+/**
+ * Create a one-level-shallow probe proxy over the root state object.
+ *
+ * Unlike the deep tracking proxy, the probe:
+ * - records only WHICH top-level keys the selector reads (no signals,
+ *   no path strings, no nested proxies)
+ * - returns raw nested values, so the selector runs at native speed
+ *   below the first level (in production; dev builds wrap nested
+ *   objects in write guards so mutating selectors throw at mount too)
+ *
+ * The proxy target is an unfrozen shell so the dev-mode get trap can
+ * return write guards without violating ES Proxy invariants on frozen
+ * state; the other traps read through to the real state object.
+ *
+ * The proxy is registered in the proxy→target map so `untrackResult`
+ * and `unwrap` strip it from selector results (`s => s`,
+ * `s => ({ root: s })`).
+ *
+ * Only plain-object roots may be probed: for class instances / Map /
+ * Set roots, method calls through the proxy would run with the proxy as
+ * `this` and break internal-slot access. Callers must check first.
+ * @param state - The root state object (plain object)
+ * @returns The probe proxy and the record it fills in
+ */
+export function createProbeProxy<T extends object>(
+  state: T,
+): { proxy: T; record: ProbeRecord } {
+  const record: ProbeRecord = { segments: new Set(), enumerated: false }
+
+  const shell = Object.create(Object.getPrototypeOf(state)) as T
+
+  const proxy = new Proxy(shell, {
+    get(_obj, prop) {
+      if (typeof prop === 'symbol') return Reflect.get(state, prop)
+      record.segments.add(prop)
+      const value = (state as Record<string, unknown>)[prop]
+      if (process.env.NODE_ENV !== 'production' && isGuardable(value)) {
+        return createWriteGuard(value)
+      }
+      return value
+    },
+
+    has(_obj, prop) {
+      if (typeof prop !== 'symbol') record.segments.add(prop)
+      return Reflect.has(state, prop)
+    },
+
+    ownKeys(_obj) {
+      record.enumerated = true
+      return Reflect.ownKeys(state)
+    },
+
+    // Fires for Object.getOwnPropertyDescriptor and hasOwnProperty, and
+    // per-key during enumeration (where `enumerated` is already set by
+    // ownKeys). A single descriptor read reveals one key's existence and
+    // value — record it as a segment read, like get/has.
+    getOwnPropertyDescriptor(_obj, prop) {
+      if (typeof prop !== 'symbol') record.segments.add(prop)
+      return shellDescriptor(state, prop)
+    },
+
+    getPrototypeOf(_obj) {
+      return Object.getPrototypeOf(state)
+    },
+
+    set(_obj, prop) {
+      throwStateMutationError('set', String(prop))
+    },
+
+    deleteProperty(_obj, prop) {
+      throwStateMutationError('delete', String(prop))
+    },
+
+    defineProperty(_obj, prop) {
+      throwStateMutationError('defineProperty', String(prop))
+    },
+
+    setPrototypeOf() {
+      throwStateMutationError('setPrototypeOf', '')
+    },
+  }) as T
+
+  registerProxyTarget(proxy as object, state)
+
+  return { proxy, record }
+}

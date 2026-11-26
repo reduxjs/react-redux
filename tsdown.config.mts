@@ -13,65 +13,65 @@ if (process.env.NODE_ENV === 'production') {
   module.exports = require('./react-redux.development.cjs')
 }`,
   )
+  await fs.writeFile(
+    path.join('dist/cjs/', 'signals.js'),
+    `'use strict'
+if (process.env.NODE_ENV === 'production') {
+  module.exports = require('./react-redux-signals.production.min.cjs')
+} else {
+  module.exports = require('./react-redux-signals.development.cjs')
+}`,
+  )
 }
 
 const tsconfig = 'tsconfig.build.json'
 
-export default defineConfig((options): UserConfig[] => {
-  const commonOptions = {
-    entry: {
-      'react-redux': 'src/index.ts',
-    },
-    sourcemap: true,
-    // `pnpm clean` already removes `dist/`; letting each of the seven builds
-    // clean would race them against each other.
-    clean: false,
-    hash: false,
-    target: ['esnext'],
-    tsconfig,
-    dts: false,
-    report: false,
-    ...options,
-  } satisfies UserConfig
+// The main entry and the `react-redux/signals` entry share almost all of their
+// code. Building them in the same config makes Rolldown hoist that code into a
+// shared `src.*` chunk and leaves `react-redux.mjs` as a re-export shim, which
+// changes the published main artifact and breaks the publish-ci snapshot of
+// which file each bundler resolves. Each entry therefore gets its own build of
+// every variant, at the cost of duplicating the shared code into the signals
+// bundles.
+const entries = {
+  'react-redux': 'src/index.ts',
+  'react-redux-signals': 'src/index-signals.ts',
+}
 
-  return [
-    // Standard ESM, embedded `process.env.NODE_ENV` checks
-    {
-      ...commonOptions,
-      name: 'Modern ESM',
+type Variant = {
+  name: string
+  suffix: string
+  options: Partial<UserConfig>
+}
+
+const variants: Variant[] = [
+  // Standard ESM, embedded `process.env.NODE_ENV` checks
+  {
+    name: 'Modern ESM',
+    suffix: '',
+    options: {
       format: ['esm'],
       outExtensions: () => ({ js: '.mjs' }),
     },
-    {
-      ...commonOptions,
-      name: 'ESM for RSC',
-      entry: {
-        rsc: 'src/index-rsc.ts',
-      },
-      format: ['esm'],
-      outExtensions: () => ({ js: '.mjs' }),
-    },
+  },
 
-    // Support Webpack 4 by pointing `"module"` to a file with a `.js` extension
-    // and optional chaining compiled away
-    {
-      ...commonOptions,
-      name: 'Legacy ESM, Webpack 4',
-      entry: {
-        'react-redux.legacy-esm': 'src/index.ts',
-      },
+  // Support Webpack 4 by pointing `"module"` to a file with a `.js` extension
+  // and optional chaining compiled away
+  {
+    name: 'Legacy ESM, Webpack 4',
+    suffix: '.legacy-esm',
+    options: {
       target: ['es2017'],
       format: ['esm'],
       outExtensions: () => ({ js: '.js' }),
     },
+  },
 
-    // Meant to be served up via CDNs like `unpkg`.
-    {
-      ...commonOptions,
-      name: 'Browser-ready ESM',
-      entry: {
-        'react-redux.browser': 'src/index.ts',
-      },
+  // Meant to be served up via CDNs like `unpkg`.
+  {
+    name: 'Browser-ready ESM',
+    suffix: '.browser',
+    options: {
       platform: 'browser',
       env: {
         NODE_ENV: 'production',
@@ -80,12 +80,11 @@ export default defineConfig((options): UserConfig[] => {
       outExtensions: () => ({ js: '.mjs' }),
       minify: true,
     },
-    {
-      ...commonOptions,
-      name: 'CJS Development',
-      entry: {
-        'react-redux.development': 'src/index.ts',
-      },
+  },
+  {
+    name: 'CJS Development',
+    suffix: '.development',
+    options: {
       env: {
         NODE_ENV: 'development',
       },
@@ -93,12 +92,11 @@ export default defineConfig((options): UserConfig[] => {
       outDir: './dist/cjs/',
       outExtensions: () => ({ js: '.cjs' }),
     },
-    {
-      ...commonOptions,
-      name: 'CJS production',
-      entry: {
-        'react-redux.production.min': 'src/index.ts',
-      },
+  },
+  {
+    name: 'CJS production',
+    suffix: '.production.min',
+    options: {
       env: {
         NODE_ENV: 'production',
       },
@@ -110,12 +108,53 @@ export default defineConfig((options): UserConfig[] => {
         await writeCommonJSEntry()
       },
     },
-    {
-      ...commonOptions,
-      name: 'Type definitions',
+  },
+  {
+    name: 'Type definitions',
+    suffix: '',
+    options: {
       format: ['esm'],
       dts: { emitDtsOnly: true },
       outExtensions: () => ({ dts: '.d.ts' }),
+    },
+  },
+]
+
+export default defineConfig((options): UserConfig[] => {
+  const commonOptions = {
+    sourcemap: true,
+    // `pnpm clean` already removes `dist/`; letting each of the builds
+    // clean would race them against each other.
+    clean: false,
+    hash: false,
+    target: ['esnext'],
+    tsconfig,
+    dts: false,
+    report: false,
+    ...options,
+  } satisfies UserConfig
+
+  const entryBuilds = Object.entries(entries).flatMap(([outName, source]) =>
+    variants.map(
+      ({ name, suffix, options: variantOptions }): UserConfig => ({
+        ...commonOptions,
+        name: `${name} (${outName})`,
+        entry: { [outName + suffix]: source },
+        ...variantOptions,
+      }),
+    ),
+  )
+
+  return [
+    ...entryBuilds,
+    {
+      ...commonOptions,
+      name: 'ESM for RSC',
+      entry: {
+        rsc: 'src/index-rsc.ts',
+      },
+      format: ['esm'],
+      outExtensions: () => ({ js: '.mjs' }),
     },
   ]
 })

@@ -4,6 +4,17 @@ on:
   #release:
   #  types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'NPM dist-tag (latest, alpha, beta, next)'
+        required: true
+        default: 'latest'
+        type: choice
+        options:
+          - latest
+          - next
+          - alpha
+          - beta
 
 permissions: {}
 
@@ -29,4 +40,4 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
-      - run: npm publish --access public --provenance
+      - run: npm publish --access public --provenance --tag ${{ inputs.tag }}
