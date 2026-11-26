@@ -3,6 +3,8 @@ import { alienEngine } from '../../../src/signals/engine'
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { delayedSweepPolicy } from '../../../src/signals/sweepPolicy'
 import type { ReactiveSignal } from '../../../src/signals/types'
+import { reconcileState } from '../../../src/signals/diff'
+import { mountEngineHook } from '../differential/engineHook'
 import { EMPTY_STATS } from '../helpers/registry'
 
 type Registry = ReturnType<typeof createPathSignalRegistry>
@@ -791,5 +793,37 @@ describe('PathSignalRegistry', () => {
         segmentSubs: 0,
       })
     })
+  })
+})
+
+describe('identity-based array tracking: hooks mounted after a teardown', () => {
+  it('a hook mounted right after another stops still sees its element replaced', () => {
+    let state: { a: unknown[]; b?: unknown[] } = { a: [] }
+    const registry = createPathSignalRegistry(alienEngine)
+    const dispatch = (next: typeof state) => {
+      const prev = state
+      state = next
+      reconcileState(prev, next, registry, alienEngine)
+    }
+
+    // Serializing tracks every element of `b` by identity, and stopping
+    // leaves those releases queued when the next hook mounts.
+    const first = mountEngineHook(
+      () => state,
+      (s) => JSON.stringify(s),
+      registry,
+    )
+    dispatch({ a: [], b: [{ id: 1 }] })
+    first.stop()
+
+    const hook = mountEngineHook(
+      () => state,
+      (s) => (s as typeof state).b![0],
+      registry,
+    )
+    expect(hook.last).toEqual({ id: 1 })
+    dispatch({ a: [], b: [0] })
+    expect(hook.last).toBe(0)
+    hook.stop()
   })
 })

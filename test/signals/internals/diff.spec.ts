@@ -698,3 +698,755 @@ describe('diffAndUpdateSignals', () => {
     })
   })
 })
+
+describe('identity-based array tracking: diff', () => {
+  describe('entity update (no reorder)', () => {
+    it('updates only changed entity fields', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice', score: 100 },
+          { id: 2, name: 'Bob', score: 200 },
+          { id: 3, name: 'Carol', score: 300 },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice', score: 100 },
+          { id: 2, name: 'Bob', score: 250 }, // changed
+          { id: 3, name: 'Carol', score: 300 },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].score
+        s.items[1].score
+        s.items[2].score
+      })
+
+      const sig1 = registry.getOrCreate('items.{id:1}.score', 100)
+      const sig2 = registry.getOrCreate('items.{id:2}.score', 200)
+      const sig3 = registry.getOrCreate('items.{id:3}.score', 300)
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      expect(sig1.get()).toBe(100) // unchanged
+      expect(sig2.get()).toBe(250) // updated
+      expect(sig3.get()).toBe(300) // unchanged
+    })
+
+    it('skips entity entirely when structurally shared', () => {
+      const sharedEntity = deepFreeze({ id: 1, name: 'Alice', score: 100 })
+      const prev = deepFreeze({
+        items: [sharedEntity, { id: 2, name: 'Bob', score: 200 }],
+      })
+      // Immer-style: share entity reference, change another
+      const next = deepFreeze({
+        items: [sharedEntity, { id: 2, name: 'Bob', score: 250 }],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[0].score
+        s.items[1].score
+      })
+
+      const nameSig = registry.getOrCreate('items.{id:1}.name', 'Alice')
+      const score1Sig = registry.getOrCreate('items.{id:1}.score', 100)
+      const score2Sig = registry.getOrCreate('items.{id:2}.score', 200)
+
+      const initialName = nameSig.get()
+      const initialScore1 = score1Sig.get()
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // Shared entity skipped entirely (prevItem === nextItem)
+      expect(nameSig.get()).toBe(initialName)
+      expect(score1Sig.get()).toBe(initialScore1)
+      // Other entity updated
+      expect(score2Sig.get()).toBe(250)
+    })
+  })
+
+  describe('entity addition', () => {
+    it('handles new entity appended', () => {
+      const shared = deepFreeze([
+        { id: 1, name: 'Alice' },
+        { id: 2, name: 'Bob' },
+      ])
+      const prev = deepFreeze({ items: shared })
+      const next = deepFreeze({
+        items: [...shared, { id: 3, name: 'Carol' }],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      const keysSignal = registry.getOrCreate('items.@@keys', 2)
+      const initialVersion = keysSignal.get()
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // @@keys should update for length change
+      expect(keysSignal.get()).not.toBe(initialVersion)
+      // Existing entities unchanged (structurally shared)
+      expect(registry.getOrCreate('items.{id:1}.name', 'Alice').get()).toBe(
+        'Alice',
+      )
+    })
+
+    it('handles new entity prepended', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 2, name: 'Bob' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      // Existing entities are tracked by identity, not index
+      const bobSig = registry.getOrCreate('items.{id:2}.name', 'Bob')
+      const carolSig = registry.getOrCreate('items.{id:3}.name', 'Carol')
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // Bob and Carol's signals are stable — same identity path regardless of index
+      expect(bobSig.get()).toBe('Bob')
+      expect(carolSig.get()).toBe('Carol')
+    })
+  })
+
+  describe('entity removal', () => {
+    it('prunes signals for removed entity', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice', score: 100 },
+          { id: 2, name: 'Bob', score: 200 },
+          { id: 3, name: 'Carol', score: 300 },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice', score: 100 },
+          { id: 3, name: 'Carol', score: 300 },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[0].score
+        s.items[1].name
+        s.items[1].score
+        s.items[2].name
+        s.items[2].score
+      })
+
+      expect(registry.has('items.{id:2}.name')).toBe(true)
+      expect(registry.has('items.{id:2}.score')).toBe(true)
+      expect(registry.hasPrefix('items.{id:2}')).toBe(true)
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // Entity 2 removed — all its signals pruned
+      expect(registry.has('items.{id:2}.name')).toBe(false)
+      expect(registry.has('items.{id:2}.score')).toBe(false)
+      expect(registry.hasPrefix('items.{id:2}')).toBe(false)
+      // Remaining entities intact
+      expect(registry.has('items.{id:1}.name')).toBe(true)
+      expect(registry.has('items.{id:3}.name')).toBe(true)
+    })
+
+    it('prunes signals when removing from beginning (shift)', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 2, name: 'Bob' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+        s.items[2].name
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // Entity 1 removed
+      expect(registry.has('items.{id:1}.name')).toBe(false)
+      // Entities 2 and 3 still exist at their identity paths
+      expect(registry.has('items.{id:2}.name')).toBe(true)
+      expect(registry.has('items.{id:3}.name')).toBe(true)
+    })
+
+    it('handles removing all entities', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+        ],
+      })
+      const next = deepFreeze({ items: [] as any[] })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      expect(registry.has('items.{id:1}.name')).toBe(true)
+      expect(registry.has('items.{id:2}.name')).toBe(true)
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      expect(registry.has('items.{id:1}.name')).toBe(false)
+      expect(registry.has('items.{id:2}.name')).toBe(false)
+    })
+  })
+
+  describe('entity reorder', () => {
+    it('does not update signals when entities just swap positions', () => {
+      const entityA = deepFreeze({ id: 1, name: 'Alice', score: 100 })
+      const entityB = deepFreeze({ id: 2, name: 'Bob', score: 200 })
+      const prev = deepFreeze({ items: [entityA, entityB] })
+      // Swap positions but share refs (Immer structural sharing)
+      const next = deepFreeze({ items: [entityB, entityA] })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[0].score
+        s.items[1].name
+        s.items[1].score
+      })
+
+      const aliceNameSig = registry.getOrCreate('items.{id:1}.name', 'Alice')
+      const aliceScoreSig = registry.getOrCreate('items.{id:1}.score', 100)
+      const bobNameSig = registry.getOrCreate('items.{id:2}.name', 'Bob')
+      const bobScoreSig = registry.getOrCreate('items.{id:2}.score', 200)
+
+      const initialAliceName = aliceNameSig.get()
+      const initialAliceScore = aliceScoreSig.get()
+      const initialBobName = bobNameSig.get()
+      const initialBobScore = bobScoreSig.get()
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // With identity-based tracking, reorder with shared refs → zero updates
+      expect(aliceNameSig.get()).toBe(initialAliceName)
+      expect(aliceScoreSig.get()).toBe(initialAliceScore)
+      expect(bobNameSig.get()).toBe(initialBobName)
+      expect(bobScoreSig.get()).toBe(initialBobScore)
+    })
+
+    it('handles reorder with content change', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice', score: 100 },
+          { id: 2, name: 'Bob', score: 200 },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 2, name: 'Bob', score: 250 }, // moved AND changed
+          { id: 1, name: 'Alice', score: 100 }, // just moved
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].score
+        s.items[1].score
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // Alice unchanged (even though she moved)
+      expect(registry.getOrCreate('items.{id:1}.score', 100).get()).toBe(100)
+      // Bob changed
+      expect(registry.getOrCreate('items.{id:2}.score', 250).get()).toBe(250)
+    })
+
+    it('handles complete reversal', () => {
+      const e1 = deepFreeze({ id: 1, v: 'a' })
+      const e2 = deepFreeze({ id: 2, v: 'b' })
+      const e3 = deepFreeze({ id: 3, v: 'c' })
+      const prev = deepFreeze({ items: [e1, e2, e3] })
+      const next = deepFreeze({ items: [e3, e2, e1] })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].v
+        s.items[1].v
+        s.items[2].v
+      })
+
+      const sig1 = registry.getOrCreate('items.{id:1}.v', 'a')
+      const sig2 = registry.getOrCreate('items.{id:2}.v', 'b')
+      const sig3 = registry.getOrCreate('items.{id:3}.v', 'c')
+
+      const init1 = sig1.get()
+      const init2 = sig2.get()
+      const init3 = sig3.get()
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // All shared refs — zero updates
+      expect(sig1.get()).toBe(init1)
+      expect(sig2.get()).toBe(init2)
+      expect(sig3.get()).toBe(init3)
+    })
+  })
+
+  describe('consecutive diffs', () => {
+    it('matches moved elements by key on the first diff after proxy access', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 2, name: 'Bobby' },
+          { id: 1, name: 'Alice' },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+      const alice = registry.getOrCreate('items.{id:1}.name', 'Alice')
+      const bob = registry.getOrCreate('items.{id:2}.name', 'Bob')
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      expect(alice.get()).toBe('Alice')
+      expect(bob.get()).toBe('Bobby')
+    })
+
+    it('matches against the latest state after append, update and removal', () => {
+      const state1 = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+        ],
+      })
+      const state2 = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bobby' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+      const state3 = deepFreeze({
+        items: [{ id: 1, name: 'Alice' }],
+      })
+
+      const registry = setupRegistry(state1, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      diffAndUpdateSignals(state1, state2, '', registry)
+      expect(registry.getOrCreate('items.{id:2}.name', 'Bobby').get()).toBe(
+        'Bobby',
+      )
+
+      diffAndUpdateSignals(state2, state3, '', registry)
+      expect(registry.has('items.{id:1}.name')).toBe(true)
+      expect(registry.has('items.{id:2}.name')).toBe(false)
+    })
+  })
+
+  describe('edge cases', () => {
+    it('handles empty array → entities', () => {
+      const prev = deepFreeze({ items: [] as any[] })
+      const next = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items.length
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // No crash, @@keys updated
+      const keysSignal = registry.getOrCreate('items.@@keys', 2)
+      expect(typeof keysSignal.get()).toBe('number')
+    })
+
+    it('handles entities → empty array', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+        ],
+      })
+      const next = deepFreeze({ items: [] as any[] })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // All entities pruned
+      expect(registry.has('items.{id:1}.name')).toBe(false)
+      expect(registry.has('items.{id:2}.name')).toBe(false)
+    })
+
+    it('handles duplicate IDs gracefully', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 1, name: 'Also Alice' }, // duplicate ID
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 1, name: 'Still Alice' },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      // Should not throw — just works with last-wins semantics
+      expect(() => diffAndUpdateSignals(prev, next, '', registry)).not.toThrow()
+    })
+
+    it('handles entity with id=0', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 0, name: 'Zero' },
+          { id: 1, name: 'One' },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 0, name: 'Zero Updated' },
+          { id: 1, name: 'One' },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      expect(
+        registry.getOrCreate('items.{id:0}.name', 'Zero Updated').get(),
+      ).toBe('Zero Updated')
+      expect(registry.getOrCreate('items.{id:1}.name', 'One').get()).toBe('One')
+    })
+
+    it('handles entity with empty string id', () => {
+      const prev = deepFreeze({
+        items: [{ id: '', name: 'Empty' }],
+      })
+      const next = deepFreeze({
+        items: [{ id: '', name: 'Updated' }],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      expect(registry.getOrCreate('items.{id:}.name', 'Updated').get()).toBe(
+        'Updated',
+      )
+    })
+
+    it('handles mixed keyed and non-keyed arrays in same state', () => {
+      const prev = deepFreeze({
+        users: [{ id: 1, name: 'Alice' }],
+        tags: ['react', 'redux'],
+      })
+      const next = deepFreeze({
+        users: [{ id: 1, name: 'Alicia' }],
+        tags: ['react', 'signals'],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.users[0].name
+        s.tags[0]
+        s.tags[1]
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      // Users: identity-based
+      expect(registry.getOrCreate('users.{id:1}.name', 'Alicia').get()).toBe(
+        'Alicia',
+      )
+      // Tags: index-based (primitive array)
+      expect(registry.getOrCreate('tags.1', 'signals').get()).toBe('signals')
+    })
+
+    it('handles deeply nested entity arrays', () => {
+      const prev = deepFreeze({
+        data: {
+          nested: {
+            items: [
+              { id: 'a', val: 1 },
+              { id: 'b', val: 2 },
+            ],
+          },
+        },
+      })
+      const next = deepFreeze({
+        data: {
+          nested: {
+            items: [
+              { id: 'a', val: 1 },
+              { id: 'b', val: 99 },
+            ],
+          },
+        },
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.data.nested.items[0].val
+        s.data.nested.items[1].val
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      expect(
+        registry.getOrCreate('data.nested.items.{id:a}.val', 1).get(),
+      ).toBe(1)
+      expect(
+        registry.getOrCreate('data.nested.items.{id:b}.val', 99).get(),
+      ).toBe(99)
+    })
+
+    it('handles entities with nested objects', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, profile: { name: 'Alice', age: 30 } },
+          { id: 2, profile: { name: 'Bob', age: 25 } },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 1, profile: { name: 'Alice', age: 31 } }, // age changed
+          { id: 2, profile: { name: 'Bob', age: 25 } },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].profile.age
+        s.items[1].profile.age
+      })
+
+      diffAndUpdateSignals(prev, next, '', registry)
+
+      expect(registry.getOrCreate('items.{id:1}.profile.age', 31).get()).toBe(
+        31,
+      )
+      expect(registry.getOrCreate('items.{id:2}.profile.age', 25).get()).toBe(
+        25,
+      )
+    })
+  })
+
+  describe('reactive propagation with identity tracking', () => {
+    it('triggers computed only for changed entity', () => {
+      const prev = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+        ],
+      })
+      const next = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bobby' },
+        ],
+      })
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      const sig1 = registry.getOrCreate('items.{id:1}.name', 'Alice')
+      const sig2 = registry.getOrCreate('items.{id:2}.name', 'Bob')
+
+      let computed1Runs = 0
+      let computed2Runs = 0
+
+      const c1 = alienEngine.computed(() => {
+        computed1Runs++
+        return sig1.get()
+      })
+      const c2 = alienEngine.computed(() => {
+        computed2Runs++
+        return sig2.get()
+      })
+
+      // Initial read
+      c1.get()
+      c2.get()
+      const initialRuns1 = computed1Runs
+      const initialRuns2 = computed2Runs
+
+      reconcileState(prev, next, registry, alienEngine)
+
+      c1.get()
+      c2.get()
+
+      // Only entity 2 changed — only computed2 should re-run
+      expect(computed1Runs).toBe(initialRuns1) // no re-run
+      expect(computed2Runs).toBe(initialRuns2 + 1) // re-ran
+      expect(c2.get()).toBe('Bobby')
+    })
+
+    it('does not trigger computed for reorder-only change', () => {
+      const e1 = deepFreeze({ id: 1, name: 'Alice' })
+      const e2 = deepFreeze({ id: 2, name: 'Bob' })
+      const prev = deepFreeze({ items: [e1, e2] })
+      const next = deepFreeze({ items: [e2, e1] }) // swapped
+
+      const registry = setupRegistry(prev, (s) => {
+        s.items[0].name
+        s.items[1].name
+      })
+
+      const sig1 = registry.getOrCreate('items.{id:1}.name', 'Alice')
+      const sig2 = registry.getOrCreate('items.{id:2}.name', 'Bob')
+
+      let runs = 0
+      const derived = alienEngine.computed(() => {
+        runs++
+        return `${sig1.get()}-${sig2.get()}`
+      })
+
+      derived.get()
+      const initialRuns = runs
+
+      reconcileState(prev, next, registry, alienEngine)
+
+      derived.get()
+      // No content changed, just reorder with shared refs → zero signal updates → no re-run
+      expect(runs).toBe(initialRuns)
+    })
+  })
+
+  describe('multi-dispatch sequences', () => {
+    it('handles add → update → remove sequence', () => {
+      const state0 = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+        ],
+      })
+      const state1 = deepFreeze({
+        items: [
+          { id: 1, name: 'Alice' },
+          { id: 2, name: 'Bob' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+      const state2 = deepFreeze({
+        items: [
+          { id: 1, name: 'Alicia' },
+          { id: 2, name: 'Bob' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+      const state3 = deepFreeze({
+        items: [
+          { id: 2, name: 'Bob' },
+          { id: 3, name: 'Carol' },
+        ],
+      })
+
+      const registry = setupRegistry(state0, (s) => {
+        s.items[0].name // tracks {id:1}.name
+        s.items[1].name // tracks {id:2}.name
+      })
+
+      expect(registry.has('items.{id:1}.name')).toBe(true)
+      expect(registry.has('items.{id:2}.name')).toBe(true)
+
+      // Dispatch 1: add entity 3
+      diffAndUpdateSignals(state0, state1, '', registry)
+      // @@keys updated but entity 3 not tracked (never accessed via proxy)
+
+      // Dispatch 2: update entity 1's name
+      diffAndUpdateSignals(state1, state2, '', registry)
+      expect(registry.getOrCreate('items.{id:1}.name', 'Alicia').get()).toBe(
+        'Alicia',
+      )
+
+      // Dispatch 3: remove entity 1
+      diffAndUpdateSignals(state2, state3, '', registry)
+      expect(registry.has('items.{id:1}.name')).toBe(false)
+      expect(registry.has('items.{id:2}.name')).toBe(true)
+    })
+
+    it('handles repeated reorders', () => {
+      const e1 = deepFreeze({ id: 1, v: 'a' })
+      const e2 = deepFreeze({ id: 2, v: 'b' })
+      const e3 = deepFreeze({ id: 3, v: 'c' })
+
+      const s0 = deepFreeze({ items: [e1, e2, e3] })
+      const s1 = deepFreeze({ items: [e3, e1, e2] })
+      const s2 = deepFreeze({ items: [e2, e3, e1] })
+      const s3 = deepFreeze({ items: [e1, e2, e3] }) // back to original
+
+      const registry = setupRegistry(s0, (s) => {
+        s.items[0].v
+        s.items[1].v
+        s.items[2].v
+      })
+
+      const sig1 = registry.getOrCreate('items.{id:1}.v', 'a')
+      const sig2 = registry.getOrCreate('items.{id:2}.v', 'b')
+      const sig3 = registry.getOrCreate('items.{id:3}.v', 'c')
+
+      const init1 = sig1.get()
+      const init2 = sig2.get()
+      const init3 = sig3.get()
+
+      diffAndUpdateSignals(s0, s1, '', registry)
+      diffAndUpdateSignals(s1, s2, '', registry)
+      diffAndUpdateSignals(s2, s3, '', registry)
+
+      // After multiple reorders with shared refs, signals unchanged
+      expect(sig1.get()).toBe(init1)
+      expect(sig2.get()).toBe(init2)
+      expect(sig3.get()).toBe(init3)
+    })
+  })
+})
