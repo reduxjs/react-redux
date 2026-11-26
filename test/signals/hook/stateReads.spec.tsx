@@ -4,11 +4,18 @@
  * freezes state in development, so these run against frozen state, both
  * at mount (probe tier) and after the hook has been promoted (deep tier).
  */
+import React from 'react'
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
+import { Provider, useSelector, shallowEqual } from 'react-redux'
 import { afterEach, describe, expect, it } from 'vitest'
+import { keysMetaPath } from '../../../src/signals/arrayKeys'
+import { useSignalContext } from '../../../src/signals/context'
+import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { renderSignalSelector } from '../helpers/react'
+
+const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
 
 const slice = createSlice({
   name: 'data',
@@ -129,4 +136,119 @@ describe('frozen and extensible checks on state proxies', () => {
       ])
     })
   }
+})
+
+// Runs in both TEST_IMPL modes through the react-redux entry point.
+describe('enumeration collapse (hook)', () => {
+  interface Address {
+    city: string
+    zip: string
+  }
+
+  interface User {
+    name: string
+    age: number
+    address: Address
+    joined: Date
+  }
+
+  interface Item {
+    id: number
+    text: string
+    done: boolean
+  }
+
+  interface State {
+    user: User
+    other: User
+    counter: number
+    items: Item[]
+  }
+
+  function makeState(): State {
+    return {
+      user: {
+        name: 'Alice',
+        age: 30,
+        address: { city: 'Springfield', zip: '11111' },
+        joined: new Date(2020, 0, 1),
+      },
+      other: {
+        name: 'Bob',
+        age: 41,
+        address: { city: 'Shelbyville', zip: '22222' },
+        joined: new Date(2021, 0, 1),
+      },
+      counter: 0,
+      items: [
+        { id: 1, text: 'a', done: false },
+        { id: 2, text: 'b', done: true },
+      ],
+    }
+  }
+
+  const slice = createSlice({
+    name: 'root',
+    initialState: makeState(),
+    reducers: {
+      renameUser(s, a: { payload: string }) {
+        s.user.name = a.payload
+      },
+      renameOther(s, a: { payload: string }) {
+        s.other.name = a.payload
+      },
+      increment(s) {
+        s.counter++
+      },
+    },
+  })
+
+  function makeStore() {
+    return configureStore({ reducer: slice.reducer })
+  }
+
+  it('spread selector with shallowEqual: renders only when the object changes', () => {
+    const store = makeStore()
+    const renders = { user: 0 }
+    let registry: PathSignalRegistry | undefined
+
+    function CaptureRegistry() {
+      registry = useSignalContext().registry
+      return null
+    }
+
+    function UserCard() {
+      renders.user++
+      const user = useSelector((s: State) => ({ ...s.user }), shallowEqual)
+      return <div data-testid="name">{user.name}</div>
+    }
+
+    rtl.render(
+      <Provider store={store}>
+        {IS_SIGNALS ? <CaptureRegistry /> : null}
+        <UserCard />
+      </Provider>,
+    )
+    expect(rtl.screen.getByTestId('name').textContent).toBe('Alice')
+    expect(renders.user).toBe(1)
+
+    rtl.act(() => {
+      store.dispatch(slice.actions.increment())
+      store.dispatch(slice.actions.renameOther('Robert'))
+    })
+    expect(renders.user).toBe(1)
+
+    rtl.act(() => {
+      store.dispatch(slice.actions.renameUser('Alicia'))
+    })
+    expect(rtl.screen.getByTestId('name').textContent).toBe('Alicia')
+    expect(renders.user).toBe(2)
+
+    if (IS_SIGNALS) {
+      const paths = registry!.debugPaths()
+      expect(paths).toContain('user')
+      expect(paths).not.toContain('user.name')
+      expect(paths).not.toContain(keysMetaPath('user'))
+    }
+  })
 })

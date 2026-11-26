@@ -1,8 +1,5 @@
-import React from 'react'
 import { describe, it, expect } from 'vitest'
-import * as rtl from '@testing-library/react'
-import { configureStore, createSlice } from '@reduxjs/toolkit'
-import { Provider, useSelector, shallowEqual } from 'react-redux'
+import { shallowEqual } from 'react-redux'
 import { alienEngine } from '../../../src/signals/engine'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import {
@@ -13,10 +10,7 @@ import {
 import { getProxyPath } from '../../../src/signals/proxyIdentity'
 import { reconcileState } from '../../../src/signals/diff'
 import { keysMetaPath } from '../../../src/signals/arrayKeys'
-import { useSignalContext } from '../../../src/signals/context'
 import { createRegistry } from '../helpers/registry'
-
-const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
 
 // Enumerating a plain object and then reading every own value (spread,
 // Object.values/entries, JSON.stringify, shallowEqual, for...in) depends on
@@ -559,74 +553,5 @@ describe('enumeration collapse (unit)', () => {
       expect(h.evals()).toBe(3)
       h.stop()
     })
-  })
-})
-
-// ─── Hook-level behavior (both TEST_IMPL modes) ───
-
-const slice = createSlice({
-  name: 'root',
-  initialState: makeState(),
-  reducers: {
-    renameUser(s, a: { payload: string }) {
-      s.user.name = a.payload
-    },
-    renameOther(s, a: { payload: string }) {
-      s.other.name = a.payload
-    },
-    increment(s) {
-      s.counter++
-    },
-  },
-})
-
-function makeStore() {
-  return configureStore({ reducer: slice.reducer })
-}
-
-describe('enumeration collapse (hook)', () => {
-  it('spread selector with shallowEqual: renders only when the object changes', () => {
-    const store = makeStore()
-    const renders = { user: 0 }
-    let registry: PathSignalRegistry | undefined
-
-    function CaptureRegistry() {
-      registry = useSignalContext().registry
-      return null
-    }
-
-    function UserCard() {
-      renders.user++
-      const user = useSelector((s: State) => ({ ...s.user }), shallowEqual)
-      return <div data-testid="name">{user.name}</div>
-    }
-
-    rtl.render(
-      <Provider store={store}>
-        {IS_SIGNALS ? <CaptureRegistry /> : null}
-        <UserCard />
-      </Provider>,
-    )
-    expect(rtl.screen.getByTestId('name').textContent).toBe('Alice')
-    expect(renders.user).toBe(1)
-
-    rtl.act(() => {
-      store.dispatch(slice.actions.increment())
-      store.dispatch(slice.actions.renameOther('Robert'))
-    })
-    expect(renders.user).toBe(1)
-
-    rtl.act(() => {
-      store.dispatch(slice.actions.renameUser('Alicia'))
-    })
-    expect(rtl.screen.getByTestId('name').textContent).toBe('Alicia')
-    expect(renders.user).toBe(2)
-
-    if (IS_SIGNALS) {
-      const paths = registry!.debugPaths()
-      expect(paths).toContain('user')
-      expect(paths).not.toContain('user.name')
-      expect(paths).not.toContain(keysMetaPath('user'))
-    }
   })
 })
