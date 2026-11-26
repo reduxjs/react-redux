@@ -1053,4 +1053,54 @@ describe('entity adapter selectors feeding result functions', () => {
     expect(renders).toEqual({ 1: 3, 2: 4, 3: 3 })
     expect(sawProxy).toBe(false)
   })
+
+  it('a component that only gets selectAll cache hits keeps updating after the component that ran it unmounts', () => {
+    // Only the first hook to evaluate after a change runs selectAll's body
+    // and reads ids/entities; the others get the memoized array back and
+    // depend on the `comments` object itself.
+    const store = makeEntityStore()
+    const selectCount = (s: EntityState) => selectAllComments(s).length
+    const selectIds = (s: EntityState) =>
+      selectAllComments(s)
+        .map((c) => c.id)
+        .join(',')
+
+    function Count() {
+      return <div data-testid="count">{useSelector(selectCount)}</div>
+    }
+    function Ids() {
+      return <div data-testid="ids">{useSelector(selectIds)}</div>
+    }
+    function App({ showCount }: { showCount: boolean }) {
+      return (
+        <>
+          {showCount && <Count />}
+          <Ids />
+        </>
+      )
+    }
+
+    const { getByTestId, rerender } = rtl.render(
+      <Provider store={store}>
+        <App showCount />
+      </Provider>,
+    )
+    rtl.act(() => {
+      store.dispatch(commentsSlice.actions.addComment({ id: 4, postId: 3 }))
+    })
+    expect(getByTestId('count').textContent).toBe('4')
+    expect(getByTestId('ids').textContent).toBe('1,2,3,4')
+
+    rerender(
+      <Provider store={store}>
+        <App showCount={false} />
+      </Provider>,
+    )
+    for (const id of [5, 6]) {
+      rtl.act(() => {
+        store.dispatch(commentsSlice.actions.addComment({ id, postId: 1 }))
+      })
+    }
+    expect(getByTestId('ids').textContent).toBe('1,2,3,4,5,6')
+  })
 })
