@@ -28,7 +28,7 @@ export function createRegistryCapture() {
 
 /** Renders one `useSignalSelector` hook; `seen.current` holds its latest
  *  result. */
-export function renderSignalSelector<S, R>(
+export function renderSignalSelector<S extends object, R>(
   store: Store<S>,
   selector: (state: S) => R,
 ) {
