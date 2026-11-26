@@ -1,20 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { alienEngine } from '../../../src/signals/engine'
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
-import type { RegistryStats } from '../../../src/signals/pathSignalRegistry'
 import { delayedSweepPolicy } from '../../../src/signals/sweepPolicy'
 import type { ReactiveSignal } from '../../../src/signals/types'
-
-const EMPTY_STATS: RegistryStats = {
-  signals: 0,
-  prefixCounts: 0,
-  prefixOnlyPaths: 0,
-  childIndex: 0,
-  arrays: 0,
-  columns: 0,
-  structures: 0,
-  segmentSubs: 0,
-}
+import { EMPTY_STATS } from '../helpers/registry'
 
 type Registry = ReturnType<typeof createPathSignalRegistry>
 

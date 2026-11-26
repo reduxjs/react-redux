@@ -20,6 +20,7 @@ import {
   useSignalSelector,
   unwrap,
 } from '../../../src/signals/index'
+import { ErrorBoundary } from '../helpers/react'
 
 interface Counter {
   id: string
@@ -296,22 +297,6 @@ describe('edge cases: React integration', () => {
   })
 
   describe('selector errors', () => {
-    class ErrorBoundary extends React.Component<
-      { children: React.ReactNode },
-      { error: Error | null }
-    > {
-      state = { error: null as Error | null }
-      static getDerivedStateFromError(error: Error) {
-        return { error }
-      }
-      render() {
-        if (this.state.error) {
-          return <div data-testid="boundary">{this.state.error.message}</div>
-        }
-        return this.props.children
-      }
-    }
-
     it('recovers when a throwing evaluation is superseded before React renders', () => {
       // Two dispatches in one act: the first makes the selector throw
       // during the effect's re-evaluation, the second fixes the state.

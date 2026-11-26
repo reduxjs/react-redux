@@ -3,27 +3,8 @@ import { alienEngine } from '../../../src/signals/engine'
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { createTrackingProxy } from '../../../src/signals/trackingProxy'
 import { diffAndUpdateSignals, reconcileState } from '../../../src/signals/diff'
-import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
-
-// Helper: create a registry with signals pre-populated by running a selector through a tracking proxy
-function setupRegistry(state: object, selectorFn: (s: any) => void) {
-  const registry = createPathSignalRegistry(alienEngine)
-  const proxy = createTrackingProxy(state, '', registry)
-  selectorFn(proxy)
-  return registry
-}
-
-// Helper: freeze deeply (Immer-style)
-function deepFreeze<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object') return obj
-  Object.freeze(obj)
-  for (const val of Object.values(obj as Record<string, unknown>)) {
-    if (val !== null && typeof val === 'object' && !Object.isFrozen(val)) {
-      deepFreeze(val)
-    }
-  }
-  return obj
-}
+import { setupRegistry } from '../helpers/registry'
+import { deepFreeze } from '../helpers/state'
 
 describe('diffAndUpdateSignals', () => {
   describe('structural sharing short-circuits', () => {

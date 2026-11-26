@@ -9,6 +9,7 @@
 import fc from 'fast-check'
 import { createSelector } from 'reselect'
 import { getProxyTarget } from '../../../src/signals/proxyIdentity'
+import { deepFreeze } from '../helpers/state'
 
 export type Value =
   | null
@@ -117,16 +118,6 @@ export function clone(v: Value): Value {
     return Object.fromEntries(
       Object.entries(v).map(([k, x]) => [k, clone(x as Value)]),
     )
-  }
-  return v
-}
-
-export function deepFreeze<T>(v: T): T {
-  if (isObj(v) && !Object.isFrozen(v)) {
-    Object.freeze(v)
-    for (const k of Object.keys(v)) {
-      deepFreeze((v as Record<string, unknown>)[k])
-    }
   }
   return v
 }

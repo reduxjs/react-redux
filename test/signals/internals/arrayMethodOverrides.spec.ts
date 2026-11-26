@@ -1,23 +1,10 @@
 import { describe, test, expect, vi } from 'vitest'
-import { alienEngine } from '@internal/signals/engine'
-import { createPathSignalRegistry } from '@internal/signals/pathSignalRegistry'
-import { createTrackingProxy } from '@internal/signals/trackingProxy'
-import { getProxyPath, unwrap } from '@internal/signals/proxyIdentity'
-
-function deepFreeze<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object') return obj
-  Object.freeze(obj)
-  for (const val of Object.values(obj as Record<string, unknown>)) {
-    if (val !== null && typeof val === 'object') deepFreeze(val)
-  }
-  return obj
-}
-
-function setup<T extends object>(state: T) {
-  const registry = createPathSignalRegistry(alienEngine)
-  const proxy = createTrackingProxy(state, '', registry)
-  return { registry, proxy }
-}
+import { alienEngine } from '../../../src/signals/engine'
+import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
+import { createTrackingProxy } from '../../../src/signals/trackingProxy'
+import { getProxyPath, unwrap } from '../../../src/signals/proxyIdentity'
+import { trackState } from '../helpers/registry'
+import { deepFreeze } from '../helpers/state'
 
 describe('Array method overrides on tracking proxy', () => {
   // Test data factory — mimics Immer test structure
@@ -36,7 +23,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('find()', () => {
     test('returns the raw found item with an identity dependency', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const found = proxy.items.find((item) => item.id === 3)
       expect(found).toBe(state.items[2])
       expect(getProxyPath(found)).toBeUndefined()
@@ -46,14 +33,14 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('returns undefined when not found', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const found = proxy.items.find((item) => item.id === 999)
       expect(found).toBeUndefined()
     })
 
     test('callback receives scan recorder, unwrap resolves raw element', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const unwrapped: unknown[] = []
       let callCount = 0
       proxy.items.find((item) => {
@@ -73,7 +60,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('only registers signals for the found element, not all scanned elements', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
 
       // find item with id === 3 (index 2)
       const found = proxy.items.find((item) => item.id === 3)
@@ -95,7 +82,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('callback receives correct index and array arguments', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const indices: number[] = []
       let receivedArray: unknown
 
@@ -112,7 +99,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('found element properties are accessible through proxy', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const found = proxy.items.find((item) => item.id === 2)!
       expect(found.id).toBe(2)
       expect(found.value).toBe(20)
@@ -121,7 +108,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('works with primitive arrays', () => {
       const state = deepFreeze({ nums: [10, 20, 30, 40, 50] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const found = proxy.nums.find((n) => n > 25)
       expect(found).toBe(30)
     })
@@ -136,7 +123,7 @@ describe('Array method overrides on tracking proxy', () => {
           { id: 3, type: 'A' },
         ],
       })
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const found = proxy.items.findLast((item) => item.type === 'A')
       expect(found).toBe(state.items[2])
       expect(registry.has('items.{id:3}')).toBe(true)
@@ -145,14 +132,14 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('returns undefined when not found', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const found = proxy.items.findLast((item) => item.id === 999)
       expect(found).toBeUndefined()
     })
 
     test('searches from end', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const indices: number[] = []
       proxy.items.findLast((item, index) => {
         indices.push(index)
@@ -166,21 +153,21 @@ describe('Array method overrides on tracking proxy', () => {
   describe('findIndex()', () => {
     test('returns index of found item', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const index = proxy.items.findIndex((item) => item.id === 3)
       expect(index).toBe(2)
     })
 
     test('returns -1 when not found', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const index = proxy.items.findIndex((item) => item.id === 999)
       expect(index).toBe(-1)
     })
 
     test('does not register any element signals', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       proxy.items.findIndex((item) => item.id === 3)
       // findIndex returns a primitive — no element signals should be created
       expect(registry.has('items.{id:1}.value')).toBe(false)
@@ -189,7 +176,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('callback receives scan recorder, unwrap resolves raw element', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       let i = 0
       proxy.items.findIndex((item) => {
         expect(getProxyPath(item)).toBeUndefined()
@@ -210,14 +197,14 @@ describe('Array method overrides on tracking proxy', () => {
           { id: 3, type: 'A' },
         ],
       })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const index = proxy.items.findLastIndex((item) => item.type === 'A')
       expect(index).toBe(2)
     })
 
     test('returns -1 when not found', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const index = proxy.items.findLastIndex((item) => item.id === 999)
       expect(index).toBe(-1)
     })
@@ -226,7 +213,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('filter()', () => {
     test('returns the raw matching items', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const filtered = proxy.items.filter((item) => item.value > 25)
       expect(filtered).toEqual([state.items[2], state.items[3], state.items[4]])
       expect(filtered[0]).toBe(state.items[2])
@@ -235,7 +222,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('callback receives scan recorder, not tracking proxies', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const unwrapped: unknown[] = []
       proxy.items.filter((item) => {
         expect(getProxyPath(item)).toBeUndefined()
@@ -247,7 +234,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('registers identity signals for matching elements only', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const filtered = proxy.items.filter((item) => item.id === 3)
       // Reads on the raw result are not tracked; the element identity is
       expect(filtered[0].value).toBe(30)
@@ -259,7 +246,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('filtered items give access to nested properties', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const filtered = proxy.items.filter((item) => item.id > 3)
       expect(filtered[0].nested.count).toBe(4)
       expect(filtered[1].nested.count).toBe(5)
@@ -267,7 +254,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('multiple filters on same array work correctly', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const high = proxy.items.filter((item) => item.value > 30)
       const low = proxy.items.filter((item) => item.value < 30)
       expect(high).toHaveLength(2)
@@ -276,14 +263,14 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('returns empty array when nothing matches', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const filtered = proxy.items.filter((item) => item.id > 100)
       expect(filtered).toHaveLength(0)
     })
 
     test('callback receives correct index and array arguments', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const seen: number[] = []
       proxy.items.filter((_item, index, arr) => {
         seen.push(index)
@@ -297,7 +284,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('slice()', () => {
     test('returns the raw sliced items', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const sliced = proxy.items.slice(1, 3)
       expect(sliced).toEqual([state.items[1], state.items[2]])
       expect(sliced[0]).toBe(state.items[1])
@@ -306,7 +293,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('slice with no arguments returns a raw copy of all items', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const sliced = proxy.items.slice()
       expect(sliced).toEqual([...state.items])
       expect(sliced).not.toBe(state.items)
@@ -314,7 +301,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('slice with negative indices', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const sliced = proxy.items.slice(-2)
       expect(sliced).toHaveLength(2)
       expect(sliced[0].id).toBe(4)
@@ -323,7 +310,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('slice with negative start and end', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const sliced = proxy.items.slice(-3, -1)
       expect(sliced).toHaveLength(2)
       expect(sliced[0].id).toBe(3)
@@ -332,14 +319,14 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('out-of-bounds indices are clamped', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const sliced = proxy.items.slice(-100, 100)
       expect(sliced).toHaveLength(5)
     })
 
     test('depends on the whole array, not on each sliced element', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       proxy.items.slice(2, 3)
 
       expect(registry.has('items')).toBe(true)
@@ -355,7 +342,7 @@ describe('Array method overrides on tracking proxy', () => {
       [[-Infinity, Infinity]],
     ])('matches native slice for arguments %j', (args) => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const slice = proxy.items.slice as (...a: unknown[]) => unknown[]
       const nativeSlice = state.items.slice as (...a: unknown[]) => unknown[]
       expect(slice.apply(proxy.items, args)).toEqual(
@@ -378,7 +365,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test.each(methods)('%s() calls the callback with thisArg', (method) => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const thisArg = { marker: true }
       const seen: unknown[] = []
       const callback = function (this: unknown) {
@@ -398,19 +385,19 @@ describe('Array method overrides on tracking proxy', () => {
   describe('some()', () => {
     test('returns true when predicate matches', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.some((item) => item.value > 40)).toBe(true)
     })
 
     test('returns false when no match', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.some((item) => item.value > 100)).toBe(false)
     })
 
     test('short-circuits on first match', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       let callCount = 0
       proxy.items.some((item) => {
         callCount++
@@ -421,7 +408,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('callback receives raw values', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       proxy.items.some((item) => {
         expect(getProxyPath(item)).toBeUndefined()
         return false
@@ -430,7 +417,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('does not register element signals', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       proxy.items.some((item) => item.id === 3)
       expect(registry.has('items.{id:1}.value')).toBe(false)
       expect(registry.has('items.{id:3}.value')).toBe(false)
@@ -440,19 +427,19 @@ describe('Array method overrides on tracking proxy', () => {
   describe('every()', () => {
     test('returns true when all match', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.every((item) => item.value > 0)).toBe(true)
     })
 
     test('returns false when some do not match', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.every((item) => item.value > 25)).toBe(false)
     })
 
     test('short-circuits on first failure', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       let callCount = 0
       proxy.items.every((item) => {
         callCount++
@@ -466,19 +453,19 @@ describe('Array method overrides on tracking proxy', () => {
   describe('includes()', () => {
     test('returns true for primitive values', () => {
       const state = deepFreeze({ nums: [10, 20, 30, 40, 50] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.includes(30)).toBe(true)
     })
 
     test('returns false for missing primitive', () => {
       const state = deepFreeze({ nums: [10, 20, 30, 40, 50] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.includes(99)).toBe(false)
     })
 
     test('works with fromIndex', () => {
       const state = deepFreeze({ nums: [10, 20, 30, 20, 50] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.includes(20, 2)).toBe(true) // finds the 20 at index 3
       expect(proxy.nums.includes(10, 1)).toBe(false) // 10 is before index 1
     })
@@ -487,19 +474,19 @@ describe('Array method overrides on tracking proxy', () => {
   describe('indexOf()', () => {
     test('returns index of primitive value', () => {
       const state = deepFreeze({ nums: [10, 20, 30, 40, 50] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.indexOf(30)).toBe(2)
     })
 
     test('returns -1 when not found', () => {
       const state = deepFreeze({ nums: [10, 20, 30] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.indexOf(99)).toBe(-1)
     })
 
     test('with fromIndex parameter', () => {
       const state = deepFreeze({ nums: [1, 2, 3, 2, 5] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.indexOf(2)).toBe(1)
       expect(proxy.nums.indexOf(2, 2)).toBe(3)
     })
@@ -508,13 +495,13 @@ describe('Array method overrides on tracking proxy', () => {
   describe('lastIndexOf()', () => {
     test('returns last index of primitive value', () => {
       const state = deepFreeze({ nums: [10, 20, 30, 20, 50] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.lastIndexOf(20)).toBe(3)
     })
 
     test('returns -1 when not found', () => {
       const state = deepFreeze({ nums: [10, 20, 30] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.lastIndexOf(99)).toBe(-1)
     })
   })
@@ -522,19 +509,19 @@ describe('Array method overrides on tracking proxy', () => {
   describe('join()', () => {
     test('returns joined string with separator', () => {
       const state = deepFreeze({ items: [1, 2, 3, 4, 5] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.join(',')).toBe('1,2,3,4,5')
     })
 
     test('join with custom separator', () => {
       const state = deepFreeze({ items: ['a', 'b', 'c'] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.join(' - ')).toBe('a - b - c')
     })
 
     test('join with no separator uses comma', () => {
       const state = deepFreeze({ items: [1, 2, 3] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.join()).toBe('1,2,3')
     })
   })
@@ -542,7 +529,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('toString()', () => {
     test('returns string representation', () => {
       const state = deepFreeze({ items: [1, 2, 3] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.toString()).toBe('1,2,3')
     })
   })
@@ -550,7 +537,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('toLocaleString()', () => {
     test('returns locale string', () => {
       const state = deepFreeze({ items: [1, 2, 3] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       // Just verify it returns a string without error
       expect(typeof proxy.items.toLocaleString()).toBe('string')
     })
@@ -559,14 +546,14 @@ describe('Array method overrides on tracking proxy', () => {
   describe('concat()', () => {
     test('returns new array with concatenated items (raw values)', () => {
       const state = deepFreeze({ items: [1, 2, 3] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const result = proxy.items.concat([4, 5])
       expect(result).toEqual([1, 2, 3, 4, 5])
     })
 
     test('concat with no arguments creates shallow copy', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const copy = proxy.items.concat()
       expect(copy).toHaveLength(5)
       expect(copy[0].id).toBe(1)
@@ -576,7 +563,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('concat with multiple arrays', () => {
       const state = deepFreeze({ items: [1, 2] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const result = proxy.items.concat([3, 4], [5, 6])
       expect(result).toEqual([1, 2, 3, 4, 5, 6])
     })
@@ -585,14 +572,14 @@ describe('Array method overrides on tracking proxy', () => {
   describe('flat()', () => {
     test('flattens nested arrays', () => {
       const state = deepFreeze({ items: [[1, 2], [3, 4], [5]] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const result = proxy.items.flat()
       expect(result).toEqual([1, 2, 3, 4, 5])
     })
 
     test('flat with depth', () => {
       const state = deepFreeze({ items: [[[1, 2]], [[3, 4]]] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.flat(1)).toEqual([
         [1, 2],
         [3, 4],
@@ -604,7 +591,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('map()', () => {
     test('primitive results register a column signal, not element signals', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const mapped = proxy.items.map((item) => item.value * 2)
       expect(mapped).toEqual([20, 40, 60, 80, 100])
       expect(registry.has('items.{*}.value')).toBe(true)
@@ -614,7 +601,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('identity mapping returns raw elements with identity dependencies', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const mapped = proxy.items.map((item) => item)
       expect(mapped).toEqual([...state.items])
       expect(mapped[0]).toBe(state.items[0])
@@ -631,7 +618,7 @@ describe('Array method overrides on tracking proxy', () => {
           2: { id: 2, name: 'two' },
         } as Record<number, { id: number; name: string }>,
       })
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const all = proxy.ids.map((id) => proxy.entities[id])
       expect(all).toEqual([state.entities[2], state.entities[1]])
       expect(all[0]).toBe(state.entities[2])
@@ -647,7 +634,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('fresh objects that embed the element get the raw element, not the recorder', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const calls: number[] = []
       const mapped = proxy.items.map((item, i) => {
         calls.push(i)
@@ -665,7 +652,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('nested object reads fall back to the coarse array signal', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
       const counts = proxy.items.map((item) => item.nested.count)
       expect(counts).toEqual([1, 2, 3, 4, 5])
       expect(registry.has('items')).toBe(true)
@@ -674,7 +661,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('callback receives correct index and array arguments', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const seen: number[] = []
       proxy.items.map((_item, index, arr) => {
         seen.push(index)
@@ -688,7 +675,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('Non-overridden methods (pass-through)', () => {
     test('forEach() callbacks receive proxied values', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const values: number[] = []
       proxy.items.forEach((item) => {
         values.push(item.value)
@@ -698,14 +685,14 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('reduce() callbacks receive proxied values', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const sum = proxy.items.reduce((acc, item) => acc + item.value, 0)
       expect(sum).toBe(150)
     })
 
     test('reduceRight() callbacks receive proxied values', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const ids = proxy.items.reduceRight((acc: number[], item) => {
         acc.push(item.id)
         return acc
@@ -717,7 +704,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('Signal tracking precision', () => {
     test('find() registers the column read by the callback plus the result identity', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
 
       // Simulate what a selector does: find + read properties
       const item = proxy.items.find((i) => i.id === 3)!
@@ -731,7 +718,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('filter() registers the column read by the callback plus matching identities', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
 
       const highValue = proxy.items.filter((i) => i.value > 30)
       expect(highValue.map((i) => i.value)).toEqual([40, 50])
@@ -750,7 +737,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('primitive-returning methods register no element signals', () => {
       const state = createTestData()
-      const { proxy, registry } = setup(state)
+      const { proxy, registry } = trackState(state)
 
       // Call several primitive-returning methods
       proxy.items.some((i) => i.id === 3)
@@ -798,7 +785,7 @@ describe('Array method overrides on tracking proxy', () => {
   describe('Edge cases', () => {
     test('empty array', () => {
       const state = deepFreeze({ items: [] as { id: number }[] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.find(() => true)).toBeUndefined()
       expect(proxy.items.filter(() => true)).toEqual([])
       expect(proxy.items.some(() => true)).toBe(false)
@@ -809,7 +796,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('single-element array', () => {
       const state = deepFreeze({ items: [{ id: 1, value: 10 }] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const found = proxy.items.find((i) => i.id === 1)
       expect(found).toBeDefined()
       expect(found!.value).toBe(10)
@@ -817,7 +804,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('array of primitives (no identity detection)', () => {
       const state = deepFreeze({ nums: [5, 10, 15, 20, 25] })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.nums.find((n) => n > 12)).toBe(15)
       expect(proxy.nums.filter((n) => n > 12)).toEqual([15, 20, 25])
       expect(proxy.nums.some((n) => n > 20)).toBe(true)
@@ -837,7 +824,7 @@ describe('Array method overrides on tracking proxy', () => {
           { id: 2, items: [{ id: 20, name: 'c' }] },
         ],
       })
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const group = proxy.groups.find((g) => g.id === 1)!
       const item = group.items.find((i) => i.id === 11)!
       expect(item.name).toBe('b')
@@ -845,7 +832,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('chained array methods', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       // filter then find — both should work with overrides
       const highValue = proxy.items.filter((i) => i.value > 20)
       // highValue is a plain array of raw items (not a tracking proxy itself)
@@ -857,13 +844,13 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('array.length is not affected by overrides', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(proxy.items.length).toBe(5)
     })
 
     test('for...of iteration still works (not overridden)', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const ids: number[] = []
       for (const item of proxy.items) {
         ids.push(item.id)
@@ -873,7 +860,7 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('spread still works', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const copy = [...proxy.items]
       expect(copy).toHaveLength(5)
       expect(copy[0].id).toBe(1)
@@ -881,13 +868,13 @@ describe('Array method overrides on tracking proxy', () => {
 
     test('Array.isArray still works', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       expect(Array.isArray(proxy.items)).toBe(true)
     })
 
     test('array destructuring works', () => {
       const state = createTestData()
-      const { proxy } = setup(state)
+      const { proxy } = trackState(state)
       const [first, second] = proxy.items
       expect(first.id).toBe(1)
       expect(second.id).toBe(2)

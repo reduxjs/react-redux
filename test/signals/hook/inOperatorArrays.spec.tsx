@@ -6,7 +6,7 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import { promoteToDeepTier, renderSignalSelector } from '../helpers/react'
 
 type Item = { id: number; label: string }
 
@@ -41,23 +41,8 @@ afterEach(() => {
 
 function renderPromoted(items: unknown[], selector: (s: RootState) => unknown) {
   const { store, actions } = makeStore(items)
-  const seen: { current: unknown } = { current: undefined }
-  function Comp() {
-    seen.current = useSignalSelector(selector)
-    return null
-  }
-  rtl.render(
-    <SignalProvider store={store}>
-      <Comp />
-    </SignalProvider>,
-  )
-  // Two dispatches in the selector's segment promote it past the probe tier.
-  rtl.act(() => {
-    store.dispatch(actions.tick())
-  })
-  rtl.act(() => {
-    store.dispatch(actions.tick())
-  })
+  const seen = renderSignalSelector(store, selector)
+  promoteToDeepTier(store, actions.tick())
   return { store, actions, seen }
 }
 

@@ -13,13 +13,14 @@ import React from 'react'
 import { createStore } from 'redux'
 import type { Store } from 'redux'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useSignalContext } from '../../../src/signals/context'
 import type {
   PathSignalRegistry,
   RegistryStats,
 } from '../../../src/signals/pathSignalRegistry'
 import { SignalProvider } from '../../../src/signals/SignalProvider'
 import { useSignalSelector } from '../../../src/signals/useSignalSelector'
+import { createRegistryCapture } from '../helpers/react'
+import { EMPTY_STATS } from '../helpers/registry'
 
 interface Slice {
   value: number
@@ -115,19 +116,11 @@ function makeStore(): Store<AppState, Action> {
   return createStore(reducer)
 }
 
-let captured: PathSignalRegistry | null = null
-
-function CaptureRegistry() {
-  captured = useSignalContext<AppState>().registry
-  return null
-}
-
-function requireRegistry(): PathSignalRegistry {
-  if (captured === null) {
-    throw new Error('registry was not captured')
-  }
-  return captured
-}
+const {
+  Capture: CaptureRegistry,
+  registry: requireRegistry,
+  reset: resetCapturedRegistry,
+} = createRegistryCapture()
 
 function Watcher({ index }: { index: number }) {
   const n = useSignalSelector((s: AppState) => s.slices[`s${index}`].nested.n)
@@ -171,19 +164,8 @@ function Tree({
   )
 }
 
-const EMPTY_STATS: RegistryStats = {
-  signals: 0,
-  prefixCounts: 0,
-  prefixOnlyPaths: 0,
-  childIndex: 0,
-  arrays: 0,
-  columns: 0,
-  structures: 0,
-  segmentSubs: 0,
-}
-
 beforeEach(() => {
-  captured = null
+  resetCapturedRegistry()
 })
 
 describe('registry lifecycle: coarse tier only (never promoted)', () => {

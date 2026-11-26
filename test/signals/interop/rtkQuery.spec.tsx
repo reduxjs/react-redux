@@ -23,12 +23,9 @@ import {
 import { Provider, useSelector } from 'react-redux'
 import { useDispatch, useStore } from '../../../src/index'
 import { unwrap } from '../../../src/signals/proxyIdentity'
-import { useSignalContext } from '../../../src/signals/context'
-import type {
-  PathSignalRegistry,
-  RegistryStats,
-} from '../../../src/signals/pathSignalRegistry'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createRegistryCapture } from '../helpers/react'
+import { EMPTY_STATS } from '../helpers/registry'
 
 const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
 
@@ -171,28 +168,11 @@ function makeStore(api: Api) {
 
 type AppStore = ReturnType<typeof makeStore>
 
-const EMPTY_STATS: RegistryStats = {
-  signals: 0,
-  prefixCounts: 0,
-  prefixOnlyPaths: 0,
-  childIndex: 0,
-  arrays: 0,
-  columns: 0,
-  structures: 0,
-  segmentSubs: 0,
-}
-
-let capturedRegistry: PathSignalRegistry | null = null
-
-function CaptureRegistry() {
-  capturedRegistry = useSignalContext().registry
-  return null
-}
-
-function requireRegistry(): PathSignalRegistry {
-  if (capturedRegistry === null) throw new Error('registry not captured')
-  return capturedRegistry
-}
+const {
+  Capture: CaptureRegistry,
+  registry: requireRegistry,
+  reset: resetCapturedRegistry,
+} = createRegistryCapture()
 
 const renders: Record<string, number> = {}
 function countRender(name: string) {
@@ -207,7 +187,7 @@ beforeEach(() => {
   server = makeServer()
   api = makeApi(server.baseQuery)
   store = makeStore(api)
-  capturedRegistry = null
+  resetCapturedRegistry()
   for (const key of Object.keys(renders)) delete renders[key]
 })
 

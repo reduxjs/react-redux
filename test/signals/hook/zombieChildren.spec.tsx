@@ -29,6 +29,7 @@ import { alienEngine } from '../../../src/signals/engine'
 import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { SignalProvider } from '../../../src/signals/SignalProvider'
 import { useSignalSelector } from '../../../src/signals/useSignalSelector'
+import { ErrorBoundary } from '../helpers/react'
 
 interface Item {
   id: number
@@ -56,22 +57,6 @@ const slice = createSlice({
 
 const makeStore = () => configureStore({ reducer: { items: slice.reducer } })
 type RootState = ReturnType<ReturnType<typeof makeStore>['getState']>
-
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
-  state = { error: null as Error | null }
-  static getDerivedStateFromError(error: Error) {
-    return { error }
-  }
-  render() {
-    if (this.state.error) {
-      return <div data-testid="boundary">{this.state.error.message}</div>
-    }
-    return this.props.children
-  }
-}
 
 describe('prune fires non-numeric primitive leaf signals', () => {
   it.each([

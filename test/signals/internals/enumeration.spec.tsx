@@ -4,7 +4,6 @@ import * as rtl from '@testing-library/react'
 import { configureStore, createSlice } from '@reduxjs/toolkit'
 import { Provider, useSelector, shallowEqual } from 'react-redux'
 import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import {
   createLeafTracker,
@@ -15,6 +14,7 @@ import { getProxyPath } from '../../../src/signals/proxyIdentity'
 import { reconcileState } from '../../../src/signals/diff'
 import { keysMetaPath } from '../../../src/signals/arrayKeys'
 import { useSignalContext } from '../../../src/signals/context'
+import { createRegistry } from '../helpers/registry'
 
 const IS_SIGNALS = process.env.TEST_IMPL === 'signals'
 
@@ -73,10 +73,6 @@ function makeState(): State {
   }
 }
 
-function makeRegistry(): PathSignalRegistry {
-  return createPathSignalRegistry(alienEngine)
-}
-
 function mount<R>(
   getState: () => State,
   selector: (state: State) => R,
@@ -103,7 +99,7 @@ function mount<R>(
 
 function harness<R>(selector: (state: State) => R) {
   let state = makeState()
-  const registry = makeRegistry()
+  const registry = createRegistry()
   const m = mount(() => state, selector, registry)
   const dispatch = (recipe: (prev: State) => State) => {
     const prev = state
@@ -223,7 +219,7 @@ describe('enumeration collapse (unit)', () => {
 
   it('empty object spread collapses and fires when a key is added', () => {
     let state = { ...makeState(), user: {} as User }
-    const registry = makeRegistry()
+    const registry = createRegistry()
     const m = mount(
       () => state,
       (s) => ({ ...s.user }),
@@ -412,7 +408,7 @@ describe('enumeration collapse (unit)', () => {
         ...state,
         other: { ...state.other, address: { ...state.user.address } },
       }
-      const registry = makeRegistry()
+      const registry = createRegistry()
       const m = mount(
         () => state,
         (s) => shallowEqual(s.user.address, s.other.address),

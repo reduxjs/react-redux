@@ -8,7 +8,7 @@ import { configureStore, createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import { renderSignalSelector } from '../helpers/react'
 
 const slice = createSlice({
   name: 'data',
@@ -31,25 +31,10 @@ const slice = createSlice({
 
 const makeStore = () => configureStore({ reducer: { data: slice.reducer } })
 type RootState = ReturnType<ReturnType<typeof makeStore>['getState']>
-type Store = ReturnType<typeof makeStore>
 
 afterEach(() => {
   rtl.cleanup()
 })
-
-function renderSelector<R>(store: Store, selector: (s: RootState) => R) {
-  const seen: { current: R | undefined } = { current: undefined }
-  function Comp() {
-    seen.current = useSignalSelector(selector)
-    return null
-  }
-  rtl.render(
-    <SignalProvider store={store}>
-      <Comp />
-    </SignalProvider>,
-  )
-  return seen
-}
 
 const arrayCalls: Array<[string, (arr: readonly unknown[]) => number]> = [
   ['Object.keys', (arr) => Object.keys(arr).length],
@@ -80,7 +65,9 @@ describe('key enumeration on state arrays', () => {
     for (const field of ['list', 'objs'] as const) {
       it(`${name} on ${field} tracks through [1,2] -> [] -> [5] in both tiers`, () => {
         const store = makeStore()
-        const seen = renderSelector(store, (s) => call(s.data[field]))
+        const seen = renderSignalSelector(store, (s: RootState) =>
+          call(s.data[field]),
+        )
         expect(seen.current).toBe(2)
 
         // Promote to the deep tier without changing the array.
@@ -115,7 +102,7 @@ describe('frozen and extensible checks on state proxies', () => {
       const store = makeStore()
       expect(Object.isFrozen(store.getState().data)).toBe(true)
 
-      const seen = renderSelector(store, (s) => [
+      const seen = renderSignalSelector(store, (s: RootState) => [
         typeof check(s),
         typeof check(s.data),
         typeof check(s.data.obj),

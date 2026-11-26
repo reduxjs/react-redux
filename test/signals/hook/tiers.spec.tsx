@@ -20,12 +20,8 @@ import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import React, { useCallback, useState } from 'react'
 import { legacy_createStore as createStore } from 'redux'
-import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
-import {
-  SignalProvider,
-  useSignalContext,
-  useSignalSelector,
-} from '../../../src/signals/index'
+import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import { createRegistryCapture } from '../helpers/react'
 
 const makeStore = () => {
   const aSlice = createSlice({
@@ -64,15 +60,6 @@ const noStabilityCheck = {
   devModeChecks: { stabilityCheck: 'never' as const },
 }
 
-function makeRegistryCapture() {
-  const captured: { registry: PathSignalRegistry | null } = { registry: null }
-  function Capture() {
-    captured.registry = useSignalContext().registry
-    return null
-  }
-  return { captured, Capture }
-}
-
 afterEach(() => {
   rtl.cleanup()
 })
@@ -80,7 +67,7 @@ afterEach(() => {
 describe('coarse tier: deferred deep-graph build', () => {
   it('defers building the deep graph until a dispatch touches a probed segment', () => {
     const { store, bumpA, bumpB } = makeStore()
-    const { captured, Capture } = makeRegistryCapture()
+    const { registry: capturedRegistry, Capture } = createRegistryCapture()
     let selectorCalls = 0
     let renders = 0
 
@@ -102,7 +89,7 @@ describe('coarse tier: deferred deep-graph build', () => {
       </SignalProvider>,
     )
 
-    const registry = captured.registry!
+    const registry = capturedRegistry()
     expect(getByTestId('value').textContent).toBe('0')
     expect(selectorCalls).toBe(1) // one probe run, nothing else
     expect(renders).toBe(1)
@@ -254,7 +241,7 @@ describe('coarse tier: deferred deep-graph build', () => {
       }
     }
     const store = configureStore({ reducer })
-    const { captured, Capture } = makeRegistryCapture()
+    const { registry: capturedRegistry, Capture } = createRegistryCapture()
 
     const selectKeyCount = (s: RootState) => Object.keys(s).length
 
@@ -270,7 +257,7 @@ describe('coarse tier: deferred deep-graph build', () => {
       </SignalProvider>,
     )
 
-    const registry = captured.registry!
+    const registry = capturedRegistry()
     expect(getByTestId('count').textContent).toBe('1')
     // Enumeration can't be gated by top-level segments — built at mount.
     expect(registry.segmentIndex.size()).toBe(0)
@@ -284,7 +271,7 @@ describe('coarse tier: deferred deep-graph build', () => {
 
   it('skips coarse registration for an identity selector and returns the raw state', () => {
     const { store } = makeStore()
-    const { captured, Capture } = makeRegistryCapture()
+    const { registry: capturedRegistry, Capture } = createRegistryCapture()
     let selected: AppState | null = null
 
     const identity = (s: AppState) => s
@@ -306,7 +293,7 @@ describe('coarse tier: deferred deep-graph build', () => {
       </SignalProvider>,
     )
 
-    const registry = captured.registry!
+    const registry = capturedRegistry()
     // Empty probe footprint (returned the root without reading keys):
     // can't be gated, so the deep graph builds at mount.
     expect(registry.segmentIndex.size()).toBe(0)
@@ -323,7 +310,7 @@ describe('coarse tier: deferred deep-graph build', () => {
 
   it('serves a fresh snapshot when a dispatch lands between render and subscribe', () => {
     const { store, bumpA } = makeStore()
-    const { captured, Capture } = makeRegistryCapture()
+    const { Capture } = createRegistryCapture()
 
     const selectAValue = (s: AppState) => s.a.value
 
@@ -361,7 +348,7 @@ describe('coarse tier: deferred deep-graph build', () => {
 
   it('registers exactly one coarse sub under StrictMode double-subscribe', () => {
     const { store, bumpA, bumpB } = makeStore()
-    const { captured, Capture } = makeRegistryCapture()
+    const { registry: capturedRegistry, Capture } = createRegistryCapture()
 
     const selectAValue = (s: AppState) => s.a.value
 
@@ -379,7 +366,7 @@ describe('coarse tier: deferred deep-graph build', () => {
       </React.StrictMode>,
     )
 
-    const registry = captured.registry!
+    const registry = capturedRegistry()
     expect(getByTestId('value').textContent).toBe('0')
     // subscribe -> cleanup -> resubscribe must not leak a registration.
     expect(registry.segmentIndex.size()).toBe(1)
@@ -399,7 +386,7 @@ describe('coarse tier: deferred deep-graph build', () => {
 
   it('cleans up the coarse registration when unmounted while unbuilt', () => {
     const { store, bumpA } = makeStore()
-    const { captured, Capture } = makeRegistryCapture()
+    const { registry: capturedRegistry, Capture } = createRegistryCapture()
 
     const selectAValue = (s: AppState) => s.a.value
 
@@ -422,7 +409,7 @@ describe('coarse tier: deferred deep-graph build', () => {
     }
 
     const { getByTestId } = rtl.render(<App />)
-    const registry = captured.registry!
+    const registry = capturedRegistry()
     expect(registry.segmentIndex.size()).toBe(1)
 
     rtl.fireEvent.click(getByTestId('hide'))
@@ -440,7 +427,7 @@ describe('coarse tier: deferred deep-graph build', () => {
 
   it('promotes hooks independently: only the hook whose segment changed wakes up', () => {
     const { store, bumpA, bumpB } = makeStore()
-    const { captured, Capture } = makeRegistryCapture()
+    const { registry: capturedRegistry, Capture } = createRegistryCapture()
     let rendersA = 0
     let rendersB = 0
 
@@ -466,7 +453,7 @@ describe('coarse tier: deferred deep-graph build', () => {
       </SignalProvider>,
     )
 
-    const registry = captured.registry!
+    const registry = capturedRegistry()
     expect(registry.segmentIndex.size()).toBe(2)
     expect(registry.size()).toBe(0)
 

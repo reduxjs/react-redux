@@ -37,13 +37,9 @@ import { configureStore, createSlice } from '@reduxjs/toolkit'
 import * as rtl from '@testing-library/react'
 import React, { StrictMode, Suspense, startTransition, useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { RegistryStats } from '../../../src/signals/pathSignalRegistry'
-import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
-import {
-  SignalProvider,
-  useSignalContext,
-  useSignalSelector,
-} from '../../../src/signals/index'
+import { SignalProvider, useSignalSelector } from '../../../src/signals/index'
+import { createRegistryCapture } from '../helpers/react'
+import { EMPTY_STATS } from '../helpers/registry'
 
 const makeStore = () => {
   const aSlice = createSlice({
@@ -99,30 +95,6 @@ const ungateableSelector = (s: AppState) => {
 // creates no signals at mount.
 const gateableSelector = (s: AppState) => s.a.nested.n
 
-const EMPTY_STATS: RegistryStats = {
-  signals: 0,
-  prefixCounts: 0,
-  prefixOnlyPaths: 0,
-  childIndex: 0,
-  arrays: 0,
-  columns: 0,
-  structures: 0,
-  segmentSubs: 0,
-}
-
-function makeRegistryCapture() {
-  const captured: { registry: PathSignalRegistry | null } = { registry: null }
-  function Capture() {
-    captured.registry = useSignalContext().registry
-    return null
-  }
-  const registry = () => {
-    if (captured.registry === null) throw new Error('registry not captured')
-    return captured.registry
-  }
-  return { registry, Capture }
-}
-
 // A manually-controlled Suspense gate.
 function makeGate() {
   let resolve!: () => void
@@ -151,7 +123,7 @@ afterEach(() => {
 describe('baseline: committed components already clean up', () => {
   it('ungateable hook builds path signals at mount and releases them all on unmount', () => {
     const { store } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
 
     function Watcher() {
       const n = useSignalSelector(ungateableSelector, noStabilityCheck)
@@ -177,7 +149,7 @@ describe('baseline: committed components already clean up', () => {
 describe('component suspends before commit, promise never resolves', () => {
   it('gateable hook: registers nothing while suspended and nothing after unmount', () => {
     const { store } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
 
     function SuspendingWatcher() {
@@ -206,7 +178,7 @@ describe('component suspends before commit, promise never resolves', () => {
 
   it('ungateable hook: leaves no path signals behind while suspended', () => {
     const { store } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
 
     function SuspendingWatcher() {
@@ -233,7 +205,7 @@ describe('component suspends before commit, promise never resolves', () => {
 
   it('ungateable hook: registry is empty after the suspended tree unmounts', () => {
     const { store } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
 
     function SuspendingWatcher() {
@@ -261,7 +233,7 @@ describe('component suspends before commit, promise never resolves', () => {
 describe('component suspends, then commits when the promise resolves', () => {
   it('recovers fully: subscribes on commit, updates on dispatch, releases on unmount', async () => {
     const { store, bumpA } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
 
     function SuspendingWatcher() {
@@ -309,7 +281,7 @@ describe("today's only recovery path: pruning when state paths disappear", () =>
     // processing. It passes today and should keep passing after the
     // fix (at which point there is simply nothing to prune).
     const { store, addDyn, removeDyn } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
 
     rtl.act(() => {
@@ -352,7 +324,7 @@ describe("today's only recovery path: pruning when state paths disappear", () =>
 describe('transitions', () => {
   it('a suspended transition that never finishes leaves the registry empty after unmount', async () => {
     const { store } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
     let setShowOuter: ((show: boolean) => void) | null = null
 
@@ -394,7 +366,7 @@ describe('transitions', () => {
 
   it('an abandoned transition render leaves the registry empty while the app keeps running', () => {
     const { store } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
     let setShowOuter: ((show: boolean) => void) | null = null
 
@@ -441,7 +413,7 @@ describe('transitions', () => {
 describe('StrictMode', () => {
   it('double-invoked render of an ungateable hook does not double-count, and unmount is clean', () => {
     const { store, bumpA } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
 
     function Watcher() {
       const n = useSignalSelector(ungateableSelector, noStabilityCheck)
@@ -478,7 +450,7 @@ describe('StrictMode', () => {
 
   it('StrictMode + suspended-forever ungateable hook leaves the registry empty after unmount', () => {
     const { store } = makeStore()
-    const { registry, Capture } = makeRegistryCapture()
+    const { registry, Capture } = createRegistryCapture()
     const gate = makeGate()
 
     function SuspendingWatcher() {

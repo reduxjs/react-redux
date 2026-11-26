@@ -3,9 +3,9 @@ import type { CoarseSub } from '../../../src/signals/segmentIndex'
 import { createSegmentIndex } from '../../../src/signals/segmentIndex'
 import { createProbeProxy } from '../../../src/signals/probeProxy'
 import { alienEngine } from '../../../src/signals/engine'
-import { createPathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { reconcileState } from '../../../src/signals/diff'
 import { unwrap } from '../../../src/signals/proxyIdentity'
+import { createRegistry } from '../helpers/registry'
 
 function makeSub(segments: Set<string> | null): CoarseSub & { hits: number } {
   const sub: CoarseSub & { hits: number } = {
@@ -256,19 +256,15 @@ describe('createProbeProxy', () => {
 })
 
 describe('reconcileState changed-root-keys return value', () => {
-  function makeRegistry() {
-    return createPathSignalRegistry(alienEngine)
-  }
-
   it('returns [] when prev === next', () => {
-    const registry = makeRegistry()
+    const registry = createRegistry()
     const state = { a: 1 }
 
     expect(reconcileState(state, state, registry, alienEngine)).toEqual([])
   })
 
   it('returns the top-level keys whose references changed', () => {
-    const registry = makeRegistry()
+    const registry = createRegistry()
     const prev = { a: { v: 1 }, b: { v: 2 }, c: { v: 3 } }
     const next = { a: { v: 9 }, b: prev.b, c: prev.c }
 
@@ -276,7 +272,7 @@ describe('reconcileState changed-root-keys return value', () => {
   })
 
   it('includes added keys', () => {
-    const registry = makeRegistry()
+    const registry = createRegistry()
     const prev: Record<string, unknown> = { a: 1 }
     const next = { a: 1, added: 2 }
 
@@ -284,7 +280,7 @@ describe('reconcileState changed-root-keys return value', () => {
   })
 
   it('includes keys added with an undefined value', () => {
-    const registry = makeRegistry()
+    const registry = createRegistry()
     const prev: Record<string, unknown> = { a: 1 }
     const next = { a: 1, added: undefined }
 
@@ -292,7 +288,7 @@ describe('reconcileState changed-root-keys return value', () => {
   })
 
   it('includes removed keys', () => {
-    const registry = makeRegistry()
+    const registry = createRegistry()
     const prev = { a: 1, removed: 2 }
     const next = { a: 1 }
 
@@ -302,7 +298,7 @@ describe('reconcileState changed-root-keys return value', () => {
   })
 
   it('returns null when the root is not a plain object', () => {
-    const registry = makeRegistry()
+    const registry = createRegistry()
     const prev = new Map([['v', 1]])
     const next = new Map([['v', 2]])
 

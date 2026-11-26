@@ -9,25 +9,8 @@ import {
   getKeyValue,
 } from '../../../src/signals/arrayKeys'
 import { mountEngineHook } from '../differential/engineHook'
-
-// Helper: create a registry with signals pre-populated by running a selector through a tracking proxy
-function setupRegistry(state: object, selectorFn: (s: any) => void) {
-  const registry = createPathSignalRegistry(alienEngine)
-  const proxy = createTrackingProxy(state, '', registry)
-  selectorFn(proxy)
-  return registry
-}
-
-function deepFreeze<T>(obj: T): T {
-  if (obj === null || typeof obj !== 'object') return obj
-  Object.freeze(obj)
-  for (const val of Object.values(obj as Record<string, unknown>)) {
-    if (val !== null && typeof val === 'object' && !Object.isFrozen(val)) {
-      deepFreeze(val)
-    }
-  }
-  return obj
-}
+import { setupRegistry } from '../helpers/registry'
+import { deepFreeze } from '../helpers/state'
 
 describe('findKeyField', () => {
   it('detects "id" field', () => {

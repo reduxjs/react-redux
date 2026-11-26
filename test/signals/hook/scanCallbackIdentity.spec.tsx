@@ -18,6 +18,7 @@ import {
   unwrap,
   useSignalSelector,
 } from '../../../src/signals/index'
+import { promoteToDeepTier, renderSignalSelector } from '../helpers/react'
 
 type Item = { id: number }
 
@@ -53,23 +54,9 @@ afterEach(() => {
 
 function renderInBothTiers<R>(selector: (s: RootState) => R) {
   const { store, tick } = makeStore()
-  const seen: { current: R | undefined } = { current: undefined }
-  function Comp() {
-    seen.current = useSignalSelector(selector)
-    return null
-  }
-  rtl.render(
-    <SignalProvider store={store}>
-      <Comp />
-    </SignalProvider>,
-  )
+  const seen = renderSignalSelector(store, selector)
   const probeTier = seen.current
-  rtl.act(() => {
-    store.dispatch(tick())
-  })
-  rtl.act(() => {
-    store.dispatch(tick())
-  })
+  promoteToDeepTier(store, tick())
   const deepTier = seen.current
   return { probeTier, deepTier }
 }

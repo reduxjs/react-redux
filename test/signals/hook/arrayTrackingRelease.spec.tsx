@@ -8,10 +8,9 @@ import React from 'react'
 import { createStore } from 'redux'
 import type { Store } from 'redux'
 import { describe, expect, it } from 'vitest'
-import { useSignalContext } from '../../../src/signals/context'
-import type { PathSignalRegistry } from '../../../src/signals/pathSignalRegistry'
 import { SignalProvider } from '../../../src/signals/SignalProvider'
 import { useSignalSelector } from '../../../src/signals/useSignalSelector'
+import { createRegistryCapture } from '../helpers/react'
 
 interface Item {
   id: number
@@ -64,11 +63,8 @@ function reducer(
 
 const makeStore = (): Store<AppState, Action> => createStore(reducer)
 
-let captured: PathSignalRegistry | null = null
-function CaptureRegistry() {
-  captured = useSignalContext<AppState>().registry
-  return null
-}
+const { Capture: CaptureRegistry, registry: capturedRegistry } =
+  createRegistryCapture()
 
 function WholeArray() {
   useSignalSelector((s: AppState) => s.items)
@@ -221,7 +217,7 @@ describe('array column and structure tracking after the array signal is released
       store.dispatch({ type: 'other' })
     })
 
-    const stats = captured!.debugStats()
+    const stats = capturedRegistry().debugStats()
     expect(stats.signals).toBe(0)
     expect(stats.arrays).toBe(0)
     expect(stats.columns).toBe(0)
