@@ -17,34 +17,14 @@ import type { EqualityFn } from '../../../src/types'
 import { promoteToDeepTier, renderSignalSelector } from '../helpers/react'
 
 // ============================================================================
-// Test: Object Identity Comparison in Selectors
+// Object identity comparisons in selectors
 //
-// Investigates whether selectors relying on object identity (===, Object.is)
-// are correctly tracked by our path-signal tracking proxy architecture.
-//
-// ROOT CAUSE OF FAILURES:
-// When the tracking proxy's `get` trap encounters an object value, it calls
-// `registry.ensurePrefix(pathKey)` — which registers the path in the prefix
-// index but does NOT create a signal or establish a reactive dependency.
-// Only primitive leaf values call `registry.getOrCreate(pathKey, value).get()`
-// which creates a signal and reads it (establishing dep via alien-signals).
-//
-// When a selector does `state.a === state.b` (both objects), the get trap
-// fires for both reads, but since both are objects, only ensurePrefix is
-// called. The selector's computed ends up with ZERO signal dependencies.
-// It never re-runs, regardless of state changes.
-//
-// ADDITIONAL ISSUE: Array.includes() override
-// The `includes` override calls `target[m](...args)` on the raw frozen array,
-// but the search argument is a proxy (e.g., `state.selectedItem`). Since
-// `proxy !== rawObject`, `includes` always returns false for object elements.
-//
-// CORRECTLY WORKING:
-// - Proxy cache ensures same underlying object → same proxy instance, so
-//   `state.draft === state.published` returns the correct boolean initially
-// - Selectors that access primitive properties of objects work fine
-// - `useSignalSelector` terminal proxy detection works when selector returns
-//   an object (proxy), but doesn't help when selector returns a boolean
+// Selectors that compare state objects by reference (===, Object.is,
+// includes, indexOf) without reading any field inside them. Reading an object
+// through the tracking proxy must still subscribe to its path, so the selector
+// re-runs when either reference changes. The proxy cache returns the same
+// proxy for the same underlying object, so comparing two state reads gives the
+// same answer as comparing the raw objects.
 // ============================================================================
 
 // ============================================================================
@@ -191,7 +171,7 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 1: selectedItem === items[i]
+  // selectedItem === items[i]
   //
   // A selector reads state.selectedItem and state.items[i] and compares them.
   // The proxy's get trap fires for both reads. The question is whether the
@@ -199,7 +179,7 @@ describe('object identity comparison in selectors', () => {
   // to point to a different object.
   // ==========================================================================
 
-  describe('Pattern 1: selectedItem === items[i]', () => {
+  describe('selectedItem === items[i]', () => {
     it('detects when selectedItem is the same ref as items[0]', () => {
       const Comp = () => {
         const isSelected = useSignalSelector(
@@ -219,10 +199,6 @@ describe('object identity comparison in selectors', () => {
       expect(getByTestId('result').textContent).toBe('true')
     })
 
-    // KNOWN FAILURE: selector reads two objects (selectedItem, items[0]) but
-    // never accesses a primitive property on either. The tracking proxy only
-    // calls ensurePrefix for objects — no signal dependency is created.
-    // The computed has zero reactive sources and never re-runs.
     it('updates when selectedItem changes to a different item', () => {
       let selectorCalls = 0
 
@@ -248,13 +224,11 @@ describe('object identity comparison in selectors', () => {
         store.dispatch(identitySlice.actions.selectItem(1))
       })
 
-      // The selector MUST re-run and return false
+      // The selector must re-run and return false
       expect(getByTestId('result').textContent).toBe('false')
       expect(selectorCalls).toBeGreaterThan(callsAfterMount)
     })
 
-    // KNOWN FAILURE: same root cause — selectedItem changes from an object
-    // proxy to null, but no signal was tracking the selectedItem path.
     it('updates when selectedItem becomes null', () => {
       const Comp = () => {
         const isSelected = useSignalSelector(
@@ -313,13 +287,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 2: draft === published (cross-slice identity)
+  // draft === published (cross-slice identity)
   //
   // Two state branches might point to the same object. Selector checks
   // if they are identical.
   // ==========================================================================
 
-  describe('Pattern 2: draft === published', () => {
+  describe('draft === published', () => {
     it('detects when draft and published are the same ref', () => {
       const Comp = () => {
         const isSynced = useSignalSelector(
@@ -339,9 +313,6 @@ describe('object identity comparison in selectors', () => {
       expect(getByTestId('result').textContent).toBe('true')
     })
 
-    // KNOWN FAILURE: draft and published are both objects. The selector
-    // compares their identity but never reads any primitive property.
-    // Zero signal deps → computed never re-runs.
     it('updates when draft diverges from published', () => {
       const Comp = () => {
         const isSynced = useSignalSelector(
@@ -397,13 +368,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 3: current !== saved (boolean from identity comparison)
+  // current !== saved (boolean from identity comparison)
   //
   // Selector returns a boolean based on whether two objects are the same ref.
   // This is the "has unsaved changes" pattern.
   // ==========================================================================
 
-  describe('Pattern 3: current !== saved (unsaved changes detection)', () => {
+  describe('current !== saved (unsaved changes detection)', () => {
     it('returns true when current and saved are different refs', () => {
       const Comp = () => {
         const hasChanges = useSignalSelector(
@@ -422,9 +393,6 @@ describe('object identity comparison in selectors', () => {
       expect(getByTestId('result').textContent).toBe('true')
     })
 
-    // KNOWN FAILURE: selector reads current and saved (objects), compares
-    // identity, returns boolean. No signal deps created for object-only reads.
-    // The selector never re-runs even when current is replaced.
     it('updates when current is mutated', () => {
       let selectorCalls = 0
 
@@ -460,13 +428,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 4: Reading object ref without accessing properties
+  // Reading object ref without accessing properties
   //
   // The selector reads an object but only uses it for identity comparison,
   // never accessing any of its properties. Does the proxy still track this?
   // ==========================================================================
 
-  describe('Pattern 4: object ref read without property access', () => {
+  describe('object ref read without property access', () => {
     it('tracks object ref changes via proxy version counter', () => {
       // This selector reads state.identity.current (an object) but doesn't
       // access any of its properties. It just checks if the ref exists.
@@ -489,15 +457,9 @@ describe('object identity comparison in selectors', () => {
     it('selector re-runs when object ref changes even without property access', () => {
       let selectorCalls = 0
 
-      // This is the tricky case: the selector reads two object refs and
-      // compares them, but never accesses any property inside either object.
-      // The proxy's get trap fires to return the child proxy, but
-      // ensurePrefix is called (NOT getOrCreate). No signal dependency is
-      // established for intermediate objects.
-      //
-      // HOWEVER: useSignalSelector checks if the result is a proxy and
-      // explicitly reads its signal. But here the result is a boolean,
-      // not a proxy. So we rely on intermediate version counters.
+      // The selector reads two object refs and compares them without reading
+      // any field inside either object, and returns a boolean rather than a
+      // proxy. Reading each object must still subscribe to its path.
       const Comp = () => {
         const isSame = useSignalSelector((state: RootState) => {
           selectorCalls++
@@ -567,12 +529,12 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 5: Array.includes / Set.has with object identity
+  // Array.includes / Set.has with object identity
   //
   // Selectors that use methods relying on identity comparison internally.
   // ==========================================================================
 
-  describe('Pattern 5: identity-based collection methods', () => {
+  describe('identity-based collection methods', () => {
     it('tracks when using manual identity check across arrays', () => {
       // Selector: find items from listA whose id is in setB
       const Comp = () => {
@@ -633,12 +595,8 @@ describe('object identity comparison in selectors', () => {
       expect(getByTestId('result').textContent).toBe('Gamma')
     })
 
-    // KNOWN FAILURE (different root cause): Array.includes override calls
-    // `target[m](...args)` on the RAW frozen array, but the search argument
-    // `state.identity.selectedItem` is a PROXY. Since proxy !== rawObject,
-    // includes always returns false for object elements.
-    // This is a bug in arrayMethodOverrides.ts — the search arg should be
-    // unwrapped to its raw target before passing to the native method.
+    // The search argument is a proxy while the array's elements are raw
+    // objects, so the includes override has to unwrap the argument first.
     it('selector using Array.includes with object identity', () => {
       // This test creates a scenario where Array.includes is used with
       // object references. Array.includes uses ===.
@@ -674,15 +632,15 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 6: Selective re-execution verification
+  // Selective re-execution verification
   //
-  // The key concern: does the selector re-run when it SHOULD but no
-  // property-level signals changed? This tests whether our version
-  // counters on intermediate objects are sufficient.
+  // Does the selector re-run when a compared reference changes even though
+  // no field it read changed, and keep the right result when an unrelated
+  // field changes?
   // ==========================================================================
 
-  describe('Pattern 6: selective re-execution with identity selectors', () => {
-    it('identity selector re-runs when unrelated slice changes do NOT trigger it', () => {
+  describe('selective re-execution with identity selectors', () => {
+    it('identity selector keeps the right result when an unrelated field changes', () => {
       let identitySelectorCalls = 0
       let unrelatedSelectorCalls = 0
 
@@ -721,10 +679,8 @@ describe('object identity comparison in selectors', () => {
       })
 
       expect(unrelatedSelectorCalls).toBeGreaterThan(unrelatedCallsAfterMount)
-      // Identity selector should NOT re-run — draft/published didn't change
-      // (The exact behavior depends on whether identity.draft and identity.published
-      // share parent object version signals that fire for ANY identity.* change)
-      // This is informational — we record whether it ran or not
+      // draft and published did not change. Whether the identity selector
+      // re-runs here is only logged; the assertion is on its result.
       const identityRan = identitySelectorCalls > identityCallsAfterMount
 
       // Whether or not it re-ran, the result should be correct
@@ -738,9 +694,7 @@ describe('object identity comparison in selectors', () => {
       )
     })
 
-    // KNOWN FAILURE: same root cause as all identity comparison failures.
-    // The selector reads draft and published (objects), no signal deps.
-    it('identity selector DOES re-run when relevant ref changes', () => {
+    it('identity selector re-runs when a compared reference changes', () => {
       let selectorCalls = 0
 
       const Comp = () => {
@@ -760,7 +714,7 @@ describe('object identity comparison in selectors', () => {
       expect(getByTestId('result').textContent).toBe('true')
       const callsAfterMount = selectorCalls
 
-      // Diverge draft from published — selector MUST re-run and return false
+      // Diverge draft from published — selector must re-run and return false
       rtl.act(() => {
         store.dispatch(identitySlice.actions.divergeDraftFromPublished())
       })
@@ -771,14 +725,14 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 7: Proxy identity consistency
+  // Proxy identity consistency
   //
   // Verify that when two state paths point to the same underlying object,
   // the proxy cache returns the same proxy, making === work correctly
   // THROUGH the proxy layer.
   // ==========================================================================
 
-  describe('Pattern 7: proxy identity preservation', () => {
+  describe('proxy identity preservation', () => {
     it('same underlying object produces same proxy via cache', () => {
       // This is fundamental: if state.draft and state.published point to
       // the same object, do their proxies compare as === ?
@@ -829,14 +783,14 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 8: Immer structural sharing edge case
+  // Immer structural sharing edge case
   //
   // When Immer updates one field but leaves another untouched,
   // the untouched field keeps its reference. Test that identity
   // comparisons reflect this correctly.
   // ==========================================================================
 
-  describe('Pattern 8: Immer structural sharing with identity', () => {
+  describe('Immer structural sharing with identity', () => {
     it('reflects Immer structural sharing in identity comparisons', () => {
       // After dispatching divergeDraftFromPublished, draft changes but
       // published keeps its old ref. selectedItem should still be items[0].
@@ -874,14 +828,14 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 9: Workarounds — identity comparison WITH property access
+  // Workarounds — identity comparison WITH property access
   //
   // These tests show that adding a primitive property access alongside
   // the identity comparison makes the selector correctly reactive.
   // This is the natural workaround for real-world selectors.
   // ==========================================================================
 
-  describe('Pattern 9: workaround — identity comparison with property access', () => {
+  describe('workaround — identity comparison with property access', () => {
     it('identity selector works when also reading a primitive property', () => {
       // This is the realistic pattern: compare identity BUT ALSO read
       // a property (like id or name) from the objects.
@@ -945,13 +899,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 10: indexOf/lastIndexOf with proxy arguments
+  // indexOf/lastIndexOf with proxy arguments
   //
   // Same root cause as includes: the override calls the raw array method
   // with a proxy argument, which can't match raw objects.
   // ==========================================================================
 
-  describe('Pattern 10: indexOf/lastIndexOf with object args', () => {
+  describe('indexOf/lastIndexOf with object args', () => {
     it('indexOf returns correct index for proxy-wrapped object', () => {
       const Comp = () => {
         const idx = useSignalSelector((state: RootState) => {
@@ -974,13 +928,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 11: Null/undefined identity transitions
+  // Null/undefined identity transitions
   //
   // Object goes from non-null to null and back. Tests that the transition
   // between object and null is tracked (type changes at a path).
   // ==========================================================================
 
-  describe('Pattern 11: null identity transitions', () => {
+  describe('null identity transitions', () => {
     it('tracks object → null transition', () => {
       const Comp = () => {
         const isNull = useSignalSelector(
@@ -1066,13 +1020,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 12: Nested leaf object (deep traversal, identity at leaf)
+  // Nested leaf object (deep traversal, identity at leaf)
   //
   // state.deep.nested.target used for identity. Three levels of intermediate
   // traversal, leaf object at the end.
   // ==========================================================================
 
-  describe('Pattern 12: nested leaf object identity', () => {
+  describe('nested leaf object identity', () => {
     it('tracks identity change on deeply nested object', () => {
       const Comp = () => {
         const isSame = useSignalSelector(
@@ -1137,13 +1091,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 13: Multiple leaf objects from same parent
+  // Multiple leaf objects from same parent
   //
   // state.objA === state.objB where both are siblings under identity.
   // Tests that leaf detection works when both leaves share a parent.
   // ==========================================================================
 
-  describe('Pattern 13: sibling leaf objects', () => {
+  describe('sibling leaf objects', () => {
     it('tracks identity between sibling objects', () => {
       const Comp = () => {
         const isSame = useSignalSelector(
@@ -1200,14 +1154,14 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 14: Parent version signal false-positive suppression
+  // Parent version signal false-positive suppression
   //
   // Sibling primitive changes → parent version signal fires → selector
   // re-runs → returns same result → equality check suppresses re-render.
   // Verifies the "benign false positive" trade-off of parent version signals.
   // ==========================================================================
 
-  describe('Pattern 14: false-positive suppression via equality check', () => {
+  describe('false-positive suppression via equality check', () => {
     it('does not re-render when sibling changes but selector result is stable', () => {
       let renderCount = 0
 
@@ -1242,14 +1196,14 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 15: Conditional property access based on identity
+  // Conditional property access based on identity
   //
   // Selector first checks identity, then conditionally reads properties.
   // On first run it may only read objects (leaf detection needed).
   // On re-run after state change, it reads different paths.
   // ==========================================================================
 
-  describe('Pattern 15: conditional property access after identity check', () => {
+  describe('conditional property access after identity check', () => {
     it('handles selector that conditionally reads properties', () => {
       const Comp = () => {
         const result = useSignalSelector((state: RootState) => {
@@ -1317,13 +1271,13 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 16: Returning a leaf object (terminal proxy check)
+  // Returning a leaf object (terminal proxy check)
   //
   // Selector returns an object directly (not a boolean from comparison).
   // The terminal proxy check in useSignalSelector should handle this.
   // ==========================================================================
 
-  describe('Pattern 16: selector returning leaf object', () => {
+  describe('selector returning leaf object', () => {
     it('re-runs when returned object ref changes', () => {
       let selectorCalls = 0
 
@@ -1354,14 +1308,14 @@ describe('object identity comparison in selectors', () => {
   })
 
   // ==========================================================================
-  // Pattern 17: Mixed identity + primitive in same selector
+  // Mixed identity + primitive in same selector
   //
   // Selector reads both object identity and primitive properties.
   // Tests that leaf object detection and parent version signals
   // work together without interference.
   // ==========================================================================
 
-  describe('Pattern 17: mixed identity and primitive reads', () => {
+  describe('mixed identity and primitive reads', () => {
     it('tracks both identity and primitive changes', () => {
       const Comp = () => {
         const result = useSignalSelector((state: RootState) => {
@@ -1465,7 +1419,7 @@ describe('identity comparisons between state values', () => {
 
 // A selector can return a state object inside a derived result and also read
 // a field through that same object. The returned object must still update
-// when a field the selector did NOT read changes, because the component holds
+// when a field the selector did not read changes, because the component holds
 // the whole object.
 describe('state object embedded in a derived result and read through', () => {
   interface User {
